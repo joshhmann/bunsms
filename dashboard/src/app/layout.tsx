@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   icons: { icon: "/logo.png", apple: "/logo.png" },
   openGraph: {
     title: "BunsMS - MapleStory v83 Guided by AI",
-    description: "Something ancient watches over this world. A MapleStory v83 private server with an AI oracle that dynamically tunes rates, drops, and events.",
+    description: "The Baker has buns in the oven and eyes on the whole world. A MapleStory v83 server where a cheeky AI oracle kneads rates, drops, and events fresh daily. 🍑",
     images: [{ url: "/logo.png", width: 1024, height: 1024 }],
   },
 };
