@@ -19,7 +19,7 @@ if [ -n "$DISABLE_AUTO_REGISTER" ]; then
   sed -i 's|^  AUTOMATIC_REGISTER: .*|  AUTOMATIC_REGISTER: false|' "$CONFIG"
 fi
 
-echo "=== AugurMS Game Server starting ==="
+echo "=== BunsMS Game Server starting ==="
 grep -E '^\s+(HOST|LANHOST|DB_HOST|AUTOMATIC_REGISTER):' "$CONFIG" | head -5
 echo "DB_HOST env override: ${DB_HOST:-none}"
 echo "=================================="

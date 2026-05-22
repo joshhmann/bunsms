@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BunsMS — Browser Client 🍑</title>
+    <title>BunsMS — Browser Client 🍑 🍑</title>
     <link rel="icon" href="/web/logo.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -327,7 +327,7 @@
         <div id="boot-brand">
             <img id="boot-logo" src="/web/logo.png" alt="BunsMS">
             <div id="boot-title">BunsMS</div>
-            <div id="boot-subtitle">Browser Client 🍑</div>
+            <div id="boot-subtitle">Browser Client 🍑 🍑</div>
         </div>
         <div id="boot-bar-wrap"><div id="boot-bar"></div></div>
         <div id="boot-status">Connecting…</div>
@@ -526,9 +526,9 @@
 
         function startBackgroundPrefill() {
             const baseUrl = Module.LazyFS?.NxBaseUrl;
-            if (!baseUrl || !window.AugurPrefetch?.prefetchBackground) return;
+            if (!baseUrl || !window.BakerPrefetch?.prefetchBackground) return;
             prefillEl.classList.add('visible');
-            window.AugurPrefetch.prefetchBackground({
+            window.BakerPrefetch.prefetchBackground({
                 baseUrl,
                 files: ALL_NX_FILES,
                 concurrency: 4, // Chrome allows ~6 per origin; 4 leaves room for on-demand LazyFS fetches
@@ -577,11 +577,11 @@
             Module.LazyFS = Object.assign(Module.LazyFS || {}, lazyConfig);
 
             // 2. Prefetch NX assets (if HTTP mode)
-            if (lazyConfig.NxBaseUrl && window.AugurPrefetch) {
+            if (lazyConfig.NxBaseUrl && window.BakerPrefetch) {
                 setStatus('Preparing assets…');
                 setProgress(4);
                 try {
-                    await window.AugurPrefetch.prefetchAll({
+                    await window.BakerPrefetch.prefetchAll({
                         baseUrl: lazyConfig.NxBaseUrl,
                         onProgress: ({ loadedBytes, totalBytes, file, phase }) => {
                             const pct = totalBytes ? (loadedBytes / totalBytes) * 90 + 5 : 5; // reserve 5..95 for prefetch

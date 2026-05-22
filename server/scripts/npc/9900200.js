@@ -1,5 +1,5 @@
 /*
- * AugurMS — The Augur NPC (ID: 9900200)
+ * BunsMS — The Augur NPC (ID: 9900200)
  *
  * AI-powered oracle chatbot. Players type questions,
  * the script calls the dashboard API which runs an LLM
@@ -9,12 +9,12 @@
  */
 
 var status;
-var DASHBOARD_URL = "http://augur-ms.internal:3000"; // prod: Fly internal (IPv6); local: override to LAN IP:3005
+var DASHBOARD_URL = "http://buns-ms.internal:3000"; // prod: Fly internal (IPv6); local: override to LAN IP:3005
 var NPC_SECRET = "augur-npc-secret";
 
 function start() {
   status = 0;
-  cm.sendNext("I am the Augur... I see the threads of fate that bind this world.\r\nWhat knowledge do you seek, adventurer?");
+  cm.sendNext("I am The Baker 🍑... I see the threads of dough that bind this world.\r\nWhat knowledge do you seek, adventurer?");
 }
 
 function action(mode, type, selection) {

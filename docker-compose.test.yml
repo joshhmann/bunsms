@@ -2,12 +2,12 @@ services:
   db:
     image: mysql:8.4
     environment:
-      MYSQL_ROOT_PASSWORD: augurpass
+      MYSQL_ROOT_PASSWORD: bunspass
       MYSQL_DATABASE: cosmic
     ports:
       - "3309:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-paugurpass"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pbunspass"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -24,7 +24,7 @@ services:
       - "7677:7576"
       - "7678:7577"
     environment:
-      DB_PASS: augurpass
+      DB_PASS: bunspass
       DB_HOST: db
       GAME_HOST: 192.168.0.157
     volumes:
@@ -44,11 +44,11 @@ services:
       DB_HOST: db
       DB_PORT: "3306"
       DB_USER: root
-      DB_PASS: augurpass
+      DB_PASS: bunspass
       DB_NAME: cosmic
       ADMIN_USER: admin
       ADMIN_PASS_HASH: ""
-      JWT_SECRET: "augurms-test-jwt-secret-2026"
+      JWT_SECRET: "bunsms-test-jwt-secret-2026"
       COSMIC_ROOT: /cosmic
       NODE_ENV: production
     depends_on:

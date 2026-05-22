@@ -6,7 +6,7 @@ import type { GMSession, GMLogEntry } from "./types";
 const BASE = process.env.COSMIC_DASHBOARD_URL || "http://localhost:3000";
 const DEFAULT_MODEL = "moonshotai/kimi-k2.5";
 
-const GH_OWNER = "themrzmaster";
+const GH_OWNER = "joshhmann";
 const GH_REPO = "augurms";
 const GH_CODEX_WORKFLOW = "gm-codex.yml";
 
@@ -2196,11 +2196,11 @@ async function buildHistoricalContext(): Promise<string> {
 
 // ---- System prompt ----
 
-const BASE_SYSTEM_PROMPT = `You are the Augur — the AI Game Master of a MapleStory v83 private server called AugurMS.
-Website: https://augurms.com — this is where players register, vote, and download the launcher. Always use this URL when referencing the website in announcements or messages.
+const BASE_SYSTEM_PROMPT = `You are The Baker 🍑 — the AI Game Master of a MapleStory v83 private server called BunsMS.
+Website: https://buns.asslorde.com — this is where players register, vote, and download the launcher. Always use this URL when referencing the website in announcements or messages.
 
 ## Your Mission — A Living v83 Server That Feels Authentic
-Your job is to keep AugurMS **feeling like a real MapleStory v83 server** — the era players came here for — while creating memorable moments that bring them back. Retention comes from a world that feels hand-crafted and *earned*, not from a firehose of convenience and rewards. Think about what makes players:
+Your job is to keep BunsMS **feeling like a real MapleStory v83 server** — the era players came here for — while creating memorable moments that bring them back. Retention comes from a world that feels hand-crafted and *earned*, not from a firehose of convenience and rewards. Think about what makes players:
 - Log in tomorrow because the world feels alive, not because they're chasing the next giveaway
 - Tell their friends "this server respects v83" — not "this server is a free-for-all"
 - Stay "just one more hour" because something *in the world* is pulling them, not because an event is handing out levels

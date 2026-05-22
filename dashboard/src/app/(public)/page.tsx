@@ -79,7 +79,7 @@ export default function LandingPage() {
             <Link href="/rankings" className="rounded-lg px-4 py-2 text-sm font-medium text-text-secondary transition hover:text-text-primary">
               Rankings
             </Link>
-            <a href="https://github.com/themrzmaster/augurms" target="_blank" rel="noopener noreferrer" className="rounded-lg px-4 py-2 text-sm font-medium text-text-secondary transition hover:text-text-primary">
+            <a href="https://github.com/joshhmann/bunsms" target="_blank" rel="noopener noreferrer" className="rounded-lg px-4 py-2 text-sm font-medium text-text-secondary transition hover:text-text-primary">
               GitHub
             </a>
             <Link href="/vote" className="rounded-lg px-4 py-2 text-sm font-medium text-text-secondary transition hover:text-text-primary">
@@ -135,7 +135,7 @@ export default function LandingPage() {
               </Link>
             ))}
             <a
-              href="https://github.com/themrzmaster/augurms"
+              href="https://github.com/joshhmann/bunsms"
               target="_blank"
               rel="noopener noreferrer"
               className="block rounded-lg px-4 py-2.5 text-sm font-medium text-text-secondary transition hover:bg-bg-card hover:text-text-primary"
@@ -203,14 +203,15 @@ export default function LandingPage() {
           MapleStory v83
           <br />
           <span className="bg-gradient-to-r from-accent-gold via-accent-orange to-accent-gold bg-clip-text text-transparent">
-            Guided by AI
+            Guided by The Baker 🍑
           </span>
         </h1>
 
         <p className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary">
-          Something ancient watches over this world. It reads every kill, every
-          trade, every quiet hour. It shifts the rules before you notice and
-          reshapes the game while you sleep. Welcome to the server that plays back.
+          The Baker&apos;s got buns in the oven and eyes on the whole damn world.
+          EXP rates, drop tables, surprise events — all hand-kneaded fresh daily.
+          MapleStory the way it should be: unpredictable, alive, and just a little
+          bit cheeky. 🍑
         </p>
 
         {/* Rates */}
@@ -261,7 +262,7 @@ export default function LandingPage() {
           {[
             {
               title: "The Baker 🍑",
-              desc: `An AI oracle that watches the world and reshapes it. It tunes rates, spawns events, and answers player questions in-game as an NPC you can talk to in Henesys.${gmModel ? ` Powered by ${gmModel.split("/").pop()}.` : ""}`,
+              desc: `Our AI oracle that watches the world and reshapes it. It tunes rates, spawns events, and answers player questions in-game as an NPC you can talk to in Henesys.${gmModel ? ` Powered by ${gmModel.split("/").pop()}.` : ""}`,
               icon: "\uD83E\uDDE0",
             },
             {
@@ -286,7 +287,7 @@ export default function LandingPage() {
           ))}
         </div>
 
-        {/* Meet the Augur NPC */}
+        {/* Meet The Baker NPC */}
         <div className="mt-20 w-full max-w-4xl">
           <div className="overflow-hidden rounded-2xl border border-accent-purple/20 bg-gradient-to-br from-bg-card/80 via-accent-purple/[0.03] to-bg-card/80 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-8 p-8 sm:flex-row sm:items-start">
@@ -294,7 +295,7 @@ export default function LandingPage() {
               <div className="relative shrink-0">
                 <div className="absolute inset-0 scale-125 rounded-full bg-accent-purple/10 blur-2xl" />
                 <Image
-                  src="/augur-npc.png"
+                  src="/baker-npc.png"
                   alt="The Baker 🍑 NPC"
                   width={180}
                   height={180}
@@ -305,10 +306,10 @@ export default function LandingPage() {
               <div className="flex-1 text-left">
                 <div className="mb-1 flex items-center gap-2">
                   <span className="text-2xl">{"\uD83D\uDD2E"}</span>
-                  <h2 className="text-2xl font-bold text-text-primary">Talk to the Augur</h2>
+                  <h2 className="text-2xl font-bold text-text-primary">Meet The Baker 🍑</h2>
                 </div>
                 <p className="mb-4 text-sm leading-relaxed text-text-secondary">
-                  Find the Augur NPC in <strong className="text-text-primary">Henesys</strong> and ask it anything. It&apos;s an AI-powered oracle with access to live game data &mdash; type your question and get real answers, not canned dialogue.
+                  Find The Baker 🍑 in <strong className="text-text-primary">Henesys</strong> and ask it anything. It&apos;s an AI-powered oracle with access to live game data &mdash; type your question and get real answers, not canned dialogue.
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {[
@@ -333,7 +334,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Augur's Log */}
+        {/* The Baker's Log */}
         {augurLog.length > 0 && (
           <div className="mt-20 w-full max-w-2xl">
             <div className="mb-4 flex items-center gap-3">
@@ -408,7 +409,7 @@ export default function LandingPage() {
                 </h3>
               </div>
               <p className="mb-3 max-w-lg text-sm leading-relaxed text-text-secondary">
-                See everywhere the Augur has touched. An interactive map of the
+                See everywhere The Baker has touched. An interactive map of the
                 entire MapleStory world showing every NPC placed, every spawn
                 changed, every event created — with the AI&apos;s reasoning for each decision.
               </p>
@@ -612,7 +613,7 @@ export default function LandingPage() {
                       Download and run the launcher installer. It will auto-detect your MapleStory folder (or let you browse to it). The launcher <strong>automatically downloads and updates</strong> all game files &mdash; no manual file copying needed.
                     </p>
                     <a
-                      href="https://github.com/themrzmaster/augurms/releases/download/launcher-v1.0.2/BunsMS.Setup.1.0.2.exe"
+                      href="https://github.com/joshhmann/bunsms/releases/download/launcher-v1.0.2/BunsMS.Setup.1.0.2.exe"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 rounded-lg bg-accent-gold px-5 py-2.5 font-semibold text-bg-primary transition hover:bg-accent-gold/90 hover:shadow-[0_0_20px_rgba(245,197,66,0.3)]"
@@ -701,7 +702,7 @@ export default function LandingPage() {
                       Download the client pack and extract <strong>everything</strong> (BunsMS.exe + all .wz files) into your MapleStory install folder. Replace existing .wz files when prompted.
                     </p>
                     <a
-                      href="https://github.com/themrzmaster/augurms/releases/tag/client-v1.0.1"
+                      href="https://github.com/joshhmann/bunsms/releases/tag/client-v1.0.1"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 rounded-lg bg-accent-blue px-5 py-2.5 font-semibold text-white transition hover:bg-accent-blue/90 hover:shadow-[0_0_20px_rgba(96,165,250,0.3)]"
