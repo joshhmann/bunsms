@@ -1,16 +1,16 @@
 worlds:
-  - flag: 0
-    server_message: 🍑 Welcome to BunsMS! Fresh-baked MapleStory v83, guided by The Baker.
-    event_message: 🍑 Welcome to BunsMS!
-    why_am_i_recommended: Welcome to Scania!
+  - flag: 3
+    server_message: 🍑 Welcome to BunsMS! Bera — home of The Baker. Fresh-baked v83.
+    event_message: 🍑 BunsMS Bera — Fresh Daily!
+    why_am_i_recommended: BunsMS Bera — where The Baker kneads the world fresh.
     channels: 3
-    exp_rate: 1
-    meso_rate: 1
-    drop_rate: 1
-    boss_drop_rate: 1
-    quest_rate: 1
-    fishing_rate: 1
-    travel_rate: 1
+    exp_rate: 10
+    meso_rate: 8
+    drop_rate: 5
+    boss_drop_rate: 8
+    quest_rate: 5
+    fishing_rate: 8
+    travel_rate: 10
   - flag: 0
     server_message: Welcome to Bera!
     event_message: Bera!
