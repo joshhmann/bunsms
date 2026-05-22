@@ -82,7 +82,7 @@ export async function POST() {
     // Read rates from live game server (falls back to config.yaml)
     let expRate = 1, mesoRate = 1, dropRate = 1;
     try {
-      const GAME_API = process.env.GAME_API_URL || "http://augur-ms-game.internal:8585";
+      const GAME_API = process.env.GAME_API_URL || "http://192.168.0.157:8585";
       const ratesRes = await fetch(`${GAME_API}/rates`, { signal: AbortSignal.timeout(3000) });
       if (ratesRes.ok) {
         const rates = await ratesRes.json();

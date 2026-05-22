@@ -125,7 +125,7 @@ export default function TrackingPage() {
         <div className="border-b border-border px-5 py-4">
           <h2 className="text-sm font-semibold text-text-primary">Sources</h2>
           <p className="text-xs text-text-secondary mt-1">
-            Use link format: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-accent-gold">augurms.com/api/t/SOURCE_NAME</code>
+            Use link format: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-accent-gold">buns.asslorde.com/api/t/SOURCE_NAME</code>
           </p>
         </div>
         {loading ? (

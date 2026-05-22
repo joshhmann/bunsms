@@ -5,7 +5,7 @@ import { parse as parseYaml } from "yaml";
 import { query } from "@/lib/db";
 import { PATHS } from "@/lib/cosmic";
 
-const GAME_HOST = process.env.GAME_SERVER_HOST || "augur-ms-game.internal";
+const GAME_HOST = process.env.GAME_SERVER_HOST || "192.168.0.157";
 const LOGIN_PORT = 8484;
 
 /** Check if the game server is reachable by TCP connecting to the login port */

@@ -1,6 +1,6 @@
 // Fire-and-forget dispatch of the `wz-to-nx` GitHub Actions workflow.
 // Called after a publish endpoint uploads patched WZ file(s) to R2 so the
-// browser client at play.augurms.com picks up fresh .nx files.
+// browser client at play.buns.asslorde.com picks up fresh .nx files.
 //
 // Intentionally non-blocking: publish endpoints should not fail or stall if
 // the dispatch can't reach GitHub. The workflow's own concurrency group
@@ -15,7 +15,7 @@ const GH_WORKFLOW = "wz-to-nx.yml";
 // repository_dispatch but only `Actions: write` for workflow_dispatch — and
 // the only scope GH_DISPATCH_TOKEN carries is `actions:write`. The previous
 // `/dispatches` call returned 403 silently, so every publish quietly failed
-// to refresh the NX files for play.augurms.com.
+// to refresh the NX files for play.buns.asslorde.com.
 
 export async function dispatchWzToNx(files: string[]): Promise<void> {
   const token = process.env.GH_DISPATCH_TOKEN;

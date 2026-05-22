@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 const VOTE_POINTS_REWARD = 1;
 
 // GET — TopG postback callback
-// TopG calls: https://augurms.com/api/vote/topg?p_resp=USERNAME&ip=VOTERIP
+// TopG calls: https://buns.asslorde.com/api/vote/topg?p_resp=USERNAME&ip=VOTERIP
 export async function GET(request: NextRequest) {
   try {
     // Validate request comes from TopG

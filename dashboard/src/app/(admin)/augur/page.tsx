@@ -96,7 +96,7 @@ export default function AugurPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Augur NPC</h1>
-          <p className="text-sm text-text-secondary">AI Oracle Chatbot — NPC ID {config.npc_id}</p>
+          <p className="text-sm text-text-secondary">AI Oracle Chatbot 🍑 — NPC ID {config.npc_id}</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -232,7 +232,7 @@ export default function AugurPage() {
               >
                 <div className="flex items-center justify-between text-xs text-text-muted">
                   <span>
-                    {log.role === "user" ? `${log.character_name}` : "Augur"}{" "}
+                    {log.role === "user" ? `${log.character_name}` : "Baker 🍑"}{" "}
                   </span>
                   <span>{new Date(log.created_at).toLocaleString()}</span>
                 </div>

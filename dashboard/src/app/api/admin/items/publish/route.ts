@@ -586,7 +586,7 @@ async function runPublishJob(jobId: string) {
         update("Upload warning", `Warning: String.wz upload failed: ${strUpload.error}`);
       }
 
-      // 9b.5. Trigger WZ→NX conversion for the browser client at play.augurms.com.
+      // 9b.5. Trigger WZ→NX conversion for the browser client at play.buns.asslorde.com.
       // Fire-and-forget; the workflow coalesces rapid successive dispatches.
       const changedWz = Object.keys(manifestUpdates).filter((n) => n.endsWith(".wz"));
       if (changedWz.length > 0) {

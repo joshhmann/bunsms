@@ -10,7 +10,7 @@
 
 var status;
 var DASHBOARD_URL = "http://buns-ms.internal:3000"; // prod: Fly internal (IPv6); local: override to LAN IP:3005
-var NPC_SECRET = "augur-npc-secret";
+var NPC_SECRET = "buns-npc-secret";
 
 function start() {
   status = 0;
@@ -114,7 +114,7 @@ function callAugurAPI(message) {
     java.lang.System.out.println("[Augur] Internal API failed (" + e + "), trying public URL...");
   }
   try {
-    return doHttpPost("https://augurms.com", message);
+    return doHttpPost("https://buns.asslorde.com", message);
   } catch (e2) {
     java.lang.System.out.println("[Augur] Public API also failed: " + e2);
     return { text: "The stars are clouded... I cannot reach the beyond right now." };

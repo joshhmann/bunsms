@@ -9,7 +9,7 @@ export async function GET(
 
   // Sanitize: alphanumeric, dashes, underscores only, max 64 chars
   const safeRef = ref.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 64);
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "augurms.com";
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "buns.asslorde.com";
   const proto = request.headers.get("x-forwarded-proto") || "https";
   const baseUrl = `${proto}://${host}`;
 

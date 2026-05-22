@@ -5,7 +5,7 @@
  * @Function: Cygnus tutorial guide
  *
  * Not present in the upstream Cosmic/HeavenMS scripts — the Cygnus tutorial
- * chain was never ported there. Authored for AugurMS so the NPC actually
+ * chain was never ported there. Authored for BunsMS so the NPC actually
  * responds to clicks.
  *
  * Quest 20010 (bound to this NPC in Quest.wz/Check.img.xml) handles the

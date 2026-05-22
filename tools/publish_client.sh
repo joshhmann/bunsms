@@ -1,5 +1,5 @@
 #!/bin/bash
-# AugurMS Client Publisher — Upload patched WZ files to R2 and bump launcher manifest
+# BunsMS Client Publisher — Upload patched WZ files to R2 and bump launcher manifest
 #
 # Usage:
 #   ./tools/publish_client.sh [patched-dir]
@@ -11,8 +11,8 @@
 set -euo pipefail
 
 PATCHED_DIR="${1:-./patched}"
-DASHBOARD_URL="${DASHBOARD_URL:-https://augurms.com}"
-R2_BUCKET="augurms-client"
+DASHBOARD_URL="${DASHBOARD_URL:-https://buns.asslorde.com}"
+R2_BUCKET="bunsms-client"
 
 if [ ! -d "$PATCHED_DIR" ]; then
   echo "ERROR: Patched directory not found: $PATCHED_DIR"
@@ -20,7 +20,7 @@ if [ ! -d "$PATCHED_DIR" ]; then
   exit 1
 fi
 
-echo "=== AugurMS Client Publisher ==="
+echo "=== BunsMS Client Publisher ==="
 echo "Source: $PATCHED_DIR"
 echo ""
 

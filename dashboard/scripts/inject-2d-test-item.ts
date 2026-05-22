@@ -224,7 +224,7 @@ async function main() {
   console.log(`       docker compose -f docker-compose.local.yml restart server`);
   console.log(`  3. In-game as GM: @item ${itemId}`);
   console.log(`\nWeb client (NX) note: NX files live on R2, regenerated on publish. To test via`);
-  console.log(`play.augurms.com, publish this item normally (wz-to-nx workflow auto-dispatches).`);
+  console.log(`play.buns.asslorde.com, publish this item normally (wz-to-nx workflow auto-dispatches).`);
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

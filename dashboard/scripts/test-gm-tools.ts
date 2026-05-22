@@ -7,17 +7,17 @@
  *
  * Usage:
  *   cd dashboard
- *   npx tsx scripts/test-gm-tools.ts [--base https://augurms.com] [--write]
+ *   npx tsx scripts/test-gm-tools.ts [--base https://buns.asslorde.com] [--write]
  *
  * Flags:
- *   --base <url>   Dashboard base URL (default: https://augurms.com)
+ *   --base <url>   Dashboard base URL (default: https://buns.asslorde.com)
  *   --write        Actually execute write tools (DANGEROUS on prod!)
  */
 
 const args = process.argv.slice(2);
 const BASE = args.includes("--base")
   ? args[args.indexOf("--base") + 1]
-  : "https://augurms.com";
+  : "https://buns.asslorde.com";
 const ALLOW_WRITES = args.includes("--write");
 
 const PASS = "\x1b[32m PASS \x1b[0m";

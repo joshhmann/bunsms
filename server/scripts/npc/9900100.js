@@ -1,5 +1,5 @@
 /*
- * AugurMS Universal NPC (ID: 9900100)
+ * BunsMS Universal NPC (ID: 9900100)
  *
  * A single script that powers all AI Game Master-created NPCs.
  * Reads its behavior from the gm_npcs table based on the NPC ID.

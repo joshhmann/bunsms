@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GAME_API = process.env.GAME_API_URL || "http://augur-ms-game.internal:8585";
+const GAME_API = process.env.GAME_API_URL || "http://192.168.0.157:8585";
 
 export async function POST(request: NextRequest) {
   try {

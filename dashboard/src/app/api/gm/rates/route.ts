@@ -89,7 +89,7 @@ export async function PUT(request: NextRequest) {
     writeFileSync(PATHS.config, stringifyYaml(config, { lineWidth: 0 }), "utf-8");
 
     // Push rates to the live game server via Admin API
-    const GAME_API = process.env.GAME_API_URL || "http://augur-ms-game.internal:8585";
+    const GAME_API = process.env.GAME_API_URL || "http://192.168.0.157:8585";
     try {
       await fetch(`${GAME_API}/rates`, {
         method: "PUT",

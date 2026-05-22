@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest) {
     // If a rate was changed, push to the live game server
     const RATE_KEYS = ["exp_rate", "meso_rate", "drop_rate", "boss_drop_rate"];
     if (RATE_KEYS.includes(lastKey)) {
-      const GAME_API = process.env.GAME_API_URL || "http://augur-ms-game.internal:8585";
+      const GAME_API = process.env.GAME_API_URL || "http://192.168.0.157:8585";
       try {
         const world = config.worlds?.[0] || {};
         await fetch(`${GAME_API}/rates`, {

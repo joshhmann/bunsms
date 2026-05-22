@@ -72,7 +72,7 @@ public class RecalcHpCommand extends Command {
             }
 
             player.dropMessage(6, "HP recalculated! Gained +" + delta + " bonus HP (total bonus: +" + totalBonusHp + " HP).");
-            player.dropMessage(6, "HP washing is not needed on AugurMS — you gain +" + bonusPerLevel + " bonus HP every level.");
+            player.dropMessage(6, "HP washing is not needed on BunsMS — you gain +" + bonusPerLevel + " bonus HP every level.");
         } catch (Exception e) {
             player.dropMessage(5, "Failed to recalculate HP. Please try again later.");
             e.printStackTrace();
