@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AugurMS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Custom titlebar -->
+  <div class="titlebar">
+    <div class="titlebar-drag">
+      <img src="../assets/logo.png" alt="" class="titlebar-logo" />
+      <span class="titlebar-text">AugurMS</span>
+    </div>
+    <div class="titlebar-controls">
+      <button class="titlebar-btn" id="btn-minimize" title="Minimize">&#x2014;</button>
+      <button class="titlebar-btn titlebar-close" id="btn-close" title="Close">&#x2715;</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="container">
+    <!-- Left panel: branding + news -->
+    <div class="panel-left">
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-glow"></div>
+        <img src="../assets/logo.png" alt="AugurMS" class="hero-logo" />
+        <p class="hero-sub">MapleStory v83 &middot; Guided by AI</p>
+        <div class="status-badge" id="status-badge">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Checking...</span>
+        </div>
+      </div>
+
+      <!-- News feed from GM AI -->
+      <div class="news-section">
+        <h3 class="news-title">
+          <span class="news-icon">&#x1F9E0;</span>
+          The Augur's Log
+        </h3>
+        <div class="news-list" id="news-list">
+          <div class="news-item news-loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right panel: actions -->
+    <div class="panel-right">
+      <!-- Server rates -->
+      <div class="rates-bar" id="rates-bar">
+        <div class="rate"><span class="rate-value" id="rate-exp">--</span><span class="rate-label">EXP</span></div>
+        <div class="rate"><span class="rate-value" id="rate-drop">--</span><span class="rate-label">DROP</span></div>
+        <div class="rate"><span class="rate-value" id="rate-meso">--</span><span class="rate-label">MESO</span></div>
+      </div>
+
+      <!-- Game path -->
+      <div class="path-section">
+        <div class="path-label">Install Location</div>
+        <div class="path-row">
+          <div class="path-display" id="path-display">Searching...</div>
+          <button class="btn-browse" id="btn-browse" title="Browse">&#128193;</button>
+        </div>
+      </div>
+
+      <!-- HD Mode toggle -->
+      <div class="hd-section">
+        <label class="hd-toggle" title="HD Mode uses Ezorsia v2 for widescreen (beta)">
+          <input type="checkbox" id="hd-checkbox" />
+          <span class="hd-slider"></span>
+          <span class="hd-label">HD Mode <span class="hd-beta">BETA</span></span>
+        </label>
+        <div class="hd-options" id="hd-options" style="display:none">
+          <div class="hd-option-row">
+            <span class="hd-option-label">Resolution</span>
+            <select id="hd-resolution" class="hd-select">
+              <option value="1024x768">1024×768</option>
+              <option value="1280x720" selected>1280×720</option>
+              <option value="1366x768">1366×768</option>
+              <option value="1600x900">1600×900</option>
+              <option value="1920x1080">1920×1080</option>
+            </select>
+          </div>
+          <div class="hd-option-row">
+            <span class="hd-option-label">Fullscreen</span>
+            <label class="hd-mini-toggle">
+              <input type="checkbox" id="hd-fullscreen" />
+              <span class="hd-slider"></span>
+            </label>
+          </div>
+          <div class="hd-option-row" title="COM/DirectInput startup delay. If the game crashes with 0x80030002 right at launch, try lowering or raising this.">
+            <span class="hd-option-label">Startup delay</span>
+            <select id="hd-sleeptime" class="hd-select">
+              <option value="0">0 ms</option>
+              <option value="15">15 ms</option>
+              <option value="30" selected>30 ms (default)</option>
+              <option value="100">100 ms</option>
+              <option value="500">500 ms</option>
+              <option value="1000">1000 ms</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Update status -->
+      <div class="update-section" id="update-section">
+        <div class="update-status" id="update-status">
+          <span class="update-icon">&#x1F50D;</span>
+          <span id="update-text">Checking for updates...</span>
+        </div>
+        <div class="progress-bar-container" id="progress-container" style="display:none">
+          <div class="progress-bar" id="progress-bar"></div>
+          <div class="progress-text" id="progress-text">0%</div>
+        </div>
+      </div>
+
+      <!-- Spacer -->
+      <div class="spacer"></div>
+
+      <!-- Links -->
+      <div class="links-row">
+        <a class="link-btn" id="link-register">Create Account</a>
+        <a class="link-btn" id="link-website">Website</a>
+        <a class="link-btn" id="link-discord">Discord</a>
+      </div>
+
+      <!-- Play button -->
+      <button class="btn-play" id="btn-play" disabled>
+        <span class="btn-play-text" id="btn-play-text">CHECKING...</span>
+        <div class="btn-play-glow"></div>
+      </button>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

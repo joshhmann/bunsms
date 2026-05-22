@@ -1,0 +1,42 @@
+{
+  "name": "cosmic-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@codemirror/lang-javascript": "^6.2.3",
+    "@tybys/wz": "^1.7.1",
+    "@uiw/react-codemirror": "^4.23.10",
+    "bcryptjs": "^3.0.3",
+    "canvas": "^2.11.2",
+    "dotenv": "^17.4.2",
+    "jose": "^6.2.1",
+    "konva": "^10.2.0",
+    "lz4-napi": "^2.9.0",
+    "lz4js": "^0.2.0",
+    "mysql2": "^3.14.1",
+    "next": "^15.3.4",
+    "openai": "^6.27.0",
+    "pngjs": "^7.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-konva": "^19.2.3",
+    "yaml": "^2.7.1",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.15.0",
+    "@types/pngjs": "^6.0.5",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "postcss": "^8.5.4",
+    "tailwindcss": "^4.1.8",
+    "typescript": "^5.8.3"
+  }
+}

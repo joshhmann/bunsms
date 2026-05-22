@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BunsMS — Browser Client 🍑</title>
+    <link rel="icon" href="/web/logo.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a12;
+            --bg-secondary: #12121f;
+            --bg-card: #1a1a2e;
+            --border: #2a2a45;
+            --gold: #f5c542;
+            --orange: #fb923c;
+            --blue: #4a9eff;
+            --purple: #a78bfa;
+            --red: #ff5c5c;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888a8;
+            --text-muted: #55556a;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Ambient blurred glows shared by boot + browser-block screens */
+        .ambient {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .ambient::before, .ambient::after, .ambient > span {
+            content: '';
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(80px);
+            opacity: 0.08;
+        }
+        .ambient::before {
+            top: -25%; left: 50%;
+            width: 800px; height: 800px;
+            background: var(--gold);
+            transform: translateX(-50%);
+        }
+        .ambient::after {
+            bottom: -10%; right: -15%;
+            width: 600px; height: 600px;
+            background: var(--blue);
+        }
+        .ambient > span {
+            top: 30%; left: -15%;
+            width: 600px; height: 600px;
+            background: var(--purple);
+            display: block;
+        }
+
+        #container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        #canvas {
+            border: none;
+            background: #000;
+            display: block;
+            outline: none;
+            cursor: none;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        /* ===== Loading overlay ===== */
+        #boot {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 400ms ease;
+        }
+
+        #boot.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #boot-brand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        #boot-logo {
+            width: 96px;
+            height: 96px;
+            filter: drop-shadow(0 0 24px rgba(245, 197, 66, 0.35));
+        }
+
+        #boot-title {
+            font-size: 36px;
+            letter-spacing: 2px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--gold) 0%, var(--orange) 50%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-transform: uppercase;
+        }
+
+        #boot-subtitle {
+            font-size: 11px;
+            color: var(--text-secondary);
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        #boot-bar-wrap {
+            width: min(420px, 70vw);
+            height: 4px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 0 1px var(--border);
+        }
+
+        #boot-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--gold), var(--orange));
+            box-shadow: 0 0 16px rgba(245, 197, 66, 0.4);
+            transition: width 120ms ease-out;
+        }
+
+        #boot-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            letter-spacing: 1px;
+            text-align: center;
+            min-height: 16px;
+            font-weight: 500;
+        }
+
+        #boot-detail {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            min-height: 14px;
+        }
+
+        /* Corner indicator for background asset prefill */
+        #prefill {
+            position: fixed;
+            bottom: 12px;
+            right: 14px;
+            padding: 8px 12px;
+            background: rgba(26, 26, 46, 0.85);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 10px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            z-index: 500;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 400ms ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(8px);
+        }
+
+        #prefill.visible { opacity: 1; }
+
+        #prefill-bar-wrap {
+            width: 80px;
+            height: 3px;
+            background: var(--bg-secondary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        #prefill-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--gold), var(--orange));
+            transition: width 250ms ease-out;
+        }
+
+        /* ===== Browser-block overlay ===== */
+        #browser-block {
+            position: fixed;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            z-index: 2000;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        #browser-block.visible { display: flex; }
+
+        #block-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px 36px;
+            max-width: 460px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        #block-logo {
+            width: 72px;
+            height: 72px;
+            filter: drop-shadow(0 0 20px rgba(245, 197, 66, 0.3));
+        }
+        #block-title {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--gold), var(--orange));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0;
+        }
+        #block-message {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        #block-detected {
+            color: var(--text-muted);
+            font-size: 11px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            background: var(--bg-secondary);
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            word-break: break-all;
+        }
+        .block-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .block-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            transition: all 160ms ease;
+        }
+        .block-btn-primary {
+            background: linear-gradient(90deg, var(--gold), var(--orange));
+            color: var(--bg-primary);
+            box-shadow: 0 0 24px rgba(245, 197, 66, 0.25);
+        }
+        .block-btn-primary:hover {
+            box-shadow: 0 0 32px rgba(245, 197, 66, 0.45);
+            transform: translateY(-1px);
+        }
+        .block-btn-ghost {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            font-size: 12px;
+        }
+        .block-btn-ghost:hover {
+            color: var(--text-secondary);
+            border-color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="ambient"><span></span></div>
+
+    <div id="container">
+        <canvas id="canvas" tabindex="-1"></canvas>
+    </div>
+
+    <div id="boot">
+        <div id="boot-brand">
+            <img id="boot-logo" src="/web/logo.png" alt="BunsMS">
+            <div id="boot-title">BunsMS</div>
+            <div id="boot-subtitle">Browser Client 🍑</div>
+        </div>
+        <div id="boot-bar-wrap"><div id="boot-bar"></div></div>
+        <div id="boot-status">Connecting…</div>
+        <div id="boot-detail"></div>
+    </div>
+
+    <div id="prefill">
+        <span id="prefill-label">Caching assets</span>
+        <div id="prefill-bar-wrap"><div id="prefill-bar"></div></div>
+        <span id="prefill-pct">0%</span>
+    </div>
+
+    <div id="browser-block">
+        <div id="block-card">
+            <img id="block-logo" src="/web/logo.png" alt="BunsMS">
+            <h1 id="block-title">Chrome required</h1>
+            <p id="block-message">
+                The BunsMS browser client is built and tested on Google Chrome.
+                Other browsers can render the page but stream NX assets and WebGL
+                in inconsistent ways that crash the game mid-session.
+                <br><br>
+                Open this page in Chrome, or download the native launcher from
+                <strong>bunsms.com</strong> for the smoothest experience.
+            </p>
+            <div id="block-detected"></div>
+            <div class="block-actions">
+                <a class="block-btn block-btn-primary" href="https://www.google.com/chrome/" target="_blank" rel="noopener">
+                    Download Chrome
+                </a>
+                <a class="block-btn block-btn-primary" href="https://bunsms.com/" target="_blank" rel="noopener" style="background: transparent; color: var(--gold); box-shadow: none; border: 1px solid var(--gold);">
+                    Get the native launcher
+                </a>
+                <button class="block-btn block-btn-ghost" id="block-override">Continue anyway (unsupported)</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/web/prefetcher.js"></script>
+
+    <script>
+        // ===== Chrome gate =====
+        // Only Chromium-based browsers reliably handle the WASM client's WebGL +
+        // SharedArrayBuffer-free Asyncify model. Strict Google Chrome detection;
+        // users on Edge/Brave/Opera can opt in via the override button.
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            const data = navigator.userAgentData;
+            // Modern UA-CH: trustworthy on Chromium browsers
+            if (data && Array.isArray(data.brands)) {
+                const isStrictChrome = data.brands.some((b) => b.brand === 'Google Chrome');
+                if (isStrictChrome) return { ok: true, label: 'Chrome' };
+                const otherChromium = data.brands.find((b) =>
+                    /Microsoft Edge|Opera|Brave/i.test(b.brand)
+                );
+                if (otherChromium) {
+                    return { ok: false, label: otherChromium.brand };
+                }
+            }
+            // Fallback UA-string heuristics
+            if (/Edg\//.test(ua)) return { ok: false, label: 'Microsoft Edge' };
+            if (/OPR\/|Opera/.test(ua)) return { ok: false, label: 'Opera' };
+            if (/Vivaldi/.test(ua)) return { ok: false, label: 'Vivaldi' };
+            if (/YaBrowser/.test(ua)) return { ok: false, label: 'Yandex Browser' };
+            if (/SamsungBrowser/.test(ua)) return { ok: false, label: 'Samsung Internet' };
+            if (/UCBrowser/.test(ua)) return { ok: false, label: 'UC Browser' };
+            if (/Firefox\//.test(ua)) return { ok: false, label: 'Firefox' };
+            if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) return { ok: false, label: 'Safari' };
+            if (/Chrome\/\d/.test(ua)) return { ok: true, label: 'Chrome' };
+            return { ok: false, label: 'Unknown browser' };
+        }
+
+        const detected = detectBrowser();
+        const overrideKey = 'bunsms.browserOverride';
+        const userOverrode = (() => {
+            try { return localStorage.getItem(overrideKey) === '1'; } catch { return false; }
+        })();
+
+        if (!detected.ok && !userOverrode) {
+            document.getElementById('boot').style.display = 'none';
+            const block = document.getElementById('browser-block');
+            block.classList.add('visible');
+            document.getElementById('block-detected').textContent =
+                'Detected: ' + detected.label;
+            document.getElementById('block-override').addEventListener('click', () => {
+                try { localStorage.setItem(overrideKey, '1'); } catch {}
+                location.reload();
+            });
+            // Stop here — do not boot WASM.
+            throw new Error('bunsms: browser not supported (' + detected.label + ')');
+        }
+
+        // ===== Canvas sizing =====
+        (function () {
+            const GAME_WIDTH = 800;
+            const GAME_HEIGHT = 600;
+
+            function syncCanvasResolution(canvas) {
+                if (canvas.width === GAME_WIDTH && canvas.height === GAME_HEIGHT) return;
+                if (typeof Module !== 'undefined' && typeof Module.setCanvasSize === 'function') {
+                    Module.setCanvasSize(GAME_WIDTH, GAME_HEIGHT);
+                } else {
+                    canvas.width = GAME_WIDTH;
+                    canvas.height = GAME_HEIGHT;
+                }
+            }
+
+            function getFittedCanvasSize(viewW, viewH) {
+                if (viewW * GAME_HEIGHT <= viewH * GAME_WIDTH) {
+                    const width = Math.max(1, Math.floor(viewW));
+                    return { width, height: Math.max(1, Math.floor(width * GAME_HEIGHT / GAME_WIDTH)) };
+                }
+                const height = Math.max(1, Math.floor(viewH));
+                return { width: Math.max(1, Math.floor(height * GAME_WIDTH / GAME_HEIGHT)), height };
+            }
+
+            function fitCanvas() {
+                const canvas = document.getElementById('canvas');
+                if (!canvas) return;
+                syncCanvasResolution(canvas);
+                const { width, height } = getFittedCanvasSize(window.innerWidth, window.innerHeight);
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+            }
+
+            window.MapleWasmUI = { applyScale: fitCanvas };
+            window.addEventListener('resize', fitCanvas);
+            document.addEventListener('fullscreenchange', fitCanvas);
+            fitCanvas();
+        })();
+
+        // ===== Boot sequence =====
+        const bootBar = document.getElementById('boot-bar');
+        const bootStatus = document.getElementById('boot-status');
+        const bootDetail = document.getElementById('boot-detail');
+        const bootOverlay = document.getElementById('boot');
+
+        function setStatus(msg) { bootStatus.textContent = msg; }
+        function setDetail(msg) { bootDetail.textContent = msg; }
+        function setProgress(pct) { bootBar.style.width = Math.max(0, Math.min(100, pct)) + '%'; }
+        function formatMb(n) { return (n / 1024 / 1024).toFixed(1) + ' MB'; }
+
+        Module = {
+            canvas: (function () {
+                const c = document.getElementById('canvas');
+                c.addEventListener("webglcontextlost", (e) => { alert('WebGL context lost. Reload the page.'); e.preventDefault(); }, false);
+                c.addEventListener("click", () => c.focus());
+                return c;
+            })(),
+            preRun: [function () { FS.init(() => null, null, null); }],
+            print: (t) => console.log('[stdout]', t),
+            printErr: (t) => console.error('[stderr]', t),
+            setStatus: () => { /* swallow noisy emscripten status */ },
+            monitorRunDependencies: (left) => console.log('[dependencies]', left, 'remaining'),
+            onRuntimeInitialized: function () {
+                console.log('[runtime] Initialized');
+                if (window.MapleWasmUI?.applyScale) window.MapleWasmUI.applyScale();
+                // NxFiles::init + nl::nx::load_all take ~1-2s after runtime init, during which
+                // nothing renders yet. Keep the overlay up to hide that black gap.
+                setStatus('Starting…');
+                setProgress(100);
+                setTimeout(() => {
+                    bootOverlay.classList.add('hidden');
+                    startBackgroundPrefill();
+                }, 2000);
+            },
+            addCppLog: function (level, message) {
+                const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
+                console.log(`[${ts}] [${level}] ${message}`);
+            }
+        };
+
+        window.onerror = () => console.error('[post-exception status] Exception thrown, see JS console');
+
+        // Background prefill order — hot files first so skill/UI interactions stop
+        // stalling quickly. Map.nx and Mob.nx together are ~60% of total size but only
+        // matter when entering a new map or fighting new mobs, so they're last.
+        const ALL_NX_FILES = [
+            'UI.nx',        // 419 MB — login, menus, skill tabs, hot
+            'Skill.nx',     // 171 MB — opened every time char sheet/skill UI shows
+            'Character.nx', // 364 MB — player sprite/equip frames
+            'Effect.nx',    // 120 MB — skill + hit effects
+            'Npc.nx',       // 126 MB — towns, shops
+            'Reactor.nx',   // 114 MB — map reactors
+            'Item.nx',      // 42 MB  — inventory icons
+            'Sound.nx',     // 346 MB — SFX, music
+            'Mob.nx',       // 1.1 GB — only when new mob seen
+            'Map.nx',       // 1.4 GB — only when entering new map
+            // Tiny files (already fully prefetched in foreground but harmless to verify):
+            'Base.nx', 'String.nx', 'Etc.nx', 'Morph.nx', 'Quest.nx', 'TamingMob.nx',
+        ];
+
+        const prefillEl = document.getElementById('prefill');
+        const prefillBar = document.getElementById('prefill-bar');
+        const prefillPct = document.getElementById('prefill-pct');
+        const prefillLabel = document.getElementById('prefill-label');
+
+        function startBackgroundPrefill() {
+            const baseUrl = Module.LazyFS?.NxBaseUrl;
+            if (!baseUrl || !window.AugurPrefetch?.prefetchBackground) return;
+            prefillEl.classList.add('visible');
+            window.AugurPrefetch.prefetchBackground({
+                baseUrl,
+                files: ALL_NX_FILES,
+                concurrency: 4, // Chrome allows ~6 per origin; 4 leaves room for on-demand LazyFS fetches
+                delayMs: 5000, // let the game settle for 5s before hammering R2
+                onProgress: ({ loadedBytes, totalBytes, phase }) => {
+                    if (!totalBytes) return;
+                    const pct = (loadedBytes / totalBytes) * 100;
+                    prefillBar.style.width = pct.toFixed(1) + '%';
+                    prefillPct.textContent = pct.toFixed(0) + '%';
+                    if (phase === 'done') {
+                        prefillLabel.textContent = 'Assets cached';
+                        setTimeout(() => prefillEl.classList.remove('visible'), 3000);
+                    }
+                },
+            }).catch((e) => {
+                console.warn('[prefill] background prefill failed:', e);
+                prefillLabel.textContent = 'Caching paused';
+            });
+        }
+
+        async function boot() {
+            setStatus('Connecting…');
+            setProgress(2);
+            // 1. Load config.json
+            let config = {};
+            try {
+                const res = await fetch('/web/config.json');
+                if (res.ok) config = await res.json();
+            } catch (e) {
+                console.warn('[config] failed:', e);
+            }
+
+            const lazyConfigKeys = [
+                'AssetsServerIP', 'AssetsServerPort',
+                'MapleStoryServerIp', 'MapleStoryServerPort',
+                'ProxyIP', 'ProxyPort', 'AssetsServerProtocol',
+                'NxBaseUrl'
+            ];
+            const lazyConfig = {};
+            for (const k of lazyConfigKeys) {
+                if (config[k] !== undefined && config[k] !== null) {
+                    lazyConfig[k] = config[k];
+                    console.log(`[config] ${k}:`, config[k]);
+                }
+            }
+            Module.LazyFS = Object.assign(Module.LazyFS || {}, lazyConfig);
+
+            // 2. Prefetch NX assets (if HTTP mode)
+            if (lazyConfig.NxBaseUrl && window.AugurPrefetch) {
+                setStatus('Preparing assets…');
+                setProgress(4);
+                try {
+                    await window.AugurPrefetch.prefetchAll({
+                        baseUrl: lazyConfig.NxBaseUrl,
+                        onProgress: ({ loadedBytes, totalBytes, file, phase }) => {
+                            const pct = totalBytes ? (loadedBytes / totalBytes) * 90 + 5 : 5; // reserve 5..95 for prefetch
+                            setProgress(pct);
+                            if (phase === 'done') {
+                                setStatus('Loading client…');
+                                setDetail(`${formatMb(loadedBytes)} cached`);
+                            } else {
+                                setStatus(`Preparing assets — ${formatMb(loadedBytes)} / ${formatMb(totalBytes)}`);
+                                setDetail(file ? file : '');
+                            }
+                        },
+                    });
+                } catch (e) {
+                    console.error('[prefetch] failed:', e);
+                    setStatus('Asset prefetch failed — continuing anyway');
+                    setDetail(e.message || '');
+                }
+            } else {
+                setStatus('Loading client…');
+                setProgress(95);
+            }
+
+            // 3. Load WASM
+            setStatus('Loading client…');
+            setProgress(96);
+            const script = document.createElement('script');
+            script.src = '/build/JourneyClient.js';
+            script.async = true;
+            document.body.appendChild(script);
+        }
+
+        boot();
+    </script>
+</body>
+
+</html>

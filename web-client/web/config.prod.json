@@ -1,0 +1,8 @@
+{
+  "MapleStoryServerIp": "192.168.0.157",
+  "MapleStoryServerPort": 9494,
+  "ProxyIP": "192.168.0.157",
+  "ProxyPort": 8080,
+  "AssetsServerProtocol": "ws",
+  "NxBaseUrl": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/nx"
+}

@@ -1,0 +1,48 @@
+# Game client files - never push to GitHub
+/client/
+*.wz
+*.exe
+*.zip
+
+# Launcher build artifacts
+launcher/dist/
+launcher/node_modules/
+
+# MCP server build artifacts
+mcp-server/dist/
+mcp-server/node_modules/
+
+# Dashboard
+dashboard/node_modules/
+dashboard/.next/
+dashboard/test-output/
+
+# Server local artifacts
+server/database/docker-db-data/
+server/.git/
+server/target/
+server/wz/
+
+# Node
+node_modules/
+
+# Secrets / env files
+.env
+.env.*
+*.pem
+*.key
+
+# LLM context (local only)
+CLAUDE.md
+
+# Local scripts/tools
+create_banner.py
+resize_banner.py
+ragezone-post.txt
+tools/render-weapon.py
+dashboard/test-weapon-local.ts
+
+# OS
+.DS_Store
+Thumbs.db
+.wrangler/
