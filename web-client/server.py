@@ -1,68 +1,97 @@
-"""Combined static file server + NX proxy + WebSocket TCP proxy."""
+"""Combined static file server + WebSocket TCP proxy for the BunsMS web client.
+
+Routes:
+  GET /           -> index.html (or WS upgrade bridged to game server)
+  GET /web/*      -> static /app/web
+  GET /build/*    -> static /app/build
+  GET /healthz    -> 'ok'
+
+The WS proxy accepts the target address as its first text message (same protocol
+as the original ws_proxy.py from maplestory-wasm) but restricts the target to a
+small allow-list of host:port pairs to prevent abuse.
+"""
+
 import asyncio
 import logging
 import os
-from aiohttp import web, WSMsgType, ClientSession
+from aiohttp import web, WSMsgType
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s %(message)s')
 log = logging.getLogger('buns-ms-web')
 
 STATIC_ROOT = os.environ.get('STATIC_ROOT', '/app')
 PORT = int(os.environ.get('PORT', '8080'))
-NX_LOCAL_DIR = os.environ.get('NX_DIR', '/opt/buns/nx')
 
+# Comma-separated host:port allow list, e.g. "127.0.0.1:8484,127.0.0.1:7575,..."
+# Override per-deploy via the ALLOWED_TARGETS env var.
+# Default covers a local game server (login + 3 channels).
+DEFAULT_ALLOWED = (
+    '127.0.0.1:8484,'
+    '127.0.0.1:7575,'
+    '127.0.0.1:7576,'
+    '127.0.0.1:7577'
+)
 ALLOWED_TARGETS = {
-    '192.168.0.157:9494',
-    '192.168.0.157:7575',
-    '192.168.0.157:7576',
-    '192.168.0.157:7577',
-    '192.168.0.157:7676',
-    '192.168.0.157:7677',
-    '192.168.0.157:7678',
+    t.strip() for t in os.environ.get('ALLOWED_TARGETS', DEFAULT_ALLOWED).split(',') if t.strip()
 }
 
-async def handle_nx(request: web.Request) -> web.StreamResponse:
-    """Serve NX files from local disk with CORS headers."""
-    nx_path = request.match_info['path']
-    filepath = os.path.join(NX_LOCAL_DIR, nx_path)
-    if os.path.exists(filepath):
-        return web.FileResponse(
-            filepath,
-            headers={'Access-Control-Allow-Origin': '*'}
-        )
-    log.warning(f"NX file not found: {filepath}")
-    return web.Response(status=404, text='Not found')
+INDEX_HTML = os.path.join(STATIC_ROOT, 'web', 'index.html')
+
 
 async def handle_root(request: web.Request) -> web.StreamResponse:
+    """Serve index.html, or upgrade to WS and bridge to the game server."""
     if request.headers.get('Upgrade', '').lower() == 'websocket':
         return await handle_ws_proxy(request)
-    return web.FileResponse(os.path.join(STATIC_ROOT, 'web', 'index.html'))
+    return web.FileResponse(INDEX_HTML)
+
 
 async def handle_ws_proxy(request: web.Request) -> web.WebSocketResponse:
     ws = web.WebSocketResponse(max_msg_size=50 * 1024 * 1024)
     await ws.prepare(request)
+    peer = request.remote or '?'
+
+    # First message = target address "host:port"
     try:
         msg = await ws.receive(timeout=10)
     except asyncio.TimeoutError:
+        log.warning('ws %s: handshake timeout', peer)
         await ws.close()
         return ws
+
+    # The WASM client sends the target address as the first frame. The
+    # upstream maplestory-wasm ws_proxy accepts either text or binary —
+    # mirror that so the existing WASM build works unchanged.
     if msg.type == WSMsgType.TEXT:
-        target = msg.data.strip()
+        target_raw = msg.data
     elif msg.type == WSMsgType.BINARY:
-        target = msg.data.decode('utf-8').strip()
+        try:
+            target_raw = msg.data.decode('utf-8')
+        except UnicodeDecodeError:
+            log.warning('ws %s: first binary frame is not utf-8', peer)
+            await ws.close()
+            return ws
     else:
+        log.warning('ws %s: first frame was %s, not text/binary', peer, msg.type)
         await ws.close()
         return ws
+
+    target = target_raw.strip()
     if target not in ALLOWED_TARGETS:
-        log.warning(f"Rejected: {target}")
+        log.warning('ws %s: target %r rejected (not in allow-list)', peer, target)
         await ws.close()
         return ws
-    host, port = target.rsplit(':', 1)
+
+    host, port_str = target.rsplit(':', 1)
+    port = int(port_str)
     try:
-        reader, writer = await asyncio.open_connection(host, int(port))
+        reader, writer = await asyncio.open_connection(host, port)
     except Exception as e:
+        log.warning('ws %s: dial %s failed: %s', peer, target, e)
         await ws.close()
         return ws
+
+    log.info('ws %s <-> %s opened', peer, target)
+
     async def pump_ws_to_tcp():
         try:
             async for m in ws:
@@ -71,33 +100,60 @@ async def handle_ws_proxy(request: web.Request) -> web.WebSocketResponse:
                     await writer.drain()
                 elif m.type in (WSMsgType.CLOSE, WSMsgType.CLOSED, WSMsgType.ERROR):
                     break
+        except Exception as e:
+            log.debug('ws %s: ws->tcp pump ended: %s', peer, e)
         finally:
-            try: writer.close()
-            except: pass
+            try:
+                writer.close()
+            except Exception:
+                pass
+
     async def pump_tcp_to_ws():
         try:
             while not ws.closed:
                 data = await reader.read(65536)
-                if not data: break
+                if not data:
+                    break
                 await ws.send_bytes(data)
+        except Exception as e:
+            log.debug('ws %s: tcp->ws pump ended: %s', peer, e)
         finally:
             if not ws.closed:
                 await ws.close()
+
     await asyncio.gather(pump_ws_to_tcp(), pump_tcp_to_ws(), return_exceptions=True)
+    log.info('ws %s <-> %s closed', peer, target)
     return ws
+
 
 async def healthz(_request: web.Request) -> web.Response:
     return web.Response(text='ok')
 
+
+@web.middleware
+async def no_cache_for_build(request: web.Request, handler):
+    """Prevent Cloudflare/browsers from caching the Emscripten JS glue and WASM
+    binary independently. They MUST be loaded as a matching pair — if one is
+    served from cache and the other fresh, Emscripten aborts with
+    'No EM_ASM constant found at address ...'. Sending no-cache on /build/*
+    keeps them in lockstep across deploys.
+    """
+    response = await handler(request)
+    if request.path.startswith('/build/'):
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+    return response
+
+
 def build_app() -> web.Application:
-    app = web.Application()
+    app = web.Application(middlewares=[no_cache_for_build])
     app.router.add_get('/', handle_root)
     app.router.add_get('/healthz', healthz)
-    app.router.add_get('/nx/{path:.*}', handle_nx)
+    # Static mounts. Route order matters — these only match if the path starts with /web or /build.
     app.router.add_static('/web/', path=os.path.join(STATIC_ROOT, 'web'), show_index=False)
     app.router.add_static('/build/', path=os.path.join(STATIC_ROOT, 'build'), show_index=False)
     return app
 
+
 if __name__ == '__main__':
-    log.info(f"Starting on :{PORT}")
+    log.info('starting on :%d, static_root=%s, allowed_targets=%s', PORT, STATIC_ROOT, sorted(ALLOWED_TARGETS))
     web.run_app(build_app(), host='0.0.0.0', port=PORT, print=None)

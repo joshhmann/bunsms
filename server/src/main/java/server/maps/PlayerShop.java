@@ -148,9 +148,14 @@ public class PlayerShop extends AbstractMapObject {
             for (int i = 0; i < 3; i++) {
                 if (visitors[i] != null && visitors[i].getId() == visitor.getId()) {
                     visitors[i].setPlayerShop(null);
-                    visitors[i].sendPacket(PacketCreator.getPlayerShopRemoveVisitor(i+1));
                     visitors[i] = null;
                     visitor.setSlot(-1);
+
+                    // Upstream augurms fix: broadcast the removal to the owner and the
+                    // remaining visitors, not just the leaver (avoids stale avatars).
+                    // Bot visitors are skipped by broadcastToVisitors (isBot filter).
+                    owner.sendPacket(PacketCreator.getPlayerShopRemoveVisitor(i + 1));
+                    broadcastToVisitors(PacketCreator.getPlayerShopRemoveVisitor(i + 1));
                     owner.getMap().broadcastMessage(PacketCreator.updatePlayerShopBox(this));
                     return;
                 }
