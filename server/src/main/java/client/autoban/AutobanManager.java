@@ -10,11 +10,7 @@ import config.YamlConfig;
 import net.server.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tools.DatabaseConnection;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -25,8 +21,8 @@ import java.util.Set;
 public class AutobanManager {
     private static final Logger log = LoggerFactory.getLogger(AutobanManager.class);
 
-    // Upstream augurms@7244af4: these violations are too noisy to flag to DB — log only.
-    // (Was generating 100+ blocking DB inserts/sec on the netty event loop.)
+    // Upstream augurms@7244af4: these violations are too noisy to log per-point —
+    // log-gated only (live autoban/disconnect enforcement is unchanged).
     private static final Set<AutobanFactory> SKIP_FLAG = Set.of(
         AutobanFactory.FAST_HP_HEALING,
         AutobanFactory.FAST_MP_HEALING,
@@ -142,37 +138,5 @@ public class AutobanManager {
             this.timestamp[type] = time;
             this.timestampcounter[type] = 0;
         }
-    }
-
-    // Upstream augurms@9027986 (+@7244af4 SKIP_FLAG gate): write a cheat_flags DB row
-    // for AI-GM review IN ADDITION to the live autoban/disconnect above (dual write —
-    // solobots keeps enforcing live while gaining the dashboard review trail).
-    // Callers MUST pre-check SKIP_FLAG for noisy heal/gacha violations (log-only).
-    public void flagCheat(String violationType, String details, String severity, int points) {
-        int charId = chr.getId();
-        int accountId = chr.getAccountID();
-        String charName = chr.getName();
-        int mapId = chr.getMapId();
-
-        try (Connection con = DatabaseConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(
-                 "INSERT INTO cheat_flags (character_id, account_id, character_name, violation_type, details, severity, points, map_id) " +
-                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)")) {
-            ps.setInt(1, charId);
-            ps.setInt(2, accountId);
-            ps.setString(3, charName);
-            ps.setString(4, violationType);
-            ps.setString(5, details);
-            ps.setString(6, severity);
-            ps.setInt(7, points);
-            ps.setInt(8, mapId);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            log.warn("Failed to insert cheat flag for chr {}", charName, e);
-        }
-
-        Server.getInstance().broadcastGMMessage(chr.getWorld(),
-            tools.PacketCreator.sendYellowTip("[CHEAT] " + Character.makeMapleReadable(charName) + " flagged: " + violationType + " - " + details));
-        log.warn("CHEAT FLAG - chr={} account={} type={} details={} map={}", charName, accountId, violationType, details, mapId);
     }
 }

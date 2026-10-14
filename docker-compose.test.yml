@@ -20,6 +20,7 @@ services:
       dockerfile: Dockerfile.local
     ports:
       - "9494:8484"
+      - "8484:8484"
       - "7575:7575"
       - "7576:7576"
       - "7577:7577"
