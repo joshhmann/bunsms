@@ -22,12 +22,12 @@ RUN pip install --no-cache-dir aiohttp==3.10.5
 COPY server.py /app/server.py
 COPY web/config.prod.json /app/web/config.json
 
-# Pull WASM binary and the static shell (index.html, prefetcher.js) from the build stage.
+# Pull the patched engine from the build stage and retain the BunSMS routing shell.
 COPY --from=builder /wasm/build/JourneyClient.js   /app/build/JourneyClient.js
 COPY --from=builder /wasm/build/JourneyClient.wasm /app/build/JourneyClient.wasm
-COPY --from=builder /wasm/web/index.html           /app/web/index.html
-COPY --from=builder /wasm/web/prefetcher.js        /app/web/prefetcher.js
-COPY --from=builder /wasm/web/logo.png             /app/web/logo.png
+COPY web/index.html                              /app/web/index.html
+COPY web/prefetcher.js                            /app/web/prefetcher.js
+COPY web/logo.png                                 /app/web/logo.png
 
 ENV STATIC_ROOT=/app
 ENV PORT=8080

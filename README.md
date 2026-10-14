@@ -36,9 +36,9 @@ bunsms/
 * Electron app for Windows (NSIS installer; standalone `launcher-installer.yml`
   workflow builds on `windows-latest` and uploads the installer as an artifact)
 * Manifest-based auto-update: checks SHA256 hashes, downloads changed files
-* `BUNSMS_API_BASE` env (baked at build time, default `https://buns.asslorde.com`)
+* `BUNSMS_API_BASE` runtime env (default `https://buns.asslorde.com`)
   selects the dashboard for manifest/news/status — set to
-  `http://192.168.0.164:3001` for test-stack builds
+  `http://192.168.0.164:3001` when launching against the test stack
 * Server Address field: persisted locally, stamped into game `config.ini`
   `ServerIP_Address` on change and after downloads (compiled client dials
   fixed login port **8484** — point at a host with 8484 reachable; test

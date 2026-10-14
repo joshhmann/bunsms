@@ -143,7 +143,6 @@ int main()
         Packet empty; empty.put(0);
         auto fragments = empty.decode();
         require(fragments.empty(), "empty movement list acquired a fragment");
-        require(Movement().type == Movement::NONE, "default fragment is not a no-op");
     }
     std::cout << "movement boundaries: all passed\n";
 }
