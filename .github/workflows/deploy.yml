@@ -104,14 +104,16 @@ jobs:
   build-launcher:
     if: ${{ inputs.launcher }}
     runs-on: windows-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: launcher/package-lock.json
 
       - name: Install dependencies
         working-directory: launcher
@@ -121,28 +123,9 @@ jobs:
         working-directory: launcher
         run: npx electron-builder --win --x64
 
-      - name: Get version
-        id: version
-        working-directory: launcher
-        shell: bash
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Launcher version: $VERSION"
-
-      - name: Delete existing release
-        continue-on-error: true
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release delete "launcher-v${{ steps.version.outputs.version }}" --yes
-
-      - name: Create release with launcher
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "launcher-v${{ steps.version.outputs.version }}" \
-            --title "BunsMS Launcher v${{ steps.version.outputs.version }}" \
-            --notes "Auto-built BunsMS Launcher for Windows. Download and run to play BunsMS." \
-            "launcher/dist/BunsMS Setup ${{ steps.version.outputs.version }}.exe"
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bunsms-launcher-installer
+          path: launcher/dist/*.exe
+          if-no-files-found: error
