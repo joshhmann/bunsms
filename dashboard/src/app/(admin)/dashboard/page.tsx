@@ -75,7 +75,7 @@ export default function DashboardPage() {
     <div className="space-y-10">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-text-primary">
-          AugurMS Dashboard
+          BunsMS Dashboard 🍑
         </h1>
         <p className="mt-1.5 text-text-secondary">
           MapleStory v83 server administration panel

@@ -10,5 +10,5 @@ jobs:
     steps:
       - name: Ping ban judge cron check
         run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://augurms.com/api/ban-judge/cron/check)
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://bunsms.com/api/ban-judge/cron/check)
           echo "Status: $RESPONSE"

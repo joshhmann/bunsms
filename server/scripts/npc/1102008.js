@@ -4,7 +4,7 @@
  * @Map: 130030005 (A path out of the Forest of Beginning)
  * @Function: End-of-Cygnus-tutorial guide
  *
- * Not present in upstream Cosmic/HeavenMS. Authored for AugurMS so a new
+ * Not present in upstream Cosmic/HeavenMS. Authored for BunsMS so a new
  * Noblesse who finishes the Forest of Beginning chain has a way to
  * actually exit into Ereve.
  *

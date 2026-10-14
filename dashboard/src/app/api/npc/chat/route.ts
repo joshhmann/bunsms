@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { execute, query } from "@/lib/db";
-import { runAugurChat } from "@/lib/augur/engine";
+import { runBakerChat } from "@/lib/baker/engine";
 
-const NPC_SECRET = process.env.NPC_SECRET || "augur-npc-secret";
+const NPC_SECRET = process.env.NPC_SECRET || "baker-npc-secret";
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Run LLM
-    const result = await runAugurChat(
+    const result = await runBakerChat(
       characterId,
       characterName,
       characterLevel || 1,
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ text: result.text });
   } catch (err: any) {
-    console.error("Augur chat error:", err);
+    console.error("Baker chat error:", err);
     return NextResponse.json(
       { text: "The crystal dims... Something went wrong. Try again later." },
       { status: 200 }, // Return 200 so NPC script can show the message

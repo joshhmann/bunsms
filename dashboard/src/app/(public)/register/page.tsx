@@ -112,7 +112,7 @@ export default function RegisterPage() {
             <span className="text-2xl text-accent-gold drop-shadow-[0_0_8px_rgba(245,197,66,0.4)]">
               &#10022;
             </span>
-            <span className="text-xl font-bold tracking-wide">AugurMS</span>
+            <span className="text-xl font-bold tracking-wide">BunsMS</span>
           </Link>
           <p className="mt-3 text-sm text-text-secondary">Create your account and start playing</p>
         </div>

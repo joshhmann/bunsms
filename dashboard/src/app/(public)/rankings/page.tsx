@@ -143,12 +143,12 @@ export default function RankingsPage() {
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/logo.png"
-            alt="AugurMS"
+            alt="BunsMS"
             width={44}
             height={44}
             className="drop-shadow-[0_0_12px_rgba(245,197,66,0.3)]"
           />
-          <span className="text-xl font-bold tracking-wide">AugurMS</span>
+          <span className="text-xl font-bold tracking-wide">BunsMS</span>
         </Link>
         <div className="flex items-center gap-4">
           <Link
@@ -178,7 +178,7 @@ export default function RankingsPage() {
           Rankings
         </h1>
         <p className="mb-8 text-sm text-text-secondary">
-          Top adventurers of AugurMS, ranked by their achievements.
+          Top adventurers of BunsMS 🍑, ranked by their achievements.
         </p>
 
         {/* Filters */}
@@ -260,7 +260,7 @@ export default function RankingsPage() {
       {/* Footer */}
       <footer className="relative z-10 mt-12 border-t border-border px-8 py-6 text-center text-sm text-text-muted">
         <p>
-          AugurMS &mdash; MapleStory v83 private server. Not affiliated with
+          BunsMS &mdash; MapleStory v83 private server. Not affiliated with
           Nexon.
         </p>
       </footer>

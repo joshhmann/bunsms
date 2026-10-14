@@ -126,7 +126,7 @@ export async function POST() {
       actions,
       output: outputDir,
       instructions: [
-        `Copy ${outPath} to your game client folder (e.g. C:\\AugurMS\\Reactor.wz)`,
+        `Copy ${outPath} to your game client folder (e.g. C:\\BunsMS\\Reactor.wz)`,
         "Restart local server: docker compose -f docker-compose.local.yml restart server",
         "Place reactor on a map: INSERT INTO preactor (world, map, rid, x, y, f, reactor_time, name) VALUES (0, MAP_ID, REACTOR_ID, X, Y, 0, -1, 'test')",
       ],

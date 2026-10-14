@@ -5,14 +5,17 @@ import os
 from aiohttp import web, WSMsgType, ClientSession
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s %(message)s')
-log = logging.getLogger('augur-ms-web')
+log = logging.getLogger('buns-ms-web')
 
 STATIC_ROOT = os.environ.get('STATIC_ROOT', '/app')
 PORT = int(os.environ.get('PORT', '8080'))
-NX_LOCAL_DIR = os.environ.get('NX_DIR', '/opt/augurms/nx')
+NX_LOCAL_DIR = os.environ.get('NX_DIR', '/opt/buns/nx')
 
 ALLOWED_TARGETS = {
     '192.168.0.157:9494',
+    '192.168.0.157:7575',
+    '192.168.0.157:7576',
+    '192.168.0.157:7577',
     '192.168.0.157:7676',
     '192.168.0.157:7677',
     '192.168.0.157:7678',

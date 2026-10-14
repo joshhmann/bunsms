@@ -1,7 +1,7 @@
 {
-  "name": "augurms-launcher",
+  "name": "bunsms-launcher",
   "version": "1.0.2",
-  "description": "AugurMS - MapleStory v83 Launcher",
+  "description": "BunsMS 🍑 - MapleStory v83 Launcher",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -10,15 +10,15 @@
     "build:mac": "electron-builder --mac",
     "build:all": "electron-builder --win --mac"
   },
-  "author": "AugurMS",
+  "author": "BunsMS",
   "license": "MIT",
   "devDependencies": {
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0"
   },
   "build": {
-    "appId": "com.augurms.launcher",
-    "productName": "AugurMS",
+    "appId": "com.bunsms.launcher",
+    "productName": "BunsMS",
     "directories": {
       "output": "dist"
     },

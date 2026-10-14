@@ -1,4 +1,4 @@
-// ── AugurMS Launcher ──
+// ── BunsMS Launcher ──
 
 const $ = (id) => document.getElementById(id);
 
@@ -14,14 +14,14 @@ async function init() {
 
 // ── Window Controls ──
 function setupControls() {
-  $("btn-minimize").onclick = () => window.augur.minimize();
-  $("btn-close").onclick = () => window.augur.close();
+  $("btn-minimize").onclick = () => window.buns.minimize();
+  $("btn-close").onclick = () => window.buns.close();
   $("btn-browse").onclick = browseFolder;
   $("btn-play").onclick = handlePlay;
 
-  $("link-register").onclick = () => window.augur.openExternal("https://augurms.com/register");
-  $("link-website").onclick = () => window.augur.openExternal("https://augurms.com");
-  $("link-discord").onclick = () => window.augur.openExternal("https://discord.gg/pApUkuZjNa");
+  $("link-register").onclick = () => window.buns.openExternal("https://buns.asslorde.com");
+  $("link-website").onclick = () => window.buns.openExternal("https://buns.asslorde.com");
+  $("link-discord").onclick = () => window.buns.openExternal("https://discord.gg/pApUkuZjNa");
 
   // HD Mode toggle
   const hdCheckbox = $("hd-checkbox");
@@ -30,11 +30,11 @@ function setupControls() {
   const hdFullscreen = $("hd-fullscreen");
   const hdSleepTime = $("hd-sleeptime");
 
-  window.augur.getHD().then((enabled) => {
+  window.buns.getHD().then((enabled) => {
     hdCheckbox.checked = enabled;
     hdOptions.style.display = enabled ? "flex" : "none";
   });
-  window.augur.getHDOptions().then((opts) => {
+  window.buns.getHDOptions().then((opts) => {
     hdResolution.value = opts.resolution;
     hdFullscreen.checked = opts.fullscreen;
     // Match the closest preset; fall back to 30 if value isn't in the dropdown.
@@ -45,7 +45,7 @@ function setupControls() {
   hdCheckbox.onchange = async () => {
     const enabled = hdCheckbox.checked;
     hdOptions.style.display = enabled ? "flex" : "none";
-    const result = await window.augur.setHD(enabled);
+    const result = await window.buns.setHD(enabled);
     if (result.warning) {
       $("update-text").textContent = result.warning;
       $("update-status").className = "update-status error";
@@ -54,7 +54,7 @@ function setupControls() {
   };
 
   const saveHDOptions = async () => {
-    await window.augur.setHDOptions({
+    await window.buns.setHDOptions({
       resolution: hdResolution.value,
       fullscreen: hdFullscreen.checked,
       sleepTime: parseInt(hdSleepTime.value, 10),
@@ -65,7 +65,7 @@ function setupControls() {
   hdSleepTime.onchange = saveHDOptions;
 
   // Listen for download progress
-  window.augur.onDownloadProgress((data) => {
+  window.buns.onDownloadProgress((data) => {
     const overall = ((data.index + data.percent / 100) / data.total) * 100;
     $("progress-bar").style.width = overall + "%";
     const statusSuffix = data.status ? ` - ${data.status}` : "";
@@ -81,7 +81,7 @@ async function checkServerStatus() {
   dot.className = "status-dot checking";
 
   try {
-    const status = await window.augur.getStatus();
+    const status = await window.buns.getStatus();
     if (status.online) {
       dot.className = "status-dot online";
       text.textContent = status.players > 0
@@ -98,7 +98,7 @@ async function checkServerStatus() {
 
   // Also fetch rates from config (raw YAML structure: worlds[0].exp_rate etc.)
   try {
-    const res = await fetch("https://augurms.com/api/config");
+    const res = await fetch("https://buns.asslorde.com/api/config");
     if (res.ok) {
       const data = await res.json();
       const world = data?.worlds?.[0];
@@ -116,7 +116,7 @@ async function checkServerStatus() {
 
 // ── Game Path ──
 async function findGamePath() {
-  const result = await window.augur.findGamePath();
+  const result = await window.buns.findGamePath();
   if (result.found) {
     $("path-display").textContent = result.path;
     $("path-display").title = result.path;
@@ -127,7 +127,7 @@ async function findGamePath() {
 }
 
 async function browseFolder() {
-  const path = await window.augur.selectFolder();
+  const path = await window.buns.selectFolder();
   if (path) {
     $("path-display").textContent = path;
     $("path-display").title = path;
@@ -146,7 +146,7 @@ async function checkForUpdates() {
   icon.textContent = "\uD83D\uDD0D";
   text.textContent = "Checking for updates...";
 
-  const result = await window.augur.checkUpdates();
+  const result = await window.buns.checkUpdates();
 
   switch (result.status) {
     case "up_to_date":
@@ -193,7 +193,7 @@ async function handlePlay() {
     $("btn-play-text").textContent = "UPDATING 0%";
     $("progress-container").style.display = "block";
 
-    const result = await window.augur.downloadUpdates(currentUpdates);
+    const result = await window.buns.downloadUpdates(currentUpdates);
 
     $("progress-container").style.display = "none";
     isUpdating = false;
@@ -219,7 +219,7 @@ async function handlePlay() {
 }
 
 async function launchGame() {
-  const result = await window.augur.launch();
+  const result = await window.buns.launch();
   if (result.success) {
     $("btn-play-text").textContent = "LAUNCHING...";
     setTimeout(() => {
@@ -257,7 +257,7 @@ async function loadNews() {
   const list = $("news-list");
 
   try {
-    const data = await window.augur.getNews();
+    const data = await window.buns.getNews();
     const news = data?.news || [];
 
     if (news.length === 0) {

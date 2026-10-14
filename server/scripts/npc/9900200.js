@@ -1,5 +1,5 @@
 /*
- * BunsMS — The Augur NPC (ID: 9900200)
+ * BunsMS — The Baker 🍑 (ID: 9900200)
  *
  * AI-powered oracle chatbot. Players type questions,
  * the script calls the dashboard API which runs an LLM
@@ -36,7 +36,7 @@ function action(mode, type, selection) {
     }
 
     // Call dashboard API
-    var response = callAugurAPI(String(playerMessage));
+    var response = callBakerAPI(String(playerMessage));
 
     if (response == null || response.text == null) {
       cm.sendOk("The crystal dims... I cannot see clearly. Try again later.");
@@ -106,17 +106,17 @@ function doHttpPost(baseUrl, message) {
   }
 }
 
-function callAugurAPI(message) {
+function callBakerAPI(message) {
   // Try Fly internal network first (fast, no Cloudflare), fall back to public URL
   try {
     return doHttpPost(DASHBOARD_URL, message);
   } catch (e) {
-    java.lang.System.out.println("[Augur] Internal API failed (" + e + "), trying public URL...");
+    java.lang.System.out.println("[Baker] Internal API failed (" + e + "), trying public URL...");
   }
   try {
     return doHttpPost("https://buns.asslorde.com", message);
   } catch (e2) {
-    java.lang.System.out.println("[Augur] Public API also failed: " + e2);
+    java.lang.System.out.println("[Baker] Public API also failed: " + e2);
     return { text: "The stars are clouded... I cannot reach the beyond right now." };
   }
 }

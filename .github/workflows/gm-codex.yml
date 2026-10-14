@@ -58,8 +58,8 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name "augur-gm[bot]"
-          git config user.email "augur-gm@users.noreply.github.com"
+          git config user.name "buns-gm[bot]"
+          git config user.email "buns-gm@users.noreply.github.com"
           git checkout -b "$IN_BRANCH"
 
       - name: Install Codex CLI
@@ -86,7 +86,7 @@ jobs:
           # Use the quoted heredoc terminator ('EOF') so shell does not expand
           # the body, then inject env-var values with envsubst-like sentinels.
           cat > /tmp/codex/prompt.txt <<PROMPT_EOF
-          You are acting on behalf of the AugurMS AI Game Master. This is a real private-server codebase; treat it with care.
+          You are acting on behalf of the BunsMS AI Game Master. This is a real private-server codebase; treat it with care.
 
           Tracking ID: ${IN_TRACKING_ID}
           Area hint: ${IN_AREA}
@@ -200,7 +200,7 @@ jobs:
 
           body_file=$(mktemp)
           {
-            echo "**This PR was opened by the AugurMS AI Game Master via \`delegate_code_change\`.**"
+            echo "**This PR was opened by the BunsMS AI Game Master via \`delegate_code_change\`.**"
             echo ""
             echo "Tracking ID: \`${IN_TRACKING_ID}\`"
             echo "Workflow run: ${RUN_URL}"

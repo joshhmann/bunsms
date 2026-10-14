@@ -3,7 +3,7 @@ name: WZ → NX conversion
 # Triggered after publish endpoints upload patched WZ files to R2. Runs the
 # NoLifeWzToNx converter inside Docker on the patched WZ files and uploads the
 # resulting .nx files back to R2 under the `nx/` prefix so the browser client
-# (play.augurms.com) picks them up. `UI.nx` is NEVER regenerated — the v83 UI.wz
+# (play.bunsms.com) picks them up. `UI.nx` is NEVER regenerated — the v83 UI.wz
 # converts to a UI.nx without login fields (known-broken); the v154+ UI.nx
 # already in R2 must stay as-is.
 
@@ -96,7 +96,7 @@ jobs:
           # container-convert.sh writes to /work/nxFiles, NOT /work/nx — keep
           # this listing aligned with the upload step or the workflow silently
           # "succeeds" while uploading nothing (which is exactly how publishes
-          # were quietly failing to refresh play.augurms.com).
+          # were quietly failing to refresh play.bunsms.com).
           ls -lh work/nxFiles/
 
       - name: Upload NX files to R2 (skip UI.nx)

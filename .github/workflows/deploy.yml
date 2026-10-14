@@ -31,7 +31,7 @@ jobs:
 
       - name: Set Fly.io secrets
         run: |
-          cat <<'SECRETS' | flyctl secrets import --app augur-ms --stage
+          cat <<'SECRETS' | flyctl secrets import --app buns-ms --stage
           DB_HOST=${{ secrets.DB_HOST }}
           DB_PORT=${{ secrets.DB_PORT }}
           DB_USER=${{ secrets.DB_USER }}
@@ -73,7 +73,7 @@ jobs:
 
       - name: Set Fly.io secrets
         run: |
-          cat <<'SECRETS' | flyctl secrets import --app augur-ms-game --stage
+          cat <<'SECRETS' | flyctl secrets import --app buns-ms-game --stage
           DB_PASS=${{ secrets.DB_PASS }}
           GAME_HOST=${{ secrets.GAME_HOST }}
           DISABLE_AUTO_REGISTER=${{ secrets.DISABLE_AUTO_REGISTER }}
@@ -143,6 +143,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "launcher-v${{ steps.version.outputs.version }}" \
-            --title "AugurMS Launcher v${{ steps.version.outputs.version }}" \
-            --notes "Auto-built AugurMS Launcher for Windows. Download and run to play AugurMS." \
-            "launcher/dist/AugurMS Setup ${{ steps.version.outputs.version }}.exe"
+            --title "BunsMS Launcher v${{ steps.version.outputs.version }}" \
+            --notes "Auto-built BunsMS Launcher for Windows. Download and run to play BunsMS." \
+            "launcher/dist/BunsMS Setup ${{ steps.version.outputs.version }}.exe"

@@ -76,9 +76,9 @@ export default function VotePage() {
             <span className="text-2xl text-accent-gold drop-shadow-[0_0_8px_rgba(245,197,66,0.4)]">
               &#10022;
             </span>
-            <span className="text-xl font-bold tracking-wide">AugurMS</span>
+            <span className="text-xl font-bold tracking-wide">BunsMS</span>
           </Link>
-          <h1 className="mt-3 text-lg font-semibold">Vote for AugurMS</h1>
+          <h1 className="mt-3 text-lg font-semibold">Vote for BunsMS 🍑</h1>
           <p className="mt-1 text-sm text-text-secondary">
             Vote daily to earn Vote Points — spend them at Fredrick in the FM!
           </p>

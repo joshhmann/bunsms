@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 /**
  * Exercise the GM item-generation tool handlers directly — proves what happens
- * when the Augur cron calls generate_item / list_generated_items /
+ * when the Baker cron calls generate_item / list_generated_items /
  * publish_generated_item / reject_generated_item.
  *
  * Usage:

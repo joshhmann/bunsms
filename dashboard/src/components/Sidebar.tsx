@@ -41,7 +41,7 @@ const NAV_SECTIONS: NavSection[] = [
     title: "AI",
     items: [
       { href: "/gamemaster", label: "Game Master", icon: "🧠" },
-      { href: "/augur", label: "Buns Oracle 🍑", icon: "🔮" },
+      { href: "/baker", label: "Buns Oracle 🍑", icon: "🔮" },
       { href: "/items/generated", label: "AI Items", icon: "✨" },
     ],
   },

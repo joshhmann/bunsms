@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-WZ Patcher for AugurMS — Injects custom item icons into client .wz files.
+WZ Patcher for BunsMS — Injects custom item icons into client .wz files.
 
 Usage:
   python3 wz_patcher.py --manifest custom_items.json --wz-dir ./client/cosmic-wz --output ./patched
@@ -397,7 +397,7 @@ def load_manifest(path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="AugurMS WZ Patcher — inject custom items into client WZ files")
+    parser = argparse.ArgumentParser(description="BunsMS WZ Patcher — inject custom items into client WZ files")
     parser.add_argument("--manifest", required=True, help="Path to custom_items.json manifest")
     parser.add_argument("--wz-dir", required=True, help="Directory containing client .wz files")
     parser.add_argument("--output", default="./patched", help="Output directory for patched files")

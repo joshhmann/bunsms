@@ -10,5 +10,5 @@ jobs:
     steps:
       - name: Ping GM cron check
         run: |
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://augurms.com/api/gm/cron/check)
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://bunsms.com/api/gm/cron/check)
           echo "Status: $RESPONSE"

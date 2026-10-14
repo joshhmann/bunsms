@@ -21,7 +21,7 @@ const OUTPUT = join(ROOT, "dashboard", "test-output");
 const TEST_ITEMS = [
   {
     itemId: 1112999,
-    name: "Augur's Ring",
+    name: "Baker's Ring",
     desc: "A ring forged by the AI Game Master. +10 all stats, +500 HP.",
     subCategory: "Ring",
     stats: { str: 10, dex: 10, int: 10, luk: 10, hp: 500, watk: 5 },
@@ -208,4 +208,4 @@ console.log(`\nTo test locally with Docker:`);
 console.log(`  1. Copy ${OUTPUT}/Character.wz and String.wz to your game client folder`);
 console.log(`  2. Rebuild & run the game server (it reads from server/wz/)`);
 console.log(`  3. Log in, use: @item 1112999`);
-console.log(`  4. "Augur's Ring" should appear with gold ring icon, +10 all stats, +500 HP`);
+console.log(`  4. "Baker's Ring" should appear with gold ring icon, +10 all stats, +500 HP`);

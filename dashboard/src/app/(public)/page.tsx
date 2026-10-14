@@ -19,7 +19,7 @@ export default function LandingPage() {
   const [status, setStatus] = useState<"online" | "offline" | "loading">("loading");
   const [rates, setRates] = useState({ exp: "1x", drop: "1x", meso: "1x" });
   const [installTab, setInstallTab] = useState<"launcher" | "manual" | "browser">("launcher");
-  const [augurLog, setAugurLog] = useState<Array<{ type: string; text: string; date: string }>>([]);
+  const [bakerLog, setBakerLog] = useState<Array<{ type: string; text: string; date: string }>>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [gmModel, setGmModel] = useState("");
   const [stats, setStats] = useState({ players: 0, accounts: 0, characters: 0, maxLevel: 0 });
@@ -49,7 +49,7 @@ export default function LandingPage() {
     fetch("/api/launcher/news")
       .then((r) => r.json())
       .then((data) => {
-        if (data?.news) setAugurLog(data.news.slice(0, 5));
+        if (data?.news) setBakerLog(data.news.slice(0, 5));
       })
       .catch(() => {});
   }, []);
@@ -335,7 +335,7 @@ export default function LandingPage() {
         </div>
 
         {/* The Baker's Log */}
-        {augurLog.length > 0 && (
+        {bakerLog.length > 0 && (
           <div className="mt-20 w-full max-w-2xl">
             <div className="mb-4 flex items-center gap-3">
               <div className="h-2 w-2 rounded-full bg-accent-gold shadow-[0_0_8px_rgba(245,197,66,0.5)] animate-pulse" />
@@ -343,7 +343,7 @@ export default function LandingPage() {
               <span className="text-xs text-text-muted">Live AI Game Master activity</span>
             </div>
             <div className="space-y-2">
-              {augurLog.map((entry, i) => {
+              {bakerLog.map((entry, i) => {
                 const typeColors: Record<string, string> = {
                   rates: "border-accent-gold/20 text-accent-gold",
                   drops: "border-accent-green/20 text-accent-green",

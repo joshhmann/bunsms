@@ -453,7 +453,7 @@ export default function CreateItemPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder={isWeapon ? "Crystal Staff of Power" : "Augur's Blessing Ring"}
+                  placeholder={isWeapon ? "Crystal Staff of Power" : "The Baker's Blessing Ring"}
                   className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue/30"
                 />
               </div>
@@ -467,7 +467,7 @@ export default function CreateItemPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={isWeapon
                     ? "A crystalline staff that channels arcane energy."
-                    : "A ring blessed by the Augur, granting power to those who complete quests."}
+                    : "A ring blessed by The Baker, granting power to those who complete quests."}
                   rows={2}
                   className="w-full rounded-lg border border-border bg-bg-secondary px-3 py-2 text-sm text-text-primary placeholder-text-muted focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue/30 resize-none"
                 />

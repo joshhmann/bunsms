@@ -580,7 +580,7 @@ function CodexRunsPanel() {
                         </a>
                       )}
                       {r.branchSlug && (
-                        <a href={`https://github.com/themrzmaster/augurms/tree/${r.branchSlug}`} target="_blank" rel="noopener noreferrer"
+                        <a href={`https://github.com/joshhmann/bunsms/tree/${r.branchSlug}`} target="_blank" rel="noopener noreferrer"
                           className="rounded-md border border-border px-2.5 py-1 text-[10px] font-mono text-text-muted hover:text-text-primary hover:border-border-light transition-colors">
                           {r.branchSlug}
                         </a>

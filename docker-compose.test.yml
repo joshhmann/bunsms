@@ -20,9 +20,9 @@ services:
       dockerfile: Dockerfile.local
     ports:
       - "9494:8484"
-      - "7676:7575"
-      - "7677:7576"
-      - "7678:7577"
+      - "7575:7575"
+      - "7576:7576"
+      - "7577:7577"
     environment:
       DB_PASS: bunspass
       DB_HOST: db

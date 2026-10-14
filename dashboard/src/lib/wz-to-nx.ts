@@ -8,7 +8,7 @@
 // run, so spamming this is safe.
 
 const GH_OWNER = "themrzmaster";
-const GH_REPO = "augurms";
+const GH_REPO = "bunsms";
 const GH_WORKFLOW = "wz-to-nx.yml";
 // We deliberately use the workflow_dispatch endpoint, not repository_dispatch
 // (`POST /repos/.../dispatches`). Fine-grained PATs need `Contents: write` for

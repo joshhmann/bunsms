@@ -1,4 +1,4 @@
-const FLY_APP = "augur-ms-game";
+const FLY_APP = "buns-ms-game";
 
 export async function restartGameServer(): Promise<string> {
   const token = process.env.FLY_API_TOKEN;
