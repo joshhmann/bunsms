@@ -5,9 +5,10 @@ const crypto = require("crypto");
 const https = require("https");
 const http = require("http");
 
-// API base: override via BUNSMS_API_BASE env (baked at build time) so the same
-// launcher can target prod (https://buns.asslorde.com, default) or the test
-// dashboard (http://192.168.0.164:3001). Plain http allowed for LAN test use.
+// API base: runtime override via the BUNSMS_API_BASE process env (NOT baked at
+// build time — Electron reads process.env at launch). Default prod
+// (https://buns.asslorde.com); to reach the test dashboard, launch with
+// BUNSMS_API_BASE=http://192.168.0.164:3001 (plain http allowed for LAN).
 const API_BASE = process.env.BUNSMS_API_BASE || "https://buns.asslorde.com";
 const MANIFEST_URL = `${API_BASE}/api/launcher/manifest`;
 const NEWS_URL = `${API_BASE}/api/launcher/news`;
