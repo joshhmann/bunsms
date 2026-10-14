@@ -8,6 +8,7 @@ let isUpdating = false;
 // ── Init ──
 async function init() {
   setupControls();
+  setupServerHost();
   await Promise.all([checkServerStatus(), findGamePath(), loadNews()]);
   await checkForUpdates();
 }
@@ -19,8 +20,8 @@ function setupControls() {
   $("btn-browse").onclick = browseFolder;
   $("btn-play").onclick = handlePlay;
 
-  $("link-register").onclick = () => window.buns.openExternal("https://buns.asslorde.com");
-  $("link-website").onclick = () => window.buns.openExternal("https://buns.asslorde.com");
+  $("link-register").onclick = () => window.buns.openSite("/");
+  $("link-website").onclick = () => window.buns.openSite("/");
   $("link-discord").onclick = () => window.buns.openExternal("https://discord.gg/pApUkuZjNa");
 
   // HD Mode toggle
@@ -98,9 +99,9 @@ async function checkServerStatus() {
 
   // Also fetch rates from config (raw YAML structure: worlds[0].exp_rate etc.)
   try {
-    const res = await fetch("https://buns.asslorde.com/api/config");
+    const res = await window.buns.fetchConfig();
     if (res.ok) {
-      const data = await res.json();
+      const data = res.data;
       const world = data?.worlds?.[0];
       if (world) {
         $("rate-exp").textContent = (world.exp_rate || "?") + "x";
@@ -124,6 +125,26 @@ async function findGamePath() {
     $("path-display").textContent = "Not found - click browse to set";
     $("path-display").style.color = "var(--orange)";
   }
+  // Load saved server host into the field
+  try {
+    $("server-host").value = await window.buns.getServerHost();
+  } catch {}
+}
+
+async function setupServerHost() {
+  const field = $("server-host");
+  field.addEventListener("change", async () => {
+    const res = await window.buns.setServerHost(field.value);
+    if (!res.success) {
+      field.value = await window.buns.getServerHost();
+    } else {
+      field.value = res.host;
+    }
+  });
+  $("btn-server-default").onclick = async () => {
+    await window.buns.setServerHost("213.188.212.103");
+    field.value = await window.buns.getServerHost();
+  };
 }
 
 async function browseFolder() {

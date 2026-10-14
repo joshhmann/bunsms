@@ -1,17 +1,17 @@
 {
-  "version": "1.0.4",
-  "updatedAt": "2026-03-14T02:30:00Z",
+  "version": "1.0.5",
+  "updatedAt": "2026-10-14T13:49:13Z",
   "files": [
     {
       "name": "BunsMS.exe",
       "hash": "d4be83197bad0ff5f7a6b84bbb80ea006e6350e644f0b2ee1966ef5a81f925dc",
       "size": 9920523,
-      "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/BunsMS.exe"
+      "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/AugurMS.exe"
     },
     {
       "name": "Character.wz",
-      "hash": "ed787285951c1388f3cf2a515999ab1c45307265ba9b9d01f2ba3f75f81c371c",
-      "size": 206267331,
+      "hash": "a06039021bd3652a84849e429c85135b3299025e1caa972a44dd9e078d4c4ee1",
+      "size": 417143480,
       "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/Character.wz"
     },
     {
@@ -22,8 +22,8 @@
     },
     {
       "name": "Item.wz",
-      "hash": "33d7e2d8416a6523935e9fc933107ca3b66f6dde869667ffb0551746a36c5e44",
-      "size": 18397440,
+      "hash": "3e9ee0862855ee0b4a78a700534475c205e2ae1d923e6eb4582c1d2283a1ee9f",
+      "size": 18401066,
       "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/Item.wz"
     },
     {
@@ -34,8 +34,8 @@
     },
     {
       "name": "Map.wz",
-      "hash": "a39da5ac66cb3cb1803b1a8f70f19cdf67ca191016e16c853f521b3c8156aca4",
-      "size": 638428788,
+      "hash": "c70c1eefac641363242cbe0b784d52c329058ffa5b494ee81c9aa429c7034b7a",
+      "size": 638428915,
       "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/Map.wz"
     },
     {
@@ -46,8 +46,8 @@
     },
     {
       "name": "Npc.wz",
-      "hash": "2992910ac5f65fa3d1ca4b2469fa4105f948f6ceb4a6c47ee6953be9d04dee17",
-      "size": 53498512,
+      "hash": "f83e0f3ba81f7e1f8132b2d69ec6cd00e76ad8c7fa52df0140aceef4f79bc175",
+      "size": 53588944,
       "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/Npc.wz"
     },
     {
@@ -58,8 +58,8 @@
     },
     {
       "name": "Reactor.wz",
-      "hash": "9f10fc59d51d355750e55e3d252003b8f325f03ef13f2e6db123056bbd84f66d",
-      "size": 54348491,
+      "hash": "8bd7b14d9ae7e6b21bc720b4d9df72a5c783046ef7682ec02010ea6f3ecb4f47",
+      "size": 54415789,
       "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/Reactor.wz"
     },
     {
@@ -70,8 +70,8 @@
     },
     {
       "name": "String.wz",
-      "hash": "9437deb8ce481dae4909097ebfb366d24baccd73d55d3ed00fa3198603cae499",
-      "size": 3561285,
+      "hash": "89c477c16fa3dd88bda7a954a8112091e138becf31a7d4df538458cd40baaddf",
+      "size": 4101816,
       "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/String.wz"
     },
     {
@@ -79,12 +79,11 @@
       "hash": "bebd65f77f167cd5484423842e3000e5ba26ccb51c6463f355cad404041d4053",
       "size": 28315281,
       "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/UI.wz"
-    }
-    ,
+    },
     {
       "name": "dinput8.dll",
-      "hash": "1c0835181b529cfd7cea720688b294e6ae0cce83d72ebacbda003aeb7262a61a",
-      "size": 2840064,
+      "hash": "d2bebaaf9802d4c05ef92a70ded604a4aa83c65abfa081b3cc1c9c4141d1f79b",
+      "size": 3053056,
       "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/dinput8.dll",
       "hd": true
     },

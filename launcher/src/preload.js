@@ -5,10 +5,14 @@ contextBridge.exposeInMainWorld("buns", {
   minimize: () => ipcRenderer.invoke("window:minimize"),
   close: () => ipcRenderer.invoke("window:close"),
   openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
+  openSite: (sitePath) => ipcRenderer.invoke("site:open", sitePath),
+  fetchConfig: () => ipcRenderer.invoke("site:config"),
 
   // Game
   findGamePath: () => ipcRenderer.invoke("game:findPath"),
   setGamePath: (p) => ipcRenderer.invoke("game:setPath", p),
+  getServerHost: () => ipcRenderer.invoke("server:getHost"),
+  setServerHost: (host) => ipcRenderer.invoke("server:setHost", host),
   selectFolder: () => ipcRenderer.invoke("game:selectFolder"),
   launch: () => ipcRenderer.invoke("game:launch"),
 

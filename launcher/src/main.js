@@ -5,7 +5,10 @@ const crypto = require("crypto");
 const https = require("https");
 const http = require("http");
 
-const API_BASE = "https://buns.asslorde.com";
+// API base: override via BUNSMS_API_BASE env (baked at build time) so the same
+// launcher can target prod (https://buns.asslorde.com, default) or the test
+// dashboard (http://192.168.0.164:3001). Plain http allowed for LAN test use.
+const API_BASE = process.env.BUNSMS_API_BASE || "https://buns.asslorde.com";
 const MANIFEST_URL = `${API_BASE}/api/launcher/manifest`;
 const NEWS_URL = `${API_BASE}/api/launcher/news`;
 const STATUS_URL = `${API_BASE}/api/server`;
@@ -98,6 +101,48 @@ ipcMain.handle("game:setPath", (_, newPath) => {
   return { success: true };
 });
 
+const DEFAULT_SERVER_HOST = "213.188.212.103";
+
+// Server host: written into config.ini ServerIP_Address so the HD DLL routes
+// the compiled client (fixed login port 8484) at the chosen host. The launcher
+// owns this file after download (manifest ships a prod-default copy), so the
+// recipe is coherent: host here + host:8484 reachable + port-forward only if
+// the operator remaps 8484 elsewhere.
+ipcMain.handle("server:getHost", () => {
+  const configPath = path.join(app.getPath("userData"), "config.json");
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    if (config.serverHost) return config.serverHost;
+  } catch {}
+  return DEFAULT_SERVER_HOST;
+});
+
+ipcMain.handle("server:setHost", (_, host) => {
+  host = String(host || "").trim();
+  if (!host) return { success: false, error: "Empty host" };
+  saveConfig({ serverHost: host });
+  if (gamePath) writeServerHostToIni(host);
+  return { success: true, host };
+});
+
+function writeServerHostToIni(host) {
+  const iniPath = path.join(gamePath, "config.ini");
+  if (!fs.existsSync(iniPath)) return false;
+  try {
+    let ini = fs.readFileSync(iniPath, "utf-8");
+    if (/^ServerIP_Address=.*/m.test(ini)) {
+      ini = ini.replace(/^ServerIP_Address=.*/m, `ServerIP_Address=${host}`);
+    } else {
+      ini = ini.replace(/^(\[general\])/m, `$1\nServerIP_Address=${host}`);
+    }
+    fs.writeFileSync(iniPath, ini);
+    return true;
+  } catch (err) {
+    console.error("Failed to write ServerIP_Address:", err);
+    return false;
+  }
+}
+
 ipcMain.handle("game:selectFolder", async () => {
   const { dialog } = require("electron");
   const result = await dialog.showOpenDialog(mainWindow, {
@@ -167,6 +212,17 @@ ipcMain.handle("launcher:news", async () => {
     return await fetchJSON(NEWS_URL);
   } catch {
     return { news: [] };
+  }
+});
+
+// Site/config helpers so the renderer never hardcodes the deploy domain.
+ipcMain.handle("site:open", (_, sitePath) => shell.openExternal(API_BASE + (sitePath || "/")));
+ipcMain.handle("site:config", async () => {
+  try {
+    const data = await fetchJSON(`${API_BASE}/api/config`);
+    return { ok: true, data };
+  } catch {
+    return { ok: false };
   }
 });
 
@@ -421,6 +477,13 @@ ipcMain.handle("launcher:downloadUpdates", async (_, updates) => {
       return { success: false, error: `Failed to download ${file.name} after ${MAX_RETRIES} retries` };
     }
   }
+
+  // After any download set completes, stamp the saved server host into
+  // config.ini (fresh downloads ship the prod-default copy from R2).
+  try {
+    const config = JSON.parse(fs.readFileSync(path.join(app.getPath("userData"), "config.json"), "utf-8"));
+    if (config.serverHost && gamePath) writeServerHostToIni(config.serverHost);
+  } catch {}
 
   return { success: true };
 });

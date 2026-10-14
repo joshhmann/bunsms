@@ -1,0 +1,43 @@
+name: Launcher Installer (standalone)
+
+# Safe standalone installer build: npm ci + electron-builder on
+# windows-latest, upload the .exe as a workflow artifact. No release
+# deletion, no Fly deploys, no dashboard/server side effects.
+# BUNSMS_API_BASE is baked at build time (defaults to prod).
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: 'Dashboard API base baked into launcher'
+        type: string
+        default: 'https://buns.asslorde.com'
+
+jobs:
+  build-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: launcher/package-lock.json
+
+      - name: Install dependencies
+        working-directory: launcher
+        run: npm ci
+
+      - name: Build Windows installer
+        working-directory: launcher
+        run: npx electron-builder --win --x64
+        env:
+          BUNSMS_API_BASE: ${{ inputs.api_base }}
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bunsms-launcher-installer
+          path: launcher/dist/*.exe
+          if-no-files-found: error

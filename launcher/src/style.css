@@ -339,6 +339,15 @@ body {
   font-family: "Consolas", "SF Mono", monospace;
 }
 
+input.path-display {
+  outline: none;
+  color: var(--text-primary);
+}
+
+input.path-display:focus {
+  border-color: var(--orange);
+}
+
 .btn-browse {
   background: var(--bg-card);
   border: 1px solid var(--border);
