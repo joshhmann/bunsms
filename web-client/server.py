@@ -1,9 +1,10 @@
-"""Combined static file server + WebSocket TCP proxy for the BunsMS web client.
+"""Combined static file server + NX proxy + WebSocket TCP proxy for the BunsMS web client.
 
 Routes:
   GET /           -> index.html (or WS upgrade bridged to game server)
   GET /web/*      -> static /app/web
   GET /build/*    -> static /app/build
+  GET /nx/*       -> NX files from local disk (NX_DIR, live systemd deploys)
   GET /healthz    -> 'ok'
 
 The WS proxy accepts the target address as its first text message (same protocol
@@ -21,6 +22,7 @@ log = logging.getLogger('buns-ms-web')
 
 STATIC_ROOT = os.environ.get('STATIC_ROOT', '/app')
 PORT = int(os.environ.get('PORT', '8080'))
+NX_LOCAL_DIR = os.environ.get('NX_DIR', '/opt/buns/nx')
 
 # Comma-separated host:port allow list, e.g. "127.0.0.1:8484,127.0.0.1:7575,..."
 # Override per-deploy via the ALLOWED_TARGETS env var.
@@ -130,6 +132,23 @@ async def healthz(_request: web.Request) -> web.Response:
     return web.Response(text='ok')
 
 
+async def handle_nx(request: web.Request) -> web.StreamResponse:
+    """Serve NX files from local disk with CORS headers.
+
+    Live path: systemd deploys (buns-web.service) set NX_DIR=/opt/buns/nx.
+    Group A removal reasoning missed these — restoring, no regression.
+    """
+    nx_path = request.match_info['path']
+    filepath = os.path.join(NX_LOCAL_DIR, nx_path)
+    if os.path.exists(filepath):
+        return web.FileResponse(
+            filepath,
+            headers={'Access-Control-Allow-Origin': '*'},
+        )
+    log.warning("NX file not found: %s", filepath)
+    return web.Response(status=404, text='Not found')
+
+
 @web.middleware
 async def no_cache_for_build(request: web.Request, handler):
     """Prevent Cloudflare/browsers from caching the Emscripten JS glue and WASM
@@ -148,6 +167,7 @@ def build_app() -> web.Application:
     app = web.Application(middlewares=[no_cache_for_build])
     app.router.add_get('/', handle_root)
     app.router.add_get('/healthz', healthz)
+    app.router.add_get('/nx/{path:.*}', handle_nx)
     # Static mounts. Route order matters — these only match if the path starts with /web or /build.
     app.router.add_static('/web/', path=os.path.join(STATIC_ROOT, 'web'), show_index=False)
     app.router.add_static('/build/', path=os.path.join(STATIC_ROOT, 'build'), show_index=False)

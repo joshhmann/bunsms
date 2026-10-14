@@ -33,10 +33,18 @@ bunsms/
 - Dashboard UI at `/gamemaster` with preset prompts, session history, and live tool execution logs
 
 ### Launcher
-- Electron app for Windows (NSIS installer via GitHub Releases)
-- Manifest-based auto-update: checks SHA256 hashes, downloads changed files
-- Server status display, news feed from GM activity
-- Client files hosted on GitHub Releases
+* Electron app for Windows (NSIS installer; standalone `launcher-installer.yml`
+  workflow builds on `windows-latest` and uploads the installer as an artifact)
+* Manifest-based auto-update: checks SHA256 hashes, downloads changed files
+* `BUNSMS_API_BASE` env (baked at build time, default `https://buns.asslorde.com`)
+  selects the dashboard for manifest/news/status — set to
+  `http://192.168.0.164:3001` for test-stack builds
+* Server Address field: persisted locally, stamped into game `config.ini`
+  `ServerIP_Address` on change and after downloads (compiled client dials
+  fixed login port **8484** — point at a host with 8484 reachable; test
+  needs 8484, not the 9494 docker alias)
+* Server status display, news feed from GM activity
+* Client files hosted on R2 (`pub-34b8b332208f464a9e74fa14104be3e2.r2.dev`)
 
 ## Deployment
 
@@ -69,5 +77,6 @@ The launcher handles this automatically. For manual setup:
 1. Run `MapleGlobal-v83-setup.exe` (vanilla installer)
 2. Remove: `HShield/`, `ASPLnchr.exe`, `MapleStory.exe`, `Patcher.exe`
 3. Copy all `.wz` files from `client/cosmic-wz/` into the install directory
-4. Copy `BunsMS.exe` into the install directory
-5. Launch `BunsMS.exe`
+4. Copy `BunsMS.exe` (R2 `AugurMS.exe` bytes, same SHA) into the install directory
+5. Set `config.ini` `ServerIP_Address` to your login host (port is fixed 8484)
+6. Launch `BunsMS.exe`
