@@ -80,3 +80,40 @@ The launcher handles this automatically. For manual setup:
 4. Copy `BunsMS.exe` (R2 `AugurMS.exe` bytes, same SHA) into the install directory
 5. Set `config.ini` `ServerIP_Address` to your login host (port is fixed 8484)
 6. Launch `BunsMS.exe`
+
+## Patch Notes — 2026-10-14 (solobots `0d76a4d`)
+
+Shipped to TEST stack (192.168.0.164, docker compose `test`):
+- Upstream cherry-picks Group A (`0874223`): env-driven WS proxy allowlist,
+  no-cache `/build/*` middleware, PlayerShop visitor-removal broadcast,
+  ChangeMapSpecialHandler script-NPC fallback (Door of Dimension).
+- Group B (`60b869c`): Autoban SKIP log-gate (noisy heal/gacha), stylist
+  `getLiveWzStyles` + TTL cache, DeleteChar PIC removal (deliberate).
+- Baseline client (`bfd3082`): launcher `BUNSMS_API_BASE` (default prod,
+  `http://192.168.0.164:3001` for test builds), Server Address field stamped
+  to `config.ini` `ServerIP_Address`, manifest v1.0.5 with 8 live-verified
+  hashes, artifact-only installer workflow.
+- `/nx` route restored (`a75add5`) — live systemd units serve NX from disk.
+- World capacity counts humans only (`0d76a4d` + `WorldCapacityBotsTest`
+  3/3 GREEN): 3168 bots no longer wedge charlist at SERVERSTATUS 2; 300-human
+  cap still enforced. `USE_CUSTOM_KEYSET:false` + `SPAWN_BOTS_ON_STARTUP:true`
+  committed to repo config (was live-only drift).
+- Test compose: `8484:8484` added alongside `9494:8484` (host 8484 was free).
+  Dashboard rebuilt — `:3001/api/launcher/manifest` serves v1.0.5;
+  `:3001/api/server` reports `players:0` = human sessions (bots excluded by
+  design — `accounts WHERE loggedin>0` has no bot rows).
+- Name note: launcher downloads `BunsMS.exe` (local name) from the
+  `AugurMS.exe` R2 key — byte-identical (SHA256 `d4be8319…`), no recompile or
+  upload performed.
+
+CI: [Deploy & Release run 38576650941](https://github.com/joshhmann/bunsms/actions/runs/38576650941)
+(success; `bunsms-launcher-installer` artifact 83.8 MB,
+`BunsMS Setup 1.0.2.exe` SHA256 `34fc2005…`).
+
+NOT done / known limits:
+- Windows UI path untested (no Windows host): installer builds, but no
+  click-through, DLL-load, or real `BunsMS.exe` connect exercised.
+- Public domain `buns.asslorde.com` returns 502 — prod unreachable; recipes
+  above target the test stack.
+- Group C (launcher sleepTime/dinput8 already in tree; dashboard items),
+  Cosmic PRs #348/#352/#353/#354, owner bundle: parked, not started.
