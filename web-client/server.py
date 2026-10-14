@@ -150,21 +150,17 @@ async def handle_nx(request: web.Request) -> web.StreamResponse:
 
 
 @web.middleware
-async def no_cache_for_build(request: web.Request, handler):
-    """Prevent Cloudflare/browsers from caching the Emscripten JS glue and WASM
-    binary independently. They MUST be loaded as a matching pair — if one is
-    served from cache and the other fresh, Emscripten aborts with
-    'No EM_ASM constant found at address ...'. Sending no-cache on /build/*
-    keeps them in lockstep across deploys.
-    """
+async def revalidate_client_files(request: web.Request, handler):
+    """Revalidate routing config/page as well as the matched JS/WASM build pair."""
     response = await handler(request)
-    if request.path.startswith('/build/'):
+    if (request.path.startswith('/build/') or
+            request.path in ('/', '/web/index.html', '/web/config.json', '/web/config.prod.json')):
         response.headers['Cache-Control'] = 'no-cache, must-revalidate'
     return response
 
 
 def build_app() -> web.Application:
-    app = web.Application(middlewares=[no_cache_for_build])
+    app = web.Application(middlewares=[revalidate_client_files])
     app.router.add_get('/', handle_root)
     app.router.add_get('/healthz', healthz)
     app.router.add_get('/nx/{path:.*}', handle_nx)

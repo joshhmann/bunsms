@@ -555,11 +555,20 @@
             // 1. Load config.json
             let config = {};
             try {
-                const res = await fetch('/web/config.json');
+                const res = await fetch('/web/config.json', { cache: 'no-store' });
                 if (res.ok) config = await res.json();
             } catch (e) {
                 console.warn('[config] failed:', e);
             }
+
+            // The page and WS-to-TCP proxy share an origin in LAN and HTTPS deployments.
+            // Never let a stale config redirect Journey to an old public proxy.
+            const secure = window.location.protocol === 'https:';
+            Object.assign(config, {
+                ProxyIP: window.location.hostname,
+                ProxyPort: Number(window.location.port || (secure ? 443 : 80)),
+                AssetsServerProtocol: secure ? 'wss' : 'ws',
+            });
 
             const lazyConfigKeys = [
                 'AssetsServerIP', 'AssetsServerPort',

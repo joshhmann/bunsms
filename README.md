@@ -84,13 +84,69 @@ Manifest-driven (no manual WZ hunting):
    `$env:BUNSMS_API_BASE='http://192.168.0.164:3001'` (runtime env, see notes).
 5. Press Play. HD Mode (Ezorsia `dinput8.dll` + `config.ini`) is optional.
 
+## Journey browser routing repair — 2026-10-14 (solobots)
+
+The existing Journey surface is deployed and smoke-verified:
+- Production: <https://buns.asslorde.com/> or <http://192.168.0.164:8080/>.
+- Development: <https://dev.buns.asslorde.com/> or <http://192.168.0.164:8081/>.
+- The loader derives `ProxyIP`, `ProxyPort`, and `AssetsServerProtocol` from
+  the page origin: LAN uses `ws` on 8080/8081; HTTPS uses same-origin `wss`
+  on 443. Both config files now select game target `192.168.0.164:9494`
+  and local assets `/nx`; config fetch bypasses cache, while the page,
+  config, and existing JS/WASM files are served with revalidation headers.
+
+Diagnosis, in ranked order: (1) served configs selected the old `.157`
+target and public proxy, matching the reported browser log; (2) deployed
+Python allowlists still permitted only `.157`, independently rejecting a
+direct LAN WS request for `.164:9494`; (3) inspection of Caddy's disk and
+live configuration found both public upstreams still pointing at `.157`.
+The new-target LAN probe was red (WS closed without a v83 handshake);
+the known old-domain failure was not rerun just to reconfirm it.
+
+Deployment truth:
+- `server.py`, routing configs, and the loader fix were deployed to
+  `/opt/buns/web-client` and `/opt/buns-dev`; existing dev-page differences
+  were preserved. Only `buns-web` and `buns-web-dev` were restarted.
+- Their units retain `STATIC_ROOT`, ports 8080/8081, and
+  `NX_DIR=/opt/buns/nx`, and explicitly set
+  `ALLOWED_TARGETS=192.168.0.164:9494,192.168.0.164:8484,192.168.0.164:7575,192.168.0.164:7576,192.168.0.164:7577`.
+  Configure this environment explicitly on future deployments; the Python
+  default remains loopback-only for a colocated server.
+- Pre-change web files and units are backed up at
+  `/opt/buns/backups/journey-routing-20261014-0748/web-routing.tar`.
+- The authorized gateway repair on `192.168.0.70` changed only the
+  buns/dev `reverse_proxy` destinations in `/etc/caddy/public.Caddyfile`
+  to `.164:8080`/`.164:8081`, validated and reloaded Caddy. Its backup is
+  `/etc/caddy/public.Caddyfile.bak.journey-20261014-upstream`.
+- No Java, database, compose, NX files, or Node/WASM engine changes.
+  Production JS/WASM hashes start `d9154da1`/`180e21d7`; dev retains its
+  distinct pre-existing pair `948404ba`/`e8cefcd9`. Neither pair was copied
+  or rebuilt; both initialized and rendered the login screen.
+
+Verification:
+- `cd web-client && python3 -m unittest test_routing -v`: 5/5 passed after
+  the config/cache regressions were observed red. Covers first-message text
+  and binary WS targets, TCP v83 handshake forwarding, denied targets,
+  page/config/build revalidation, and NX Range.
+- Real HTTP config and WS-to-TCP smoke passed on all four URLs above,
+  for all five allowed ports: 16-byte handshake, packet length 14, version
+  83. Denied targets closed without a handshake; `/nx/Base.nx` returned
+  HTTP 206 with `Content-Range: bytes 0-15/13296` and `PKG4` bytes.
+- Fresh Chromium Journey pages (not Maplewright) rendered login on LAN
+  and both public origins. CDP captured HTTP 101, the binary first message
+  `192.168.0.164:9494`, and the binary 16-byte v83 response for production
+  LAN and both public WSS origins. Dev LAN logged same-host `ws` on 8081.
+- This establishes connection and login-surface rendering, not a complete
+  Journey login/gameplay feature audit. No account login was attempted;
+  the separate Maplewright gameplay demo at `.187` was not modified.
+
 ## Patch Notes — 2026-10-14 (solobots `9b56e04`)
 
 Deployed to TEST stack (192.168.0.164, compose `test`):
 - Upstream cherry-picks Group A (`0874223`, live in server image):
   ChangeMapSpecialHandler script-NPC fallback (Door of Dimension),
-  PlayerShop visitor-removal broadcast. (WS proxy allowlist + no-cache
-  middleware are Java-adjacent Python changes — see source-only below.)
+  PlayerShop visitor-removal broadcast. (Python WS proxy changes were
+  deployed separately in the Journey routing repair above.)
 - Group B (`60b869c` + `ea42615`, live): Autoban SKIP log-gate for noisy
   heal/gacha (dead `flagCheat` helper removed — zero call sites, no DB
   writes; `cheat_flags` table idle), stylist `getLiveWzStyles` + TTL cache,
@@ -110,16 +166,13 @@ Deployed to TEST stack (192.168.0.164, compose `test`):
   committed (were live-only drift); live config byte-identical after sync.
 
 Source-only (in repo, NOT deployed):
-- `web-client/server.py` env-allowlist + no-cache + `/nx` restore (`0874223`,
-  `a75add5`): live systemd units (`buns-web`, `buns-web-dev`) still run the
-  pre-Group-A file — deploy separately with route + env (`ALLOWED_TARGETS`,
-  `NX_DIR`) preserved.
 - Launcher changes (`bfd3082`): NOT installed anywhere — ship via the CI
   artifact below. `BUNSMS_API_BASE` is a **runtime** process env (read at
   Electron launch, not baked). Test-stack launch from PowerShell:
   `$env:BUNSMS_API_BASE='http://192.168.0.164:3001'; & "$env:LOCALAPPDATA\BunsMS\BunsMS.exe"`
   (default `%LOCALAPPDATA%\BunsMS` per NSIS oneClick install; adjust if you
-  chose otherwise). Without it the launcher defaults to prod, currently 502.
+  chose otherwise). Without it the launcher defaults to the public origin;
+  use the explicit test-stack API base for this test deployment.
 - Name note: manifest keeps local name `BunsMS.exe` but downloads the
   `AugurMS.exe` R2 key — byte-identical (SHA256 `d4be8319…`, full 9920523 B
   download verified), no recompile/upload. `config.ini` entry uses live
@@ -150,7 +203,7 @@ Live browser smoke (maple-build, 2026-10-14, test stack — no mocks):
   FAILED the WZ parser — must not be described as v83-compatible;
   Sound/TamingMob absent, NPC/quest/shop alpha incomplete.
 
-- Prod `buns.asslorde.com` 502 — recipes target the test stack.
+- Public Journey buns/dev routes are restored by the repair above.
 - Group C remainder, Cosmic PRs #348/#352/#353/#354, owner bundle: parked.
 - Kaentake preferred-target trial (UNVERIFIED, local-only
   `/tmp/kaentake-trial/` — nothing pushed): v3.4.1 assets staged

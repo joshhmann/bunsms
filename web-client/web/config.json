@@ -1,8 +1,5 @@
 {
-  "MapleStoryServerIp": "192.168.0.157",
+  "MapleStoryServerIp": "192.168.0.164",
   "MapleStoryServerPort": 9494,
-  "ProxyIP": "buns.asslorde.com",
-  "ProxyPort": 443,
-  "AssetsServerProtocol": "wss",
   "NxBaseUrl": "/nx"
 }
