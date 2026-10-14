@@ -135,6 +135,21 @@ CI: [Deploy & Release run 38576650941](https://github.com/joshhmann/bunsms/actio
 (success; `bunsms-launcher-installer` 83.8 MB,
 `BunsMS Setup 1.0.2.exe` SHA256 `34fc2005…`).
 
+Live browser smoke (maple-build, 2026-10-14, test stack — no mocks):
+- Chain: LOGIN OK → CHARLIST len=151 status=0 → channel :7575 →
+  SET_FIELD map 100000000 (Henesys). Reviewed `/tmp/shot14_hgame.png`
+  (test character standing in live Henesys, 3+ dressed remote bot peers
+  rendered) and `/tmp/shot14_hmoved.png` (displaced right after 2.5 s
+  ArrowRight — movement works, peers persist). Zero browser console errors.
+- Native diagnostic (same session): 71 map peers / 71 sprite sets loaded,
+  ~4250 live movement packets in 20 s — bots move server-side.
+- Reproducible local checkout `/tmp/mw` + patch `/tmp/mw.patch` (136 lines,
+  5 files) + runbook `/tmp/RUNBOOK.md`; demo at `http://192.168.0.187:8080`
+  (WS :8081, nohup unsupervised — not part of shipped stack).
+- Asset limits: stock v83 installer + hash-verified UI confirmed; Kinoko set
+  FAILED the WZ parser — must not be described as v83-compatible;
+  Sound/TamingMob absent, NPC/quest/shop alpha incomplete.
+
 - Prod `buns.asslorde.com` 502 — recipes target the test stack.
 - Group C remainder, Cosmic PRs #348/#352/#353/#354, owner bundle: parked.
 - Kaentake preferred-target trial (UNVERIFIED, local-only
