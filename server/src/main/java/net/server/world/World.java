@@ -669,7 +669,9 @@ public class World {
 
     public int getWorldCapacityStatus() {
         int worldCap = getChannelsSize() * YamlConfig.config.server.CHANNEL_LOAD;
-        int num = players.getSize();
+        // Bots are simulated Characters in storage but consume no human login
+        // slots — exclude them so 3168 bots don't wedge charlist at SERVERSTATUS 2.
+        int num = getHumanPlayerCount();
 
         int status;
         if (num >= worldCap) {
@@ -681,6 +683,17 @@ public class World {
         }
 
         return status;
+    }
+
+    /** Human (non-bot) online count — the admission-relevant population. */
+    public int getHumanPlayerCount() {
+        int num = 0;
+        for (Character chr : players.getAllCharacters()) {
+            if (!soloMapling.ArtificialPlayer.BotHelpers.isBot(chr)) {
+                num++;
+            }
+        }
+        return num;
     }
 
     public GuildSummary getGuildSummary(int gid, int wid) {
