@@ -135,8 +135,16 @@ CI: [Deploy & Release run 38576650941](https://github.com/joshhmann/bunsms/actio
 (success; `bunsms-launcher-installer` 83.8 MB,
 `BunsMS Setup 1.0.2.exe` SHA256 `34fc2005…`).
 
-NOT done / known limits:
-- Windows UI path untested (no Windows host): installer packs, but no
-  click-through, DLL-load, or real `BunsMS.exe` connect exercised.
 - Prod `buns.asslorde.com` 502 — recipes target the test stack.
 - Group C remainder, Cosmic PRs #348/#352/#353/#354, owner bundle: parked.
+- Kaentake preferred-target trial (UNVERIFIED, local-only
+  `/tmp/kaentake-trial/` — nothing pushed): v3.4.1 assets staged
+  (Kaentake.exe `792e1023…`, Kaentake.dll `b05a9e12…`,
+  Custom.wz `79180961…`; both PE32 x86, matching stock
+  `MapleStory.exe` x86 from `/tmp/mw-wz/full/`). Upstream declares NO
+  license — no redistribution without grant. Trial `config.ini` points at
+  `192.168.0.164:8484`. No Ezorsia DLLs mixed in; no Wine/Windows host
+  here so end-to-end is UNVERIFIED (blocker). Config/port compatibility is
+  source-based only (`[config] host/port`, CLI precedence) — NOT a working
+  client claim. Later launcher support must use a distinct profile, never
+  silently replace `BunsMS.exe`.
