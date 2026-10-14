@@ -1,0 +1,322 @@
+diff --git a/src/client/Character/OtherChar.cpp b/src/client/Character/OtherChar.cpp
+index a795b92..4122742 100644
+--- a/src/client/Character/OtherChar.cpp
++++ b/src/client/Character/OtherChar.cpp
+@@ -22,50 +22,26 @@
+ namespace jrc
+ {
+     OtherChar::OtherChar(int32_t id, const CharLook& lk, uint8_t lvl,
+-        int16_t jb, const std::string& nm, int8_t st, Point<int16_t> pos) : Char(id, lk, nm) {
++        int16_t jb, const std::string& nm, int8_t st, Point<int16_t> pos) : Char(id, lk, nm), movement(st) {
+ 
+         level = lvl;
+         job = jb;
+         set_position(pos);
+ 
+-        lastmove.xpos = pos.x();
+-        lastmove.ypos = pos.y();
+-        lastmove.newstate = st;
+-        timer = 0;
+-
+         attackspeed = 6;
+         attacking = false;
+     }
+ 
+     int8_t OtherChar::update(const Physics& physics)
+     {
+-        if (timer > 1)
+-        {
+-            timer--;
+-        }
+-        else if (timer == 1)
+-        {
+-            if (!movements.empty())
+-            {
+-                lastmove = movements.front();
+-                movements.pop();
+-            }
+-            else
+-            {
+-                timer = 0;
+-            }
+-        }
++        movement.advance(phobj, Constants::TIMESTEP);
+ 
+         if (!attacking)
+         {
+-            uint8_t laststate = lastmove.newstate;
++            uint8_t laststate = movement.get_state();
+             set_state(laststate);
+         }
+ 
+-        phobj.hspeed = lastmove.xpos - phobj.crnt_x();
+-        phobj.vspeed = lastmove.ypos - phobj.crnt_y();
+-        phobj.move();
+-
+         physics.get_fht().update_fh(phobj);
+ 
+         bool aniend = Char::update(physics, get_stancespeed());
+@@ -79,13 +55,7 @@ namespace jrc
+ 
+     void OtherChar::send_movement(const std::vector<Movement>& newmoves)
+     {
+-        movements.push(newmoves.back());
+-
+-        if (timer == 0)
+-        {
+-            constexpr uint16_t DELAY = 50;
+-            timer = DELAY;
+-        }
++        movement.enqueue(newmoves);
+     }
+ 
+     void OtherChar::update_skill(int32_t skillid, uint8_t skilllevel)
+@@ -102,7 +72,7 @@ namespace jrc
+     {
+         look = newlook;
+ 
+-        uint8_t laststate = lastmove.newstate;
++        uint8_t laststate = movement.get_state();
+         set_state(laststate);
+     }
+ 
+diff --git a/src/client/Character/OtherChar.h b/src/client/Character/OtherChar.h
+index ce63782..a7d11fb 100644
+--- a/src/client/Character/OtherChar.h
++++ b/src/client/Character/OtherChar.h
+@@ -19,9 +19,8 @@
+ #include "Char.h"
+ #include "Look/CharLook.h"
+ 
+-#include "../Gameplay/Movement.h"
++#include "../Gameplay/RemoteMovement.h"
+ 
+-#include <queue>
+ #include <vector>
+ 
+ namespace jrc
+@@ -55,9 +54,7 @@ namespace jrc
+     private:
+         uint16_t level;
+         int16_t job;
+-        std::queue<Movement> movements;
+-        Movement lastmove;
+-        uint16_t timer;
++        RemoteMovement movement;
+ 
+         std::unordered_map<int32_t, uint8_t> skilllevels;
+         uint8_t attackspeed;
+diff --git a/src/client/Gameplay/Movement.h b/src/client/Gameplay/Movement.h
+index 36bd35c..7aa706a 100644
+--- a/src/client/Gameplay/Movement.h
++++ b/src/client/Gameplay/Movement.h
+@@ -27,21 +27,21 @@ namespace jrc
+             NONE,
+             _ABSOLUTE,
+             _RELATIVE,
+-            CHAIR,
++            TELEPORT,
+             JUMPDOWN
+         };
+ 
+-        Movement(Type t, uint8_t c, int16_t x, int16_t y, int16_t lx, int16_t ly, uint16_t f, uint8_t s, int16_t d)
++        Movement(Type t, uint8_t c, int16_t x, int16_t y, int16_t lx, int16_t ly, uint16_t f, uint8_t s, uint16_t d)
+             : type(t), command(c), xpos(x), ypos(y), lastx(lx), lasty(ly), fh(f), newstate(s), duration(d) {}
+ 
+-        Movement(int16_t x, int16_t y, int16_t lx, int16_t ly, uint8_t s, int16_t d)
++        Movement(int16_t x, int16_t y, int16_t lx, int16_t ly, uint8_t s, uint16_t d)
+             : Movement(_ABSOLUTE, 0, x, y, lx, ly, 0, s, d) {}
+ 
+         Movement(const PhysicsObject& phobj, uint8_t s)
+             : Movement(_ABSOLUTE, 0, phobj.get_x(), phobj.get_y(), phobj.get_last_x(), phobj.get_last_y(), phobj.fhid, s, 1) {}
+ 
+         Movement()
+-            : Movement(NONE, 0, 0, 0, 0, 0) {}
++            : Movement(NONE, 0, 0, 0, 0, 0, 0, 0, 0) {}
+ 
+         bool hasmoved(const Movement& newmove) const
+         {
+@@ -57,6 +57,6 @@ namespace jrc
+         int16_t lasty;
+         uint16_t fh;
+         uint8_t newstate;
+-        int16_t duration;
++        uint16_t duration;
+     };
+ }
+diff --git a/src/client/Gameplay/RemoteMovement.h b/src/client/Gameplay/RemoteMovement.h
+new file mode 100644
+index 0000000..175da9d
+--- /dev/null
++++ b/src/client/Gameplay/RemoteMovement.h
+@@ -0,0 +1,102 @@
++#pragma once
++#include "Movement.h"
++
++#include <algorithm>
++#include <queue>
++#include <vector>
++
++namespace jrc
++{
++    // Movement fragments describe a timeline in milliseconds, not update counts.
++    class RemoteMovement
++    {
++    public:
++        explicit RemoteMovement(uint8_t initialstate) : state(initialstate) {}
++
++        void enqueue(const std::vector<Movement>& fragments)
++        {
++            for (const auto& fragment : fragments)
++            {
++                if (fragment.type != Movement::NONE)
++                    pending.push(fragment);
++            }
++        }
++
++        void advance(PhysicsObject& object, uint16_t elapsed)
++        {
++            double x = object.crnt_x();
++            double y = object.crnt_y();
++
++            while (true)
++            {
++                if (remaining == 0)
++                {
++                    if (pending.empty())
++                        break;
++
++                    current = pending.front();
++                    pending.pop();
++                    state = current.newstate;
++                    remaining = current.duration;
++
++                    if (current.type == Movement::TELEPORT || remaining == 0)
++                    {
++                        if (current.type != Movement::_RELATIVE)
++                        {
++                            x = current.xpos;
++                            y = current.ypos;
++                            // An instantaneous fragment must not draw a path from
++                            // the old location through render-time interpolation.
++                            object.set_x(x);
++                            object.set_y(y);
++                        }
++                        if (current.type == Movement::_ABSOLUTE || current.type == Movement::JUMPDOWN)
++                            object.fhid = current.fh;
++                        remaining = 0;
++                        continue;
++                    }
++                }
++
++                if (elapsed == 0)
++                    break;
++
++                uint16_t step = std::min(elapsed, remaining);
++                if (current.type == Movement::_RELATIVE)
++                {
++                    // Relative fragments carry velocity in pixels per second.
++                    x += current.xpos * (static_cast<double>(step) / 1000.0);
++                    y += current.ypos * (static_cast<double>(step) / 1000.0);
++                }
++                else
++                {
++                    double fraction = static_cast<double>(step) / remaining;
++                    x += (current.xpos - x) * fraction;
++                    y += (current.ypos - y) * fraction;
++                }
++
++                elapsed -= step;
++                remaining -= step;
++                if (remaining == 0 && current.type != Movement::_RELATIVE)
++                {
++                    x = current.xpos;
++                    y = current.ypos;
++                    object.fhid = current.fh;
++                }
++            }
++
++            // Move once per physics update, so Linear's previous/current values
++            // remain the endpoints of this update even across fragment boundaries.
++            object.hspeed = x - object.crnt_x();
++            object.vspeed = y - object.crnt_y();
++            object.move();
++        }
++
++        uint8_t get_state() const { return state; }
++
++    private:
++        std::queue<Movement> pending;
++        Movement current;
++        uint16_t remaining = 0;
++        uint8_t state;
++    };
++}
+diff --git a/src/client/Net/Handlers/Helpers/MovementParser.cpp b/src/client/Net/Handlers/Helpers/MovementParser.cpp
+index bf5c72b..c20a83e 100644
+--- a/src/client/Net/Handlers/Helpers/MovementParser.cpp
++++ b/src/client/Net/Handlers/Helpers/MovementParser.cpp
+@@ -47,19 +47,28 @@ namespace jrc
+             case 12:
+             case 13:
+             case 16:
++            case 18:
++            case 19:
++            case 20:
++            case 22:
+                 fragment.type = Movement::_RELATIVE;
+                 fragment.xpos = recv.read_short();
+                 fragment.ypos = recv.read_short();
+                 fragment.newstate = recv.read_byte();
+                 fragment.duration = recv.read_short();
+                 break;
++            case 3:
++            case 4:
++            case 7:
++            case 8:
++            case 9:
+             case 11:
+-                fragment.type = Movement::CHAIR;
++                fragment.type = Movement::TELEPORT;
+                 fragment.xpos = recv.read_short();
+                 fragment.ypos = recv.read_short();
+-                recv.skip(2);
++                fragment.lastx = recv.read_short();
++                fragment.lasty = recv.read_short();
+                 fragment.newstate = recv.read_byte();
+-                fragment.duration = recv.read_short();
+                 break;
+             case 15:
+                 fragment.type = Movement::JUMPDOWN;
+@@ -67,23 +76,22 @@ namespace jrc
+                 fragment.ypos = recv.read_short();
+                 fragment.lastx = recv.read_short();
+                 fragment.lasty = recv.read_short();
+-                recv.skip(2);
+                 fragment.fh = recv.read_short();
++                recv.skip(2); // origin foothold
+                 fragment.newstate = recv.read_byte();
+                 fragment.duration = recv.read_short();
+                 break;
+-            case 3:
+-            case 4:
+-            case 7:
+-            case 8:
+-            case 9:
+             case 14:
+-                fragment.type = Movement::NONE;
++                recv.skip(9);
+                 break;
+             case 10:
+-                fragment.type = Movement::NONE;
+-                //change equip
++                recv.skip(1); // change equip
++                break;
++            case 21:
++                recv.skip(3);
+                 break;
++            default:
++                throw PacketError("Unknown movement command " + std::to_string(fragment.command));
+             }
+             movements.push_back(fragment);
+         }

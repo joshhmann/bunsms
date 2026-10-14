@@ -148,6 +148,120 @@ Verification:
   Journey login/gameplay feature audit. No account login was attempted;
   the separate Maplewright gameplay demo at `.187` was not modified.
 
+## Journey remote-player movement repair — 2026-10-14 (DEV only)
+
+The browser engine treated the first remote movement as **50 physics updates**
+of buffering (400 ms at the 8 ms timestep), then drained one endpoint per
+update without using fragment durations. When the queue emptied it restarted
+that delay. It also retained only the last fragment of each packet.
+
+The discriminating experiment used a fresh, normal-protocol test account and
+an actual remote character spawned by the live server. In that account's
+isolated browser tab only, a protocol-valid synthetic stream entered the
+original Emscripten WebSocket callback, through the real packet decoder,
+`OtherChar`, physics, and renderer. The stream contained 140 single-command
+absolute movements, each advancing 3 pixels over 50 ms. Physics coordinates
+were sampled each animation frame; 60 fps videos independently show the motion.
+No packet filtering or instrumentation is part of the shipped repair.
+
+Ranked hypotheses and falsifiable discriminators:
+1. **Update-count buffering:** regular 50 ms input would still produce
+   approximately 400 ms freezes. Confirmed on the production engine and the
+   exact pre-change dev bundle; duration-based playback removed those freezes.
+2. **Lost fragment timing/endpoints:** a multi-fragment packet would not visit
+   its intermediate endpoint at the specified time. The old caller selected
+   only `.back()`; retained real-parser/model regressions now cover ordered
+   fragments and leftover update time.
+3. **Frame stalls or packet cadence:** if necessary for the defect, regular
+   input and stable render frames would remove it. They did not: pre-change
+   frame intervals never exceeded 16.8 ms while motion paused for 433.4 ms.
+   This does not certify every live bot's packet cadence.
+4. **Server reversals or foothold corrections:** if necessary, monotonic
+   constant-Y input would not reproduce it. It did, with zero input/output
+   reversals. Other maps and native clients remain untested.
+
+Actual dev-engine comparison, using the same stream before and after:
+
+| Measurement | Before | Deployed DEV |
+| --- | ---: | ---: |
+| Mean packet interval | 49.9986 ms | 50.0237 ms |
+| Largest gap between position changes | 433.4 ms | 16.8 ms |
+| Motionless gaps over 100 ms | 13 | 0 |
+| Position-changing render samples | 70 | 418 |
+| Largest per-frame position step | 6 px | 1.44 px |
+| Final X / reversals | 573 / 0 | 573 / 0 |
+
+The first command intentionally holds the spawn position for 50 ms; the first
+observed position change was 407.4 ms before and 63.4 ms after. Both runs
+finished without a WASM abort or JavaScript error. Before deployment, the rebuilt
+pair also passed this same real-engine loop in an isolated browser asset
+override: maximum motion gap 16.8 ms, no long holds.
+
+Source/build ownership:
+- `web-client/patches/remote-movement.patch` is BunSMS-owned and applies to the
+  pinned submodule **8eece1d1fc43afa48e12df56b4719ca63af88e0b**. The submodule
+  gitlink is unchanged; there is no unpublished replacement revision.
+- The Docker build applies the patch with `git apply --check` followed by
+  `git apply`. Drift or double application fails the build; nothing is silently
+  skipped. Build from a clean initialized submodule checkout:
+  `git submodule update --init web-client/vendor/maplestory-wasm`, then
+  `docker build -t buns-journey web-client`.
+- `RemoteMovement` advances all decoded fragments by their wire duration in
+  milliseconds, carries time across fragment boundaries, and moves the real
+  `PhysicsObject` once per update. Relative fragments carry pixels/second;
+  teleport/zero-duration position changes remain instantaneous. No bot-ID
+  branch, predictive buffer, speed cap, or arbitrary smoothing constant exists.
+- Parser changes consume the existing teleport/chair and no-op payloads so
+  following fragments stay aligned; jump-down destination/origin footholds
+  remain distinct. Empty lists and stance-only moves are covered.
+- `cd web-client && python3 -m unittest test_movement -v` passed. It exports the
+  exact pinned source into a temporary directory, applies the shipped patch,
+  and compiles the actual parser/playback/physics seam with
+  `g++ -std=c++17 -Wall -Wextra -Werror`. Its 50 ms stream had a maximum hold
+  of 0 ms and reached X=299.64 at 5 s; duration, multi-fragment, relative,
+  no-op, stance, teleport, empty-list, and foothold boundaries passed.
+
+Deployment and provenance:
+- Only `/opt/buns-dev/build` on **192.168.0.164:8081** was replaced. A Linux
+  `renameat2(RENAME_EXCHANGE)` atomically exchanged the complete build directory
+  with `/opt/buns-dev/build.before-movement-20261014`, which retains the exact
+  previous JS/WASM pair. No service restart, Java/DB/Caddy change, or production
+  asset replacement was performed.
+- Build: isolated `/tmp/bot-jitter-wasm-build`, Emscripten **4.0.21**, Release,
+  `./scripts/build_wasm.sh --jobs 4`; completed without compiler warnings.
+  The original dev source tree was not edited. Its existing NPC/chat changes
+  in `UIChatBar.cpp`, `UINpcTalk.cpp`, and `NpcInteractionHandlers.cpp` were
+  copied by an explicit patch and their file hashes match the originals.
+- Exact base, movement patch, complete applied source delta, preserved-file
+  hashes, compiler image digest, baseline/new asset hashes, and measurements
+  are recorded in `web-client/movement-build-manifest.json`. The complete dev
+  source delta is backed up on the host at
+  `/opt/buns-dev/movement-applied-source-20261014.patch`; the manifest is also
+  copied to `/opt/buns-dev/movement-build-manifest-20261014.json`.
+- New JS SHA256:
+  `98ff3048bc1d99a8a4b9ac4e88f96d2772eb137b9b78e49314c528bf1c1dbe7f`.
+  New WASM SHA256:
+  `9a099050d05f02bc354bc7bc9cda9257663237813a1926347a5d6e7b9df211cb`.
+  A fresh public dev browser fetched those hashes, completed normal login and
+  character entry, and observed HTTP 101 on root WSS with first-frame targets
+  `.164:9494` and `.164:7575`. Ordinary local-player walking still worked.
+  Fresh LAN dev also rendered login without abort, using root
+  `ws://192.168.0.164:8081/` and a real 16-byte v83 handshake.
+- Local evidence: `/tmp/jitter-dev-before.webm`, `/tmp/jitter-dev-after.webm`,
+  `/tmp/jitter-dev-before-metadata.json`, `/tmp/jitter-dev-after-metadata.json`,
+  and `/tmp/jitter-dev-live-smoke.webm`. Metadata is explicitly synthetic;
+  authentication packets/passwords are not published in the repository.
+
+Limitations: the actual tutorial-map bot remained idle, so no live walking-bot
+`CHAR_MOVED` cadence was claimed. Normal tutorial NPC interaction was attempted
+but did not reach a bot-populated town. The experiment proves this browser
+mechanism under the server's documented 50 ms single-fragment input shape,
+not every live emitter path. Production's older binary/source provenance could
+not be certified; its unchanged JS/WASM hashes remain `d9154da1`/`180e21d7`.
+Desktop Journey, native OpenStory/Kaentake, and the separate Maplewright
+`.187` surface were not tested or changed. Production promotion requires a
+separate decision after reviewing the dev evidence.
+
 ## Patch Notes — 2026-10-14 (solobots `9b56e04`)
 
 Deployed to TEST stack (192.168.0.164, compose `test`):

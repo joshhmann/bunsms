@@ -1,0 +1,134 @@
+{
+  "date": "2026-10-14",
+  "scope": "Journey DEV only: 192.168.0.164:8081 / dev.buns.asslorde.com",
+  "source": {
+    "repository": "https://github.com/themrzmaster/maplestory-wasm.git",
+    "base": "8eece1d1fc43afa48e12df56b4719ca63af88e0b",
+    "movementPatch": "patches/remote-movement.patch",
+    "movementPatchSha256": "b7484763d88f4329cc2bb5ac5e9723ed0006e7b520e55a248ba4e873c8ab7df4",
+    "preservedUserDiffSha256": "011fcc2d778bccdec71452e99fc884e5c57ddc385aac9c22acd661299250b9cb",
+    "completeAppliedDiffSha256": "cbfb640fa39cd012fefcd91480a91423b20d212af29c68b608f73622e61d5da1",
+    "completeAppliedDiffBackup": "/opt/buns-dev/movement-applied-source-20261014.patch",
+    "preservedFiles": {
+      "src/client/IO/UITypes/UIChatBar.cpp": "7b6a2c7e67180b913d8d750a236219f9620509e044d47c13bd3bef97aaca1619",
+      "src/client/IO/UITypes/UINpcTalk.cpp": "6af1f8e5af14873a55384ff5aa612c550fb1df9af1fa3c4826e93c80d1b7c9b4",
+      "src/client/Net/Handlers/NpcInteractionHandlers.cpp": "79b196a3202d951318e6b26b30c56075898cfe07e2d01cf328fe9833a525cc4d"
+    }
+  },
+  "build": {
+    "image": "emscripten/emsdk@sha256:631841e7ee7a808bc2735a4f26aff3c1354119764df8459c38abfe2d0923dffb",
+    "command": "./scripts/build_wasm.sh --jobs 4",
+    "directory": "/tmp/bot-jitter-wasm-build",
+    "mode": "Release, DEBUG_SYMBOLS=OFF"
+  },
+  "baseline": {
+    "js": "948404ba8e603925e6e639fb3c00cfa6470b68c44f38bd649115a264e0df484e",
+    "wasm": "e8cefcd915c3bbe1ce0b2ae2f4883c238a16592e7a96b8fc56dbe510054e7af3",
+    "backup": "/opt/buns-dev/build.before-movement-20261014"
+  },
+  "assets": {
+    "js": "98ff3048bc1d99a8a4b9ac4e88f96d2772eb137b9b78e49314c528bf1c1dbe7f",
+    "wasm": "9a099050d05f02bc354bc7bc9cda9257663237813a1926347a5d6e7b9df211cb"
+  },
+  "localActualEngineVerification": {
+    "synthetic": true,
+    "before": {
+      "samples": 459,
+      "changes": 70,
+      "firstDelay": 407.40000009536743,
+      "maxGap": 433.40000000000146,
+      "longHolds": 13,
+      "maxStep": 6,
+      "reverse": 0,
+      "finalX": 573,
+      "rafMax": 16.80000000000291,
+      "rafMean": 16.66593886462882
+    },
+    "after": {
+      "samples": 459,
+      "changes": 418,
+      "firstDelay": 57.19999980926514,
+      "maxGap": 16.80000000000291,
+      "longHolds": 0,
+      "maxStep": 1.4400000000000546,
+      "reverse": 0,
+      "finalX": 573,
+      "rafMax": 16.80000000000291,
+      "rafMean": 16.66593886462882
+    }
+  },
+  "limitations": [
+    "Production pair provenance is not certified and production remains unchanged.",
+    "Native desktop client was not tested.",
+    "Captured actual tutorial bot was idle; uniform movement packets were protocol-valid synthetic input through real WASM decoder and physics."
+  ],
+  "deployedActualEngineVerification": {
+    "synthetic": true,
+    "input": {
+      "count": 140,
+      "minGap": 43.90000009536743,
+      "maxGap": 55,
+      "meanGap": 50.02374100513595
+    },
+    "output": {
+      "samples": 459,
+      "changes": 418,
+      "firstDelay": 63.39999971389625,
+      "maxGap": 16.80000000000291,
+      "longHolds": 0,
+      "maxStep": 1.4399999999999977,
+      "reverse": 0,
+      "finalX": 573,
+      "rafMax": 16.80000000000291,
+      "rafMean": 16.66593886462882
+    },
+    "errors": [],
+    "aborted": false,
+    "network": {
+      "url": "wss://dev.buns.asslorde.com/",
+      "handshakeStatuses": [
+        101,
+        101
+      ],
+      "firstFrameTargets": [
+        "192.168.0.164:9494",
+        "192.168.0.164:7575"
+      ]
+    },
+    "artifacts": {
+      "beforeVideo": "/tmp/jitter-dev-before.webm",
+      "afterVideo": "/tmp/jitter-dev-after.webm",
+      "beforeTrajectory": "/tmp/jitter-dev-before-metadata.json",
+      "afterTrajectory": "/tmp/jitter-dev-after-metadata.json",
+      "liveInputSmoke": "/tmp/jitter-dev-live-smoke.webm"
+    },
+    "lan": {
+      "url": "ws://192.168.0.164:8081/",
+      "target": "192.168.0.164:9494",
+      "serverHandshakeBytes": 16,
+      "serverVersion": 83,
+      "loginRendered": true,
+      "aborted": false
+    },
+    "normalLiveInput": {
+      "walkedRightForMs": 1500,
+      "errors": [],
+      "aborted": false,
+      "liveRemoteMovementPacketsObserved": 0
+    }
+  },
+  "deployment": {
+    "method": "Linux renameat2(RENAME_EXCHANGE), whole build directories",
+    "serviceRestarts": 0,
+    "productionAssetsUnchanged": {
+      "js": "d9154da1077a3e3349a04a57fdd6c9e03f343f56844eac244dad5ad55bd01329",
+      "wasm": "180e21d75edebc0611a40960df6d5ba78a68e9c2ba545e8443f9eb5cc88ceb57"
+    }
+  },
+  "nativeVerification": {
+    "command": "cd web-client && python3 -m unittest test_movement -v",
+    "result": "passed",
+    "uniform50msMaxHold": 0,
+    "uniform5sFinalX": 299.64
+  }
+}

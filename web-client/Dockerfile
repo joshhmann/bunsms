@@ -6,8 +6,11 @@ WORKDIR /wasm
 
 # Copy just the repo checkout. We don't need the .git directory at build time.
 COPY vendor/maplestory-wasm/ /wasm/
+COPY patches/remote-movement.patch /tmp/remote-movement.patch
 
-RUN ./scripts/build_wasm.sh -j 8
+RUN git apply --check /tmp/remote-movement.patch \
+    && git apply /tmp/remote-movement.patch \
+    && ./scripts/build_wasm.sh -j 8
 
 # ---- Stage 2: aiohttp runtime (static files + WS TCP proxy) ----
 FROM python:3.11-slim AS runtime
