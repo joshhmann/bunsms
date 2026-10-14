@@ -69,6 +69,8 @@
         <liquibase-core.version>4.32.0</liquibase-core.version> <!-- Database migrations -->
         <junit.version>5.13.1</junit.version> <!-- Unit test -->
         <mockito.version>5.18.0</mockito.version> <!-- Unit test -->
+        <jgrapht.version>1.5.2</jgrapht.version> <!-- SoloMapling bot pathfinding -->
+        <jgraphx.version>4.2.2</jgraphx.version>
     </properties>
 
     <dependencies>
@@ -159,6 +161,33 @@
             <groupId>org.graalvm.js</groupId>
             <artifactId>js-scriptengine</artifactId>
             <version>${graalvm-js-scriptengine.version}</version>
+        </dependency>
+
+        <!-- SoloMapling bot pathfinding -->
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-core</artifactId>
+            <version>${jgrapht.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-io</artifactId>
+            <version>${jgrapht.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-ext</artifactId>
+            <version>${jgrapht.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jgrapht</groupId>
+            <artifactId>jgrapht-guava</artifactId>
+            <version>${jgrapht.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.vlsi.mxgraph</groupId>
+            <artifactId>jgraphx</artifactId>
+            <version>${jgraphx.version}</version>
         </dependency>
 
         <!-- Testing -->

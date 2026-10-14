@@ -52,6 +52,9 @@ public class ServerConfig {
     //Other configuration
     public boolean SHUTDOWNHOOK;
 
+    //SoloMapling: spawn the bot world automatically on server startup (cold boot).
+    public boolean SPAWN_BOTS_ON_STARTUP;
+
     //Server Flags
     public boolean USE_CUSTOM_KEYSET;
     public boolean USE_DEBUG;
@@ -131,6 +134,10 @@ public class ServerConfig {
     //Maker Configuration
     public boolean USE_MAKER_PERMISSIVE_ATKUP;
     public boolean USE_MAKER_FEE_HEURISTICS;
+    //Custom Configuration
+    public boolean USE_ENABLE_CUSTOM_NPC_SCRIPT;
+    public boolean USE_STARTER_MERGE;
+
 
     //Commands Configuration
     public boolean BLOCK_GENERATE_CASH_ITEM;

@@ -71,6 +71,9 @@ import server.expeditions.ExpeditionBossLog;
 import server.life.PlayerNPC;
 import server.quest.Quest;
 import service.NoteService;
+import soloMapling.ArtificialPlayer.BotClientHandler;
+import soloMapling.Environment.EnvironmentManager;
+import soloMapling.server.MethodScheduler;
 import tools.DatabaseConnection;
 import tools.Pair;
 
@@ -881,6 +884,11 @@ public class Server {
         futures.add(initExecutor.submit(CashItemFactory::loadAllCashItems));
         futures.add(initExecutor.submit(Quest::loadAllQuests));
         futures.add(initExecutor.submit(SkillbookInformationProvider::loadAllSkillbookInformation));
+        // SoloMapling server data (bot equip metadata) - loaded here with the rest
+        // of the WZ-derived data so it's ready before any player can trigger the
+        // bot environment startup.
+        futures.add(initExecutor.submit(soloMapling.itemPool.EquipMetadataCache::initialize));
+        futures.add(initExecutor.submit(soloMapling.itemPool.DesirableEquipList::load));
         initExecutor.shutdown();
 
         TimeZone.setDefault(TimeZone.getTimeZone(YamlConfig.config.server.TIMEZONE));
@@ -901,6 +909,8 @@ public class Server {
             log.error("Failed to run all startup-bound database tasks", sqle);
             throw new IllegalStateException(sqle);
         }
+
+        soloMapling.Casino.WzXmlPatcher.applyAllPatches();
 
         ThreadManager.getInstance().start();
         initializeTimelyTasks(channelDependencies);    // aggregated method for timely tasks thanks to lxconan
@@ -942,7 +952,6 @@ public class Server {
         // Start Admin API for dashboard control
         AdminAPI adminAPI = new AdminAPI();
         adminAPI.start();
-
         Duration initDuration = Duration.between(beforeInit, Instant.now());
         log.info("Cosmic is now online after {} ms.", initDuration.toMillis());
 
@@ -951,6 +960,12 @@ public class Server {
 
         for (Channel ch : this.getAllChannels()) {
             ch.reloadEventScriptManager();
+        }
+
+        // SoloMapling cold-boot bot startup. Everything bots need is ready by here:
+        BotClientHandler.initHeadlessBotClient();
+        if (YamlConfig.config.server.SPAWN_BOTS_ON_STARTUP) {
+            MethodScheduler.runAfterDelay(EnvironmentManager::environmentLoadStartup, 1000);
         }
     }
 
