@@ -124,10 +124,11 @@ Deployment truth:
   or rebuilt; both initialized and rendered the login screen.
 
 Verification:
-- `cd web-client && python3 -m unittest test_routing -v`: 5/5 passed after
-  the config/cache regressions were observed red. Covers first-message text
-  and binary WS targets, TCP v83 handshake forwarding, denied targets,
-  page/config/build revalidation, and NX Range.
+- `cd web-client && python3 -m unittest test_routing -v`: 3/3 passed.
+  Retained regressions exercise denied-target rejection without dialing a
+  listening TCP probe, observable page/config/build revalidation, and NX Range.
+  Source-string assertions and fixture-handshake forwarding tests were removed;
+  actual deployed handshakes below supply the connection evidence.
 - Real HTTP config and WS-to-TCP smoke passed on all four URLs above,
   for all five allowed ports: 16-byte handshake, packet length 14, version
   83. Denied targets closed without a handshake; `/nx/Base.nx` returned
@@ -136,6 +137,13 @@ Verification:
   and both public origins. CDP captured HTTP 101, the binary first message
   `192.168.0.164:9494`, and the binary 16-byte v83 response for production
   LAN and both public WSS origins. Dev LAN logged same-host `ws` on 8081.
+- Browser-derived runtime snapshots recorded target `.164:9494`, `/nx`,
+  and proxy host/port/protocol matching each origin: `.164:8080`/`ws`,
+  `.164:8081`/`ws`, `buns.asslorde.com:443`/`wss`, and
+  `dev.buns.asslorde.com:443`/`wss`. All reached `[runtime] Initialized`.
+  CDP observed actual WS URLs `ws://192.168.0.164:8080/`,
+  `wss://buns.asslorde.com/`, and `wss://dev.buns.asslorde.com/`;
+  dev LAN's client log recorded `ws://192.168.0.164:8081`.
 - This establishes connection and login-surface rendering, not a complete
   Journey login/gameplay feature audit. No account login was attempted;
   the separate Maplewright gameplay demo at `.187` was not modified.
