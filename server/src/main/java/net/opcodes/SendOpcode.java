@@ -353,6 +353,10 @@ public enum SendOpcode {
     MAPLELIFE_RESULT(0x15D),
     MAPLELIFE_ERROR(0x15E),
     VICIOUS_HAMMER(0x162),
+    // Custom-opcode registry: see server/docs/OPCODE_REGISTRY.md.
+    // Reserved (not yet added): 0x372F (prism S2C), 0x3731 (cash-shop window S2C),
+    // 0x373D (WEATHER_SYNC), 0x373F (LAMP_PREVIEW), 0x17C (daily check-in S2C).
+    // Stock ranges that are NOT custom: 0x145-0x14D (CASHSHOP_*), 0x8E (BLOW_WEATHER).
     VEGA_SCROLL(0x166);
     private int code = -2;
 
