@@ -59,4 +59,9 @@
         <sqlFile path="db/data/171-casino-shop-data.sql"/>
     </changeSet>
 
+    <changeSet id="172" author="solobots">
+        <sqlFile path="db/data/172-mapleroot-shops-data.sql"/>
+    </changeSet>
+
+
 </databaseChangeLog>
