@@ -234,6 +234,19 @@ public class Character extends AbstractCharacterObject {
     private int checkinDay = 0;        // last day claimed this cycle (0..28)
     private int checkinClaimed = 0;    // 28-bit mask of days claimed this cycle
     private long checkinLastClaim = 0; // epoch millis of the last claim (0 = never)
+    // Coloring prism (ticket #11, CP 0x372E / LP 0x372F): look tints, nine columns.
+    // skinTint* rotates whichever fixed skin skinColor selects; the two coexist.
+    private short hairTintHue = 0;
+    private byte hairTintChroma = 0;
+    private byte hairTintBright = 0;
+    private short faceTintHue = 0;
+    private byte faceTintChroma = 0;
+    private byte faceTintBright = 0;
+    private short skinTintHue = 0;
+    private byte skinTintChroma = 0;
+    private byte skinTintBright = 0;
+    // Skill tints (skillId -> [hue, chroma, bright]); absent key means vanilla.
+    private final Map<Integer, int[]> skillTints = new LinkedHashMap<>();
     private static final long CHECKIN_PERIOD_MS = 86_400_000L;   // 24h
     private transient int localstr, localdex, localluk, localint_, localmagic, localwatk;
     private transient int equipmaxhp, equipmaxmp, equipstr, equipdex, equipluk, equipint_, equipmagic, equipwatk, localchairhp, localchairmp;
@@ -2896,6 +2909,7 @@ public class Character extends AbstractCharacterObject {
         if (getMessenger() != null) {
             getWorldServer().updateMessenger(getMessenger(), getName(), getWorld(), client.getChannel());
         }
+        syncWeaponTint();
     }
 
     public void cancelDiseaseExpireTask() {
@@ -5990,6 +6004,83 @@ public class Character extends AbstractCharacterObject {
     public SkinColor getSkinColor() {
         return skinColor;
     }
+    // ---- Coloring prism look tints (ticket #11) ----
+
+    public short getHairTintHue()    { return hairTintHue; }
+    public byte  getHairTintChroma() { return hairTintChroma; }
+    public byte  getHairTintBright() { return hairTintBright; }
+    public short getFaceTintHue()    { return faceTintHue; }
+    public byte  getFaceTintChroma() { return faceTintChroma; }
+    public byte  getFaceTintBright() { return faceTintBright; }
+
+    public boolean isHairTinted() { return hairTintHue != 0 || hairTintChroma != 0 || hairTintBright != 0; }
+    public boolean isFaceTinted() { return faceTintHue != 0 || faceTintChroma != 0 || faceTintBright != 0; }
+
+    public void setHairTint(int hue, int chroma, int bright) {
+        this.hairTintHue    = (short) normalizeTintHue(hue);
+        this.hairTintChroma = (byte) Math.max(-100, Math.min(100, chroma));
+        this.hairTintBright = (byte) Math.max(-100, Math.min(100, bright));
+    }
+
+    public void setFaceTint(int hue, int chroma, int bright) {
+        this.faceTintHue    = (short) normalizeTintHue(hue);
+        this.faceTintChroma = (byte) Math.max(-100, Math.min(100, chroma));
+        this.faceTintBright = (byte) Math.max(-100, Math.min(100, bright));
+    }
+
+    public void clearHairTint() { hairTintHue = 0; hairTintChroma = 0; hairTintBright = 0; }
+    public void clearFaceTint() { faceTintHue = 0; faceTintChroma = 0; faceTintBright = 0; }
+
+    public short getSkinTintHue()    { return skinTintHue; }
+    public byte  getSkinTintChroma() { return skinTintChroma; }
+    public byte  getSkinTintBright() { return skinTintBright; }
+    public boolean isSkinTinted() { return skinTintHue != 0 || skinTintChroma != 0 || skinTintBright != 0; }
+
+    public void setSkinTint(int hue, int chroma, int bright) {
+        this.skinTintHue    = (short) normalizeTintHue(hue);
+        this.skinTintChroma = (byte) Math.max(-100, Math.min(100, chroma));
+        this.skinTintBright = (byte) Math.max(-100, Math.min(100, bright));
+    }
+
+    public void clearSkinTint() { skinTintHue = 0; skinTintChroma = 0; skinTintBright = 0; }
+
+    public Map<Integer, int[]> getSkillTints() { return Collections.unmodifiableMap(skillTints); }
+
+    public boolean isSkillTinted(int skillId) {
+        int[] t = skillTints.get(skillId);
+        return t != null && (t[0] != 0 || t[1] != 0 || t[2] != 0);
+    }
+
+    public void setSkillTint(int skillId, int hue, int chroma, int bright) {
+        int h = normalizeTintHue(hue);
+        int c = Math.max(-100, Math.min(100, chroma));
+        int b = Math.max(-100, Math.min(100, bright));
+        if (h == 0 && c == 0 && b == 0) skillTints.remove(skillId);
+        else skillTints.put(skillId, new int[]{h, c, b});
+    }
+
+    public void clearSkillTint(int skillId) { skillTints.remove(skillId); }
+
+    /**
+     * Tint-hue sign convention: positive 1..359 rotates, negative -1..-360 selects an
+     * absolute target as -(degrees + 1), zero leaves the hue alone. Only the positive
+     * half wraps.
+     */
+    protected static int normalizeTintHue(int hue) {
+        if (hue < 0) {
+            return hue < -360 ? -360 : hue;
+        }
+        return Math.floorMod(hue, 360);
+    }
+
+    /** Pushes every tint this character owns to the client DLL (LP 0x372F). */
+    public void syncWeaponTint() {
+        if (client != null) {
+            sendPacket(server.colorprism.ColorPrismPackets.snapshot(this));
+            server.colorprism.ColorPrismPackets.broadcastMapTable(getMap());
+        }
+    }
+
 
     public int getSlot() {
         return slots;
@@ -7027,6 +7118,10 @@ public class Character extends AbstractCharacterObject {
                     try { ret.checkinDay = rs.getInt("checkinDay"); } catch (SQLException e) { ret.checkinDay = 0; }
                     try { ret.checkinClaimed = rs.getInt("checkinClaimed"); } catch (SQLException e) { ret.checkinClaimed = 0; }
                     try { ret.checkinLastClaim = rs.getLong("checkinLastClaim"); } catch (SQLException e) { ret.checkinLastClaim = 0; }
+                    // Coloring prism (ticket #11); zero when the migration has not run yet.
+                    try { ret.setHairTint(rs.getInt("hairtinthue"), rs.getInt("hairtintchroma"), rs.getInt("hairtintbright")); } catch (SQLException e) { ret.clearHairTint(); }
+                    try { ret.setFaceTint(rs.getInt("facetinthue"), rs.getInt("facetintchroma"), rs.getInt("facetintbright")); } catch (SQLException e) { ret.clearFaceTint(); }
+                    try { ret.setSkinTint(rs.getInt("skintinthue"), rs.getInt("skintintchroma"), rs.getInt("skintintbright")); } catch (SQLException e) { ret.clearSkinTint(); }
 
                     wserv = Server.getInstance().getWorld(ret.world);
 
@@ -7295,6 +7390,20 @@ public class Character extends AbstractCharacterObject {
                             }
                         }
                     }
+                }
+
+                // Coloring prism skill tints (ticket #11); absent table (pre-migration) = vanilla.
+                try (PreparedStatement ps = con.prepareStatement("SELECT skillid, tinthue, tintchroma, tintbright FROM skilltints WHERE characterid = ?")) {
+                    ps.setInt(1, charid);
+
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            ret.skillTints.put(rs.getInt("skillid"), new int[]{
+                                    rs.getInt("tinthue"), rs.getInt("tintchroma"), rs.getInt("tintbright")});
+                        }
+                    }
+                } catch (SQLException e) {
+                    ret.skillTints.clear();
                 }
 
                 // Cooldowns (load)
@@ -8584,8 +8693,56 @@ public class Character extends AbstractCharacterObject {
                     psSkill.executeBatch();
                 }
 
+                // Coloring prism look tints (ticket #11): separate UPDATE keeps the big
+                // positional statement above untouched; inside this transaction, before commit.
+                try (PreparedStatement psTint = con.prepareStatement(
+                        "UPDATE characters SET hairtinthue = ?, hairtintchroma = ?, hairtintbright = ?, "
+                        + "facetinthue = ?, facetintchroma = ?, facetintbright = ?, "
+                        + "skintinthue = ?, skintintchroma = ?, skintintbright = ? WHERE id = ?")) {
+                    psTint.setInt(1, hairTintHue);
+                    psTint.setInt(2, hairTintChroma);
+                    psTint.setInt(3, hairTintBright);
+                    psTint.setInt(4, faceTintHue);
+                    psTint.setInt(5, faceTintChroma);
+                    psTint.setInt(6, faceTintBright);
+                    psTint.setInt(7, skinTintHue);
+                    psTint.setInt(8, skinTintChroma);
+                    psTint.setInt(9, skinTintBright);
+                    psTint.setInt(10, id);
+                    psTint.executeUpdate();
+                } catch (SQLException e) {
+                    // Pre-migration characters table: keep the rest of the save, tints stay memory-only.
+                    log.debug("Skipping prism look-tint save for {} (columns missing?)", name);
+                }
+
+                // Skill tints: the in-memory map is the whole truth, so delete + reinsert.
+                try {
+                    try (PreparedStatement psDel = con.prepareStatement(
+                            "DELETE FROM skilltints WHERE characterid = ?")) {
+                        psDel.setInt(1, id);
+                        psDel.executeUpdate();
+                    }
+                    if (!skillTints.isEmpty()) {
+                        try (PreparedStatement ps = con.prepareStatement(
+                                "INSERT INTO skilltints (characterid, skillid, tinthue, tintchroma, tintbright) "
+                                + "VALUES (?, ?, ?, ?, ?)")) {
+                            for (Entry<Integer, int[]> e : skillTints.entrySet()) {
+                                int[] t = e.getValue();
+                                ps.setInt(1, id);
+                                ps.setInt(2, e.getKey());
+                                ps.setInt(3, t[0]);
+                                ps.setInt(4, t[1]);
+                                ps.setInt(5, t[2]);
+                                ps.addBatch();
+                            }
+                            ps.executeBatch();
+                        }
+                    }
+                } catch (SQLException e) {
+                    log.debug("Skipping prism skill-tint save for {} (table missing?)", name);
+                }
+
                 // Saved locations
-                deleteWhereCharacterId(con, "DELETE FROM savedlocations WHERE characterid = ?");
                 try (PreparedStatement psLoc = con.prepareStatement("INSERT INTO savedlocations (characterid, `locationtype`, `map`, `portal`) VALUES (?, ?, ?, ?)")) {
                     psLoc.setInt(1, id);
                     for (SavedLocationType savedLocationType : SavedLocationType.values()) {

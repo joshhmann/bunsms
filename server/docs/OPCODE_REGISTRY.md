@@ -9,7 +9,7 @@ this file plus the reservation comments in the enums are the reservation mechani
 
 | Opcode(s) | Direction | Owner / feature | Status |
 |---|---|---|---|
-| `0x372E` / `0x372F` | Recv / Send | Coloring prism (`WEAPON_TINT_ACTION` / `WEAPON_TINT_SYNC` per dump INTEGRATION docs; prism C2S/S2C per kaentake guide; item 5782000) | RESERVED, not yet in enums |
+| `0x372E` / `0x372F` | Recv / Send | Coloring prism (canonical `COLORING_PRISM_ACTION` / `COLORING_PRISM_SYNC`; dump-side alias `WEAPON_TINT_ACTION` / `WEAPON_TINT_SYNC` per INTEGRATION docs; item 5782000) | CLAIMED in RecvOpcode/SendOpcode (ticket #11) |
 | `0x3730` / `0x3731` | Recv / Send | Cash-shop window (`CASHSHOP_WINDOW_ACTION` / `CASHSHOP_WINDOW_SYNC`, per cashshop-window INTEGRATION.md) | CLAIMED in RecvOpcode/SendOpcode (ticket #10; stock `CASHSHOP_*` 0x145-0x14D untouched) |
 | `0x373C` / `0x373E` | Recv (request twins) | Weather/lamp system, unused request side | RESERVED |
 | `0x373D` | Send | Weather sync (`WEATHER_SYNC` / `LP_WeatherSync`) | RESERVED, not yet in enums |

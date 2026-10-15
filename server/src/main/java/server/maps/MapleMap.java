@@ -2657,6 +2657,9 @@ public class MapleMap {
 
         chr.receivePartyMemberHP();
         announcePlayerDiseases(chr.getClient());
+        // Coloring prism (ticket #11): both directions — arrival needs everyone's tints,
+        // everyone already here needs the arrival's.
+        server.colorprism.ColorPrismPackets.broadcastMapTable(this);
     }
 
     private static void announcePlayerDiseases(final Client c) {

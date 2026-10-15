@@ -46,6 +46,11 @@ public class Item implements Comparable<Item> {
     private short flag;
     private long expiration = -1;
     private String giftFrom = "";
+    // Coloring prism (ticket #11): cash-effect-item tint (5010000..5019999).
+    // An effect item IS the effect, so it carries one tint, not the body+fx pair Equip has.
+    private short effTintHue = 0;
+    private byte effTintChroma = 0;
+    private byte effTintBright = 0;
 
     public Item(int id, short position, short quantity) {
         this.id = id;
@@ -75,6 +80,9 @@ public class Item implements Comparable<Item> {
         ret.flag = flag;
         ret.owner = owner;
         ret.expiration = expiration;
+        ret.effTintHue = effTintHue;
+        ret.effTintChroma = effTintChroma;
+        ret.effTintBright = effTintBright;
         ret.itemLog = new LinkedList<>(itemLog);
         return ret;
     }
@@ -187,6 +195,34 @@ public class Item implements Comparable<Item> {
     public void setGiftFrom(String giftFrom) {
         this.giftFrom = giftFrom;
     }
+    public short getEffTintHue()    { return effTintHue; }
+    public byte  getEffTintChroma() { return effTintChroma; }
+    public byte  getEffTintBright() { return effTintBright; }
+    public boolean isEffTinted() {
+        return effTintHue != 0 || effTintChroma != 0 || effTintBright != 0;
+    }
+
+    public void setEffTint(int hue, int chroma, int bright) {
+        this.effTintHue    = (short) normalizeTintHue(hue);
+        this.effTintChroma = (byte) Math.max(-100, Math.min(100, chroma));
+        this.effTintBright = (byte) Math.max(-100, Math.min(100, bright));
+    }
+
+    public void clearEffTint() { effTintHue = 0; effTintChroma = 0; effTintBright = 0; }
+
+    /**
+     * Tint-hue sign convention (shared with Equip/Character): positive 1..359 rotates the
+     * sprite's own hue; negative -1..-360 selects an absolute target as -(degrees + 1);
+     * zero leaves the hue alone. Only the positive half wraps — a plain floorMod(hue, 360)
+     * would turn -1 ("absolute red") into 359 ("rotate by 359").
+     */
+    protected static int normalizeTintHue(int hue) {
+        if (hue < 0) {
+            return hue < -360 ? -360 : hue;
+        }
+        return Math.floorMod(hue, 360);
+    }
+
 
     public Pet getPet() {
         return pet;

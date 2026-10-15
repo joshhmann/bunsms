@@ -113,4 +113,8 @@
         <sqlFile path="db/tables/027-buyback.sql"/>
     </changeSet>
 
+    <changeSet id="28" author="solobots">
+        <sqlFile path="db/tables/028-coloring-prism.sql" splitStatements="false" endDelimiter="$$"/>
+    </changeSet>
+
 </databaseChangeLog>

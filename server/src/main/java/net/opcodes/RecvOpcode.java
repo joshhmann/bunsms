@@ -23,10 +23,11 @@ package net.opcodes;
 
 public enum RecvOpcode {
     // Custom-opcode registry: see server/docs/OPCODE_REGISTRY.md.
-    // Reserved (not yet added): 0x372E (prism C2S), 0x373C/0x373E (weather request twins).
+    // Reserved (not yet added): 0x373C/0x373E (weather request twins).
     // Claimed: DAILY_CHECKIN C2S (0x11A — note stock Send HIT_SNOWBALL shares the
     // numeric value in the opposite direction; not a wire collision, do not renumber),
-    // CASHSHOP_WINDOW_ACTION C2S (0x3730).
+    // CASHSHOP_WINDOW_ACTION C2S (0x3730),
+    // COLORING_PRISM_ACTION C2S (0x372E; WEAPON_TINT_ACTION is the dump-side alias).
     // Grandfathered custom: CUSTOM_PACKET(0x3713).
     CUSTOM_PACKET(0x3713),//13 37 lol
 
@@ -211,7 +212,8 @@ public enum RecvOpcode {
     USE_HAMMER(0x104),
     USE_HYPERROCK(0xF1),
     DAILY_CHECKIN(0x11A),
-    CASHSHOP_WINDOW_ACTION(0x3730);
+    CASHSHOP_WINDOW_ACTION(0x3730),
+    COLORING_PRISM_ACTION(0x372E);
 
     private int code = -2;
 

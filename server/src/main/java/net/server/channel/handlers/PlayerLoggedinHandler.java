@@ -362,6 +362,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             c.sendPacket(PacketCreator.updateGender(player));
             player.checkMessenger();
             c.sendPacket(PacketCreator.enableReport());
+            player.syncWeaponTint(); // coloring prism (ticket #11): seed the DLL tint table
             player.changeSkillLevel(SkillFactory.getSkill(10000000 * player.getJobType() + 12), (byte) (player.getLinkedLevel() / 10), 20, -1);
             player.checkBerserk(player.isHidden());
 

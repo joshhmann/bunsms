@@ -167,6 +167,7 @@ import net.server.channel.handlers.UseOwlOfMinervaHandler;
 import net.server.channel.handlers.UseSolomonHandler;
 import net.server.channel.handlers.UseSummonBagHandler;
 import net.server.channel.handlers.UseWaterOfLifeHandler;
+import net.server.channel.handlers.WeaponTintHandler;
 import net.server.channel.handlers.WeddingHandler;
 import net.server.channel.handlers.WeddingTalkHandler;
 import net.server.channel.handlers.WeddingTalkMoreHandler;
@@ -454,5 +455,6 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.DAILY_CHECKIN, new DailyCheckinHandler());
         registerHandler(RecvOpcode.USE_HYPERROCK, new HyperTPHandler());
         registerHandler(RecvOpcode.CASHSHOP_WINDOW_ACTION, new CashShopWindowHandler());
+        registerHandler(RecvOpcode.COLORING_PRISM_ACTION, new WeaponTintHandler());
     }
 }

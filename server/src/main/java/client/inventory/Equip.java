@@ -75,6 +75,14 @@ public class Equip extends Item {
     private int ringid = -1;
     private boolean wear = false;
     private boolean isUpgradeable, isElemental = false;    // timeless or reverse, or any equip that could levelup on GMS for all effects
+    // Coloring prism (ticket #11, CP 0x372E / LP 0x372F): body tint + effect-art tint.
+    // All zero is the identity transform and therefore also means "never dyed".
+    private short tintHue = 0;
+    private byte tintChroma = 0;
+    private byte tintBright = 0;
+    private short tintFxHue = 0;
+    private byte tintFxChroma = 0;
+    private byte tintFxBright = 0;
 
     public Equip(int id, short position) {
         this(id, position, 0);
@@ -113,6 +121,12 @@ public class Equip extends Item {
         ret.itemLevel = itemLevel;
         ret.itemExp = itemExp;
         ret.level = level;
+        ret.tintHue = tintHue;
+        ret.tintChroma = tintChroma;
+        ret.tintBright = tintBright;
+        ret.tintFxHue = tintFxHue;
+        ret.tintFxChroma = tintFxChroma;
+        ret.tintFxBright = tintFxBright;
         ret.itemLog = new LinkedList<>(itemLog);
         ret.setOwner(getOwner());
         ret.setQuantity(getQuantity());
@@ -729,6 +743,32 @@ public class Equip extends Item {
     public void setRingId(int id) {
         this.ringid = id;
     }
+
+    public short getTintHue()    { return tintHue; }
+    public byte  getTintChroma() { return tintChroma; }
+    public byte  getTintBright() { return tintBright; }
+    public boolean isTinted()    { return tintHue != 0 || tintChroma != 0 || tintBright != 0; }
+
+    public void setTint(int hue, int chroma, int bright) {
+        this.tintHue    = (short) normalizeTintHue(hue);
+        this.tintChroma = (byte) Math.max(-100, Math.min(100, chroma));
+        this.tintBright = (byte) Math.max(-100, Math.min(100, bright));
+    }
+
+    public void clearTint() { tintHue = 0; tintChroma = 0; tintBright = 0; }
+
+    public short getTintFxHue()    { return tintFxHue; }
+    public byte  getTintFxChroma() { return tintFxChroma; }
+    public byte  getTintFxBright() { return tintFxBright; }
+    public boolean isFxTinted()    { return tintFxHue != 0 || tintFxChroma != 0 || tintFxBright != 0; }
+
+    public void setFxTint(int hue, int chroma, int bright) {
+        this.tintFxHue    = (short) normalizeTintHue(hue);
+        this.tintFxChroma = (byte) Math.max(-100, Math.min(100, chroma));
+        this.tintFxBright = (byte) Math.max(-100, Math.min(100, bright));
+    }
+
+    public void clearFxTint() { tintFxHue = 0; tintFxChroma = 0; tintFxBright = 0; }
 
     public boolean isWearing() {
         return wear;

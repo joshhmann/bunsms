@@ -354,12 +354,14 @@ public enum SendOpcode {
     MAPLELIFE_ERROR(0x15E),
     VICIOUS_HAMMER(0x162),
     // Custom-opcode registry: see server/docs/OPCODE_REGISTRY.md.
-    // Reserved (not yet added): 0x372F (prism S2C), 0x373D (WEATHER_SYNC), 0x373F (LAMP_PREVIEW).
-    // Claimed: DAILY_CHECKIN S2C (0x17C), CASHSHOP_WINDOW_SYNC S2C (0x3731).
+    // Reserved (not yet added): 0x373D (WEATHER_SYNC), 0x373F (LAMP_PREVIEW).
+    // Claimed: DAILY_CHECKIN S2C (0x17C), CASHSHOP_WINDOW_SYNC S2C (0x3731),
+    // COLORING_PRISM_SYNC S2C (0x372F; WEAPON_TINT_SYNC is the dump-side alias).
     // Stock ranges that are NOT custom: 0x145-0x14D (CASHSHOP_*), 0x8E (BLOW_WEATHER).
     VEGA_SCROLL(0x166),
     DAILY_CHECKIN(0x17C),
-    CASHSHOP_WINDOW_SYNC(0x3731);
+    CASHSHOP_WINDOW_SYNC(0x3731),
+    COLORING_PRISM_SYNC(0x372F);
     private int code = -2;
 
     SendOpcode(int code) {
