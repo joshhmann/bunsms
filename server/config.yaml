@@ -211,6 +211,7 @@ server:
   USE_CLEAR_OUTDATED_COUPONS: true
   ALLOW_CASHSHOP_NAME_CHANGE: true
   ALLOW_CASHSHOP_WORLD_TRANSFER: true
+  USE_CASHSHOP_WINDOW: false
   USE_MAKER_PERMISSIVE_ATKUP: false
   USE_MAKER_FEE_HEURISTICS: true
   # Maximum number of sell events kept visible for buyback (0 = buyback disabled).

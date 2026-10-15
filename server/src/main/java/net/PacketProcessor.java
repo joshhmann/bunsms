@@ -40,6 +40,7 @@ import net.server.channel.handlers.CancelDebuffHandler;
 import net.server.channel.handlers.CancelItemEffectHandler;
 import net.server.channel.handlers.CashOperationHandler;
 import net.server.channel.handlers.CashShopSurpriseHandler;
+import net.server.channel.handlers.CashShopWindowHandler;
 import net.server.channel.handlers.ChangeChannelHandler;
 import net.server.channel.handlers.ChangeMapHandler;
 import net.server.channel.handlers.ChangeMapSpecialHandler;
@@ -452,5 +453,6 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.CHANGE_QUICKSLOT, new QuickslotKeyMappedModifiedHandler());
         registerHandler(RecvOpcode.DAILY_CHECKIN, new DailyCheckinHandler());
         registerHandler(RecvOpcode.USE_HYPERROCK, new HyperTPHandler());
+        registerHandler(RecvOpcode.CASHSHOP_WINDOW_ACTION, new CashShopWindowHandler());
     }
 }

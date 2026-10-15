@@ -943,6 +943,11 @@ public class Server {
             }
         }
 
+        // Cash Shop window catalogue (server/cashshop/catalog.tsv). Loads after the WZ-backed
+        // providers above so names missing from the TSV resolve from String.wz; a missing file
+        // just leaves the shop empty (logged by the catalogue itself).
+        server.cashshop.CashShopCatalog.load();
+
         loginServer = initLoginServer(8484);
 
         log.info("Listening on port 8484");

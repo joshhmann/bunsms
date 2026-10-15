@@ -23,9 +23,11 @@ package net.server.channel.handlers;
 
 import client.Character;
 import client.Client;
+import config.YamlConfig;
 import net.AbstractPacketHandler;
 import net.packet.InPacket;
 import net.server.Server;
+import server.cashshop.CashShopWindowPackets;
 import server.maps.MiniDungeonInfo;
 import tools.PacketCreator;
 
@@ -56,6 +58,17 @@ public class EnterCashShopHandler extends AbstractPacketHandler {
             }
 
             if (mc.getCashShop().isOpened()) {
+                return;
+            }
+
+            // Standalone Cash Shop window (ticket #10): no stage change, no channel/map detach,
+            // no buff teardown — the player stays exactly where they are and a window opens
+            // over the field. enableActions() is mandatory: the client latches itself on the
+            // cash-shop request and stays input-locked until something releases it.
+            if (YamlConfig.config.server.USE_CASHSHOP_WINDOW) {
+                c.sendPacket(PacketCreator.enableActions());
+                c.sendPacket(CashShopWindowPackets.open(mc));
+                CashShopWindowHandler.sendCatalog(c, mc);
                 return;
             }
 
