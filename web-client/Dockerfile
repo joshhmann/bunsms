@@ -15,6 +15,10 @@ RUN git apply --check /tmp/patches/remote-movement.patch \
     && git apply /tmp/patches/deployed-npc-chat.patch \
     && git apply --check /tmp/patches/browser-modernization.patch \
     && git apply /tmp/patches/browser-modernization.patch \
+    && git apply --check /tmp/patches/inventory-equipment.patch \
+    && git apply /tmp/patches/inventory-equipment.patch \
+    && git apply --check /tmp/patches/shop-storage.patch \
+    && git apply /tmp/patches/shop-storage.patch \
     && ./scripts/build_wasm.sh --jobs 4
 
 # ---- Stage 2: aiohttp runtime (static files + WS TCP proxy) ----

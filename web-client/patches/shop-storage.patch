@@ -1,0 +1,996 @@
+From 9031844cf5db9e41e089c5356b811ad2d7ebce04 Mon Sep 17 00:00:00 2001
+From: t <t@t>
+Date: Wed, 14 Oct 2026 22:58:41 -0700
+Subject: [PATCH] slice
+
+---
+ src/client/IO/UITypes/UIShop.cpp              |  40 +++
+ src/client/IO/UITypes/UIShop.h                |   3 +
+ src/client/IO/UITypes/UIStorage.cpp           |  25 +-
+ src/client/IO/UITypes/UIStorage.h             |   5 +-
+ src/client/Net/Handlers/Helpers/ShopParser.h  | 132 +++++++++
+ .../Net/Handlers/Helpers/StorageParser.h      | 273 ++++++++++++++++++
+ .../Net/Handlers/NpcInteractionHandlers.cpp   | 260 ++++-------------
+ .../Net/Handlers/NpcInteractionHandlers.h     |   7 +
+ src/client/Net/PacketSwitch.cpp               |   3 +-
+ 9 files changed, 538 insertions(+), 210 deletions(-)
+ create mode 100644 src/client/Net/Handlers/Helpers/ShopParser.h
+ create mode 100644 src/client/Net/Handlers/Helpers/StorageParser.h
+
+diff --git a/src/client/IO/UITypes/UIShop.cpp b/src/client/IO/UITypes/UIShop.cpp
+index 4d14dcb..b7f48e8 100644
+--- a/src/client/IO/UITypes/UIShop.cpp
++++ b/src/client/IO/UITypes/UIShop.cpp
+@@ -25,6 +25,7 @@
+ #include "../Components/TwoSpriteButton.h"
+ 
+ #include "../../Data/ItemData.h"
++#include "../../Net/Handlers/Helpers/ShopParser.h"
+ #include "../../Net/Packets/NpcInteractionPackets.h"
+ #include "../../Util/Misc.h"
+ 
+@@ -130,7 +130,7 @@ namespace jrc
+ 
+         mesolabel.draw(position + Point<int16_t>(450, 62));
+ 
+-        buystate.draw(position, selection);
++        buystate.draw(position, selection, impossible);
+         sellstate.draw(position, selection);
+ 
+         buyslider.draw(position);
+@@ -324,10 +325,37 @@ namespace jrc
+             return;
+         }
+ 
++        // UIShop is FOCUSED but Escape is front-routed: an active NOTICE
++        // (confirm/quantity/result dialog) consumes it first via get_front,
++        // so reaching here means no modal prompt is open.
+         active = false;
+         NpcShopActionPacket().dispatch();
+     }
+ 
++    void UIShop::confirm_shop_transaction(int8_t code)
++    {
++        if (!active)
++        {
++            return;
++        }
++
++        if (const char* message = ShopParser::result_message(code))
++        {
++            UI::get().emplace<UIOk>(message, []() {});
++            return;
++        }
++
++        switch (code)
++        {
++        case 0:
++        case 8:
++            clear_tooltip();
++            break;
++        default:
++            break;
++        }
++    }
++
+     void UIShop::clear_tooltip()
+     {
+         UI::get().clear_tooltip(Tooltip::SHOP);
+@@ -521,6 +549,17 @@ namespace jrc
+         pricelabel.draw(pos + Point<int16_t>(53, 17));
+     }
+ 
++    void UIShop::BuyItem::draw_soldout(Point<int16_t> pos, const Texture& badge) const
++    {
++        if (buyable <= 0)
++            badge.draw(pos);
++    }
++
++    bool UIShop::BuyItem::is_soldout() const
++    {
++        return buyable <= 0;
++    }
++
+     int32_t UIShop::BuyItem::get_id() const
+     {
+         return id;
+@@ -601,7 +601,7 @@ namespace jrc
+         selection = -1;
+     }
+ 
+-    void UIShop::BuyState::draw(Point<int16_t> parentpos, const Texture& selected) const
++    void UIShop::BuyState::draw(Point<int16_t> parentpos, const Texture& selected, const Texture& soldout) const
+     {
+         for (int16_t i = 0; i < 5; ++i)
+         {
+@@ -617,6 +656,7 @@ namespace jrc
+                 selected.draw(parentpos + itempos + Point<int16_t>(35, -1));
+             }
+             items[slot].draw(parentpos + itempos);
++            items[slot].draw_soldout(parentpos + itempos, soldout);
+         }
+     }
+ 
+diff --git a/src/client/IO/UITypes/UIShop.h b/src/client/IO/UITypes/UIShop.h
+index 9d66079..0d0776a 100644
+--- a/src/client/IO/UITypes/UIShop.h
++++ b/src/client/IO/UITypes/UIShop.h
+@@ -149,7 +149,7 @@ namespace jrc
+             int16_t selection;
+ 
+             void reset();
+-            void draw(Point<int16_t> position, const Texture& selected) const;
++            void draw(Point<int16_t> position, const Texture& selected, const Texture& soldout) const;
+             void show_item(int16_t slot);
+             void add(BuyItem item);
+             void buy() const;
+@@ -52,6 +52,7 @@ namespace jrc
+             int32_t time, int16_t chargeprice, int16_t buyable);
+ 
+         void modify(InventoryType::Id type);
++        void confirm_shop_transaction(int8_t code);
+ 
+     protected:
+         Button::State button_pressed(uint16_t buttonid) override;
+@@ -103,6 +104,8 @@ namespace jrc
+ 
+             int32_t get_id() const;
+             int16_t get_buyable() const;
++            bool is_soldout() const;
++            void draw_soldout(Point<int16_t> pos, const Texture& badge) const;
+ 
+         private:
+             Texture icon;
+diff --git a/src/client/IO/UITypes/UIStorage.cpp b/src/client/IO/UITypes/UIStorage.cpp
+index 160b514..33f20e5 100644
+--- a/src/client/IO/UITypes/UIStorage.cpp
++++ b/src/client/IO/UITypes/UIStorage.cpp
+@@ -25,6 +25,7 @@
+ #include "../Components/TwoSpriteButton.h"
+ 
+ #include "../../Character/Inventory/InventoryType.h"
++#include "../../Net/Handlers/Helpers/StorageParser.h"
+ #include "../../Data/ItemData.h"
+ #include "../../Net/Packets/NpcInteractionPackets.h"
+ #include "../../Util/Misc.h"
+@@ -316,9 +317,27 @@ namespace jrc
+ 
+     void UIStorage::send_key(int32_t, bool pressed, bool escape)
+     {
+-        if (pressed && escape)
++        if (!pressed || !escape)
+         {
+-            close_with_packet();
++            return;
++        }
++
++        // UIStorage is FOCUSED but Escape is front-routed: an active NOTICE
++        // (quantity/meso dialog) consumes it first via get_front, so reaching
++        // here means no modal prompt is open.
++        close_with_packet();
++    }
++
++    void UIStorage::confirm_storage_result(int8_t mode)
++    {
++        if (!active)
++        {
++            return;
++        }
++
++        if (const char* message = StorageParser::error_message(mode))
++        {
++            UI::get().emplace<UIOk>(message, []() {});
+         }
+     }
+ 
+@@ -350,7 +369,7 @@ namespace jrc
+         inventory_selection = -1;
+     }
+ 
+-    void UIStorage::set_items_for_all(const EnumMap<InventoryType::Id, std::vector<ItemEntry>>& items)
++    void UIStorage::set_items_for_all(const ItemMap& items)
+     {
+         for (auto type : INVENTORY_TABS)
+         {
+diff --git a/src/client/IO/UITypes/UIStorage.h b/src/client/IO/UITypes/UIStorage.h
+index 79966f1..a1793d3 100644
+--- a/src/client/IO/UITypes/UIStorage.h
++++ b/src/client/IO/UITypes/UIStorage.h
+@@ -38,6 +38,8 @@ namespace jrc
+             int16_t count = 0;
+         };
+ 
++        using ItemMap = EnumMap<InventoryType::Id, std::vector<ItemEntry>>;
++
+         static constexpr Type TYPE = STORAGE;
+         static constexpr bool FOCUSED = true;
+         static constexpr bool TOGGLED = true;
+@@ -55,11 +57,12 @@ namespace jrc
+ 
+         void open(int32_t npcid, uint8_t slots, int32_t meso);
+         void close();
+-        void set_items_for_all(const EnumMap<InventoryType::Id, std::vector<ItemEntry>>& items);
++        void set_items_for_all(const ItemMap& items);
+         void set_items_for_tab(InventoryType::Id type, const std::vector<ItemEntry>& items);
+         void set_slots(uint8_t value);
+         void set_meso(int32_t meso);
+         void modify(InventoryType::Id type);
++        void confirm_storage_result(int8_t mode);
+ 
+     protected:
+         Button::State button_pressed(uint16_t buttonid) override;
+diff --git a/src/client/Net/Handlers/Helpers/ShopParser.h b/src/client/Net/Handlers/Helpers/ShopParser.h
+new file mode 100644
+index 0000000..33b50e2
+--- /dev/null
++++ b/src/client/Net/Handlers/Helpers/ShopParser.h
+@@ -0,0 +1,132 @@
++//////////////////////////////////////////////////////////////////////////////
++// This file is part of the Journey MMORPG client                           //
++// Copyright © 2015-2016 Daniel Allendorf                                   //
++//                                                                          //
++// This program is free software: you can redistribute it and/or modify     //
++// it under the terms of the GNU Affero General Public License as           //
++// published by the Free Software Foundation, either version 3 of the       //
++// License, or (at your option) any later version.                          //
++//                                                                          //
++// This program is distributed in the hope that it will be useful,          //
++// but WITHOUT ANY WARRANTY; without even the implied warranty of           //
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            //
++// GNU Affero General Public License for more details.                      //
++//                                                                          //
++// You should have received a copy of the GNU Affero General Public License //
++// along with this program.  If not, see <http://www.gnu.org/licenses/>.    //
++//////////////////////////////////////////////////////////////////////////////
++#pragma once
++#include "../../InPacket.h"
++
++#include <cstdint>
++#include <vector>
++
++namespace jrc
++{
++// NPC shop open layout shared by the live handler and native tests.
++//
++// Ground truth: server PacketCreator.getNPCShop writes npcid, item count,
++// then per item id/price/pitch-or-zero/time-zero/pad-int32/short flag.
++// Flag 1 (non-rechargeable) is followed by buyable; any other value is
++// followed by pad-int32 + recharge price (unit price bits) + slot max.
++// The live handler previously misread the rechargeable int32 pads as extra
++// items; this parser consumes the exact stride and fails truncated input.
++namespace ShopParser
++{
++    struct ShopEntry
++    {
++        int32_t itemid = 0;
++        int32_t price = 0;
++        int32_t pitch = 0;
++        int32_t time = 0;
++        int16_t rechargeprice = 0;
++        int16_t slotmax = 0;
++        int16_t buyable = 0;
++        bool rechargeable = false;
++    };
++
++    struct ShopOffer
++    {
++        int32_t npcid = 0;
++        std::vector<ShopEntry> items;
++    };
++
++    // v83 CONFIRM_SHOP_TRANSACTION result codes from Shop.buy/sell/recharge:
++    // 0 success, 1/5 out of stock (buyable/sellable mismatch), 2 insufficient
++    // mesos, 3 inventory full, 8 sell/recharge accepted. Code 0x0E crashes an
++    // unpatched client (short length). There is no buyback list in v83.
++    enum class ShopResult : int8_t
++    {
++        SUCCESS = 0,
++        OUT_OF_STOCK_1 = 1,
++        NO_MESOS = 2,
++        INVENTORY_FULL = 3,
++        OUT_OF_STOCK_5 = 5,
++        TRADE_FAILED_6 = 6,
++        TRADE_FAILED_7 = 7,
++        ACCEPTED_8 = 8
++    };
++
++    inline const char* result_message(int8_t code)
++    {
++        switch (code)
++        {
++        case 1:
++        case 5:
++            return "You don't have enough in stock.";
++        case 2:
++            return "You do not have enough mesos.";
++        case 3:
++            return "Please check if your inventory is full or not.";
++        case 6:
++        case 7:
++            return "Due to an error, the trade did not happen.";
++        default:
++            return nullptr;
++        }
++    }
++
++    inline bool parse_open_shop(InPacket& recv, ShopOffer& offer)
++    {
++        if (recv.length() < 6)
++            return false;
++        offer.npcid = recv.read_int();
++        int16_t size = recv.read_short();
++        if (size < 0)
++            return false;
++        offer.items.clear();
++        for (int16_t i = 0; i < size; ++i)
++        {
++            // id/price/pitch/time + pad int32 + short flag.
++            if (recv.length() < 22)
++                return false;
++            ShopEntry entry = {};
++            entry.itemid = recv.read_int();
++            entry.price = recv.read_int();
++            entry.pitch = recv.read_int();
++            entry.time = recv.read_int();
++            recv.skip(4);
++            int16_t flag = recv.read_short();
++            if (flag == 1)
++            {
++                if (recv.length() < 2)
++                    return false;
++                entry.buyable = recv.read_short();
++                entry.rechargeable = false;
++            }
++            else
++            {
++                if (recv.length() < 8)
++                    return false;
++                recv.skip(4);
++                entry.rechargeprice = recv.read_short();
++                entry.slotmax = recv.read_short();
++                entry.buyable = entry.slotmax;
++                entry.rechargeable = true;
++            }
++            offer.items.push_back(entry);
++        }
++        return true;
++    }
++} // namespace ShopParser
++} // namespace jrc
+diff --git a/src/client/Net/Handlers/Helpers/StorageParser.h b/src/client/Net/Handlers/Helpers/StorageParser.h
+new file mode 100644
+index 0000000..bbea89b
+--- /dev/null
++++ b/src/client/Net/Handlers/Helpers/StorageParser.h
+@@ -0,0 +1,273 @@
++//////////////////////////////////////////////////////////////////////////////
++// This file is part of the Journey MMORPG client                           //
++// Copyright © 2015-2016 Daniel Allendorf                                   //
++//                                                                          //
++// This program is free software: you can redistribute it and/or modify     //
++// it under the terms of the GNU Affero General Public License as           //
++// published by the Free Software Foundation, either version 3 of the       //
++// License, or (at your option) any later version.                          //
++//                                                                          //
++// This program is distributed in the hope that it will be useful,          //
++// but WITHOUT ANY WARRANTY; without even the implied warranty of           //
++// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the            //
++// GNU Affero General Public License for more details.                      //
++//                                                                          //
++// You should have received a copy of the GNU Affero General Public License //
++// along with this program.  If not, see <http://www.gnu.org/licenses/>.    //
++//////////////////////////////////////////////////////////////////////////////
++#pragma once
++#include "../../InPacket.h"
++#include "../../PacketError.h"
++
++#include "../../../Character/Inventory/InventoryType.h"
++#include "../../../Template/EnumMap.h"
++
++#include <cstdint>
++#include <utility>
++#include <vector>
++
++namespace jrc
++{
++// Storage (trunk) wire layout shared by the live handler and native tests.
++//
++// Ground truth: server PacketCreator.getStorage/storeStorage/takeOutStorage/
++// arrangeStorage/mesoStorage build addItemInfo(item, zeroPosition=true)
++// payloads; StorageProcessor.store validates quantity >= 1 and isFull,
++// take-out charges trunkGet and sends getStorageError(0x0A/0x0B/0x0C).
++// Display entries intentionally carry item id + stack count only; the
++// handler skips the remaining per-item stride without duplicating it into
++// UI state, so equip/non-equip strides stay aligned on the wire.
++namespace StorageParser
++{
++    struct ItemEntry
++    {
++        int32_t itemid = 0;
++        int16_t count = 0;
++    };
++
++    using ItemListByType = EnumMap<InventoryType::Id, std::vector<ItemEntry>>;
++
++    // Server InventoryType bitfield encoding: 2 << type (EQUIP=4, USE=8,
++    // SETUP=16, ETC=32, CASH=64). Unknown values map to NONE so the caller
++    // skips the tab update instead of misfiling items.
++    inline InventoryType::Id type_by_storage_bitfield(int16_t bitfield)
++    {
++        switch (bitfield)
++        {
++        case 4:
++            return InventoryType::EQUIP;
++        case 8:
++            return InventoryType::USE;
++        case 16:
++            return InventoryType::SETUP;
++        case 32:
++            return InventoryType::ETC;
++        case 64:
++            return InventoryType::CASH;
++        default:
++            return InventoryType::NONE;
++        }
++    }
++
++    // Parse one zeroPosition addItemInfo entry. The per-item stride is
++    // consumed exactly once: cash id, expiration, then the equip branch
++    // (upgrade slots + level, 14 stat shorts, owner, flags, cash/non-cash
++    // tail, expiration + serial) or the pet branch (name, level/tameness/
++    // fullness, tail) or the stackable branch (count, owner, flags,
++    // rechargeable tail). Returns false on truncation.
++    inline bool parse_item(InPacket& recv, InventoryType::Id forced_type,
++        InventoryType::Id& parsed_type, ItemEntry& entry)
++    {
++        size_t start = recv.length();
++        auto need = [&](size_t count) { return start >= count; };
++        auto take = [&](size_t count) {
++            if (!need(count))
++                return false;
++            recv.skip(count);
++            start -= count;
++            return true;
++        };
++
++        if (!need(1 + 4))
++            return false;
++        int8_t item_type = recv.read_byte();
++        int32_t item_id = recv.read_int();
++        start -= 1 + 4;
++
++        parsed_type = forced_type;
++        if (parsed_type == InventoryType::NONE)
++            parsed_type = InventoryType::by_item_id(item_id);
++
++        if (!need(1))
++            return false;
++        bool is_cash = recv.read_bool();
++        start -= 1;
++        if (is_cash && !take(8))
++            return false;
++        if (!take(8)) // expiration
++            return false;
++
++        entry = { item_id, 1 };
++
++        bool is_equip = parsed_type == InventoryType::EQUIP || item_type == 1;
++        bool is_pet = item_id >= 5000000 && item_id <= 5000102;
++
++        if (is_equip)
++        {
++            // upgrade slots + level, 14 stat shorts, owner, flags.
++            if (!take(2 + 28))
++                return false;
++            if (!need(2))
++                return false;
++            recv.read_string();
++            start = recv.length();
++            if (!take(2)) // flags
++                return false;
++            if (!take(is_cash ? 10 : 18))
++                return false;
++            if (!take(12)) // expiration + serial
++                return false;
++        }
++        else if (is_pet)
++        {
++            if (!need(13))
++                return false;
++            recv.read_padded_string(13);
++            start = recv.length();
++            if (!take(4 + 18))
++                return false;
++        }
++        else
++        {
++            if (!need(2))
++                return false;
++            entry.count = recv.read_short();
++            start -= 2;
++            if (!need(2))
++                return false;
++            recv.read_string();
++            start = recv.length();
++            if (!take(2)) // flags
++                return false;
++            bool rechargeable = item_id / 10000 == 207 || item_id / 10000 == 233;
++            if (rechargeable && !take(8))
++                return false;
++        }
++
++        return true;
++    }
++
++    // Parse a counted item run, filing entries by tab. Truncated runs fail
++    // instead of emitting partial tabs.
++    inline bool parse_items(InPacket& recv, uint8_t count,
++        InventoryType::Id forced_type, ItemListByType& parsed)
++    {
++        parsed = {};
++        for (size_t i = 0; i < count; ++i)
++        {
++            InventoryType::Id parsed_type = InventoryType::NONE;
++            ItemEntry entry = {};
++            if (!parse_item(recv, forced_type, parsed_type, entry))
++                return false;
++            if (parsed_type != InventoryType::NONE)
++                parsed[parsed_type].push_back(entry);
++        }
++        return true;
++    }
++
++    // Storage open frame (server mode 0x16): npcid, slot count, inventory
++    // mask + zeroes, stored mesos, counted zeroPosition items, trailer.
++    struct OpenStorage
++    {
++        int32_t npcid = 0;
++        uint8_t slots = 0;
++        int32_t meso = 0;
++        ItemListByType items;
++    };
++
++    inline bool parse_open(InPacket& recv, OpenStorage& open)
++    {
++        if (recv.length() < 4 + 1 + 2 + 2 + 4 + 4 + 2 + 1)
++            return false;
++        open.npcid = recv.read_int();
++        open.slots = static_cast<uint8_t>(recv.read_byte());
++        recv.skip(2); // inventory mask
++        recv.skip(2); // zero
++        recv.skip(4); // zero
++        open.meso = recv.read_int();
++        recv.skip(2); // zero
++        uint8_t count = static_cast<uint8_t>(recv.read_byte());
++        if (!parse_items(recv, count, InventoryType::NONE, open.items))
++            return false;
++        if (recv.length() >= 2)
++            recv.skip(2);
++        if (recv.length() >= 1)
++            recv.skip(1);
++        return true;
++    }
++
++    // Store/take-out tab refresh (server modes 0x0D/0x09): slot count, type
++    // bitfield, zeroes, then the counted items of that tab.
++    struct TabUpdate
++    {
++        uint8_t slots = 0;
++        InventoryType::Id type = InventoryType::NONE;
++        ItemListByType items;
++    };
++
++    inline bool parse_tab_update(InPacket& recv, TabUpdate& update)
++    {
++        if (recv.length() < 1 + 2 + 2 + 4 + 1)
++            return false;
++        update.slots = static_cast<uint8_t>(recv.read_byte());
++        update.type = type_by_storage_bitfield(recv.read_short());
++        recv.skip(2); // zero
++        recv.skip(4); // zero
++        uint8_t count = static_cast<uint8_t>(recv.read_byte());
++        return parse_items(recv, count, update.type, update.items);
++    }
++
++    // Sort result (server mode 0x0F): slot count, 0x7C mask, zeroes, then
++    // the counted items of every tab.
++    struct ArrangeResult
++    {
++        uint8_t slots = 0;
++        ItemListByType items;
++    };
++
++    inline bool parse_arrange(InPacket& recv, ArrangeResult& arranged)
++    {
++        if (recv.length() < 1 + 1 + 10 + 1)
++            return false;
++        arranged.slots = static_cast<uint8_t>(recv.read_byte());
++        recv.skip(1);  // 0x7C mask
++        recv.skip(10); // zeroes
++        uint8_t count = static_cast<uint8_t>(recv.read_byte());
++        if (!parse_items(recv, count, InventoryType::NONE, arranged.items))
++            return false;
++        if (recv.length() >= 1)
++            recv.skip(1);
++        return true;
++    }
++
++    // Storage result codes surfaced by the server: 0x0A inventory full,
++    // 0x0B insufficient mesos, 0x0C one-of-a-kind, 0x11 storage full.
++    // Returns the notice text, or nullptr when the mode is not an error.
++    inline const char* error_message(int8_t mode)
++    {
++        switch (mode)
++        {
++        case 0x0A:
++            return "Your inventory is full.";
++        case 0x0B:
++            return "You do not have enough mesos.";
++        case 0x0C:
++            return "This item cannot be moved from storage.";
++        case 0x11:
++            return "Storage is full.";
++        default:
++            return nullptr;
++        }
++    }
++} // namespace StorageParser
++} // namespace jrc
+diff --git a/src/client/Net/Handlers/NpcInteractionHandlers.cpp b/src/client/Net/Handlers/NpcInteractionHandlers.cpp
+index 0a40e20..9d47303 100644
+--- a/src/client/Net/Handlers/NpcInteractionHandlers.cpp
++++ b/src/client/Net/Handlers/NpcInteractionHandlers.cpp
+@@ -22,141 +22,17 @@
+ #include "../../IO/UITypes/UINotice.h"
+ #include "../../IO/UITypes/UIShop.h"
+ #include "../../IO/UITypes/UIStorage.h"
++#include "Helpers/ShopParser.h"
++#include "Helpers/StorageParser.h"
+ 
+ #include <vector>
+ 
+ namespace jrc
+ {
+-    namespace
++    void show_storage_error_message(int8_t mode)
+     {
+-        using ItemListByType = EnumMap<InventoryType::Id, std::vector<UIStorage::ItemEntry>>;
+-
+-        InventoryType::Id type_by_storage_bitfield(int16_t bitfield)
+-        {
+-            switch (bitfield)
+-            {
+-            case 4:
+-                return InventoryType::EQUIP;
+-            case 8:
+-                return InventoryType::USE;
+-            case 16:
+-                return InventoryType::SETUP;
+-            case 32:
+-                return InventoryType::ETC;
+-            case 64:
+-                return InventoryType::CASH;
+-            default:
+-                return InventoryType::NONE;
+-            }
+-        }
+-
+-        UIStorage::ItemEntry parse_storage_item(InPacket& recv, InventoryType::Id forced_type, InventoryType::Id& parsed_type)
+-        {
+-            int8_t item_type = recv.read_byte();
+-            int32_t item_id = recv.read_int();
+-
+-            parsed_type = forced_type;
+-            if (parsed_type == InventoryType::NONE)
+-            {
+-                parsed_type = InventoryType::by_item_id(item_id);
+-            }
+-
+-            bool is_cash = recv.read_bool();
+-            if (is_cash)
+-            {
+-                recv.skip(8); // cash id / ring id / pet id
+-            }
+-
+-            recv.skip(8); // expiration
+-
+-            UIStorage::ItemEntry entry = { item_id, 1 };
+-
+-            bool is_equip = parsed_type == InventoryType::EQUIP || item_type == 1;
+-            bool is_pet = item_id >= 5000000 && item_id <= 5000102;
+-
+-            if (is_equip)
+-            {
+-                recv.skip(2); // upgrade slots + level
+-                recv.skip(28); // stats
+-                recv.read_string(); // owner
+-                recv.skip(2); // flags
+-
+-                if (is_cash)
+-                {
+-                    recv.skip(10);
+-                }
+-                else
+-                {
+-                    recv.skip(18);
+-                }
+-
+-                recv.skip(12); // potential expiration + serial
+-            }
+-            else if (is_pet)
+-            {
+-                recv.read_padded_string(13); // name
+-                recv.skip(4); // level + closeness + fullness
+-                recv.skip(18); // pet details tail
+-            }
+-            else
+-            {
+-                entry.count = recv.read_short();
+-                recv.read_string(); // owner
+-                recv.skip(2); // flags
+-
+-                bool rechargeable = item_id / 10000 == 207 || item_id / 10000 == 233;
+-                if (rechargeable)
+-                {
+-                    recv.skip(8);
+-                }
+-            }
+-
+-            return entry;
+-        }
+-
+-        ItemListByType parse_storage_items(InPacket& recv, uint8_t count, InventoryType::Id forced_type)
++        if (const char* message = StorageParser::error_message(mode))
+         {
+-            ItemListByType parsed = {};
+-
+-            for (size_t i = 0; i < count; ++i)
+-            {
+-                InventoryType::Id parsed_type = InventoryType::NONE;
+-                UIStorage::ItemEntry entry = parse_storage_item(recv, forced_type, parsed_type);
+-                if (parsed_type != InventoryType::NONE)
+-                {
+-                    parsed[parsed_type].push_back(entry);
+-                }
+-            }
+-
+-            return parsed;
+-        }
+-
+-        void show_storage_error_message(int8_t mode)
+-        {
+-            const char* message = nullptr;
+-            switch (mode)
+-            {
+-            case 0x0A:
+-                message = "Your inventory is full.";
+-                break;
+-            case 0x0B:
+-                message = "You do not have enough mesos.";
+-                break;
+-            case 0x0C:
+-                message = "This item cannot be moved from storage.";
+-                break;
+-            case 0x11:
+-                message = "Storage is full.";
+-                break;
+-            default:
+-                break;
+-            }
+-
+-            if (!message)
+-            {
+-                return;
+-            }
+-
+             UI::get().emplace<UIOk>(message, []() {});
+         }
+     }
+@@ -183,43 +59,34 @@ namespace jrc
+ 
+     void OpenNpcShopHandler::handle(InPacket& recv) const
+     {
+-        int32_t npcid = recv.read_int();
+-        auto oshop = UI::get().get_element<UIShop>();
++        ShopParser::ShopOffer offer;
++        if (!ShopParser::parse_open_shop(recv, offer))
++            return;
+ 
++        auto oshop = UI::get().get_element<UIShop>();
+         if (!oshop)
+             return;
+ 
+         UIShop& shop = *oshop;
+-
+-        shop.reset(npcid);
+-
+-        int16_t size = recv.read_short();
+-        for (int16_t i = 0; i < size; i++)
++        shop.reset(offer.npcid);
++        for (const auto& item : offer.items)
+         {
+-            int32_t itemid = recv.read_int();
+-            int32_t price = recv.read_int();
+-            int32_t pitch = recv.read_int();
+-            int32_t time = recv.read_int();
+-
+-            recv.skip(4);
+-
+-            bool norecharge = recv.read_short() == 1;
+-            if (norecharge)
+-            {
+-                int16_t buyable = recv.read_short();
+-
+-                shop.add_item(itemid, price, pitch, time, buyable);
+-            }
++            if (item.rechargeable)
++                shop.add_rechargable(item.itemid, item.price, item.pitch, item.time, item.rechargeprice, item.slotmax);
+             else
+-            {
+-                recv.skip(4);
+-
+-                int16_t rechargeprice = recv.read_short();
+-                int16_t slotmax = recv.read_short();
++                shop.add_item(item.itemid, item.price, item.pitch, item.time, item.buyable);
++        }
++        shop.makeactive();
++    }
+ 
+-                shop.add_rechargable(itemid, price, pitch, time, rechargeprice, slotmax);
+-            }
++    void ConfirmShopTransactionHandler::handle(InPacket& recv) const
++    {
++        int8_t code = recv.read_byte();
++        if (auto shop = UI::get().get_element<UIShop>())
++        {
++            shop->confirm_shop_transaction(code);
+         }
++        UI::get().enable();
+     }
+ 
+     void StorageHandler::handle(InPacket& recv) const
+@@ -236,67 +103,50 @@ namespace jrc
+         {
+         case 0x16:
+             {
+-                int32_t npcid = recv.read_int();
+-                uint8_t slots = static_cast<uint8_t>(recv.read_byte());
+-
+-                recv.skip(2); // inventory mask
+-                recv.skip(2); // zero
+-                recv.skip(4); // zero
+-                int32_t meso = recv.read_int();
+-                recv.skip(2); // zero
+-
+-                uint8_t count = static_cast<uint8_t>(recv.read_byte());
+-                ItemListByType items = parse_storage_items(recv, count, InventoryType::NONE);
+-
+-                if (recv.length() >= 2)
+-                {
+-                    recv.skip(2);
+-                }
+-                if (recv.length() >= 1)
+-                {
+-                    recv.skip(1);
+-                }
+-
+-                storage->open(npcid, slots, meso);
+-                storage->set_items_for_all(items);
++                StorageParser::OpenStorage open;
++                if (!StorageParser::parse_open(recv, open))
++                    break;
++
++                storage->open(open.npcid, open.slots, open.meso);
++                UIStorage::ItemMap mapped;
++                for (auto type : { InventoryType::EQUIP, InventoryType::USE,
++                    InventoryType::SETUP, InventoryType::ETC, InventoryType::CASH })
++                    for (const auto& entry : open.items[type])
++                        mapped[type].push_back({ entry.itemid, entry.count });
++                storage->set_items_for_all(mapped);
++                storage->makeactive();
+             }
+             break;
+         case 0x09:
+         case 0x0D:
+             {
+-                uint8_t slots = static_cast<uint8_t>(recv.read_byte());
+-                int16_t type_bitfield = recv.read_short();
+-                InventoryType::Id type = type_by_storage_bitfield(type_bitfield);
++                StorageParser::TabUpdate update;
++                if (!StorageParser::parse_tab_update(recv, update))
++                    break;
+ 
+-                recv.skip(2); // zero
+-                recv.skip(4); // zero
+-
+-                uint8_t count = static_cast<uint8_t>(recv.read_byte());
+-                ItemListByType parsed = parse_storage_items(recv, count, type);
+-
+-                storage->set_slots(slots);
+-                if (type != InventoryType::NONE)
++                storage->set_slots(update.slots);
++                if (update.type != InventoryType::NONE)
+                 {
+-                    storage->set_items_for_tab(type, parsed[type]);
++                    std::vector<UIStorage::ItemEntry> tab;
++                    for (const auto& entry : update.items[update.type])
++                        tab.push_back({ entry.itemid, entry.count });
++                    storage->set_items_for_tab(update.type, tab);
+                 }
+             }
+             break;
+         case 0x0F:
+             {
+-                uint8_t slots = static_cast<uint8_t>(recv.read_byte());
+-
+-                recv.skip(1);  // 0x7C mask
+-                recv.skip(10); // zeroes
+-
+-                uint8_t count = static_cast<uint8_t>(recv.read_byte());
+-                ItemListByType items = parse_storage_items(recv, count, InventoryType::NONE);
+-                if (recv.length() >= 1)
+-                {
+-                    recv.skip(1);
+-                }
+-
+-                storage->set_slots(slots);
+-                storage->set_items_for_all(items);
++                StorageParser::ArrangeResult arranged;
++                if (!StorageParser::parse_arrange(recv, arranged))
++                    break;
++
++                storage->set_slots(arranged.slots);
++                UIStorage::ItemMap arranged_mapped;
++                for (auto type : { InventoryType::EQUIP, InventoryType::USE,
++                    InventoryType::SETUP, InventoryType::ETC, InventoryType::CASH })
++                    for (const auto& entry : arranged.items[type])
++                        arranged_mapped[type].push_back({ entry.itemid, entry.count });
++                storage->set_items_for_all(arranged_mapped);
+             }
+             break;
+         case 0x13:
+diff --git a/src/client/Net/Handlers/NpcInteractionHandlers.h b/src/client/Net/Handlers/NpcInteractionHandlers.h
+index 554d770..a35d080 100644
+--- a/src/client/Net/Handlers/NpcInteractionHandlers.h
++++ b/src/client/Net/Handlers/NpcInteractionHandlers.h
+@@ -32,6 +32,13 @@ namespace jrc
+         void handle(InPacket& recv) const override;
+     };
+ 
++    // Surfaces the server's shop transaction result (insufficient mesos,
++    // sold out, inventory full) as a notice on the open shop window.
++    class ConfirmShopTransactionHandler : public PacketHandler
++    {
++        void handle(InPacket& recv) const override;
++    };
++
+     // Handles storage (trunk) open/update packets.
+     class StorageHandler : public PacketHandler
+     {
+diff --git a/src/client/Net/PacketSwitch.cpp b/src/client/Net/PacketSwitch.cpp
+index e248855..22c71ac 100644
+--- a/src/client/Net/PacketSwitch.cpp
++++ b/src/client/Net/PacketSwitch.cpp
+@@ -147,6 +147,7 @@ namespace jrc
+         // NPC Interaction
+         NPC_DIALOGUE  = 304,
+         OPEN_NPC_SHOP = 305,
++        CONFIRM_SHOP_TRANSACTION = 306,
+         STORAGE       = 309,
+ 
+         KEYMAP      = 335,
+@@ -223,10 +224,10 @@ namespace jrc
+         emplace<MODIFY_INVENTORY, ModifyInventoryHandler>();
+         emplace<GATHER_RESULT, GatherResultHandler>();
+         emplace<SORT_RESULT, SortResultHandler>();
+-
+         // Npc Interaction Handlers
+         emplace<NPC_DIALOGUE, NpcDialogueHandler>();
+         emplace<OPEN_NPC_SHOP, OpenNpcShopHandler>();
++        emplace<CONFIRM_SHOP_TRANSACTION, ConfirmShopTransactionHandler>();
+         emplace<STORAGE, StorageHandler>();
+ 
+         // TODO
+-- 
+2.43.0
+

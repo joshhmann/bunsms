@@ -21,7 +21,8 @@ class ModernizationTests(unittest.TestCase):
             with tarfile.open(fileobj=io.BytesIO(archive)) as snapshot:
                 snapshot.extractall(source, filter="data")
             for name in ("remote-movement.patch", "deployed-npc-chat.patch",
-                         "browser-modernization.patch"):
+                         "browser-modernization.patch", "inventory-equipment.patch",
+                         "shop-storage.patch"):
                 patch = root / "patches" / name
                 subprocess.run(["git", "apply", "--check", str(patch)],
                                cwd=source, check=True)
@@ -34,12 +35,21 @@ class ModernizationTests(unittest.TestCase):
                 "pic": [client / "Net/InPacket.cpp", client / "Net/OutPacket.cpp"],
                 "movement": [client / "Net/InPacket.cpp",
                              client / "Net/Handlers/Helpers/MovementParser.cpp"],
+                "shop_storage": [client / "Net/InPacket.cpp", client / "Net/OutPacket.cpp",
+                                 source / "src/client/Character/Inventory/InventoryType.cpp"],
+                "inventory_equipment": [client / "Net/InPacket.cpp",
+                                        client / "Character/Inventory/InventoryType.cpp"],
             }
             for name, units in suites.items():
                 with self.subTest(suite=name):
                     binary = source / (name + "-test")
+                    flags = ["-std=c++17", "-Wall", "-Wextra", "-Werror", "-O2"]
+                    if name in ("shop_storage", "inventory_equipment"):
+                        # EnumMap transitively uses deprecated std::iterator;
+                        # the engine CMake build does not promote it.
+                        flags.append("-Wno-error=deprecated-declarations")
                     subprocess.run([
-                        "g++", "-std=c++17", "-Wall", "-Wextra", "-Werror", "-O2",
+                        "g++", *flags,
                         "-I", str(client), "-I", str(source / "src"),
                         str(root / ("test_" + name + ".cpp")),
                         *map(str, units), "-o", str(binary),
