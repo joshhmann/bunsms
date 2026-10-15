@@ -303,6 +303,7 @@ public class ItemId {
     public static final int WORLD_TRANSFER = 5401000;
     public static final int MAPLE_LIFE_B = 5432000;
     public static final int VICIOUS_HAMMER = 5570000;
+    public static final int HYPER_TELEPORT_ROCK = 5590001;
 
     public static final int NX_CARD_100 = 4031865;
     public static final int NX_CARD_250 = 4031866;

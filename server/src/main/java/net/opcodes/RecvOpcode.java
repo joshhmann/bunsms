@@ -209,6 +209,7 @@ public enum RecvOpcode {
     MTS_OPERATION(0xFD),
     USE_MAPLELIFE(0x100),
     USE_HAMMER(0x104),
+    USE_HYPERROCK(0xF1),
     DAILY_CHECKIN(0x11A);
 
     private int code = -2;
