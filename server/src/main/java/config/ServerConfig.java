@@ -134,6 +134,8 @@ public class ServerConfig {
     //Maker Configuration
     public boolean USE_MAKER_PERMISSIVE_ATKUP;
     public boolean USE_MAKER_FEE_HEURISTICS;
+    //Buyback Configuration
+    public int MAXIMUM_TRANSACTIONS_FOR_BUYBACK;
     //Custom Configuration
     public boolean USE_ENABLE_CUSTOM_NPC_SCRIPT;
     public boolean USE_STARTER_MERGE;

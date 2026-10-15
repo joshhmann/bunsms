@@ -109,4 +109,8 @@
         <sqlFile path="db/tables/026-daily-checkin.sql" splitStatements="false" endDelimiter="$$"/>
     </changeSet>
 
+    <changeSet id="27" author="solobots">
+        <sqlFile path="db/tables/027-buyback.sql"/>
+    </changeSet>
+
 </databaseChangeLog>

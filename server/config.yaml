@@ -213,6 +213,8 @@ server:
   ALLOW_CASHSHOP_WORLD_TRANSFER: true
   USE_MAKER_PERMISSIVE_ATKUP: false
   USE_MAKER_FEE_HEURISTICS: true
+  # Maximum number of sell events kept visible for buyback (0 = buyback disabled).
+  MAXIMUM_TRANSACTIONS_FOR_BUYBACK: 0
   BLOCK_GENERATE_CASH_ITEM: false
   USE_WHOLE_SERVER_RANKING: false
   EQUIP_EXP_RATE: 1

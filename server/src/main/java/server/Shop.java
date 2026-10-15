@@ -202,6 +202,11 @@ public class Shop {
         Item item = c.getPlayer().getInventory(type).getItem(slot);
         if (canSell(item, quantity)) {
             quantity = getSellingQuantity(item, quantity);
+            // Snapshot a sell-count copy for the buyback ledger BEFORE the removal mutates the live item.
+            Item ledgerCopy = item.copy();
+            if (!(ledgerCopy instanceof client.inventory.Equip)) {
+                ledgerCopy.setQuantity(quantity);
+            }
             InventoryManipulator.removeFromSlot(c, type, (byte) slot, quantity, false);
 
             int recvMesos;
@@ -216,8 +221,31 @@ public class Shop {
                 c.getPlayer().gainMeso(recvMesos, false);
             }
             c.sendPacket(PacketCreator.shopTransaction((byte) 0x8));
+            recordSellForBuyback(c, ledgerCopy);
         } else {
             c.sendPacket(PacketCreator.shopTransaction((byte) 0x5));
+        }
+    }
+
+    /**
+     * Records one NPC sell as a buyback-eligible transaction. Self-contained:
+     * no-op when {@code MAXIMUM_TRANSACTIONS_FOR_BUYBACK} is 0 (default) or
+     * the ledger tables are not migrated yet; a recording failure never
+     * blocks the sell itself.
+     */
+    private static void recordSellForBuyback(Client c, Item sold) {
+        if (config.YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK <= 0) {
+            return;
+        }
+        try {
+            int transactionId = server.transactions.TransactionService.createTransaction(c.getPlayer().getId());
+            if (transactionId < 0) {
+                return;
+            }
+            server.transactions.TransactionService.createTransactionItems(transactionId,
+                    server.transactions.TransactionService.convertItemsToTransactionItems(java.util.Collections.singletonList(sold)));
+        } catch (Exception e) {
+            log.warn("Buyback ledger record failed, sell still completed", e);
         }
     }
 
