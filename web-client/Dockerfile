@@ -1,16 +1,21 @@
 # ---- Stage 1: build the WASM client from source ----
 # Source is pinned via the git submodule at vendor/maplestory-wasm.
-FROM emscripten/emsdk:4.0.21 AS builder
+FROM emscripten/emsdk@sha256:631841e7ee7a808bc2735a4f26aff3c1354119764df8459c38abfe2d0923dffb AS builder
 
 WORKDIR /wasm
 
 # Copy just the repo checkout. We don't need the .git directory at build time.
 COPY vendor/maplestory-wasm/ /wasm/
-COPY patches/remote-movement.patch /tmp/remote-movement.patch
+COPY patches/ /tmp/patches/
 
-RUN git apply --check /tmp/remote-movement.patch \
-    && git apply /tmp/remote-movement.patch \
-    && ./scripts/build_wasm.sh -j 8
+# Preserve the deployed NPC/chat changes before applying the reviewed engine update.
+RUN git apply --check /tmp/patches/remote-movement.patch \
+    && git apply /tmp/patches/remote-movement.patch \
+    && git apply --check /tmp/patches/deployed-npc-chat.patch \
+    && git apply /tmp/patches/deployed-npc-chat.patch \
+    && git apply --check /tmp/patches/browser-modernization.patch \
+    && git apply /tmp/patches/browser-modernization.patch \
+    && ./scripts/build_wasm.sh --jobs 4
 
 # ---- Stage 2: aiohttp runtime (static files + WS TCP proxy) ----
 FROM python:3.11-slim AS runtime

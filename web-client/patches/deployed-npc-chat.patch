@@ -1,0 +1,78 @@
+diff --git a/src/client/IO/UITypes/UIChatBar.cpp b/src/client/IO/UITypes/UIChatBar.cpp
+index 8b16c49..36f3533 100644
+--- a/src/client/IO/UITypes/UIChatBar.cpp
++++ b/src/client/IO/UITypes/UIChatBar.cpp
+@@ -137,6 +137,9 @@ namespace jrc
+             }
+ 
+             lastentered.push_back(msg);
++            if (lastentered.size() > 50) {
++                lastentered.erase(lastentered.begin());
++            }
+             lastpos = lastentered.size();
+         });
+         chatfield.set_key_callback(KeyAction::UP, [&](){
+diff --git a/src/client/IO/UITypes/UINpcTalk.cpp b/src/client/IO/UITypes/UINpcTalk.cpp
+index 726066c..f47b39e 100644
+--- a/src/client/IO/UITypes/UINpcTalk.cpp
++++ b/src/client/IO/UITypes/UINpcTalk.cpp
+@@ -665,12 +665,11 @@ namespace jrc
+             Rectangle<int16_t> tf_area(
+                 DIALOG_TEXT_X, DIALOG_TEXT_X + TEXT_WIDTH,
+                 tf_y, tf_y + TEXTFIELD_HEIGHT);
++            size_t tf_limit = (num_max > 0) ? static_cast<size_t>(num_max) : 100;
+             textfield = Textfield(
+-                Text::A12M, Text::LEFT, Text::BLACK, tf_area, 100);
++                Text::A12M, Text::LEFT, Text::BLACK, tf_area, tf_limit);
+             // For numeric input (msgtype 3), pre-fill the default value
+-            if (num_def != 0) {
+-                textfield.change_text(std::to_string(num_def));
+-            }
++            textfield.change_text(std::to_string(num_def));
+             textfield.set_enter_callback([this](std::string) {
+                 submit_textfield();
+             });
+diff --git a/src/client/Net/Handlers/NpcInteractionHandlers.cpp b/src/client/Net/Handlers/NpcInteractionHandlers.cpp
+index c46108e..fcecc66 100644
+--- a/src/client/Net/Handlers/NpcInteractionHandlers.cpp
++++ b/src/client/Net/Handlers/NpcInteractionHandlers.cpp
+@@ -178,20 +178,33 @@ namespace jrc
+             has_navigation_flags = true;
+         }
+ 
++        // getNum (msgtype 2+3) sends default value and min/max range.
++        // Declare early so both type 2 and type 3 handlers can use them.
++        int32_t num_def = 0;
++        int32_t num_min = 0;
++        int32_t num_max = 0;
++
+         // getText (msgtype 2) has a trailing default-text string and a packed
+-        // min/max int. Consume them so subsequent handlers stay aligned.
++        // min/max int. Forward the limit as num_max so the dialog textfield
++        // enforces the server's character limit instead of a hardcoded 100.
+         if (msgtype == 2 && recv.length() > 0)
+         {
+-            recv.read_string(); // default text
++            std::string text_default = recv.read_string(); // default text hint
++            num_max = 100;
+             if (recv.length() >= 4)
+-                recv.read_int(); // min/max packed
++            {
++                int32_t packed = recv.read_int(); // min/max packed
++                if (packed > 0)
++                    num_max = packed;
++            }
++            // Inject default text as a pre-fill hint in the dialog body
++            if (!text_default.empty()) {
++                text += "\r\n\r\n#b(" + text_default + ")#k";
++            }
+         }
+ 
+         // getNum (msgtype 3) sends default value and min/max range.
+         // Consume them and pass to the NPC dialog for number input.
+-        int32_t num_def = 0;
+-        int32_t num_min = 0;
+-        int32_t num_max = 0;
+         if (msgtype == 3 && recv.length() >= 12)
+         {
+             num_def = recv.read_int();

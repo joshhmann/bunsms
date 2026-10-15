@@ -1,0 +1,3048 @@
+diff --git a/src/client/Constants.h b/src/client/Constants.h
+index c5fe0d1..b759179 100644
+--- a/src/client/Constants.h
++++ b/src/client/Constants.h
+@@ -17,6 +17,7 @@
+ //////////////////////////////////////////////////////////////////////////////
+ #pragma once
+ #include <cstdint>
++#include <algorithm>
+ 
+ namespace jrc
+ {
+@@ -46,13 +47,11 @@ namespace jrc
+ 
+         inline void set_viewsize(int32_t width, int32_t height)
+         {
+-            if (width > 0)
++            // The desktop modes fit signed sprite coordinates; DPR is never logical size.
++            if (width > 0 && height > 0)
+             {
+-                runtime_view_width = static_cast<int16_t>(width);
+-            }
+-            if (height > 0)
+-            {
+-                runtime_view_height = static_cast<int16_t>(height);
++                runtime_view_width = static_cast<int16_t>(std::clamp<int32_t>(width, VIEWWIDTH, 1920));
++                runtime_view_height = static_cast<int16_t>(std::clamp<int32_t>(height, VIEWHEIGHT, 1080));
+             }
+         }
+     }
+diff --git a/src/client/Gameplay/Camera.cpp b/src/client/Gameplay/Camera.cpp
+index fe5384e..3e147dd 100644
+--- a/src/client/Gameplay/Camera.cpp
++++ b/src/client/Gameplay/Camera.cpp
+@@ -18,6 +18,7 @@
+ #include "Camera.h"
+ 
+ #include "../Constants.h"
++#include "../Viewport.h"
+ 
+ 
+ namespace jrc
+@@ -47,38 +48,36 @@ namespace jrc
+             next_y += vdelta * (12.0 / view_height);
+         }
+ 
+-        if (next_x > hbounds.first() || hbounds.length() < view_width)
+-        {
+-            next_x = hbounds.first();
+-        }
+-        else if (next_x < hbounds.second() + view_width)
+-        {
+-            next_x = hbounds.second() + view_width;
+-        }
++        next_x = Viewport::camera_axis(next_x, hbounds.first(), hbounds.second(), view_width);
++        next_y = Viewport::camera_axis(next_y, vbounds.first(), vbounds.second(), view_height);
+ 
+-        if (next_y > vbounds.first() || vbounds.length() < view_height)
++        if (view_width != last_view_width || view_height != last_view_height)
+         {
+-            next_y = vbounds.first();
++            // Do not interpolate from the old viewport's now-invalid edge bounds.
++            x.set(next_x);
++            y.set(next_y);
++            last_view_width = view_width;
++            last_view_height = view_height;
+         }
+-        else if (next_y < vbounds.second() + view_height)
++        else
+         {
+-            next_y = vbounds.second() + view_height;
++            x = next_x;
++            y = next_y;
+         }
+-
+-        x = next_x;
+-        y = next_y;
+     }
+ 
+     void Camera::set_position(Point<int16_t> position)
+     {
+-        x.set(Constants::viewwidth() / 2 - position.x());
+-        y.set(Constants::viewheight() / 2 - position.y());
++        x.set(Constants::viewwidth() / 2.0 - position.x());
++        y.set(Constants::viewheight() / 2.0 - position.y());
+     }
+ 
+     void Camera::set_view(Range<int16_t> mapwalls, Range<int16_t> mapborders)
+     {
+         hbounds = -mapwalls;
+         vbounds = -mapborders;
++        x.set(Viewport::camera_axis(x.get(), hbounds.first(), hbounds.second(), Constants::viewwidth()));
++        y.set(Viewport::camera_axis(y.get(), vbounds.first(), vbounds.second(), Constants::viewheight()));
+     }
+ 
+     Point<int16_t> Camera::position() const
+diff --git a/src/client/Gameplay/Camera.h b/src/client/Gameplay/Camera.h
+index 49c646e..43096f0 100644
+--- a/src/client/Gameplay/Camera.h
++++ b/src/client/Gameplay/Camera.h
+@@ -52,6 +52,8 @@ namespace jrc
+         // View limits.
+         Range<int16_t> hbounds;
+         Range<int16_t> vbounds;
++        int16_t last_view_width = 0;
++        int16_t last_view_height = 0;
+     };
+ }
+ 
+diff --git a/src/client/Gameplay/Stage.cpp b/src/client/Gameplay/Stage.cpp
+index fb47f7c..1cc300d 100644
+--- a/src/client/Gameplay/Stage.cpp
++++ b/src/client/Gameplay/Stage.cpp
+@@ -20,6 +20,7 @@
+ #include "../Audio/Audio.h"
+ #include "../IO/KeyAction.h"
+ #include "../IO/Messages.h"
++#include "../IO/Window.h"
+ #include "../Net/Packets/GameplayPackets.h"
+ #include "../Net/Packets/AttackAndSkillPackets.h"
+ #include "../Util/Misc.h"
+@@ -78,6 +79,8 @@ namespace jrc
+     {
+         state = INACTIVE;
+         mapid = 0;
++        view_coverage = {};
++        Window::get().sync_view();
+         effect = MapEffect();
+         pending_intro_warp_mapid = -1;
+         pending_intro_warp_delay_ms = 0;
+@@ -102,11 +105,29 @@ namespace jrc
+         backgrounds = MapBackgrounds(src["back"]);
+         physics     = Physics(src["foothold"]);
+         mapinfo     = MapInfo(src, physics.get_fht().get_walls(), physics.get_fht().get_borders());
++        // MapInfo uses the authored VR rectangle when present, otherwise the
++        // actual foothold extent. Do not infer coverage from the camera/browser.
++        view_coverage = {
++            static_cast<int32_t>(mapinfo.get_walls().second()) - mapinfo.get_walls().first(),
++            static_cast<int32_t>(mapinfo.get_borders().second()) - mapinfo.get_borders().first()
++        };
++        Window::get().sync_view();
+         portals     = MapPortals(src["portal"], mapid);
+         // Keep any effect injected during the fade transition (e.g. intro Scene packets).
+         // `clear()` already resets stale effects before starting a map change.
+     }
+ 
++    Point<int32_t> Stage::get_view_coverage() const
++    {
++        return view_coverage;
++    }
++
++    void Stage::refresh_view()
++    {
++        if (view_coverage.x() > 0 && view_coverage.y() > 0)
++            camera.set_view(mapinfo.get_walls(), mapinfo.get_borders());
++    }
++
+     void Stage::respawn(int8_t portalid)
+     {
+         Music(mapinfo.get_bgm()).play();
+diff --git a/src/client/Gameplay/Stage.h b/src/client/Gameplay/Stage.h
+index 77e5180..7a3e77b 100644
+--- a/src/client/Gameplay/Stage.h
++++ b/src/client/Gameplay/Stage.h
+@@ -91,6 +91,10 @@ namespace jrc
+         int32_t get_mapid() const;
+         // Return a reference to the attack and buff component.
+         Combat& get_combat();
++        // Authored camera coverage, or zero while no map is loaded.
++        Point<int32_t> get_view_coverage() const;
++        // Clamp immediately after a logical mode change, before any world draw.
++        void refresh_view();
+ 
+         // Return a pointer to a character, possibly the player.
+         Optional<Char> get_character(int32_t cid);
+@@ -127,6 +131,7 @@ namespace jrc
+         uint64_t last_pickup_time;
+ 
+         MapInfo mapinfo;
++        Point<int32_t> view_coverage;
+         MapTilesObjs tilesobjs;
+         MapBackgrounds backgrounds;
+         MapPortals portals;
+diff --git a/src/client/Graphics/GraphicsGL.cpp b/src/client/Graphics/GraphicsGL.cpp
+index 1614b16..92fc7eb 100644
+--- a/src/client/Graphics/GraphicsGL.cpp
++++ b/src/client/Graphics/GraphicsGL.cpp
+@@ -559,6 +559,21 @@ namespace jrc
+         quads.emplace_back(rect.l(), rect.r(), rect.t(), rect.b(), getoffset(bmp), color, angle);
+     }
+ 
++    void GraphicsGL::draw_region(const nl::bitmap& bmp, const Rectangle<int16_t>& source,
++        const Rectangle<int16_t>& destination, const Color& color)
++    {
++        if (locked || color.invisible() || !destination.overlaps(screen()))
++        {
++            return;
++        }
++
++        const Offset& bitmap_offset = getoffset(bmp);
++        Offset region(bitmap_offset.l + source.l(), bitmap_offset.t + source.t(),
++            source.width(), source.height());
++        quads.emplace_back(destination.l(), destination.r(), destination.t(), destination.b(),
++            region, color, 0.0f);
++    }
++
+     Text::Layout GraphicsGL::createlayout(const std::string& text, Text::Font id,
+         Text::Alignment alignment, int16_t maxwidth, bool formatted) {
+ 
+diff --git a/src/client/Graphics/GraphicsGL.h b/src/client/Graphics/GraphicsGL.h
+index c328e10..46cb818 100644
+--- a/src/client/Graphics/GraphicsGL.h
++++ b/src/client/Graphics/GraphicsGL.h
+@@ -58,6 +58,9 @@ namespace jrc
+         // Draw the bitmap with the given parameters.
+         void draw(const nl::bitmap& bmp, const Rectangle<int16_t>& rect,
+             const Color& color, float angle);
++        // Draw an in-bounds bitmap region without copying pixels or splitting the atlas.
++        void draw_region(const nl::bitmap& bmp, const Rectangle<int16_t>& source,
++            const Rectangle<int16_t>& destination, const Color& color);
+ 
+         // Create a layout for the text with the parameters specified.
+         Text::Layout createlayout(const std::string& text, Text::Font font,
+diff --git a/src/client/Graphics/Texture.cpp b/src/client/Graphics/Texture.cpp
+index 9b030a3..bd6ac6f 100644
+--- a/src/client/Graphics/Texture.cpp
++++ b/src/client/Graphics/Texture.cpp
+@@ -61,6 +61,15 @@ namespace jrc
+             .draw(bitmap, args.get_rectangle(origin, dimensions), args.get_color(), args.get_angle());
+     }
+ 
++    void Texture::draw_region(const Rectangle<int16_t>& source,
++        const Rectangle<int16_t>& destination) const
++    {
++        if (is_valid())
++        {
++            GraphicsGL::get().draw_region(bitmap, source, destination, Color::WHITE);
++        }
++    }
++
+     void Texture::shift(Point<int16_t> amount)
+     {
+         origin -= amount;
+diff --git a/src/client/Graphics/Texture.h b/src/client/Graphics/Texture.h
+index 2a13926..d0075cc 100644
+--- a/src/client/Graphics/Texture.h
++++ b/src/client/Graphics/Texture.h
+@@ -32,6 +32,9 @@ namespace jrc
+         ~Texture();
+ 
+         void draw(const DrawArgument& args) const;
++        // Source uses bitmap pixels, destination uses logical pixels; origin is not applied.
++        void draw_region(const Rectangle<int16_t>& source,
++            const Rectangle<int16_t>& destination) const;
+         void shift(Point<int16_t> amount);
+ 
+         bool is_valid() const;
+diff --git a/src/client/HudLayout.h b/src/client/HudLayout.h
+new file mode 100644
+index 0000000..ebc40ab
+--- /dev/null
++++ b/src/client/HudLayout.h
+@@ -0,0 +1,66 @@
++#pragma once
++
++#include "Template/Rectangle.h"
++
++#include <algorithm>
++#include <cstdint>
++
++namespace jrc
++{
++    namespace HudLayout
++    {
++        // StatusBar2/mainBar/backgrnd is 1366x85, with origin (512,84).
++        // Its right-hand slot grid is baked artwork, not interactive quickslots.
++        constexpr int16_t CORE_WIDTH = 800;
++        constexpr int16_t ART_WIDTH = 1366;
++        constexpr int16_t ART_HEIGHT = 85;
++        constexpr int16_t GRID_LEFT = 876;
++        constexpr int16_t GRID_WIDTH = ART_WIDTH - GRID_LEFT;
++        constexpr int16_t CHAT_RIGHT = 516;
++
++        struct Status
++        {
++            Point<int16_t> anchor;
++            Rectangle<int16_t> core;
++            Rectangle<int16_t> grid;
++            Point<int16_t> trade_offset;
++        };
++
++        inline int16_t chat_left(Point<int16_t> anchor)
++        {
++            return anchor.x() - 512;
++        }
++
++        inline Status status(int16_t width, int16_t height, int16_t yoffset)
++        {
++            const int16_t bottom = height - yoffset - 1;
++            const bool inline_grid = width >= ART_WIDTH;
++            const int16_t left = (width - (inline_grid ? ART_WIDTH : CORE_WIDTH)) / 2;
++            Status layout;
++            layout.anchor = { static_cast<int16_t>(left + 512), bottom };
++            layout.core = { left, static_cast<int16_t>(left + CORE_WIDTH),
++                static_cast<int16_t>(bottom - 84), static_cast<int16_t>(bottom + 1) };
++            if (inline_grid)
++            {
++                layout.grid = { static_cast<int16_t>(left + GRID_LEFT),
++                    static_cast<int16_t>(left + ART_WIDTH),
++                    static_cast<int16_t>(bottom - 84), static_cast<int16_t>(bottom + 1) };
++                // BtMTS otherwise overlaps both BtCashShop and BtMenu.
++                layout.trade_offset = { 183, 0 };
++            }
++            else
++            {
++                // Keep the grid clear of even a fully expanded chat panel and the
++                // extra trade button. Only decorative art scales; controls stay native size.
++                const int16_t grid_width = std::min<int16_t>(GRID_WIDTH,
++                    width - left - CHAT_RIGHT - 8);
++                const int16_t grid_height = ART_HEIGHT * grid_width / GRID_WIDTH;
++                layout.grid = { static_cast<int16_t>(width - grid_width), width,
++                    static_cast<int16_t>(bottom - 106 - grid_height),
++                    static_cast<int16_t>(bottom - 106) };
++                layout.trade_offset = { -103, -62 };
++            }
++            return layout;
++        }
++    }
++}
+diff --git a/src/client/IO/Components/EquipTooltip.cpp b/src/client/IO/Components/EquipTooltip.cpp
+index 922433a..64680a6 100644
+--- a/src/client/IO/Components/EquipTooltip.cpp
++++ b/src/client/IO/Components/EquipTooltip.cpp
+@@ -22,6 +22,8 @@
+ #include "../../Gameplay/Stage.h"
+ #include "../../Data/EquipData.h"
+ #include "../../Data/WeaponData.h"
++#include "../../Constants.h"
++#include "../../Viewport.h"
+ 
+ #include "nlnx/nx.hpp"
+ #include "nlnx/node.hpp"
+@@ -350,6 +352,10 @@ namespace jrc
+         if (invpos == 0)
+             return;
+ 
++        pos = Viewport::clamp_window(pos,
++            { top.width(), static_cast<int16_t>(height + 13 + bot.height()) },
++            Constants::viewwidth(), Constants::viewheight(), Constants::VIEWYOFFSET);
++
+         top.draw({ pos });
+         mid.draw({ pos + Point<int16_t>(0, 13), Point<int16_t>(0, height) });
+         bot.draw({ pos + Point<int16_t>(0, height + 13) });
+diff --git a/src/client/IO/Components/ItemTooltip.cpp b/src/client/IO/Components/ItemTooltip.cpp
+index b54a9b6..61c3683 100644
+--- a/src/client/IO/Components/ItemTooltip.cpp
++++ b/src/client/IO/Components/ItemTooltip.cpp
+@@ -18,6 +18,8 @@
+ #include "ItemTooltip.h"
+ 
+ #include "../../Data/ItemData.h"
++#include "../../Constants.h"
++#include "../../Viewport.h"
+ 
+ #include "nlnx/nx.hpp"
+ #include "nlnx/node.hpp"
+@@ -68,6 +70,10 @@ namespace jrc
+         if (itemid == 0)
+             return;
+ 
++        pos = Viewport::clamp_window(pos,
++            { top.width(), static_cast<int16_t>(filllength + 13 + bot.height()) },
++            Constants::viewwidth(), Constants::viewheight(), Constants::VIEWYOFFSET);
++
+         top.draw(pos);
+         mid.draw({ pos + Point<int16_t>(0, 13), Point<int16_t>(0, filllength) });
+         bot.draw(pos + Point<int16_t>(0, filllength + 13));
+diff --git a/src/client/IO/Components/MapTooltip.cpp b/src/client/IO/Components/MapTooltip.cpp
+index fc90e2a..a6c5669 100644
+--- a/src/client/IO/Components/MapTooltip.cpp
++++ b/src/client/IO/Components/MapTooltip.cpp
+@@ -18,6 +18,7 @@
+ #include "MapTooltip.h"
+ 
+ #include "../../Constants.h"
++#include "../../Viewport.h"
+ #include "../../Util/Misc.h"
+ 
+ #include "nlnx/nx.hpp"
+@@ -45,22 +46,11 @@ namespace jrc
+             return;
+         }
+ 
+-        int16_t cur_width = position.x() + fillwidth + 34;
+-        int16_t cur_height = position.y() + fillheight + 30;
+-        int16_t adj_x = cur_width - Constants::viewwidth();
+-        int16_t adj_y = cur_height - Constants::viewheight();
+-
+-        if (adj_x > 0)
+-        {
+-            position.shift_x(-adj_x);
+-        }
+-
+-        if (adj_y > 0)
+-        {
+-            position.shift_y(-adj_y);
+-        }
+-
+         position.shift(Point<int16_t>(20, -3));
++        position = Viewport::clamp_window(position,
++            { static_cast<int16_t>(fillwidth + 34), static_cast<int16_t>(fillheight + 40) },
++            Constants::viewwidth(), Constants::viewheight(), Constants::VIEWYOFFSET);
++        position.set_x(std::max<int16_t>(8, position.x()));
+ 
+         frame.draw(position + Point<int16_t>(fillwidth / 2 + 10, fillheight + 14), fillwidth, fillheight);
+         cover.draw(position + Point<int16_t>(-5, -2));
+diff --git a/src/client/IO/Components/PicEntry.h b/src/client/IO/Components/PicEntry.h
+new file mode 100644
+index 0000000..dd9aa0f
+--- /dev/null
++++ b/src/client/IO/Components/PicEntry.h
+@@ -0,0 +1,46 @@
++#pragma once
++
++#include <string>
++
++namespace jrc
++{
++    // PIC entry never submits a default; registration requires matching entries.
++    class PicEntry
++    {
++    public:
++        enum class Result { INCOMPLETE, CONFIRM, MISMATCH, ACCEPTED };
++        explicit PicEntry(bool registration = false) : registration(registration) {}
++        void append(unsigned digit)
++        {
++            if (digit < 10 && value.size() < 12)
++                value.push_back(static_cast<char>('0' + digit));
++        }
++        void erase()
++        {
++            if (!value.empty()) value.pop_back();
++        }
++        bool ready() const { return value.size() >= 4; }
++        bool full() const { return value.size() == 12; }
++        std::string masked() const { return std::string(value.size(), '*'); }
++        const std::string& input() const { return value; }
++        Result submit()
++        {
++            if (!ready()) return Result::INCOMPLETE;
++            if (!registration) return Result::ACCEPTED;
++            if (first.empty())
++            {
++                first = value;
++                value.clear();
++                return Result::CONFIRM;
++            }
++            if (first == value) return Result::ACCEPTED;
++            first.clear();
++            value.clear();
++            return Result::MISMATCH;
++        }
++    private:
++        bool registration;
++        std::string value;
++        std::string first;
++    };
++}
+diff --git a/src/client/IO/Components/SkillTooltip.cpp b/src/client/IO/Components/SkillTooltip.cpp
+index c199edd..938c9f9 100644
+--- a/src/client/IO/Components/SkillTooltip.cpp
++++ b/src/client/IO/Components/SkillTooltip.cpp
+@@ -18,6 +18,8 @@
+ #include "SkillTooltip.h"
+ 
+ #include "../../Data/SkillData.h"
++#include "../../Constants.h"
++#include "../../Viewport.h"
+ 
+ #include "nlnx/nx.hpp"
+ #include "nlnx/node.hpp"
+@@ -145,6 +147,9 @@ namespace jrc
+         if (skill_id == 0)
+             return;
+ 
++        pos = Viewport::clamp_window(pos, { 352, static_cast<int16_t>(height + 32) },
++            Constants::viewwidth(), Constants::viewheight(), Constants::VIEWYOFFSET);
++
+         frame.draw(pos + Point<int16_t>(176, height + 16), 320, height);
+         name.draw(pos + Point<int16_t>(16, 8));
+ 
+diff --git a/src/client/IO/Components/TextTooltip.cpp b/src/client/IO/Components/TextTooltip.cpp
+index f6890d4..d2f4663 100644
+--- a/src/client/IO/Components/TextTooltip.cpp
++++ b/src/client/IO/Components/TextTooltip.cpp
+@@ -18,6 +18,7 @@
+ #include "TextTooltip.h"
+ 
+ #include "../../Constants.h"
++#include "../../Viewport.h"
+ 
+ #include "nlnx/nx.hpp"
+ 
+@@ -41,20 +42,10 @@ namespace jrc
+         int16_t fillwidth = text_label.width();
+         int16_t fillheight = std::max<int16_t>(text_label.height(), 18);
+ 
+-        int16_t cur_width = position.x() + fillwidth + 26;
+-        int16_t cur_height = position.y() + fillheight + 40;
+-        int16_t adj_x = cur_width - Constants::viewwidth();
+-        int16_t adj_y = cur_height - Constants::viewheight();
+-
+-        if (adj_x > 0)
+-        {
+-            position.shift_x(-adj_x);
+-        }
+-
+-        if (adj_y > 0)
+-        {
+-            position.shift_y(-adj_y);
+-        }
++        position = Viewport::clamp_window(position,
++            { static_cast<int16_t>(fillwidth + 32), static_cast<int16_t>(fillheight + 40) },
++            Constants::viewwidth(), Constants::viewheight(), Constants::VIEWYOFFSET);
++        position.set_x(std::max<int16_t>(8, position.x()));
+ 
+         frame.draw(position + Point<int16_t>(fillwidth / 2 + 10, fillheight + 14), fillwidth, fillheight);
+         cover.draw(position + Point<int16_t>(-5, -2));
+diff --git a/src/client/IO/Components/Textfield.cpp b/src/client/IO/Components/Textfield.cpp
+index f927ace..1dcbfeb 100644
+--- a/src/client/IO/Components/Textfield.cpp
++++ b/src/client/IO/Components/Textfield.cpp
+@@ -30,7 +30,7 @@ namespace jrc
+                          Rectangle<int16_t> bnd,
+                          size_t lim)
+         : textlabel(font, alignment, color, "", 0, false), text(),
+-          marker(font, alignment, color, "|"),             markerpos(0),
++          marker(font, alignment, color, "|"), showmarker(true), elapsed(0), markerpos(0),
+           bounds(bnd),                                     limit(lim),
+           crypt(0),                                        state(NORMAL)
+         {}
+diff --git a/src/client/IO/Components/Textfield.h b/src/client/IO/Components/Textfield.h
+index f83ef70..8b158c2 100644
+--- a/src/client/IO/Components/Textfield.h
++++ b/src/client/IO/Components/Textfield.h
+@@ -54,6 +54,7 @@ namespace jrc
+         void set_state(State state);
+         void change_text(const std::string& text);
+         void set_cryptchar(int8_t character);
++        void set_bounds(Rectangle<int16_t> area) { bounds = area; }
+ 
+         void set_enter_callback(std::function<void(std::string)> onreturn);
+         void set_key_callback(KeyAction::Id key, std::function<void(void)> action);
+diff --git a/src/client/IO/UI.cpp b/src/client/IO/UI.cpp
+index a421d04..f5bc08c 100644
+--- a/src/client/IO/UI.cpp
++++ b/src/client/IO/UI.cpp
+@@ -24,6 +24,9 @@
+ #include "../Audio/Audio.h"
+ #include "../Console.h"
+ #include "../Configuration.h"
++#ifdef MS_PLATFORM_WASM
++#include <emscripten.h>
++#endif
+ 
+ #include <GLFW/glfw3.h>
+ #include <list>
+@@ -72,6 +75,15 @@ namespace jrc
+ 
+     void UI::change_state(State id)
+     {
++#ifdef MS_PLATFORM_WASM
++        // Apply the effective viewport before constructing either state's UI.
++        // Pregame art keeps its classic layout; the user's mode applies in-game.
++        EM_ASM({
++            if (window.MapleWasmUI)
++                window.MapleWasmUI.setInGame(!!$0);
++        }, id == GAME);
++#endif
++        Window::get().sync_view();
+         switch (id)
+         {
+         case LOGIN:
+@@ -167,6 +179,11 @@ namespace jrc
+         }
+         else
+         {
++            release_world_inputs();
++            for (auto& key : is_key_down)
++                key.second = false;
++            cursor.set_state(Cursor::IDLE);
++            state->cancel_drag();
+             Sound::set_sfxvolume(0);
+             Music::set_bgmvolume(0);
+         }
+@@ -195,6 +212,25 @@ namespace jrc
+     void UI::send_key(int32_t keycode, bool pressed)
+     {
+         bool escape = keycode == GLFW_KEY_ESCAPE;
++        // Releases are not text input: deliver them before any focus/modal
++        // early return, including when the key was held before opening NPC UI.
++        Keyboard::Mapping world_mapping = keyboard.get_mapping(keycode);
++        if (!pressed)
++            state->send_key(world_mapping.type, world_mapping.action, false, escape);
++
++        UIElement* npc = state->get(UIElement::NPCTALK);
++        bool npc_modal = npc && npc->is_active();
++        // One physical action must not consume a subsequent server prompt via
++        // OS repeat before key-up. Keep raw down state across dialog replacement.
++        if (pressed && is_key_down[keycode] &&
++            (escape || (npc_modal && (keycode == GLFW_KEY_ENTER || keycode == GLFW_KEY_KP_ENTER))))
++            return;
++        if (npc_modal && escape)
++        {
++            npc->send_key(0, pressed, true);
++            is_key_down[keycode] = pressed;
++            return;
++        }
+ 
+         if (escape)
+         {
+@@ -226,6 +262,8 @@ namespace jrc
+ 
+         if (focusedtextfield)
+         {
++            if (npc_modal && pressed)
++                state->send_key(world_mapping.type, world_mapping.action, true, false);
+             bool ctrl =
+                 is_key_down[keyboard.ctrlcode()] ||
+                 is_key_down[GLFW_KEY_RIGHT_CONTROL];
+@@ -260,7 +298,7 @@ namespace jrc
+         {
+             Keyboard::Mapping mapping = keyboard.get_mapping(keycode);
+ 
+-            if (mapping.type)
++            if (mapping.type && pressed)
+             {
+                 state->send_key(mapping.type, mapping.action, pressed, escape);
+             }
+@@ -297,6 +335,11 @@ namespace jrc
+         state->send_key(KeyType::MENU, action, true, false);
+     }
+ 
++    void UI::release_world_inputs()
++    {
++        state->release_world_inputs();
++    }
++
+     void UI::set_scrollnotice(const std::string& notice)
+     {
+         scrollingnotice.setnotice(notice);
+@@ -304,6 +347,7 @@ namespace jrc
+ 
+     void UI::focus_textfield(Textfield* tofocus)
+     {
++        release_world_inputs();
+         if (focusedtextfield)
+         {
+             focusedtextfield->set_state(Textfield::NORMAL);
+diff --git a/src/client/IO/UI.h b/src/client/IO/UI.h
+index 34623aa..a50c4de 100644
+--- a/src/client/IO/UI.h
++++ b/src/client/IO/UI.h
+@@ -65,6 +65,7 @@ namespace jrc
+         void doubleclick();
+         void send_key(int32_t keycode, bool pressed);
+         void send_menu(KeyAction::Id action);
++        void release_world_inputs();
+ 
+         void set_scrollnotice(const std::string& notice);
+         void focus_textfield(Textfield* textfield);
+diff --git a/src/client/IO/UIDragElement.h b/src/client/IO/UIDragElement.h
+index 6335834..cb9177f 100644
+--- a/src/client/IO/UIDragElement.h
++++ b/src/client/IO/UIDragElement.h
+@@ -19,6 +19,7 @@
+ #include "UIElement.h"
+ 
+ #include "../Configuration.h"
++#include "../Constants.h"
+ 
+ namespace jrc
+ {
+@@ -34,6 +35,7 @@ namespace jrc
+                 if (clicked)
+                 {
+                     position = cursorpos - cursoroffset;
++                    update_screen(Constants::viewwidth(), Constants::viewheight());
+                     return true;
+                 }
+                 else
+@@ -52,6 +54,7 @@ namespace jrc
+                 if (clicked)
+                 {
+                     position = cursorpos - cursoroffset;
++                    update_screen(Constants::viewwidth(), Constants::viewheight());
+                     return { Cursor::CLICKING, true };
+                 }
+ 
+diff --git a/src/client/IO/UIElement.cpp b/src/client/IO/UIElement.cpp
+index 3ea1be4..7c7f779 100644
+--- a/src/client/IO/UIElement.cpp
++++ b/src/client/IO/UIElement.cpp
+@@ -19,6 +19,7 @@
+ #include "UI.h"
+ 
+ #include "../Constants.h"
++#include "../Viewport.h"
+ #include "../Audio/Audio.h"
+ 
+ namespace jrc
+@@ -65,13 +66,15 @@ namespace jrc
+         }
+     }
+ 
+-    void UIElement::update_screen(int16_t, int16_t)
++    void UIElement::update_screen(int16_t width, int16_t height)
+     {
++        position = Viewport::clamp_window(position, dimension, width, height, Constants::VIEWYOFFSET);
+     }
+ 
+     void UIElement::makeactive()
+     {
+         active = true;
++        update_screen(Constants::viewwidth(), Constants::viewheight());
+     }
+ 
+     void UIElement::deactivate()
+@@ -87,6 +90,10 @@ namespace jrc
+     void UIElement::toggle_active()
+     {
+         active = !active;
++        if (active)
++        {
++            update_screen(Constants::viewwidth(), Constants::viewheight());
++        }
+     }
+ 
+     Button::State UIElement::button_pressed(uint16_t) { return Button::DISABLED; }
+diff --git a/src/client/IO/UIState.h b/src/client/IO/UIState.h
+index c60cb43..09176b7 100644
+--- a/src/client/IO/UIState.h
++++ b/src/client/IO/UIState.h
+@@ -43,6 +43,7 @@ namespace jrc
+         virtual void doubleclick(Point<int16_t> pos) = 0;
+         virtual void rightclick(Point<int16_t> pos) = 0;
+         virtual void send_key(KeyType::Id type, int32_t action, bool pressed, bool escape) = 0;
++        virtual void release_world_inputs() {}
+         virtual Cursor::State send_cursor(Cursor::State mst, Point<int16_t> pos) = 0;
+         virtual void send_scroll(Point<int16_t> pos, double yoffset) = 0;
+         virtual void send_close() = 0;
+diff --git a/src/client/IO/UIStateGame.cpp b/src/client/IO/UIStateGame.cpp
+index f6be301..848de9c 100644
+--- a/src/client/IO/UIStateGame.cpp
++++ b/src/client/IO/UIStateGame.cpp
+@@ -94,11 +94,14 @@ namespace jrc
+         for (const auto& type : elementorder)
+         {
+             auto& element = elements[type];
+-            if (element && element->is_active())
++            if (element && element->is_active() && type != UIElement::NPCTALK)
+             {
+                 element->draw(inter);
+             }
+         }
++        auto& npc = elements[UIElement::NPCTALK];
++        if (npc && npc->is_active())
++            npc->draw(inter);
+ 
+         if (tooltip)
+         {
+@@ -125,19 +128,20 @@ namespace jrc
+         for (const auto& type : elementorder)
+         {
+             auto& element = elements[type];
+-            if (element && element->is_active())
++            if (element)
+             {
+                 if (screen_changed)
+-                {
+                     element->update_screen(new_width, new_height);
+-                }
+-                element->update();
++                if (element->is_active())
++                    element->update();
+             }
+         }
+     }
+ 
+     void UIStateGame::drop_icon(const Icon& icon, Point<int16_t> pos)
+     {
++        if (get_modal())
++            return;
+         if (UIElement* front = get_front(pos))
+         {
+             front->send_icon(icon, pos);
+@@ -150,6 +154,8 @@ namespace jrc
+ 
+     void UIStateGame::doubleclick(Point<int16_t> pos)
+     {
++        if (get_modal())
++            return;
+         if (UIElement* front = get_front(pos))
+         {
+             front->doubleclick(pos);
+@@ -158,6 +164,8 @@ namespace jrc
+ 
+     void UIStateGame::rightclick(Point<int16_t> pos)
+     {
++        if (get_modal())
++            return;
+         if (UIElement* front = get_front(pos))
+         {
+             front->rightclick(pos);
+@@ -166,16 +174,21 @@ namespace jrc
+ 
+     void UIStateGame::send_key(KeyType::Id type, int32_t action, bool pressed, bool escape)
+     {
+-        if (UIElement* focusedelement = get(focused))
+-        {
+-            if (focusedelement->is_active())
+-            {
+-                focusedelement->send_key(action, pressed, escape);
+-                return;
+-            }
+-
+-            focused = UIElement::NONE;
++        auto deliver = [](KeyType::Id input_type, int32_t input_action, bool down) {
++            Stage::get().send_key(input_type, input_action, down);
++        };
++        // Key-up must reach the world even when a dialog/textfield owns focus.
++        if (!pressed)
++            world_inputs.send(type, action, false, false, deliver);
++        if (UIElement* modal = get_modal())
++        {
++            world_inputs.suspend(deliver);
++            if (pressed)
++                world_inputs.send(type, action, true, true, deliver);
++            modal->send_key(action, pressed, escape);
++            return;
+         }
++        focused = UIElement::NONE;
+ 
+         if (pressed && type == KeyType::ACTION && action == KeyAction::RETURN)
+         {
+@@ -280,15 +293,38 @@ namespace jrc
+         case KeyType::FACE:
+         case KeyType::ITEM:
+         case KeyType::SKILL:
+-            Stage::get().send_key(type, action, pressed);
++            if (pressed)
++                world_inputs.send(type, action, true, false, deliver);
+             break;
+         default:
+             break;
+         }
+     }
+ 
++    UIElement* UIStateGame::get_modal()
++    {
++        if (auto* npc = get(UIElement::NPCTALK); npc && npc->is_active())
++            return npc;
++        auto* element = get(focused);
++        return element && element->is_active() ? element : nullptr;
++    }
++
++    void UIStateGame::release_world_inputs()
++    {
++        world_inputs.suspend([](KeyType::Id type, int32_t action, bool pressed) {
++            Stage::get().send_key(type, action, pressed);
++        });
++        cursor_captured = UIElement::NONE;
++    }
++
+     Cursor::State UIStateGame::send_cursor(Cursor::State mst, Point<int16_t> pos)
+     {
++        if (UIElement* modal = get_modal())
++        {
++            bool clicked = mst == Cursor::CLICKING;
++            clear_cursors(clicked, pos, modal->get_type());
++            return modal->send_cursor(clicked, pos).state;
++        }
+         if (draggedicon)
+         {
+             switch (mst)
+@@ -398,6 +434,11 @@ namespace jrc
+ 
+     void UIStateGame::send_scroll(Point<int16_t> pos, double yoffset)
+     {
++        if (UIElement* modal = get_modal())
++        {
++            modal->send_scroll(yoffset);
++            return;
++        }
+         if (UIElement* front = get_front(pos))
+         {
+             front->send_scroll(yoffset);
+@@ -540,11 +581,16 @@ namespace jrc
+                                            bool is_focused)
+     {
+         auto& element = elements[type];
++        if (is_focused)
++            release_world_inputs();
+         if (element && is_toggled)
+         {
+             elementorder.remove(type);
+             elementorder.push_back(type);
+             element->toggle_active();
++            element->update_screen(Constants::viewwidth(), Constants::viewheight());
++            if (is_focused && element->is_active())
++                focused = type;
+             return elements.end();
+         }
+         else
+diff --git a/src/client/IO/UIStateGame.h b/src/client/IO/UIStateGame.h
+index 43f1798..4ac9dd9 100644
+--- a/src/client/IO/UIStateGame.h
++++ b/src/client/IO/UIStateGame.h
+@@ -17,6 +17,7 @@
+ //////////////////////////////////////////////////////////////////////////////
+ #pragma once
+ #include "UIState.h"
++#include "WorldInputState.h"
+ 
+ #include "Components/EquipTooltip.h"
+ #include "Components/ItemTooltip.h"
+@@ -43,6 +44,7 @@ namespace jrc
+         void doubleclick(Point<int16_t> pos) override;
+         void rightclick(Point<int16_t> pos) override;
+         void send_key(KeyType::Id type, int32_t action, bool pressed, bool escape) override;
++        void release_world_inputs() override;
+         Cursor::State send_cursor(Cursor::State mst, Point<int16_t> pos) override;
+         void send_scroll(Point<int16_t> pos, double yoffset) override;
+         void send_close() override;
+@@ -67,6 +69,8 @@ namespace jrc
+     private:
+         void clear_cursors(bool clicked, Point<int16_t> pos, UIElement::Type except);
+         void drop_icon(const Icon& icon, Point<int16_t> pos);
++        UIElement* get_modal();
++        WorldInputState world_inputs;
+         template <class T, typename...Args>
+         void emplace(Args&&...args);
+ 
+diff --git a/src/client/IO/UITypes/UIBuffList.cpp b/src/client/IO/UITypes/UIBuffList.cpp
+index 857e83f..4da4315 100644
+--- a/src/client/IO/UITypes/UIBuffList.cpp
++++ b/src/client/IO/UITypes/UIBuffList.cpp
+@@ -84,6 +84,11 @@ namespace jrc
+         {
+             icon.second.draw(icpos, alpha);
+             icpos.shift_x(-32);
++            if (icpos.x() < 8)
++            {
++                icpos.set_x(position.x());
++                icpos.shift_y(40);
++            }
+         }
+     }
+ 
+diff --git a/src/client/IO/UITypes/UICharSelect.cpp b/src/client/IO/UITypes/UICharSelect.cpp
+index c4930b9..e90263c 100644
+--- a/src/client/IO/UITypes/UICharSelect.cpp
++++ b/src/client/IO/UITypes/UICharSelect.cpp
+@@ -36,10 +36,6 @@
+ 
+ namespace jrc
+ {
+-    namespace
+-    {
+-        constexpr const char* AUTO_PIC = "1010";
+-    }
+ 
+     UICharSelect::UICharSelect(std::vector<CharEntry> cs,
+                                uint8_t c,
+@@ -335,32 +331,21 @@ namespace jrc
+         }
+     }
+ 
+-    void UICharSelect::dispatch_pic_action(PicAction action, int32_t cid, const std::string& pic, bool auto_submit)
++    void UICharSelect::dispatch_pic_action(PicAction action, int32_t cid, const std::string& pic)
+     {
+         UI::get().disable();
+-
+-        if (auto_submit)
+-        {
+-            pending_pic_action = action;
+-            pending_pic_cid = cid;
+-        }
+-        else
+-        {
+-            clear_pending_pic_request();
+-        }
++        pending_pic_action = action;
++        pending_pic_cid = cid;
+ 
+         switch (action)
+         {
+         case PicAction::REGISTER:
+-            Console::get().print((auto_submit ? "Registering" : "Retrying registration with") + std::string(" PIC ") + pic);
+             RegisterPicPacket(cid, pic).dispatch();
+             break;
+         case PicAction::SELECT:
+-            Console::get().print((auto_submit ? "Selecting character with" : "Retrying character select with") + std::string(" PIC ") + pic);
+             SelectCharPicPacket(pic, cid).dispatch();
+             break;
+         case PicAction::DELETE:
+-            Console::get().print((auto_submit ? "Deleting character with" : "Retrying deletion with") + std::string(" PIC ") + pic);
+             DeleteCharPacket(pic, cid).dispatch();
+             break;
+         case PicAction::NONE:
+@@ -370,12 +355,14 @@ namespace jrc
+         }
+     }
+ 
+-    void UICharSelect::prompt_pic_entry(PicAction action, int32_t cid)
++    void UICharSelect::prompt_pic_entry(PicAction action, int32_t cid, bool rejected)
+     {
+         clear_pending_pic_request();
++        const char* prompt = action == PicAction::REGISTER ? "Create a PIC (4-12 digits)" :
++            action == PicAction::DELETE ? "Enter PIC to delete character" : "Enter your PIC (4-12 digits)";
+         UI::get().emplace<UISoftkey>([this, action, cid](const std::string& pic) {
+-            dispatch_pic_action(action, cid, pic, false);
+-        });
++            dispatch_pic_action(action, cid, pic);
++        }, rejected ? "PIC rejected. Please try again." : prompt, action == PicAction::REGISTER);
+     }
+ 
+     bool UICharSelect::handle_pic_failure(int8_t message, int32_t cid)
+@@ -394,8 +381,7 @@ namespace jrc
+         {
+         case UILoginNotice::SECOND_PASSWORD_INCORRECT:
+         case UILoginNotice::SECOND_PASSWORD_NOT_DIFFERENT:
+-            Console::get().print("Auto PIC was rejected. Prompting for manual PIC entry.");
+-            prompt_pic_entry(pending_pic_action, pending_pic_cid);
++            prompt_pic_entry(pending_pic_action, pending_pic_cid, true);
+             return true;
+         default:
+             clear_pending_pic_request();
+@@ -422,10 +408,10 @@ namespace jrc
+         switch (require_pic)
+         {
+         case 0:
+-            dispatch_pic_action(PicAction::REGISTER, cid, AUTO_PIC, true);
++            prompt_pic_entry(PicAction::REGISTER, cid);
+             break;
+         case 1:
+-            dispatch_pic_action(PicAction::SELECT, cid, AUTO_PIC, true);
++            prompt_pic_entry(PicAction::SELECT, cid);
+             break;
+         case 2:
+             clear_pending_pic_request();
+@@ -448,7 +434,7 @@ namespace jrc
+         }
+ 
+         int32_t cid = characters[selected_absolute].cid;
+-        dispatch_pic_action(PicAction::DELETE, cid, AUTO_PIC, true);
++        prompt_pic_entry(PicAction::DELETE, cid);
+     }
+ 
+     void UICharSelect::add_character(CharEntry&& character)
+diff --git a/src/client/IO/UITypes/UICharSelect.h b/src/client/IO/UITypes/UICharSelect.h
+index d68b44c..d2ffcd7 100644
+--- a/src/client/IO/UITypes/UICharSelect.h
++++ b/src/client/IO/UITypes/UICharSelect.h
+@@ -61,8 +61,8 @@ namespace jrc
+             DELETE
+         };
+ 
+-        void dispatch_pic_action(PicAction action, int32_t cid, const std::string& pic, bool auto_submit);
+-        void prompt_pic_entry(PicAction action, int32_t cid);
++        void dispatch_pic_action(PicAction action, int32_t cid, const std::string& pic);
++        void prompt_pic_entry(PicAction action, int32_t cid, bool rejected = false);
+         void send_selection();
+         void send_deletion();
+         void update_selection();
+diff --git a/src/client/IO/UITypes/UIChatBar.cpp b/src/client/IO/UITypes/UIChatBar.cpp
+index 36f3533..28c3fb1 100644
+--- a/src/client/IO/UITypes/UIChatBar.cpp
++++ b/src/client/IO/UITypes/UIChatBar.cpp
+@@ -6,6 +6,7 @@
+ 
+ #include "../../Net/Packets/GameplayPackets.h"
+ #include "../../Net/Packets/MessagingPackets.h"
++#include "../../HudLayout.h"
+ 
+ #include "UIParty.h"
+ #include "UIStatusMessenger.h"
+@@ -199,7 +200,7 @@ namespace jrc
+         if (chatopen)
+         {
+             tapbartop.draw({ position.x() - 576, getchattop() });
+-            chatbox.draw({ 0, getchattop() + 2 });
++            chatbox.draw({ HudLayout::chat_left(position), getchattop() + 2 });
+ 
+             int16_t chatheight = CHATROWHEIGHT * chatrows;
+             int16_t yshift = -chatheight;
+@@ -215,7 +216,7 @@ namespace jrc
+                     yshift += CHATROWHEIGHT;
+                     textheight--;
+                 }
+-                rowtexts.at(rowid).draw({ 4, getchattop() - yshift - 1 });
++                rowtexts.at(rowid).draw({ HudLayout::chat_left(position) + 4, getchattop() - yshift - 1 });
+             }
+ 
+             slider.draw({ position.x(), getchattop() + 5 });
+@@ -264,8 +265,8 @@ namespace jrc
+ 
+     bool UIChatbar::is_in_range(Point<int16_t> cursorpos) const
+     {
+-        Point<int16_t> absp(0, getchattop() - 16);
+-        Point<int16_t> dim(500, chatrows * CHATROWHEIGHT + CHATYOFFSET + 16);
++        Point<int16_t> absp(HudLayout::chat_left(position), getchattop() - 16);
++        Point<int16_t> dim(HudLayout::CHAT_RIGHT, chatrows * CHATROWHEIGHT + CHATYOFFSET + 16);
+         return Rectangle<int16_t>(absp, absp + dim)
+             .contains(cursorpos);
+     }
+@@ -300,7 +301,7 @@ namespace jrc
+         }
+ 
+         auto chattop = Rectangle<int16_t>(
+-            0,  502,
++            HudLayout::chat_left(position), static_cast<int16_t>(HudLayout::chat_left(position) + 502),
+             getchattop(),
+             getchattop() + 6
+             );
+diff --git a/src/client/IO/UITypes/UINpcTalk.cpp b/src/client/IO/UITypes/UINpcTalk.cpp
+index f47b39e..7524a5a 100644
+--- a/src/client/IO/UITypes/UINpcTalk.cpp
++++ b/src/client/IO/UITypes/UINpcTalk.cpp
+@@ -45,13 +45,42 @@ namespace jrc
+         constexpr int16_t BUTTON_MARGIN = 20;
+         constexpr int16_t BUTTON_GAP = 6;
+         constexpr int16_t DIALOG_TEXT_X = 156;
+-        constexpr int16_t DIALOG_TEXT_Y_OFFSET = 16;
+         constexpr int16_t OPTION_VERTICAL_GAP = 2;
+         constexpr int16_t HOVER_UNDERLINE_THICKNESS = 1;
+         constexpr int16_t TEXTFIELD_BOTTOM_OFFSET = 30;
+         constexpr int16_t TEXTFIELD_HEIGHT = 20;
+-        constexpr int8_t SELECTION_DIALOGUE_TYPE = 4;
+-        constexpr int8_t LEGACY_SELECTION_DIALOGUE_TYPE = 5;
++
++        // Some deployed UI archives omit UtilDlgEx/BtYes or BtNo. Missing art
++        // gets a labeled control, never a different response on End Chat.
++        class NpcButton : public MapleButton
++        {
++        public:
++            NpcButton(nl::node source, const char* caption)
++                : MapleButton(source), label(Text::A12M, Text::CENTER, Text::BLACK, caption),
++                  fallback(MapleButton::bounds({}).width() <= 0 || MapleButton::bounds({}).height() <= 0) {}
++
++            Rectangle<int16_t> bounds(Point<int16_t> parent) const override
++            {
++                if (!fallback)
++                    return MapleButton::bounds(parent);
++                return { parent + position, parent + position + Point<int16_t>(68, 22) };
++            }
++
++            void draw(Point<int16_t> parent) const override
++            {
++                if (!fallback)
++                    return MapleButton::draw(parent);
++                if (!active)
++                    return;
++                auto at = parent + position;
++                float shade = state == MOUSEOVER ? 0.85f : 0.95f;
++                GraphicsGL::get().drawrectangle(at.x(), at.y(), 68, 22, shade, shade, shade, 1.0f);
++                label.draw(at + Point<int16_t>(34, 4));
++            }
++        private:
++            Text label;
++            bool fallback;
++        };
+ 
+         // Zero-parameter formatting tokens: bold, color switches, etc.
+         // These must be handled before number-parsing to avoid greedily
+@@ -74,12 +103,6 @@ namespace jrc
+             }
+         }
+ 
+-        bool is_selection_dialogue_type(int8_t msgtype)
+-        {
+-            // Cosmic-compatible servers have been observed using both values
+-            // for menu prompts with #L...#l options.
+-            return msgtype == SELECTION_DIALOGUE_TYPE || msgtype == LEGACY_SELECTION_DIALOGUE_TYPE;
+-        }
+ 
+         size_t find_next_selection_tag(const std::string& source, size_t start)
+         {
+@@ -294,10 +317,8 @@ namespace jrc
+     UINpcTalk::UINpcTalk()
+         : height(0),
+           vtile(0),
+-          dialogue_mode(DialogueMode::UNKNOWN),
++          dialogue_mode(DialogueMode::TEXT),
+           slider(false),
+-          type(0),
+-          end_confirms_dialogue(false),
+           selected(0),
+           hovered_selection(-1),
+           scroll_offset(0),
+@@ -311,48 +332,16 @@ namespace jrc
+         bottom = src["s"];
+         nametag = src["bar"];
+ 
+-        buttons[OK] = std::make_unique<MapleButton>(src["BtOK"]);
+-        buttons[NEXT] = std::make_unique<MapleButton>(src["BtNext"]);
+-        buttons[PREV] = std::make_unique<MapleButton>(src["BtPrev"]);
+-        buttons[END] = std::make_unique<MapleButton>(src["BtClose"]);
+-        buttons[YES] = std::make_unique<MapleButton>(src["BtYes"]);
+-        buttons[NO] = std::make_unique<MapleButton>(src["BtNo"]);
++        buttons[OK] = std::make_unique<NpcButton>(src["BtOK"], "OK");
++        buttons[NEXT] = std::make_unique<NpcButton>(src["BtNext"], "Next");
++        buttons[PREV] = std::make_unique<NpcButton>(src["BtPrev"], "Back");
++        buttons[END] = std::make_unique<NpcButton>(src["BtClose"], "End Chat");
++        buttons[YES] = std::make_unique<NpcButton>(src["BtYes"], "Yes");
++        buttons[NO] = std::make_unique<NpcButton>(src["BtNo"], "No");
+ 
+         active = false;
+     }
+ 
+-    UINpcTalk::DialogueMode UINpcTalk::resolve_dialogue_mode(int8_t msgtype, bool has_navigation_flags)
+-    {
+-        if (is_selection_dialogue_type(msgtype))
+-        {
+-            return DialogueMode::SELECTION;
+-        }
+-
+-        switch (msgtype)
+-        {
+-        case 0:
+-            return DialogueMode::TEXT;
+-        case 1:
+-            // Cosmic servers use type=1 for text dialogue with navigation flags,
+-            // while some older variants used it for yes/no prompts.
+-            return has_navigation_flags ? DialogueMode::TEXT : DialogueMode::YES_NO;
+-        case 2:
+-            // sendGetText — free-form text input from the player.
+-            return DialogueMode::TEXTFIELD;
+-        case 3:
+-            // getNPCTalkNum — numeric input (meso amounts, item quantities).
+-            // Reuse the textfield for number entry; min/max enforced server-side.
+-            return DialogueMode::TEXTFIELD;
+-        case 7:
+-            // sendStyle — hair/face style picker. Show as a selection list.
+-            return DialogueMode::STYLE;
+-        case 12:
+-        case 14:
+-            return DialogueMode::ACCEPT_DECLINE;
+-        default:
+-            return DialogueMode::UNKNOWN;
+-        }
+-    }
+ 
+     void UINpcTalk::draw(float inter) const
+     {
+@@ -382,6 +371,8 @@ namespace jrc
+                 TEXT_WIDTH, 1, 0.4f, 0.4f, 0.4f, 1.0f);
+             textfield.draw(position);
+         }
++        input_error.draw(position + Point<int16_t>(DIALOG_TEXT_X,
++            static_cast<int16_t>(top.height() + height - TEXTFIELD_BOTTOM_OFFSET - 16)));
+ 
+         // Visible content bounds (relative to dialog position).
+         int16_t content_top = static_cast<int16_t>(top.height() + TEXT_VERTICAL_PADDING);
+@@ -433,7 +424,7 @@ namespace jrc
+         if (UIElement::is_in_range(cursorpos))
+             return true;
+ 
+-        if (active && dialogue_mode == DialogueMode::SELECTION && !selection_labels.empty())
++        if (active && (dialogue_mode == DialogueMode::SELECTION || dialogue_mode == DialogueMode::STYLE) && !selection_labels.empty())
+         {
+             Point<int16_t> relative = cursorpos - position;
+             int16_t text_y = get_dialogue_text_y();
+@@ -453,109 +444,58 @@ namespace jrc
+ 
+     Button::State UINpcTalk::button_pressed(uint16_t buttonid)
+     {
++        if (!active)
++            return Button::NORMAL;
++        using Action = NpcDialogueState::Action;
+         switch (buttonid)
+         {
+         case OK:
+-            if (dialogue_mode == DialogueMode::TEXTFIELD)
+-            {
+-                submit_textfield();
+-            }
+-            else if (dialogue_mode == DialogueMode::SELECTION)
+-            {
+-                int32_t selection = selections.empty() ? 0 : selections[selected];
+-                NpcTalkMorePacket::selection(type, selection).dispatch();
+-                active = false;
+-            }
+-            else
+-            {
+-                NpcTalkMorePacket(type, 1).dispatch();
+-                active = false;
+-            }
++            respond(Action::CONFIRM);
+             break;
+         case NEXT:
+-            if (dialogue_mode == DialogueMode::SELECTION)
+-            {
+-                if (!selections.empty())
+-                {
+-                    selected = (selected + 1) % static_cast<int32_t>(selections.size());
+-                    refresh_selection_styles();
+-                }
+-            }
+-            else if (dialogue_mode == DialogueMode::TEXT)
+-            {
+-                NpcTalkMorePacket(type, 1).dispatch();
+-                active = false;
+-            }
+-            break;
+         case PREV:
+-            if (dialogue_mode == DialogueMode::SELECTION)
++            if (dialogue_mode == DialogueMode::SELECTION || dialogue_mode == DialogueMode::STYLE)
+             {
+-                if (!selections.empty())
++                if (!selection_labels.empty())
+                 {
+-                    selected = (selected + static_cast<int32_t>(selections.size()) - 1)
+-                        % static_cast<int32_t>(selections.size());
++                    int32_t count = static_cast<int32_t>(selection_labels.size());
++                    selected = (selected + (buttonid == NEXT ? 1 : count - 1)) % count;
+                     refresh_selection_styles();
+                 }
+             }
+-            else if (dialogue_mode == DialogueMode::TEXT)
+-            {
+-                NpcTalkMorePacket(type, 0).dispatch();
+-                active = false;
+-            }
++            else
++                respond(buttonid == NEXT ? Action::NEXT : Action::BACK);
+             break;
+         case YES:
+-            if (dialogue_mode == DialogueMode::YES_NO || dialogue_mode == DialogueMode::ACCEPT_DECLINE)
+-            {
+-                NpcTalkMorePacket(type, 1).dispatch();
+-                active = false;
+-            }
++            respond(Action::YES);
+             break;
+         case NO:
+-            if (dialogue_mode == DialogueMode::YES_NO || dialogue_mode == DialogueMode::ACCEPT_DECLINE)
+-            {
+-                NpcTalkMorePacket(type, 0).dispatch();
+-                active = false;
+-            }
++            respond(Action::NO);
+             break;
+         case END:
+-            if (show_textfield)
+-                UI::get().remove_textfield();
+-            if (end_confirms_dialogue)
+-            {
+-                NpcTalkMorePacket(type, 1).dispatch();
+-            }
+-            else
+-            {
+-                NpcTalkMorePacket::close(type).dispatch();
+-            }
+-            active = false;
++            respond(Action::CANCEL);
+             break;
+         }
+         return Button::PRESSED;
+     }
+ 
+-    void UINpcTalk::change_text(
+-        int32_t npcid,
+-        int8_t msgtype,
+-        int16_t style,
+-        bool has_navigation_flags,
+-        int8_t speakerbyte,
+-        const std::string& tx,
+-        int32_t num_def,
+-        int32_t num_min,
+-        int32_t num_max,
+-        const std::vector<int32_t>& style_ids
+-    )
++    void UINpcTalk::change_text(NpcDialogue incoming)
+     {
+-        std::string processed_tx = replace_macros(tx);
+-        dialogue_mode = resolve_dialogue_mode(msgtype, has_navigation_flags);
++        dialogue.begin(std::move(incoming));
++        const auto& request = dialogue.dialogue();
++        int32_t npcid = request.npc;
++        int8_t speakerbyte = request.speaker;
++        bool has_navigation_flags = request.navigation;
++        int16_t style = (request.previous ? 1 : 0) | (request.next ? 0x100 : 0);
++        const auto& style_ids = request.styles;
++        std::string processed_tx = replace_macros(request.text);
++        dialogue_mode = request.mode;
+ 
+         selections.clear();
+         selection_texts.clear();
+         selection_labels.clear();
+         selected = 0;
+         hovered_selection = -1;
+-        end_confirms_dialogue = false;
+ 
+         if (dialogue_mode == DialogueMode::SELECTION)
+         {
+@@ -571,8 +511,8 @@ namespace jrc
+         else if (dialogue_mode == DialogueMode::STYLE)
+         {
+             prompttext = strip_npc_tokens(processed_tx);
+-            // Build fake selection list from style IDs
+-            selection_texts.clear();
++            // Preserve the existing ID labels; the response is the list INDEX,
++            // not the style ID and not a four-byte menu selection.
+             for (auto sid : style_ids)
+                 selection_texts.push_back(std::to_string(sid));
+             text = { Text::A12M, Text::LEFT, Text::DARKGREY, prompttext, TEXT_WIDTH, false };
+@@ -588,6 +528,8 @@ namespace jrc
+             prompttext = strip_npc_tokens(processed_tx);
+             text = { Text::A12M, Text::LEFT, Text::DARKGREY, prompttext, TEXT_WIDTH, false };
+         }
++        dialogue.set_options(selections);
++        input_error = { Text::A11M, Text::LEFT, Text::DARKGREY, "", TEXT_WIDTH, false };
+ 
+         if (speakerbyte == 0)
+         {
+@@ -640,7 +582,10 @@ namespace jrc
+         auto place_button = [&](Buttons id, int16_t x) {
+             int16_t footer_y = top.height() + height;
+             int16_t button_y = footer_y + std::max<int16_t>(0, (bottom.height() - buttons[id]->height()) / 2);
+-            buttons[id]->set_position({ x, button_y });
++            // Position the visible top-left, compensating for the art's origin.
++            buttons[id]->set_position({});
++            auto origin = buttons[id]->bounds({}).getlt();
++            buttons[id]->set_position(Point<int16_t>(x, button_y) - origin);
+             buttons[id]->set_active(true);
+         };
+ 
+@@ -657,6 +602,7 @@ namespace jrc
+         switch (dialogue_mode)
+         {
+         case DialogueMode::TEXTFIELD:
++        case DialogueMode::NUMBER:
+         {
+             // Text input (sendGetText, msgtype 2). Fills a single-line
+             // input box at the footer edge of the dialog body.
+@@ -665,14 +611,14 @@ namespace jrc
+             Rectangle<int16_t> tf_area(
+                 DIALOG_TEXT_X, DIALOG_TEXT_X + TEXT_WIDTH,
+                 tf_y, tf_y + TEXTFIELD_HEIGHT);
+-            size_t tf_limit = (num_max > 0) ? static_cast<size_t>(num_max) : 100;
++            size_t tf_limit = dialogue_mode == DialogueMode::NUMBER ? 11 : request.text_max;
+             textfield = Textfield(
+                 Text::A12M, Text::LEFT, Text::BLACK, tf_area, tf_limit);
+-            // For numeric input (msgtype 3), pre-fill the default value
+-            textfield.change_text(std::to_string(num_def));
+-            textfield.set_enter_callback([this](std::string) {
+-                submit_textfield();
+-            });
++            textfield.change_text(dialogue_mode == DialogueMode::NUMBER ?
++                std::to_string(request.number_default) : request.default_text);
++            // Use the key callback for empty text too; unlike onreturn it does
++            // not erase rejected numeric/text input before the player corrects it.
++            textfield.set_key_callback(KeyAction::RETURN, [this]() { submit_textfield(); });
+             show_textfield = true;
+             place_button_from_right(OK);
+             break;
+@@ -705,50 +651,58 @@ namespace jrc
+             place_button_from_right(NEXT);
+             place_button_from_right(PREV);
+             break;
+-        case DialogueMode::UNKNOWN:
+-            // Older scripts and some server variants use dialogue types that this
+-            // client does not model yet. Showing OK keeps the flow usable.
+-            place_button_from_right(OK);
+-            break;
+         }
+ 
+-        auto has_visible_action_button = [&](Buttons id) {
+-            return buttons[id]->is_active() && buttons[id]->width() > 0 && buttons[id]->height() > 0;
+-        };
+ 
+-        // If text-only dialogue effectively has no visible action button besides
+-        // END, treat END as confirm to avoid trapping the player in mode=0 exits.
+-        if (dialogue_mode == DialogueMode::TEXT &&
+-            !has_visible_action_button(OK) &&
+-            !has_visible_action_button(NEXT) &&
+-            !has_visible_action_button(PREV))
+-        {
+-            end_confirms_dialogue = true;
+-        }
+-
+-        // Same fallback for accept/decline prompts when YES/NO buttons fail
+-        // to render in some WZ/UI variants: END acts as accept so flow advances.
+-        if ((dialogue_mode == DialogueMode::YES_NO || dialogue_mode == DialogueMode::ACCEPT_DECLINE) &&
+-            !has_visible_action_button(YES) &&
+-            !has_visible_action_button(NO))
+-        {
+-            end_confirms_dialogue = true;
+-        }
+-
+-        type = msgtype;
+ 
+         dimension = { top.width(), static_cast<int16_t>(top.height() + height + bottom.height()) };
+-        position = {
+-            static_cast<int16_t>(Constants::viewwidth() / 2 - dimension.x() / 2),
+-            static_cast<int16_t>(Constants::viewheight() / 2 - dimension.y() / 2)
+-        };
++        update_screen(Constants::viewwidth(), Constants::viewheight());
+ 
+         if (show_textfield)
+         {
+-            UI::get().focus_textfield(&textfield);
++            textfield.update(position);
++            textfield.set_state(Textfield::FOCUSED);
+         }
+     }
+ 
++    void UINpcTalk::update_screen(int16_t width, int16_t screen_height)
++    {
++        // Reflow tall/scrolling menus when the viewport shrinks, preserving
++        // input contents and the selected option.
++        if (fill.height() > 0 && dimension.x() > 0)
++        {
++            int16_t old_height = height;
++            int content = get_dialogue_content_height();
++            int wanted = std::max<int>(MIN_DIALOGUE_TILES,
++                (content + TEXT_VERTICAL_PADDING * 2 + fill.height() - 1) / fill.height());
++            int available = std::max<int>(1,
++                (screen_height - top.height() - bottom.height() - 40) / fill.height());
++            vtile = static_cast<int16_t>(std::min(wanted, available));
++            height = vtile * fill.height();
++            dimension = { top.width(), static_cast<int16_t>(top.height() + height + bottom.height()) };
++            max_scroll = static_cast<int16_t>(std::max<int>(0, content - height + TEXT_VERTICAL_PADDING * 2));
++            scroll_offset = std::min(scroll_offset, max_scroll);
++            for (auto& button : buttons)
++            {
++                auto visible = button.second->bounds({}).getlt();
++                button.second->set_position({});
++                auto origin = button.second->bounds({}).getlt();
++                visible.shift_y(height - old_height);
++                button.second->set_position(visible - origin);
++            }
++            if (show_textfield)
++            {
++                int16_t y = top.height() + height - TEXTFIELD_BOTTOM_OFFSET;
++                textfield.set_bounds({ DIALOG_TEXT_X, DIALOG_TEXT_X + TEXT_WIDTH, y,
++                    static_cast<int16_t>(y + TEXTFIELD_HEIGHT) });
++            }
++        }
++        position = { static_cast<int16_t>(std::max<int>(0, (width - dimension.x()) / 2)),
++                     static_cast<int16_t>(std::max<int>(0, (screen_height - dimension.y()) / 2)) };
++        if (show_textfield)
++            textfield.update(position);
++    }
++
+     void UINpcTalk::update()
+     {
+         UIElement::update();
+@@ -761,13 +715,21 @@ namespace jrc
+ 
+     void UINpcTalk::submit_textfield()
+     {
+-        std::string entered = textfield.get_text();
+-        if (entered.empty())
+-            return;
++        respond(NpcDialogueState::Action::CONFIRM);
++    }
+ 
+-        UI::get().remove_textfield();
+-        NpcTalkMorePacket(entered).dispatch();
++    void UINpcTalk::respond(NpcDialogueState::Action action)
++    {
++        if (!active)
++            return;
++        auto packet = dialogue.respond(action, show_textfield ? textfield.get_text() : "", selected);
++        input_error.change_text(dialogue.error());
++        if (!packet)
++            return;
++        if (show_textfield)
++            UI::get().remove_textfield();
+         active = false;
++        packet->dispatch();
+     }
+ 
+     void UINpcTalk::send_key(int32_t, bool pressed, bool escape)
+@@ -777,13 +739,7 @@ namespace jrc
+             return;
+         }
+ 
+-        if (show_textfield)
+-        {
+-            UI::get().remove_textfield();
+-        }
+-
+-        active = false;
+-        NpcTalkMorePacket::close(type).dispatch();
++        respond(NpcDialogueState::Action::CANCEL);
+     }
+ 
+     void UINpcTalk::send_scroll(double yoffset)
+@@ -800,14 +756,16 @@ namespace jrc
+ 
+     UIElement::CursorResult UINpcTalk::send_cursor(bool clicked, Point<int16_t> cursorpos)
+     {
++        if (clicked && handled_button_press_id == UI::get().get_cursor_press_id())
++            return { Cursor::IDLE, true };
+         if (show_textfield)
+         {
+-            Cursor::State tstate = textfield.send_cursor(cursorpos - position, clicked);
++            Cursor::State tstate = textfield.send_cursor(cursorpos, clicked);
+             if (tstate != Cursor::IDLE)
+                 return { tstate, true };
+         }
+ 
+-        if (active && dialogue_mode == DialogueMode::SELECTION && !selection_labels.empty())
++        if (active && (dialogue_mode == DialogueMode::SELECTION || dialogue_mode == DialogueMode::STYLE) && !selection_labels.empty())
+         {
+             Point<int16_t> relative = cursorpos - position;
+             int32_t hovered_option = get_option_at(relative);
+@@ -834,13 +792,17 @@ namespace jrc
+             {
+                 if (clicked)
+                 {
++                    handled_button_press_id = UI::get().get_cursor_press_id();
+                     button_pressed(OK);
+                 }
+-                return { clicked ? Cursor::CLICKING : Cursor::CANCLICK, true };
++                return { active ? (clicked ? Cursor::CLICKING : Cursor::CANCLICK) : Cursor::IDLE, true };
+             }
+         }
+ 
+-        return UIElement::send_cursor(clicked, cursorpos);
++        auto result = UIElement::send_cursor(clicked, cursorpos);
++        if (!active)
++            result.state = Cursor::IDLE;
++        return result;
+     }
+ 
+     void UINpcTalk::parse_selections(const std::string& source, std::string& rendered_text)
+@@ -958,7 +920,8 @@ namespace jrc
+ 
+     int16_t UINpcTalk::get_dialogue_text_y() const
+     {
+-        return DIALOG_TEXT_Y_OFFSET + ((vtile * fill.height() - get_dialogue_content_height()) / 2);
++        return static_cast<int16_t>(top.height() + std::max<int>(
++            TEXT_VERTICAL_PADDING, (height - get_dialogue_content_height()) / 2));
+     }
+ 
+     int16_t UINpcTalk::get_options_start_y() const
+@@ -973,6 +936,9 @@ namespace jrc
+ 
+     int32_t UINpcTalk::get_option_at(Point<int16_t> relative) const
+     {
++        if (relative.y() < top.height() + TEXT_VERTICAL_PADDING ||
++            relative.y() >= top.height() + height - TEXT_VERTICAL_PADDING)
++            return -1;
+         int16_t options_y = static_cast<int16_t>(get_options_start_y() - scroll_offset);
+         for (size_t i = 0; i < selection_labels.size(); ++i)
+         {
+diff --git a/src/client/IO/UITypes/UINpcTalk.h b/src/client/IO/UITypes/UINpcTalk.h
+index 1217d1e..ec31f89 100644
+--- a/src/client/IO/UITypes/UINpcTalk.h
++++ b/src/client/IO/UITypes/UINpcTalk.h
+@@ -21,6 +21,7 @@
+ 
+ #include "../../Graphics/Text.h"
+ #include "../../Graphics/Texture.h"
++#include "../../Net/NpcDialogue.h"
+ #include <string>
+ #include <vector>
+ 
+@@ -30,50 +31,30 @@ namespace jrc
+     {
+     public:
+         static constexpr Type TYPE = NPCTALK;
+-        static constexpr bool FOCUSED = false;
++        static constexpr bool FOCUSED = true;
+         static constexpr bool TOGGLED = true;
+ 
+         UINpcTalk();
+ 
+         void draw(float inter) const override;
+         void update() override;
++        void update_screen(int16_t width, int16_t height) override;
+         bool is_in_range(Point<int16_t> cursorpos) const override;
+         void send_key(int32_t keycode, bool pressed, bool escape) override;
+         void send_scroll(double yoffset) override;
+         CursorResult send_cursor(bool clicked, Point<int16_t> cursorpos) override;
+ 
+-        void change_text(
+-            int32_t npcid,
+-            int8_t msgtype,
+-            int16_t style,
+-            bool has_navigation_flags,
+-            int8_t speaker,
+-            const std::string& text,
+-            int32_t num_def = 0,
+-            int32_t num_min = 0,
+-            int32_t num_max = 0,
+-            const std::vector<int32_t>& style_ids = {}
+-        );
++        void change_text(NpcDialogue dialogue);
+ 
+     protected:
+         Button::State button_pressed(uint16_t buttonid) override;
+ 
+     private:
+-        enum class DialogueMode
+-        {
+-            TEXT,
+-            YES_NO,
+-            ACCEPT_DECLINE,
+-            SELECTION,
+-            STYLE,
+-            TEXTFIELD,
+-            UNKNOWN
+-        };
++        using DialogueMode = NpcDialogue::Mode;
+ 
+         void parse_selections(const std::string& text, std::string& rendered_text);
+         static std::string strip_npc_tokens(const std::string& text);
+         static std::string replace_macros(const std::string& source);
+-        static DialogueMode resolve_dialogue_mode(int8_t msgtype, bool has_navigation_flags);
+         void refresh_selection_styles();
+         int16_t get_selection_text_height() const;
+         int16_t get_dialogue_content_height() const;
+@@ -81,6 +62,7 @@ namespace jrc
+         int16_t get_options_start_y() const;
+         int32_t get_option_at(Point<int16_t> relative) const;
+         void submit_textfield();
++        void respond(NpcDialogueState::Action action);
+ 
+         enum Buttons
+         {
+@@ -105,8 +87,8 @@ namespace jrc
+         DialogueMode dialogue_mode;
+         bool slider;
+ 
+-        int8_t type;
+-        bool end_confirms_dialogue;
++        NpcDialogueState dialogue;
++        Text input_error;
+         std::string prompttext;
+         std::vector<std::string> selection_texts;
+         std::vector<Text> selection_labels;
+diff --git a/src/client/IO/UITypes/UISoftKey.cpp b/src/client/IO/UITypes/UISoftKey.cpp
+index 6e73db6..324294a 100644
+--- a/src/client/IO/UITypes/UISoftKey.cpp
++++ b/src/client/IO/UITypes/UISoftKey.cpp
+@@ -20,13 +20,14 @@
+ #include "../Components/MapleButton.h"
+ 
+ #include "../../Net/Packets/SelectCharPackets.h"
++#include "../../Constants.h"
+ 
+ #include "nlnx/nx.hpp"
+ 
+ namespace jrc
+ {
+-    UISoftkey::UISoftkey(Callback c)
+-        : callback(c) {
++    UISoftkey::UISoftkey(Callback c, const std::string& message, bool registration)
++        : callback(c), pic(registration) {
+ 
+         nl::node src = nl::nx::ui["Login.img"]["Common"]["SoftKey"];
+ 
+@@ -55,10 +56,11 @@ namespace jrc
+         buttons[BT_OK]->set_state(Button::DISABLED);
+ 
+         entry = { Text::A11M, Text::LEFT, Text::BLACK };
++        prompt = { Text::A11M, Text::CENTER, Text::WHITE, message };
+ 
+         shufflekeys();
+ 
+-        position = { 330, 160 };
++        update_screen(Constants::viewwidth(), Constants::viewheight());
+         dimension = { 140, 280 };
+         active = true;
+     }
+@@ -68,11 +70,12 @@ namespace jrc
+         UIElement::draw(alpha);
+ 
+         entry.draw(position + Point<int16_t>(15, 43));
++        prompt.draw(position + Point<int16_t>(70, -20));
+     }
+ 
+     Button::State UISoftkey::button_pressed(uint16_t id)
+     {
+-        std::string entered = entry.get_text();
++        // Keep credentials out of render text and logs.
+ 
+         switch (id)
+         {
+@@ -86,59 +89,56 @@ namespace jrc
+         case BT_7:
+         case BT_8:
+         case BT_9:
+-            if (entered.size() < MAX_SIZE)
+-            {
+-                entered.append(std::to_string(id));
+-                shufflekeys();
+-            }
++            pic.append(id);
++            shufflekeys();
+             buttons[id]->set_state(Button::NORMAL);
+             break;
+         case BT_BACK:
+-            if (entered.size() > 0)
+-            {
+-                entered.pop_back();
+-            }
++            pic.erase();
+             buttons[id]->set_state(Button::NORMAL);
+             break;
+         case BT_CANCEL:
+             active = false;
+             break;
+         case BT_OK:
+-            if (entered.size() >= MIN_SIZE && callback)
++            switch (pic.submit())
+             {
+-                callback(entered);
++            case PicEntry::Result::ACCEPTED:
++                if (callback) callback(pic.input());
+                 active = false;
++                break;
++            case PicEntry::Result::CONFIRM:
++                prompt.change_text("Confirm your new PIC");
++                break;
++            case PicEntry::Result::MISMATCH:
++                prompt.change_text("PICs differ. Create a PIC again.");
++                break;
++            case PicEntry::Result::INCOMPLETE:
++                break;
+             }
+             break;
+         }
+ 
+-        switch (entered.size())
+-        {
+-        case MIN_SIZE - 1:
+-            buttons[BT_OK]->set_state(Button::DISABLED);
+-            break;
+-        case MIN_SIZE:
+-            buttons[BT_OK]->set_state(Button::NORMAL);
+-            break;
+-        case MAX_SIZE - 1:
+-            for (uint8_t i = 0; i < NUM_KEYS; i++)
+-            {
+-                buttons[i]->set_state(Button::NORMAL);
+-            }
+-            break;
+-        case MAX_SIZE:
+-            for (uint8_t i = 0; i < NUM_KEYS; i++)
+-            {
+-                buttons[i]->set_state(Button::DISABLED);
+-            }
+-            break;
+-        }
+-
+-        entry.change_text(entered);
++        buttons[BT_OK]->set_state(pic.ready() ? Button::NORMAL : Button::DISABLED);
++        for (uint8_t i = 0; i < NUM_KEYS; ++i)
++            buttons[i]->set_state(pic.full() ? Button::DISABLED : Button::NORMAL);
++        entry.change_text(pic.masked());
+ 
+         return Button::IDENTITY;
+     }
+ 
++    void UISoftkey::send_key(int32_t, bool pressed, bool escape)
++    {
++        if (pressed && escape)
++            active = false;
++    }
++
++    void UISoftkey::update_screen(int16_t width, int16_t height)
++    {
++        position = { static_cast<int16_t>((width - 140) / 2),
++                     static_cast<int16_t>((height - 280) / 2) };
++    }
++
+     void UISoftkey::shufflekeys()
+     {
+         std::vector<uint8_t> reserve;
+diff --git a/src/client/IO/UITypes/UISoftKey.h b/src/client/IO/UITypes/UISoftKey.h
+index d27a653..59c7d9a 100644
+--- a/src/client/IO/UITypes/UISoftKey.h
++++ b/src/client/IO/UITypes/UISoftKey.h
+@@ -17,6 +17,7 @@
+ //////////////////////////////////////////////////////////////////////////////
+ #pragma once
+ #include "../UIElement.h"
++#include "../Components/PicEntry.h"
+ 
+ #include "../../Graphics/Text.h"
+ #include "../../Util/Randomizer.h"
+@@ -35,9 +36,11 @@ namespace jrc
+         static constexpr bool FOCUSED = true;
+         static constexpr bool TOGGLED = false;
+ 
+-        UISoftkey(Callback callback);
++        UISoftkey(Callback callback, const std::string& prompt, bool registration);
+ 
+         void draw(float alpha) const override;
++        void send_key(int32_t keycode, bool pressed, bool escape) override;
++        void update_screen(int16_t width, int16_t height) override;
+ 
+     protected:
+         Button::State button_pressed(uint16_t) override;
+@@ -64,12 +67,12 @@ namespace jrc
+             BT_OK
+         };
+ 
+-        static constexpr size_t MIN_SIZE = 4;
+-        static constexpr size_t MAX_SIZE = 12;
+         static constexpr uint8_t NUM_KEYS = 10;
+ 
+         Callback callback;
+         Text entry;
++        Text prompt;
++        PicEntry pic;
+         Randomizer random;
+     };
+ }
+diff --git a/src/client/IO/UITypes/UIStatusBar.cpp b/src/client/IO/UITypes/UIStatusBar.cpp
+index aa808bc..531f982 100644
+--- a/src/client/IO/UITypes/UIStatusBar.cpp
++++ b/src/client/IO/UITypes/UIStatusBar.cpp
+@@ -36,7 +36,7 @@ namespace jrc
+     {
+         nl::node mainbar = nl::nx::ui["StatusBar2.img"]["mainBar"];
+ 
+-        sprites.emplace_back(mainbar["backgrnd"]);
++        background = mainbar["backgrnd"];
+         sprites.emplace_back(mainbar["gaugeBackgrd"]);
+         sprites.emplace_back(mainbar["notice"]);
+         sprites.emplace_back(mainbar["lvBacktrnd"]);
+@@ -87,6 +87,14 @@ namespace jrc
+ 
+     void UIStatusbar::draw(float alpha) const
+     {
++        background.draw_region({ 0, HudLayout::CORE_WIDTH, 0, HudLayout::ART_HEIGHT }, layout.core);
++        if (layout.grid.t() == layout.core.t())
++        {
++            background.draw_region({ HudLayout::CORE_WIDTH, HudLayout::GRID_LEFT, 0, HudLayout::ART_HEIGHT },
++                { layout.core.r(), layout.grid.l(), layout.core.t(), layout.core.b() });
++        }
++        background.draw_region({ HudLayout::GRID_LEFT, HudLayout::ART_WIDTH, 0, HudLayout::ART_HEIGHT },
++            layout.grid);
+         UIElement::draw(alpha);
+ 
+         expbar.draw(position + Point<int16_t>(-261, -15));
+@@ -146,10 +154,10 @@ namespace jrc
+ 
+     void UIStatusbar::update_layout_position()
+     {
+-        position = {
+-            POSITION.x(),
+-            static_cast<int16_t>(Constants::viewheight() - Constants::VIEWYOFFSET)
+-        };
++        layout = HudLayout::status(Constants::viewwidth(), Constants::viewheight(),
++            Constants::VIEWYOFFSET);
++        position = layout.anchor;
++        buttons[BT_TRADE]->set_position(layout.trade_offset);
+         chatbar.set_position(position);
+     }
+ 
+@@ -176,12 +184,18 @@ namespace jrc
+ 
+     bool UIStatusbar::is_in_range(Point<int16_t> cursorpos) const
+     {
+-        Rectangle<int16_t> bounds(
+-            position - Point<int16_t>(512, 84),
+-            position - Point<int16_t>(512, 84) + dimension
+-        );
+-
+-        return bounds.contains(cursorpos) || chatbar.is_in_range(cursorpos);
++        if (layout.core.contains(cursorpos) || chatbar.is_in_range(cursorpos))
++        {
++            return true;
++        }
++        for (const auto& button : buttons)
++        {
++            if (button.second->is_active() && button.second->bounds(position).contains(cursorpos))
++            {
++                return true;
++            }
++        }
++        return false;
+     }
+ 
+     bool UIStatusbar::remove_cursor(bool clicked, Point<int16_t> cursorpos)
+diff --git a/src/client/IO/UITypes/UIStatusBar.h b/src/client/IO/UITypes/UIStatusBar.h
+index c42cd01..7041bc5 100644
+--- a/src/client/IO/UITypes/UIStatusBar.h
++++ b/src/client/IO/UITypes/UIStatusBar.h
+@@ -30,6 +30,7 @@
+ #include "../../Character/Job.h"
+ #include "../../Graphics/Animation.h"
+ #include "../../Graphics/Text.h"
++#include "../../HudLayout.h"
+ 
+ #include <vector>
+ 
+@@ -46,6 +47,7 @@ namespace jrc
+ 
+         void draw(float alpha) const override;
+         void update() override;
++        void update_screen(int16_t, int16_t) override { update_layout_position(); }
+ 
+         bool is_in_range(Point<int16_t> cursorpos) const override;
+         bool remove_cursor(bool clicked, Point<int16_t> cursorpos) override;
+@@ -94,7 +96,7 @@ namespace jrc
+         };
+ 
+         static constexpr Point<int16_t> POSITION  = {  512, 590 };
+-        static constexpr Point<int16_t> DIMENSION = { 1366, 80  };
++        static constexpr Point<int16_t> DIMENSION = { HudLayout::CORE_WIDTH, HudLayout::ART_HEIGHT };
+         static constexpr time_t MESSAGE_COOLDOWN = 1'000;
+ 
+         const CharStats& stats;
+@@ -102,6 +104,8 @@ namespace jrc
+         EnumMap<Messages::Type, time_t> message_cooldowns;
+ 
+         UIChatbar chatbar;
++        Texture background;
++        HudLayout::Status layout;
+         Gauge expbar;
+         Gauge hpbar;
+         Gauge mpbar;
+diff --git a/src/client/IO/Window.cpp b/src/client/IO/Window.cpp
+index b0c0c1b..9161c4a 100644
+--- a/src/client/IO/Window.cpp
++++ b/src/client/IO/Window.cpp
+@@ -19,6 +19,7 @@
+ 
+ #ifdef MS_PLATFORM_WASM
+ #include <emscripten.h>
++#include <emscripten/html5.h>
+ #endif
+ 
+ #include "UI.h"
+@@ -26,7 +27,9 @@
+ #include "../Console.h"
+ #include "../Constants.h"
+ #include "../Configuration.h"
++#include "../Viewport.h"
+ #include "../Graphics/GraphicsGL.h"
++#include "../Gameplay/Stage.h"
+ 
+ #include <cstdlib>
+ 
+@@ -45,6 +48,68 @@ namespace jrc
+ 
+         DoubleclickState doubleclick_state;
+ 
++        Point<int16_t> logical_cursor(GLFWwindow* window, double x, double y)
++        {
++#ifdef MS_PLATFORM_WASM
++            const int width = EM_ASM_INT({ return Module.canvas.width; });
++            const int height = EM_ASM_INT({ return Module.canvas.height; });
++#else
++            int width = 0;
++            int height = 0;
++            glfwGetWindowSize(window, &width, &height);
++#endif
++            return Viewport::input_position(x, y, width, height,
++                Constants::viewwidth(), Constants::viewheight(), Constants::VIEWYOFFSET);
++        }
++
++        void sync_logical_view()
++        {
++#ifdef MS_PLATFORM_WASM
++            const Point<int16_t> requested = {
++                static_cast<int16_t>(EM_ASM_INT({
++                    return window.MapleWasmUI && window.MapleWasmUI.inGame ?
++                        window.MapleWasmUI.requestedWidth : 800;
++                })),
++                static_cast<int16_t>(EM_ASM_INT({
++                    return window.MapleWasmUI && window.MapleWasmUI.inGame ?
++                        window.MapleWasmUI.requestedHeight : 600;
++                }))
++            };
++            const auto coverage = Stage::get().get_view_coverage();
++            static Point<int16_t> previous_request;
++            static Point<int32_t> previous_coverage;
++            static Point<int16_t> effective(800, 600);
++            if (requested != previous_request || coverage != previous_coverage)
++            {
++                effective = Viewport::supported_view(requested, coverage);
++                previous_request = requested;
++                previous_coverage = coverage;
++            }
++            const int width = effective.x();
++            const int height = effective.y();
++            EM_ASM({
++                if (window.MapleWasmUI)
++                    window.MapleWasmUI.applyView($0, $1, !!$2);
++            }, width, height, effective != requested);
++            if (width != Constants::viewwidth() || height != Constants::viewheight())
++            {
++                Constants::set_viewsize(width, height);
++                GraphicsGL::get().set_screensize(Constants::viewwidth(), Constants::viewheight());
++                Stage::get().refresh_view();
++            }
++            static int backing_width = 0;
++            static int backing_height = 0;
++            const int next_width = EM_ASM_INT({ return Module.canvas.width; });
++            const int next_height = EM_ASM_INT({ return Module.canvas.height; });
++            if (next_width != backing_width || next_height != backing_height)
++            {
++                backing_width = next_width;
++                backing_height = next_height;
++                glViewport(0, 0, backing_width, backing_height);
++            }
++#endif
++        }
++
+         // GLFW does not emit double-click events, so synthesize them from
+         // successive left-button presses that happen close together.
+         bool is_doubleclick(Point<int16_t> position)
+@@ -94,6 +159,12 @@ namespace jrc
+ 
+     void mousekey_callback(GLFWwindow* window, int button, int action, int)
+     {
++        sync_logical_view();
++        double xpos = 0.0;
++        double ypos = 0.0;
++        glfwGetCursorPos(window, &xpos, &ypos);
++        const Point<int16_t> position = logical_cursor(window, xpos, ypos);
++        UI::get().send_cursor(position);
+         switch (button)
+         {
+         case GLFW_MOUSE_BUTTON_LEFT:
+@@ -101,13 +172,6 @@ namespace jrc
+             {
+             case GLFW_PRESS:
+             {
+-                double xpos = 0.0;
+-                double ypos = 0.0;
+-                glfwGetCursorPos(window, &xpos, &ypos);
+-                Point<int16_t> position(
+-                    static_cast<int16_t>(xpos),
+-                    static_cast<int16_t>(ypos)
+-                );
+ 
+                 UI::get().send_cursor(true);
+                 if (is_doubleclick(position))
+@@ -139,12 +203,10 @@ namespace jrc
+         }
+     }
+ 
+-    void cursor_callback(GLFWwindow*, double xpos, double ypos)
++    void cursor_callback(GLFWwindow* window, double xpos, double ypos)
+     {
+-        auto x = static_cast<int16_t>(xpos);
+-        auto y = static_cast<int16_t>(ypos);
+-        Point<int16_t> pos = Point<int16_t>(x, y);
+-        UI::get().send_cursor(pos);
++        sync_logical_view();
++        UI::get().send_cursor(logical_cursor(window, xpos, ypos));
+     }
+ 
+     void scroll_callback(GLFWwindow*, double, double yoffset)
+@@ -157,24 +219,33 @@ namespace jrc
+         UI::get().send_focus(focused);
+     }
+ 
++#ifdef MS_PLATFORM_WASM
++    EM_BOOL canvas_focus_callback(int event_type, const EmscriptenFocusEvent*, void*)
++    {
++        // DOM toolbar focus does not produce GLFW's window-blur event.
++        UI::get().send_focus(event_type == EMSCRIPTEN_EVENT_FOCUS);
++        return EM_FALSE;
++    }
++#endif
++
+     void close_callback(GLFWwindow* window)
+     {
+         UI::get().send_close();
+         glfwSetWindowShouldClose(window, GL_FALSE);
+     }
+ 
+-    void framebuffer_size_callback(GLFWwindow*, int width, int height)
++    void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+     {
+         if (width > 0 && height > 0)
+         {
+-#ifdef MS_PLATFORM_WASM
+-            // Dynamic viewport — use actual browser window size
+-            Constants::set_viewsize(width, height);
+-            glViewport(0, 0, width, height);
+-#else
+-            Constants::set_viewsize(width, height);
+-            glViewport(0, 0, width, height);
++#ifndef MS_PLATFORM_WASM
++            int window_width = 0;
++            int window_height = 0;
++            glfwGetWindowSize(window, &window_width, &window_height);
++            Constants::set_viewsize(window_width, window_height);
+ #endif
++            // Framebuffer pixels may be CSS-fit logical pixels multiplied by DPR.
++            glViewport(0, 0, width, height);
+             GraphicsGL::get().set_screensize(
+                 Constants::viewwidth(),
+                 Constants::viewheight()
+@@ -192,11 +263,12 @@ namespace jrc
+         }
+ 
+ #ifdef MS_PLATFORM_WASM
+-        int winW = EM_ASM_INT({ return window.innerWidth || 1024; });
+-        int winH = EM_ASM_INT({ return window.innerHeight || 768; });
++        int winW = EM_ASM_INT({ return window.MapleWasmUI ? window.MapleWasmUI.logicalWidth : 800; });
++        int winH = EM_ASM_INT({ return window.MapleWasmUI ? window.MapleWasmUI.logicalHeight : 600; });
++        Constants::set_viewsize(winW, winH);
+         glwnd = glfwCreateWindow(
+-            winW > 0 ? winW : Constants::VIEWWIDTH,
+-            winH > 0 ? winH : Constants::VIEWHEIGHT,
++            Constants::viewwidth(),
++            Constants::viewheight(),
+             "Journey",
+             fullscreen ? glfwGetPrimaryMonitor() : nullptr,
+             nullptr
+@@ -212,7 +284,7 @@ namespace jrc
+         glfwMakeContextCurrent(context);
+         glfwSetErrorCallback(error_callback);
+         glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+-        glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
++        glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
+ #endif
+ 
+         if (Error error = GraphicsGL::get().init())
+@@ -232,8 +304,8 @@ namespace jrc
+         }
+ 
+         glwnd = glfwCreateWindow(
+-            Constants::VIEWWIDTH,
+-            Constants::VIEWHEIGHT,
++            Constants::viewwidth(),
++            Constants::viewheight(),
+             "Journey",
+             fullscreen ? glfwGetPrimaryMonitor() : nullptr,
+             context
+@@ -251,7 +323,7 @@ namespace jrc
+         glfwSwapInterval(vsync ? 1 : 0);
+ #endif
+ 
+-        glViewport(0, 0, Constants::VIEWWIDTH, Constants::VIEWHEIGHT);
++        glViewport(0, 0, Constants::viewwidth(), Constants::viewheight());
+ #ifndef MS_PLATFORM_WASM
+         glMatrixMode(GL_PROJECTION);
+         glLoadIdentity();
+@@ -278,6 +350,8 @@ namespace jrc
+         GraphicsGL::get().reinit();
+ 
+ #ifdef MS_PLATFORM_WASM
++        emscripten_set_blur_callback("#canvas", nullptr, true, canvas_focus_callback);
++        emscripten_set_focus_callback("#canvas", nullptr, true, canvas_focus_callback);
+         // Keep browser default-prevention rules configurable from JS so the input list is easy to extend.
+         EM_ASM({
+             window.MapleWasmInputGuard = window.MapleWasmInputGuard || {};
+@@ -356,35 +430,15 @@ namespace jrc
+         }
+     }
+ 
+-    void Window::check_events()
++    void Window::sync_view()
+     {
+-#ifdef MS_PLATFORM_WASM
+-        int32_t f11state = glfwGetKey(glwnd, GLFW_KEY_F11);
+-        if (f11state == GLFW_PRESS && !f11_down)
+-        {
+-            fullscreen = !fullscreen;
+-            EM_ASM({
+-                const canvas = Module && Module.canvas ? Module.canvas : null;
+-                if (!canvas) {
+-                    return;
+-                }
+-
+-                const isCanvasFullscreen = document.fullscreenElement === canvas;
+-                const next = !isCanvasFullscreen;
+-
+-                if (next) {
+-                    canvas.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
+-                } else if (document.fullscreenElement) {
+-                    document.exitFullscreen().catch(() => {});
+-                }
++        sync_logical_view();
++    }
+ 
+-                if (window.MapleWasmUI && window.MapleWasmUI.applyScale) {
+-                    setTimeout(window.MapleWasmUI.applyScale, 0);
+-                }
+-            });
+-        }
+-        f11_down = (f11state == GLFW_PRESS);
+-#else
++    void Window::check_events()
++    {
++        sync_logical_view();
++#ifndef MS_PLATFORM_WASM
+         int32_t f11state = glfwGetKey(glwnd, GLFW_KEY_F11);
+         if (f11state == GLFW_PRESS && !f11_down)
+         {
+diff --git a/src/client/IO/Window.h b/src/client/IO/Window.h
+index b39b935..a9d1a7d 100644
+--- a/src/client/IO/Window.h
++++ b/src/client/IO/Window.h
+@@ -42,6 +42,8 @@ namespace jrc
+         void end() const;
+         void fadeout(float step, std::function<void()> fadeprocedure);
+         void check_events();
++        // Apply the shell request against current authored map coverage before layout/draw.
++        void sync_view();
+ 
+         void setclipboard(const std::string& text) const;
+         std::string getclipboard() const;
+diff --git a/src/client/IO/WorldInputState.h b/src/client/IO/WorldInputState.h
+new file mode 100644
+index 0000000..a8a9a3d
+--- /dev/null
++++ b/src/client/IO/WorldInputState.h
+@@ -0,0 +1,73 @@
++#pragma once
++#include "Keyboard.h"
++
++#include <array>
++#include <cstddef>
++
++namespace jrc
++{
++    // Tracks only inputs actually delivered to the world. Suspended keys remain
++    // quarantined until key-up, so OS repeats cannot restart motion after a modal.
++    class WorldInputState
++    {
++    public:
++        template <typename Send>
++        void send(KeyType::Id type, int32_t action, bool pressed, bool blocked, Send&& deliver)
++        {
++            if (type != KeyType::ACTION && type != KeyType::FACE &&
++                type != KeyType::ITEM && type != KeyType::SKILL)
++                return;
++            // Only ACTION has held/release semantics in Stage::send_key.
++            // Releasing ITEM/SKILL/FACE would execute the command again.
++            if (type != KeyType::ACTION)
++            {
++                if (pressed && !blocked)
++                    deliver(type, action, true);
++                return;
++            }
++            size_t index = 0;
++            while (index < count && !(held[index].key == Keyboard::Mapping(type, action)))
++                ++index;
++            if (!pressed)
++            {
++                if (index < count)
++                {
++                    if (!held[index].suspended)
++                        deliver(type, action, false);
++                    held[index] = held[--count];
++                }
++                return;
++            }
++            if (index < count)
++            {
++                if (!blocked && !held[index].suspended)
++                    deliver(type, action, true);
++                return;
++            }
++            if (count == held.size())
++                return;
++            held[count++] = { Keyboard::Mapping(type, action), blocked };
++            if (!blocked)
++                deliver(type, action, true);
++        }
++
++        template <typename Send>
++        void suspend(Send&& deliver)
++        {
++            for (size_t i = 0; i < count; ++i)
++            {
++                if (!held[i].suspended)
++                {
++                    held[i].suspended = true;
++                    deliver(held[i].key.type, held[i].key.action, false);
++                }
++            }
++        }
++
++    private:
++        struct Held { Keyboard::Mapping key; bool suspended = false; };
++        // At most one held mapping per GLFW key. No allocation on input events.
++        std::array<Held, 512> held = {};
++        size_t count = 0;
++    };
++}
+diff --git a/src/client/Net/Handlers/LoginHandlers.cpp b/src/client/Net/Handlers/LoginHandlers.cpp
+index eac4c0b..e4c8b3a 100644
+--- a/src/client/Net/Handlers/LoginHandlers.cpp
++++ b/src/client/Net/Handlers/LoginHandlers.cpp
+@@ -99,6 +99,14 @@ namespace jrc
+         }
+     }
+ 
++    void PicResultHandler::handle(InPacket& recv) const
++    {
++        recv.read_byte(); // CHECK_SPW_RESULT: Cosmic wrongPic() sends mode 0.
++        if (auto charselect = UI::get().get_element<UICharSelect>())
++            charselect->handle_pic_failure(UILoginNotice::SECOND_PASSWORD_INCORRECT);
++        UI::get().enable();
++    }
++
+ 
+     void ServerlistHandler::handle(InPacket& recv) const
+     {
+diff --git a/src/client/Net/Handlers/LoginHandlers.h b/src/client/Net/Handlers/LoginHandlers.h
+index 10b121a..b4ec423 100644
+--- a/src/client/Net/Handlers/LoginHandlers.h
++++ b/src/client/Net/Handlers/LoginHandlers.h
+@@ -56,6 +56,12 @@ namespace jrc
+         void handle(InPacket& recv) const override;
+     };
+ 
++    // Cosmic reports an incorrect PIC separately from LOGIN_RESULT.
++    class PicResultHandler : public PacketHandler
++    {
++        void handle(InPacket& recv) const override;
++    };
++
+     // Handles the packet which contains the IP of a channel server to connect to.
+     class ServerIPHandler : public PacketHandler
+     {
+diff --git a/src/client/Net/Handlers/NpcInteractionHandlers.cpp b/src/client/Net/Handlers/NpcInteractionHandlers.cpp
+index fcecc66..0a40e20 100644
+--- a/src/client/Net/Handlers/NpcInteractionHandlers.cpp
++++ b/src/client/Net/Handlers/NpcInteractionHandlers.cpp
+@@ -163,70 +163,21 @@ namespace jrc
+ 
+     void NpcDialogueHandler::handle(InPacket& recv) const
+     {
+-        recv.skip(1);
+-
+-        int32_t npcid = recv.read_int();
+-        int8_t msgtype = recv.read_byte(); // 0 - textonly, 1 - yes/no, 2 - getText, 4/5 - selection, 12 - accept/decline
+-        int8_t speaker = recv.read_byte();
+-        std::string text = recv.read_string();
+-
+-        int16_t style = 0;
+-        bool has_navigation_flags = false;
+-        if ((msgtype == 0 || msgtype == 1) && recv.length() >= 2)
+-        {
+-            style = recv.read_short();
+-            has_navigation_flags = true;
+-        }
+-
+-        // getNum (msgtype 2+3) sends default value and min/max range.
+-        // Declare early so both type 2 and type 3 handlers can use them.
+-        int32_t num_def = 0;
+-        int32_t num_min = 0;
+-        int32_t num_max = 0;
+-
+-        // getText (msgtype 2) has a trailing default-text string and a packed
+-        // min/max int. Forward the limit as num_max so the dialog textfield
+-        // enforces the server's character limit instead of a hardcoded 100.
+-        if (msgtype == 2 && recv.length() > 0)
+-        {
+-            std::string text_default = recv.read_string(); // default text hint
+-            num_max = 100;
+-            if (recv.length() >= 4)
+-            {
+-                int32_t packed = recv.read_int(); // min/max packed
+-                if (packed > 0)
+-                    num_max = packed;
+-            }
+-            // Inject default text as a pre-fill hint in the dialog body
+-            if (!text_default.empty()) {
+-                text += "\r\n\r\n#b(" + text_default + ")#k";
+-            }
+-        }
+-
+-        // getNum (msgtype 3) sends default value and min/max range.
+-        // Consume them and pass to the NPC dialog for number input.
+-        if (msgtype == 3 && recv.length() >= 12)
+-        {
+-            num_def = recv.read_int();
+-            num_min = recv.read_int();
+-            num_max = recv.read_int();
+-        }
+-
+-        // Style picker (msgtype 7) — reads style count + style IDs array.
+-        int8_t style_count = 0;
+-        std::vector<int32_t> style_ids;
+-        if (msgtype == 7 && recv.length() >= 1)
++        // Parse completely before touching the live dialog. Malformed/quiz
++        // packets must never become an actionable style or accept prompt.
++        NpcDialogue dialogue = NpcDialogue::parse(recv);
++        UI::get().release_world_inputs();
++        UI::get().cancel_drag();
++        UI::get().remove_textfield();
++        auto npctalk = UI::get().get_element<UINpcTalk>();
++        if (!npctalk)
++            npctalk = UI::get().emplace<UINpcTalk>();
++        UI::get().enable();
++        if (npctalk)
+         {
+-            style_count = recv.read_byte();
+-            for (int i = 0; i < style_count && recv.length() >= 4; ++i)
+-                style_ids.push_back(recv.read_int());
++            npctalk->change_text(std::move(dialogue));
++            npctalk->makeactive();
+         }
+-
+-        UI::get().emplace<UINpcTalk>();
+-        UI::get().enable();
+-
+-        if (auto npctalk = UI::get().get_element<UINpcTalk>())
+-            npctalk->change_text(npcid, msgtype, style, has_navigation_flags, speaker, text, num_def, num_min, num_max, style_ids);
+     }
+ 
+ 
+diff --git a/src/client/Net/InPacket.cpp b/src/client/Net/InPacket.cpp
+index e1b644c..825dcca 100644
+--- a/src/client/Net/InPacket.cpp
++++ b/src/client/Net/InPacket.cpp
+@@ -89,7 +89,9 @@ namespace jrc
+     {
+         std::string ret;
+ 
+-        for (int16_t i = 0; i < count; ++i)
++        if (count > length())
++            throw PacketError("String underflow");
++        for (uint16_t i = 0; i < count; ++i)
+         {
+             char letter = read_byte();
+             if (letter != '\0')
+diff --git a/src/client/Net/InPacket.h b/src/client/Net/InPacket.h
+index 34d5804..3b3ac22 100644
+--- a/src/client/Net/InPacket.h
++++ b/src/client/Net/InPacket.h
+@@ -21,6 +21,7 @@
+ #include "../Template/Point.h"
+ 
+ #include <cstdint>
++#include <type_traits>
+ 
+ 
+ namespace jrc
+@@ -76,15 +77,18 @@ namespace jrc
+         T read()
+         {
+             size_t count = sizeof(T) / sizeof(int8_t);
+-            T all = 0;
++            if (count > length())
++                throw PacketError("Stack underflow");
++            using Unsigned = typename std::make_unsigned<T>::type;
++            Unsigned all = 0;
+             for (size_t i = 0; i < count; ++i)
+             {
+-                T val = static_cast<uint8_t>(bytes[pos]);
++                Unsigned val = static_cast<uint8_t>(bytes[pos]);
+                 all += val << (8 * i);
+ 
+                 skip(1);
+             }
+-            return all;
++            return static_cast<T>(all);
+         }
+ 
+         template <typename T>
+diff --git a/src/client/Net/NpcDialogue.h b/src/client/Net/NpcDialogue.h
+new file mode 100644
+index 0000000..ecf2ad6
+--- /dev/null
++++ b/src/client/Net/NpcDialogue.h
+@@ -0,0 +1,235 @@
++#pragma once
++#include "InPacket.h"
++#include "Packets/NpcInteractionPackets.h"
++
++#include <charconv>
++#include <optional>
++#include <utility>
++
++namespace jrc
++{
++    // The v83 PacketCreator/NPCMoreTalkHandler contract, independent of art/UI.
++    struct NpcDialogue
++    {
++        enum class Mode { TEXT, YES_NO, TEXTFIELD, NUMBER, SELECTION, STYLE, ACCEPT_DECLINE };
++        int32_t npc = 0;
++        int8_t type = 0;
++        int8_t speaker = 0;
++        Mode mode = Mode::TEXT;
++        std::string text;
++        std::string default_text;
++        int32_t number_default = 0;
++        int32_t number_min = 0;
++        int32_t number_max = 0;
++        uint16_t text_min = 0;
++        uint16_t text_max = 100;
++        bool navigation = false;
++        bool previous = false;
++        bool next = false;
++        std::vector<int32_t> styles;
++
++        // Mirror uses #index#label, not the ordinary #Lindex#label#l menu.
++        // Normalize only this packet type before the existing UI token parser.
++        static std::string mirror_text(const std::string& source)
++        {
++            std::string result;
++            size_t cursor = 0;
++            while (cursor < source.size())
++            {
++                size_t start = source.find('#', cursor);
++                if (start == std::string::npos)
++                {
++                    result += source.substr(cursor);
++                    break;
++                }
++                result += source.substr(cursor, start - cursor);
++                size_t end = source.find('#', start + 1);
++                if (end == std::string::npos)
++                    throw PacketError("Invalid dimensional mirror option");
++                int32_t id = 0;
++                auto parsed = std::from_chars(source.data() + start + 1, source.data() + end, id);
++                if (parsed.ec != std::errc() || parsed.ptr != source.data() + end)
++                    throw PacketError("Invalid dimensional mirror option");
++                size_t next = source.find('#', end + 1);
++                std::string label = source.substr(end + 1, next == std::string::npos ?
++                    std::string::npos : next - end - 1);
++                if (id >= 0)
++                    result += "#L" + std::to_string(id) + "#" + label + "#l";
++                else
++                    result += label; // #-1# means no destination, not acceptance.
++                if (next == std::string::npos)
++                    break;
++                cursor = next;
++            }
++            return result;
++        }
++
++        static NpcDialogue parse(InPacket& packet)
++        {
++            NpcDialogue result;
++            packet.read_byte();
++            result.npc = packet.read_int();
++            result.type = packet.read_byte();
++            result.speaker = packet.read_byte();
++
++            // Speed quiz 7 is NOT getNPCTalkStyle: [result][five int32s]
++            // (or just [result] on failure). Reject instead of interpreting its
++            // binary payload as a string/style count. Quiz support is separate.
++            if (result.type == 6 || (result.type == 7 &&
++                (packet.length() == 1 || (packet.length() == 21 && packet.inspect_byte() == 0))))
++                throw PacketError("Unsupported NPC quiz dialogue");
++            if (result.type == 14)
++                packet.read_int(); // getDimensionalMirror's reserved int precedes the string.
++            result.text = packet.read_string();
++            if (result.type == 14)
++                result.text = mirror_text(result.text);
++            switch (result.type)
++            {
++            case 0:
++                result.mode = Mode::TEXT;
++                result.navigation = true;
++                result.previous = packet.read_bool();
++                result.next = packet.read_bool();
++                break;
++            case 1:
++                // Retain the deployed navigation-bearing type1 variant.
++                result.mode = Mode::YES_NO;
++                if (packet.length() == 2)
++                {
++                    result.mode = Mode::TEXT;
++                    result.navigation = true;
++                    result.previous = packet.read_bool();
++                    result.next = packet.read_bool();
++                }
++                break;
++            case 2:
++            {
++                result.mode = Mode::TEXTFIELD;
++                result.default_text = packet.read_string();
++                result.text_min = static_cast<uint16_t>(packet.read_short());
++                uint16_t maximum = static_cast<uint16_t>(packet.read_short());
++                result.text_max = maximum == 0 ? 100 : maximum;
++                if (result.text_min > result.text_max ||
++                    result.default_text.size() > result.text_max)
++                    throw PacketError("Invalid NPC text bounds/default");
++                break;
++            }
++            case 3:
++                result.mode = Mode::NUMBER;
++                result.number_default = packet.read_int();
++                result.number_min = packet.read_int();
++                result.number_max = packet.read_int();
++                packet.read_int(); // PacketCreator's reserved trailer.
++                if (result.number_min > result.number_max || result.number_default < result.number_min ||
++                    result.number_default > result.number_max)
++                    throw PacketError("Invalid NPC number bounds/default");
++                break;
++            case 4:
++            case 5:
++            case 14:
++                result.mode = Mode::SELECTION;
++                break;
++            case 7:
++            {
++                result.mode = Mode::STYLE;
++                uint8_t count = static_cast<uint8_t>(packet.read_byte());
++                if (count == 0 || packet.length() != static_cast<size_t>(count) * 4)
++                    throw PacketError("Invalid NPC style count");
++                result.styles.reserve(count);
++                for (uint16_t i = 0; i < count; ++i)
++                    result.styles.push_back(packet.read_int());
++                break;
++            }
++            case 12:
++                result.mode = Mode::ACCEPT_DECLINE;
++                break;
++            default:
++                throw PacketError("Unsupported NPC dialogue type " + std::to_string(result.type));
++            }
++            if (packet.available())
++                throw PacketError("Unexpected NPC dialogue trailer");
++            return result;
++        }
++    };
++
++    class NpcDialogueState
++    {
++    public:
++        enum class Action { CONFIRM, YES, NO, BACK, NEXT, CANCEL };
++
++        void begin(NpcDialogue dialogue)
++        {
++            current = std::move(dialogue);
++            responded = false;
++            error_message.clear();
++            options.clear();
++        }
++        const NpcDialogue& dialogue() const { return current; }
++        void set_options(const std::vector<int32_t>& values) { options = values; }
++        const std::string& error() const { return error_message; }
++
++        std::optional<NpcTalkMorePacket> respond(Action action, const std::string& input = {}, int32_t index = 0)
++        {
++            if (responded)
++                return std::nullopt;
++            error_message.clear();
++            std::optional<NpcTalkMorePacket> packet;
++            if (action == Action::CANCEL)
++                packet = NpcTalkMorePacket::close(current.type);
++            else if (action == Action::BACK && current.mode == NpcDialogue::Mode::TEXT && current.previous)
++                packet = NpcTalkMorePacket(current.type, 0);
++            else if (action == Action::NEXT && current.mode == NpcDialogue::Mode::TEXT && current.next)
++                packet = NpcTalkMorePacket(current.type, 1);
++            else if ((action == Action::YES || action == Action::NO) &&
++                (current.mode == NpcDialogue::Mode::YES_NO || current.mode == NpcDialogue::Mode::ACCEPT_DECLINE))
++                packet = NpcTalkMorePacket(current.type, action == Action::YES ? 1 : 0);
++            else if (action == Action::CONFIRM)
++            {
++                switch (current.mode)
++                {
++                case NpcDialogue::Mode::NUMBER:
++                {
++                    int32_t value = 0;
++                    const auto parsed = std::from_chars(input.data(), input.data() + input.size(), value);
++                    if (input.empty() || parsed.ec != std::errc() || parsed.ptr != input.data() + input.size() ||
++                        value < current.number_min || value > current.number_max)
++                        error_message = "Enter a whole number from " + std::to_string(current.number_min) +
++                            " to " + std::to_string(current.number_max) + ".";
++                    else
++                        packet = NpcTalkMorePacket::number(1, value);
++                    break;
++                }
++                case NpcDialogue::Mode::TEXTFIELD:
++                    if (input.size() < current.text_min || input.size() > current.text_max)
++                        error_message = "Enter between " + std::to_string(current.text_min) + " and " +
++                            std::to_string(current.text_max) + " characters.";
++                    else
++                        packet = NpcTalkMorePacket(input);
++                    break;
++                case NpcDialogue::Mode::STYLE:
++                    if (index >= 0 && static_cast<size_t>(index) < current.styles.size())
++                        packet = NpcTalkMorePacket::style(static_cast<uint8_t>(index));
++                    break;
++                case NpcDialogue::Mode::SELECTION:
++                    if (index >= 0 && static_cast<size_t>(index) < options.size())
++                        packet = NpcTalkMorePacket::selection(current.type, options[index]);
++                    break;
++                case NpcDialogue::Mode::TEXT:
++                    packet = NpcTalkMorePacket(current.type, 1);
++                    break;
++                default:
++                    break;
++                }
++            }
++            if (packet)
++                responded = true;
++            return packet;
++        }
++
++    private:
++        NpcDialogue current;
++        std::vector<int32_t> options;
++        bool responded = true;
++        std::string error_message;
++    };
++}
+diff --git a/src/client/Net/OutPacket.cpp b/src/client/Net/OutPacket.cpp
+index 23b00ef..e0876b1 100644
+--- a/src/client/Net/OutPacket.cpp
++++ b/src/client/Net/OutPacket.cpp
+@@ -17,9 +17,9 @@
+ //////////////////////////////////////////////////////////////////////////////
+ #include "OutPacket.h"
+ 
+-#include "Session.h"
+-
+ #include <chrono>
++#include <limits>
++#include <stdexcept>
+ 
+ namespace jrc
+ {
+@@ -28,11 +28,6 @@ namespace jrc
+         write_short(opcode);
+     }
+ 
+-    void OutPacket::dispatch()
+-    {
+-        Session::get().
+-            write(bytes.data(), bytes.size());
+-    }
+ 
+     void OutPacket::skip(size_t count)
+     {
+@@ -90,12 +85,12 @@ namespace jrc
+ 
+     void OutPacket::write_string(const std::string& str)
+     {
+-        int16_t length = static_cast<int16_t>(str.length());
+-        write_short(length);
++        if (str.size() > std::numeric_limits<uint16_t>::max())
++            throw std::length_error("Packet string exceeds uint16 length");
++        uint16_t length = static_cast<uint16_t>(str.length());
++        write_short(static_cast<int16_t>(length));
+ 
+-        for (int16_t i = 0; i < length; ++i)
+-        {
++        for (size_t i = 0; i < length; ++i)
+             write_byte(str[i]);
+-        }
+     }
+ }
+diff --git a/src/client/Net/OutPacket.h b/src/client/Net/OutPacket.h
+index 39fedc2..394bc6c 100644
+--- a/src/client/Net/OutPacket.h
++++ b/src/client/Net/OutPacket.h
+@@ -35,6 +35,7 @@ namespace jrc
+         OutPacket(int16_t opcode);
+ 
+         void dispatch();
++        const std::vector<int8_t>& data() const { return bytes; }
+ 
+     protected:
+         // Skip a number of bytes (filled with zeroes).
+diff --git a/src/client/Net/PacketSwitch.cpp b/src/client/Net/PacketSwitch.cpp
+index 07319c4..e248855 100644
+--- a/src/client/Net/PacketSwitch.cpp
++++ b/src/client/Net/PacketSwitch.cpp
+@@ -51,6 +51,7 @@ namespace jrc
+         // Login 2
+         SELECT_WORLD       = 26,
+         RECOMMENDED_WORLDS = 27,
++        CHECK_SPW_RESULT   = 28,
+ 
+         // Inventory 1
+         MODIFY_INVENTORY = 29,
+@@ -166,6 +167,7 @@ namespace jrc
+         emplace<ADD_NEWCHAR_ENTRY, AddNewCharEntryHandler>();
+         emplace<DELCHAR_RESPONSE, DeleteCharResponseHandler>();
+         emplace<SERVER_IP, ServerIPHandler>();
++        emplace<CHECK_SPW_RESULT, PicResultHandler>();
+ 
+         // 'Setfield' handlers
+         emplace<SET_FIELD, SetfieldHandler>();
+diff --git a/src/client/Net/Packets/NpcInteractionPackets.h b/src/client/Net/Packets/NpcInteractionPackets.h
+index a87a589..4ba3732 100644
+--- a/src/client/Net/Packets/NpcInteractionPackets.h
++++ b/src/client/Net/Packets/NpcInteractionPackets.h
+@@ -61,9 +61,27 @@ namespace jrc
+             return packet;
+         }
+ 
++        static NpcTalkMorePacket number(int8_t action, int32_t value)
++        {
++            NpcTalkMorePacket packet(3, action);
++            packet.write_int(value);
++            return packet;
++        }
++
++        static NpcTalkMorePacket style(uint8_t index)
++        {
++            NpcTalkMorePacket packet(7, 1);
++            packet.write_byte(static_cast<int8_t>(index));
++            return packet;
++        }
++
+         static NpcTalkMorePacket close(int8_t lastmsg)
+         {
+-            return NpcTalkMorePacket(lastmsg, static_cast<int8_t>(-1));
++            // Text cancellation is action0: action-1 makes the server read a
++            // missing string. Number replies always carry their int32 payload.
++            if (lastmsg == 3)
++                return number(-1, 0);
++            return NpcTalkMorePacket(lastmsg, static_cast<int8_t>(lastmsg == 2 ? 0 : -1));
+         }
+     };
+ 
+diff --git a/src/client/Net/Session.cpp b/src/client/Net/Session.cpp
+index f109467..714ffc4 100644
+--- a/src/client/Net/Session.cpp
++++ b/src/client/Net/Session.cpp
+@@ -16,6 +16,7 @@
+ // along with this program.  If not, see <http://www.gnu.org/licenses/>.    //
+ //////////////////////////////////////////////////////////////////////////////
+ #include "Session.h"
++#include "OutPacket.h"
+ 
+ #include "../Configuration.h"
+ #include "../Console.h"
+@@ -25,6 +26,11 @@
+ 
+ namespace jrc
+ {
++    void OutPacket::dispatch()
++    {
++        Session::get().write(bytes.data(), bytes.size());
++    }
++
+     namespace
+     {
+         bool is_local_channel_address(const std::string& address)
+diff --git a/src/client/Template/Point.h b/src/client/Template/Point.h
+index 2925d69..4e367e2 100644
+--- a/src/client/Template/Point.h
++++ b/src/client/Template/Point.h
+@@ -178,13 +178,13 @@ namespace jrc
+         /// Return a point whose coordinates are the sum of this and another points coordinates.
+         constexpr Point<T> operator+(Point<T> v) const
+         {
+-            return { a + v.a, b + v.b };
++            return { static_cast<T>(a + v.a), static_cast<T>(b + v.b) };
+         }
+ 
+         /// Return a point whose coordinates are the difference of this and another points coordinates.
+         constexpr Point<T> operator-(Point<T> v) const
+         {
+-            return { a - v.a, b - v.b };
++            return { static_cast<T>(a - v.a), static_cast<T>(b - v.b) };
+         }
+ 
+         /// Return a point whose coordinates are the product of this and another points coordinates.
+diff --git a/src/client/Template/Range.h b/src/client/Template/Range.h
+index fbf5a40..e1d949f 100644
+--- a/src/client/Template/Range.h
++++ b/src/client/Template/Range.h
+@@ -128,7 +128,7 @@ namespace jrc
+         // Return the negative of this range.
+         constexpr Range<T> operator - () const
+         {
+-            return{ -a, -b };
++            return{ static_cast<T>(-a), static_cast<T>(-b) };
+         }
+ 
+         // Construct a symmetric range around mid.
+diff --git a/src/client/Viewport.h b/src/client/Viewport.h
+new file mode 100644
+index 0000000..3acce1b
+--- /dev/null
++++ b/src/client/Viewport.h
+@@ -0,0 +1,63 @@
++#pragma once
++
++#include "Template/Point.h"
++
++#include <algorithm>
++#include <cmath>
++#include <cstdint>
++
++namespace jrc
++{
++    // All UI/world geometry is logical pixels. Only the GL viewport uses backing pixels.
++    namespace Viewport
++    {
++        // Coverage is authored map/art extent, never the current camera or browser size.
++        // Unknown or insufficient coverage retains the original game's classic view.
++        inline Point<int16_t> supported_view(Point<int16_t> requested, Point<int32_t> coverage)
++        {
++            if (requested.x() >= 1920 && requested.y() >= 1080 &&
++                coverage.x() >= 1920 && coverage.y() >= 1080)
++                return {1920, 1080};
++            if (requested.x() >= 1280 && requested.y() >= 720 &&
++                coverage.x() >= 1280 && coverage.y() >= 720)
++                return {1280, 720};
++            return {800, 600};
++        }
++
++        inline Point<int16_t> input_position(double x, double y, int32_t window_width,
++            int32_t window_height, int16_t logical_width, int16_t logical_height,
++            int16_t yoffset)
++        {
++            const double lx = x * logical_width / std::max(1, window_width);
++            const double ly = y * logical_height / std::max(1, window_height) - yoffset;
++            return {
++                static_cast<int16_t>(std::clamp(lx, -32768.0, 32767.0)),
++                static_cast<int16_t>(std::clamp(ly, -32768.0, 32767.0))
++            };
++        }
++
++        inline Point<int16_t> clamp_window(Point<int16_t> position, Point<int16_t> size,
++            int16_t width, int16_t height, int16_t yoffset)
++        {
++            // Oversized windows retain their title/close controls at the top edge.
++            const int32_t max_x = std::max<int32_t>(0, width - size.x());
++            const int32_t max_y = std::max<int32_t>(-yoffset, height - yoffset - size.y());
++            return {
++                static_cast<int16_t>(std::clamp<int32_t>(position.x(), 0, max_x)),
++                static_cast<int16_t>(std::clamp<int32_t>(position.y(), -yoffset, max_y))
++            };
++        }
++
++        inline double camera_axis(double offset, int16_t negative_first,
++            int16_t negative_second, int16_t extent)
++        {
++            const double lower = std::min(negative_first, negative_second);
++            const double upper = std::max(negative_first, negative_second);
++            if (upper - lower <= extent)
++            {
++                return (lower + upper + extent) / 2.0;
++            }
++            return std::clamp(offset, lower + extent, upper);
++        }
++    }
++}

@@ -297,6 +297,215 @@ Production promotion — 2026-10-15 UTC:
   with the timestamped backup above using `renameat2(RENAME_EXCHANGE)`;
   never restore JS and WASM individually.
 
+## Journey browser modernization — DEV only
+
+This iteration targets reliable NPC/PIC input followed by true desktop
+widescreen, not a client replacement or a production promotion. The production
+baseline remains Journey JS
+`98ff3048bc1d99a8a4b9ac4e88f96d2772eb137b9b78e49314c528bf1c1dbe7f`
+and WASM
+`9a099050d05f02bc354bc7bc9cda9257663237813a1926347a5d6e7b9df211cb`.
+Candidate source is separate from the user's dirty `/root/workspace` checkout.
+No Java, database, service, gateway, routing, or NX changes are part of this
+iteration; HTTPS continues using same-origin WSS and login target `.164:9494`.
+The existing prefetch mismatch and on-demand asset-loading policy are unchanged.
+
+User-facing DEV changes:
+- Desktop **Display** selects Auto viewport, Classic 800×600, Wide 1280×720,
+  or Wide 1920×1080. The choice is saved locally and applies **in-game**.
+  Login/world/character/creation screens remain centered classic 800×600 so
+  their original art and control coordinates are not stretched or left
+  top-left in a blank wide canvas. The toolbar reports both actual current
+  dimensions and the requested in-game dimensions. Wide world modes reveal
+  more world space instead of magnifying the classic framebuffer.
+  Actual map extents cap the effective world mode: a requested 1920×1080
+  becomes 1280×720 on the 1440px-wide Small Forest map, then upgrades on
+  sufficiently large maps without losing the saved choice. Unknown coverage
+  uses classic mode; no terrain is invented beyond authored extents.
+- **Fullscreen** (or F11 while the game page owns input) enters/exits the
+  game container; logical coordinates remain separate from CSS size and DPR.
+  Numeric DPR changes are also detected when the browser emits no resolution
+  media-query event; fitting is change-only, not repeated layout every frame.
+- NPC dialogs own movement/attack/hotkeys while open. Previously held
+  actions release on dialog entry or blur. End/Escape cancel; Back follows
+  the server's navigation flags. Text keeps its server default; number
+  validation reports bounds instead of sending the wrong string packet.
+  Style selection sends its byte-sized option index.
+- Character selection requests an explicit masked PIC rather than silently
+  submitting a fixed value. Creating a PIC requires matching confirmation;
+  rejection reopens the prompt without credential logging.
+- Status/chat controls use their real asset bounds. The baked quickslot grid
+  reflows within the viewport but remains decorative: interactive quickslot
+  bindings are a separate parity gap, not newly implemented here.
+- Quiz6/speed-quiz7 layouts are explicitly unsupported, not misread as a style
+  picker. These changes do not certify shops, combat, advanced jobs, PQs,
+  bosses, native cash-shop windows, or mobile/touch support.
+
+### Reconstructable source and checks
+
+The engine stays pinned to public submodule commit
+`8eece1d1fc43afa48e12df56b4719ca63af88e0b`. Apply repository-owned patches in order:
+`web-client/patches/remote-movement.patch`,
+`web-client/patches/deployed-npc-chat.patch`,
+`web-client/patches/browser-modernization.patch`.
+The second patch preserves the three deployed user files: `UIChatBar.cpp`,
+`UINpcTalk.cpp`, and `NpcInteractionHandlers.cpp`; the final patch makes the
+bounded changes on top. No private gitlink or remote dirty directory is needed.
+The Dockerfile uses the same pinned emsdk image digest as the movement build.
+
+The preserved user patch SHA256 is
+`011fcc2d778bccdec71452e99fc884e5c57ddc385aac9c22acd661299250b9cb`,
+matching the prior deployed manifest. Frozen modernization source patch
+SHA256 is `a9ab5a1687722a135953d0a12e10658084c7d673e6726869f50fe3be624585d8`;
+its shell SHA256 is
+`f8f5a128328ab81bb5ed2426617c93b35f1b0a0f5d1c75056a45d7c05a44fe8d`.
+These identify the final owned source; DEV deployment and exercised evidence follow below.
+
+Run `cd web-client && python3 -m unittest test_modernization test_movement test_routing -v`.
+This command passed **5 tests** in 8.586 seconds against the reconstructed
+patch stack. Modernization runs four real native executables: NPC parser/state/
+wire and held-input ownership; viewport/map-extent/camera/HUD geometry; PIC state/
+wire; and movement parsing against the complete three-patch stack. The unchanged
+movement baseline and three HTTP/WS/NX routing contracts also pass. Both
+movement runs' uniform 50 ms streams retained maximum
+hold 0 ms and final X 299.64. Initial native compilation exposed eager Session
+singleton linkage in the serializer and three legacy narrow arithmetic
+conversions; dispatch now lives with Session transport and those conversions
+are explicit, without packet-API changes or diagnostic suppression.
+Native tests are not a substitute for actual WASM/browser acceptance. Build and deployment
+records must identify the candidate source, patch hashes, shell, coordinated
+JS/WASM pair, and rollback directory. Only DEV at `/opt/buns-dev` / port 8081
+may receive the candidate. A rollback restores the whole shell/build snapshot,
+never an individual JS or WASM file. Production `/opt/buns/web-client` / port
+8080 remains untouched until separately approved.
+
+### Current DEV deployment and recorded evidence
+
+DEV serves source-content hash
+`5874e6cacda35541a99cc3aa4c7874d9f4c14c69edd61bd77e76fe57e8348962`,
+rebuilt from a clean pinned engine and the three patches above. The isolated
+emsdk Release build passed in 154.23 seconds. Current assets are:
+
+| DEV asset | SHA256 |
+| --- | --- |
+| `JourneyClient.js` | `292f2e5b38ffb31477b107c4af8342e91eb2ed1abb84c7ae01a8d3c87429481c` |
+| `JourneyClient.wasm` | `90a9a30870f98ab0340b06fbd160b3210c7531e4f1e33a6bb5bb1d266e24f531` |
+
+The durable source/build/native-test/deployment record is
+`.164:/opt/buns-dev/browser-modernization-build-manifest.json`; its deployment
+audit is `/opt/buns-dev/browser-modernization-deployment.json`, and reconstructed
+patches are retained in `/opt/buns-dev/browser-modernization-source/`.
+No service, Java, database, gateway, routing, or NX changes were made.
+Production shell `dab75e59e39fecd1aaa1b03639769d02cc71672639a4d0e8da282714c6a0afdd`
+and production JS `98ff3048…` / WASM `9a099050…` remain unchanged.
+
+The **stable default rollback** is the pre-modernization whole root
+`/opt/buns-dev.before-browser-modernization-20261015T021459Z`: original DEV
+shell `d0702fda0e72e34eeee2c502e5040f9c5bd2bd0d79a8b17a1892f4a50528b3c4`
+and verified movement JS `98ff3048…` / WASM `9a099050…`.
+`/opt/buns-dev.before-browser-modernization-20261015T024925Z` is merely the
+immediate previous **17e intermediate**, not that stable baseline. The other
+intermediate snapshots ending `021917Z` and `022813Z` are also retained.
+The guarded durable command is:
+`ssh root@192.168.0.164 '/usr/bin/python3 /opt/buns-dev/browser-modernization-source/rollback_dev.py --authorize-dev-rollback'`.
+No rollback was executed. Swap the whole root, never separate JS/WASM files.
+Fixed asset URLs do not guarantee cross-request session atomicity during a swap;
+hard-refresh to load the coordinated current shell/pair.
+
+Recorded browser evidence is deliberately separated by candidate and source path:
+Browser checks use one managed desktop Chromium session; DPR 1/2 are CDP-emulated
+and recorded from actual `window.devicePixelRatio`, not inferred from a screenshot.
+They are not physical-retina, Firefox/Safari/Edge, mobile, or Windows-client certification.
+- The unchanged NPC/input/PIC paths were exercised in the 17e candidate:
+  live Heena Yes/No/End/Escape/Next, held Right → modal → release → close,
+  real canvas blur → release outside → refocus, six logical-mode/DPR combinations,
+  and window/fullscreen enter/settle/exit geometry. All 24 geometry states matched
+  rounded CSS × DPR; twelve actual dialog clicks emitted `03012a000000`.
+- Controlled encrypted packets entered the original Emscripten callback and real
+  C++ parser/UI/serializer. Number min/default/max/custom, malformed/overflow
+  rejection and correction, text default/edit/empty, two style indices, cancel,
+  navigation, 32-item menu scrolling and reopen were exercised. Every synthetic
+  positive response was transport-blocked, not sent to shared-server scripts.
+- Actual CHARLIST `require_pic=1` produced the normal explicit masked prompt
+  despite `ENABLE_PIC=false`. Wrong-PIC opcode 28, missing-PIC registration/
+  mismatch/matching confirmation and deletion branches used controlled real
+  ingress with blocked transport; they are **not live-server transaction proof**.
+- Final 5874 corrects the observed startup crop, centered-pregame presentation,
+  finite-art overscan and 1366px HUD clipping. Small Forest's actual VR width
+  is 1440; 1280×720 is clean, while 1920 exceeded authored coverage. Tile/object
+  drawing has no old-800 culling loop; background tiling and graphics clipping
+  already use runtime dimensions. No terrain or background paint was invented.
+- Actual ordinary portals reached map 1000000 (Amherst, VR 2700×1353) from
+  40000 via 50000, upgrading to real 1920×1080 with the requested choice intact.
+  Final DPR-only changes also matched backing resolution with zero media-query
+  notifications, without changing mode or viewport geometry.
+  The normal west portal returned to 50000 and automatically downgraded to
+  1280×720 without losing requested 1920. All six final fullscreen mode/DPR
+  cases opened the actual Skill Inventory through its visible HUD button.
+  A normal world reload restored centered 800×600 pregame, not an asserted
+  in-app logout feature. No runtime console error, WASM abort, or non-HEAD
+  failed request was observed; final public production shell/JS/WASM hashes
+  independently matched the original baseline.
+
+The accepted, candidate-attributed browser summary is retained durably as
+`.164:/opt/buns-dev/browser-modernization-browser-acceptance.json`.
+Known limits remain: NPC menu ArrowDown/Enter selection is not implemented;
+Menu/System/Trade/CashShop artwork without original handlers is not a working
+settings/shop feature; quickslots are decorative. Skill Inventory active/
+inactive clamping and a Skill Tooltip edge were exercised, not every window
+family or an active-buff panel. The short Amherst edge lies within real VR
+and is authored artwork, not newly invented terrain or pixel-perfect native parity.
+
+Ephemeral QA artifacts are under `/tmp/browser-modernization-qa/`, notably
+`summary.json`, `final-fixture-results.json`, `final-viewport-matrix.json`,
+`pic-results.json`, `responsive-dpr-transition.json`,
+`responsive-small-forest-request1920.png`,
+`responsive-true1920-normal-map-upgrade.png`,
+`responsive-normal-return-auto-downgrade.png`, and
+`responsive-final-centered-pregame-after-world-reload.png`.
+`responsive-normal-portal-roundtrip.webm` is actual final-5874 canvas footage
+of live travel, wider town, fullscreen/HUD interactions and normal return.
+`final-real-engine-fixtures.webm` is actual 17e fixture footage; neither is a
+fabricated canvas or native/cross-browser parity claim. Isolated QA tabs and
+recording streams were closed; no active fixture instrumentation or credentials
+remain in retained evidence.
+
+
+### Functional parity target and evidence
+
+Kaentake v3.4.1 is the **reference target**, not a certified tested golden
+client. Its staged Windows EXE/DLL/Custom.wz trial has no Windows/Wine smoke;
+native observations remain pending. Upstream has no declared redistribution
+license, so this browser work does not re-upload those binaries. Functional
+parity means observable protocol/gameplay/UI behavior, not binary or renderer
+identity. Browser acceptance does not wait on unavailable Windows hardware.
+
+| Area / expected v83 contract | Journey source presence or known gap | Historical browser evidence (before modernization) | Actual Kaentake observations |
+| --- | --- | --- | --- |
+| Login / PIC | Account, world/channel, character entry; explicit masked PIC, registration confirmation, wrong-PIC handling. Actual CHARLIST emits `require_pic=1` despite server `ENABLE_PIC=false`; the normal prompt is therefore expected | Disposable account login and existing character reached tutorial world; earlier audit did not certify PIC prompt/register/rejection/deletion | Pending |
+| NPC dialogue | Text/menu/yes-no/text/number/style, server-specific packet layouts and cancellation are this iteration's hardening scope | Heena dialogue rendered; pre-change No/End response failure after fullscreen is recorded, not a pass | Pending |
+| Inventory / equipment | Parsers and move/use/equip UI present; custom packet extensions require separate evidence | Inventory opened only; no inventory mutation/persistence certification | Pending |
+| NPC shops / storage | Buy/sell/recharge and storage operations present; storage item-stride duplication remains | Not transaction-tested | Pending |
+| Jobs / combat / buffs | Explorer/Aran job names, attack and buff paths present; extended-job stat assumptions and Flash Jump gap remain; damage is int32 | Beginner skill window opened only; no advanced-job/combat parity certification | Pending |
+| Party / PQ | Party invite/join/leave/leader/HP present; clock, party doors and several PQ-specific handlers missing | Not exercised | Pending |
+| Bosses / summons / statuses | Ongoing monster status/damage, mist, summons and door coverage have explicit gaps | Not exercised | Pending |
+| Cash shop / native custom UI | Native bundles depend on Windows hooks; Journey does not implement those custom windows | Not exercised / no support claim | Pending |
+| Desktop viewport / input | Existing renderer and runtime camera/UI seams extended by this iteration; classic mode retained | Pre-change 800x600 CSS scaling only; arrows/jump worked; NPC modal leak observed | Pending |
+| HUD / quickslots | Stats/Inventory/Equip/Skill actions exist. Other button artwork can react visually without an implemented action (including Menu/System); the baked grid has no interactive quickslot implementation | HUD rendered; decorative slots and unimplemented actions were not certified as working controls | Pending |
+
+Next slices are selected from observed gaps after this iteration's DEV proof:
+first missing HUD/menu/settings/quickslot behavior and inventory/equipment/shop/storage transaction/persistence coverage;
+then bounded Explorer combat/buff and party/PQ/boss routes with packet fixtures,
+followed by explicitly chosen job mechanics. Native cash-shop/custom features
+need capability-selected protocol/UI design, not injected Windows hooks.
+Any future 64-bit native damage encoding must be negotiated per session and
+serialized per recipient; existing browser int32 packets cannot be reinterpreted.
+Mobile/touch, composition/IME input, a renderer rewrite, and automatic full-NX
+prefetch are outside this desktop iteration. Candidate/browser acceptance,
+including synthetic versus live paths, is recorded separately from source
+presence; no table entry implies unexercised functionality works.
+
+
 ## Patch Notes — 2026-10-14 (solobots `9b56e04`)
 
 Deployed to TEST stack (192.168.0.164, compose `test`):

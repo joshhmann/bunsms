@@ -84,6 +84,9 @@
         }
 
         #canvas {
+            /* The shell owns CSS fit; GLFW may remove inline width/height on DPR changes. */
+            width: var(--game-css-width, 800px);
+            height: var(--game-css-height, 600px);
             border: none;
             background: #000;
             display: block;
@@ -91,6 +94,32 @@
             cursor: none;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
+        }
+
+        #display-controls {
+            position: fixed;
+            top: 10px;
+            right: 12px;
+            z-index: 20;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        #display-controls select, #display-controls button {
+            color: var(--text-primary);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font: inherit;
+        }
+        #display-controls button { cursor: pointer; }
+        #container:fullscreen { background: var(--bg-primary); }
+        @media (min-width: 800px) {
+            #display-controls { display: flex; }
+            #container { padding-top: 48px; }
         }
 
         /* ===== Loading overlay ===== */
@@ -321,6 +350,17 @@
 
     <div id="container">
         <canvas id="canvas" tabindex="-1"></canvas>
+        <div id="display-controls" aria-label="Desktop display settings">
+            <label for="display-mode">Display</label>
+            <select id="display-mode">
+                <option value="auto">Auto viewport</option>
+                <option value="800x600">Classic 800 × 600</option>
+                <option value="1280x720">Wide 1280 × 720</option>
+                <option value="1920x1080">Wide 1920 × 1080</option>
+            </select>
+            <button id="fullscreen-toggle" type="button">Fullscreen</button>
+            <span id="display-detail" aria-live="polite"></span>
+        </div>
     </div>
 
     <div id="boot">
@@ -421,40 +461,137 @@
 
         // ===== Canvas sizing =====
         (function () {
-            const GAME_WIDTH = 800;
-            const GAME_HEIGHT = 600;
+            const canvas = document.getElementById('canvas');
+            const container = document.getElementById('container');
+            const selector = document.getElementById('display-mode');
+            const fullscreen = document.getElementById('fullscreen-toggle');
+            const detail = document.getElementById('display-detail');
+            const desktop = window.matchMedia('(min-width: 800px)');
+            const modes = {
+                '800x600': [800, 600],
+                '1280x720': [1280, 720],
+                '1920x1080': [1920, 1080]
+            };
+            try {
+                const saved = localStorage.getItem('bunsms.displayMode');
+                if (saved === 'auto' || modes[saved]) selector.value = saved;
+            } catch {}
 
-            function syncCanvasResolution(canvas) {
-                if (canvas.width === GAME_WIDTH && canvas.height === GAME_HEIGHT) return;
-                if (typeof Module !== 'undefined' && typeof Module.setCanvasSize === 'function') {
-                    Module.setCanvasSize(GAME_WIDTH, GAME_HEIGHT);
-                } else {
-                    canvas.width = GAME_WIDTH;
-                    canvas.height = GAME_HEIGHT;
-                }
-            }
+            const state = window.MapleWasmUI = {
+                requestedWidth: 800,
+                requestedHeight: 600,
+                logicalWidth: 800,
+                logicalHeight: 600,
+                mapLimited: false,
+                inGame: false,
+                displayDirty: true,
+                pixelRatio: window.devicePixelRatio || 1,
+                setInGame(inGame) {
+                    state.inGame = !!inGame;
+                    state.displayDirty = true;
+                    readRequestedView();
+                },
+                applyView(width, height, limited) {
+                    // Some monitor/emulation DPR changes emit no media-query event.
+                    // The existing engine sync checks one number; fitting stays change-only.
+                    if (state.pixelRatio !== (window.devicePixelRatio || 1)) scheduleFit();
+                    if (state.logicalWidth === width && state.logicalHeight === height &&
+                        state.mapLimited === !!limited && !state.displayDirty) return;
+                    state.logicalWidth = width;
+                    state.logicalHeight = height;
+                    state.mapLimited = !!limited;
+                    state.displayDirty = false;
+                    fitCanvas();
+                },
+                applyScale: fitCanvas,
+                toggleFullscreen: toggleFullscreen
+            };
 
-            function getFittedCanvasSize(viewW, viewH) {
-                if (viewW * GAME_HEIGHT <= viewH * GAME_WIDTH) {
-                    const width = Math.max(1, Math.floor(viewW));
-                    return { width, height: Math.max(1, Math.floor(width * GAME_HEIGHT / GAME_WIDTH)) };
+            function readRequestedView() {
+                let mode = desktop.matches ? selector.value : '800x600';
+                if (mode === 'auto') {
+                    mode = window.innerWidth >= 1920 && window.innerHeight >= 1080 ? '1920x1080' :
+                        window.innerWidth >= 1280 && window.innerHeight >= 720 ? '1280x720' : '800x600';
                 }
-                const height = Math.max(1, Math.floor(viewH));
-                return { width: Math.max(1, Math.floor(height * GAME_WIDTH / GAME_HEIGHT)), height };
+                [state.requestedWidth, state.requestedHeight] = modes[mode];
             }
 
             function fitCanvas() {
-                const canvas = document.getElementById('canvas');
-                if (!canvas) return;
-                syncCanvasResolution(canvas);
-                const { width, height } = getFittedCanvasSize(window.innerWidth, window.innerHeight);
-                canvas.style.width = width + 'px';
-                canvas.style.height = height + 'px';
+                readRequestedView();
+                const viewW = window.innerWidth;
+                const viewH = window.innerHeight;
+                const availableHeight = Math.max(1, viewH - (desktop.matches ? 48 : 0));
+                const scale = Math.min(viewW / state.logicalWidth, availableHeight / state.logicalHeight);
+                const width = Math.max(1, Math.floor(state.logicalWidth * scale));
+                const height = Math.max(1, Math.floor(state.logicalHeight * scale));
+                const dpr = window.devicePixelRatio || 1;
+                state.pixelRatio = dpr;
+                const backingWidth = Math.max(1, Math.round(width * dpr));
+                const backingHeight = Math.max(1, Math.round(height * dpr));
+                // Backing resolution never changes the engine's logical dimensions.
+                if (canvas.width !== backingWidth || canvas.height !== backingHeight) {
+                    if (typeof Module !== 'undefined' && typeof Module.setCanvasSize === 'function') {
+                        Module.setCanvasSize(backingWidth, backingHeight);
+                    } else {
+                        canvas.width = backingWidth;
+                        canvas.height = backingHeight;
+                    }
+                }
+                canvas.style.setProperty('--game-css-width', width + 'px');
+                canvas.style.setProperty('--game-css-height', height + 'px');
+                fullscreen.textContent = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
+                const requested = state.requestedWidth + ' × ' + state.requestedHeight;
+                const effective = state.logicalWidth + ' × ' + state.logicalHeight;
+                detail.textContent = state.inGame ?
+                    'Current ' + effective + (state.mapLimited ? ' · Map limit · Requested ' + requested : '') :
+                    'Current ' + effective + ' · In-game requested ' + requested;
             }
 
-            window.MapleWasmUI = { applyScale: fitCanvas };
-            window.addEventListener('resize', fitCanvas);
-            document.addEventListener('fullscreenchange', fitCanvas);
+            function toggleFullscreen() {
+                const request = document.fullscreenElement ?
+                    document.exitFullscreen() : container.requestFullscreen({ navigationUI: 'hide' });
+                request.catch(() => { detail.textContent = 'Fullscreen unavailable'; });
+                canvas.focus();
+            }
+
+            selector.addEventListener('change', () => {
+                try { localStorage.setItem('bunsms.displayMode', selector.value); } catch {}
+                fitCanvas();
+                canvas.focus();
+            });
+            fullscreen.addEventListener('click', toggleFullscreen);
+            // Fullscreen must be requested during the trusted key event, not a later rAF.
+            window.addEventListener('keydown', event => {
+                if (event.key === 'F11' && desktop.matches) {
+                    event.preventDefault();
+                    if (!event.repeat) toggleFullscreen();
+                }
+            }, true);
+            // DOM display controls own new keyboard commands, but releases must still
+            // reach GLFW so selecting a mode cannot strand a held world action.
+            for (const type of ['keydown', 'keypress']) {
+                window.addEventListener(type, event => {
+                    if (event.target.closest && event.target.closest('#display-controls')) {
+                        event.stopImmediatePropagation();
+                    }
+                }, true);
+            }
+            // SDK resize/DPR listeners may reassert their old backing dimensions.
+            // One event-coalesced RAF runs after those listeners; never resize per frame.
+            let fitPending = false;
+            function scheduleFit() {
+                if (fitPending) return;
+                fitPending = true;
+                requestAnimationFrame(() => { fitPending = false; fitCanvas(); });
+            }
+            window.addEventListener('resize', scheduleFit);
+            document.addEventListener('fullscreenchange', scheduleFit);
+            desktop.addEventListener('change', scheduleFit);
+            function watchDpr() {
+                const query = window.matchMedia('(resolution: ' + window.devicePixelRatio + 'dppx)');
+                query.addEventListener('change', () => { scheduleFit(); watchDpr(); }, { once: true });
+            }
+            watchDpr();
             fitCanvas();
         })();
 
