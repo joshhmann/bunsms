@@ -4,12 +4,15 @@ const $ = (id) => document.getElementById(id);
 
 let currentUpdates = null;
 let isUpdating = false;
+let activeProfile = "stock";
 
 // ── Init ──
 async function init() {
   setupControls();
   setupServerHost();
+  setupProfiles();
   await Promise.all([checkServerStatus(), findGamePath(), loadNews()]);
+  await refreshProfileUI();
   await checkForUpdates();
 }
 
@@ -131,6 +134,69 @@ async function findGamePath() {
   } catch {}
 }
 
+// ── Profiles (stock default, Kaentake opt-in) ──
+function setupProfiles() {
+  $("profile-stock").onclick = () => switchProfile("stock");
+  $("profile-kaentake").onclick = () => switchProfile("kaentake");
+}
+
+async function switchProfile(id) {
+  if (id === activeProfile) return;
+  const res = await window.buns.setProfile(id);
+  if (!res.success) {
+    $("update-text").textContent = res.error || "Failed to switch profile";
+    $("update-status").className = "update-status error";
+    return;
+  }
+  activeProfile = id;
+  currentUpdates = null;
+  await refreshProfileUI();
+  await findGamePath();
+  await checkForUpdates();
+}
+
+async function refreshProfileUI() {
+  let info = null;
+  try {
+    info = await window.buns.getProfile();
+    activeProfile = info.active || "stock";
+  } catch { return; }
+  const me = (info.profiles || []).find((p) => p.id === activeProfile);
+  $("profile-stock").disabled = activeProfile === "stock";
+  $("profile-kaentake").disabled = activeProfile === "kaentake";
+  const kaentake = activeProfile === "kaentake";
+  $("hd-section").style.display = kaentake ? "none" : "";
+  $("kaentake-note").style.display = kaentake ? "" : "none";
+  $("path-label").textContent = kaentake ? "Install Location (Kaentake — isolated folder)" : "Install Location";
+  const status = $("profile-status");
+  if (!me || !me.path) {
+    status.style.display = "";
+    status.textContent = kaentake
+      ? "Choose an isolated folder for Kaentake (never your BunsMS folder)."
+      : "Set game folder to check for updates";
+    return;
+  }
+  const parts = [];
+  if (me.separation && me.separation !== "ok") parts.push(me.separation.reason || me.separation.warning);
+  else if (me.separation && me.separation.warning) parts.push(me.separation.warning);
+  if (kaentake) {
+    parts.push(me.exeFound ? "Kaentake.exe found" : "Kaentake.exe missing");
+    if (me.missing && me.missing.length > 0) {
+      parts.push(`Copy from stock v83 folder: ${me.missing.join(", ")}`);
+    }
+    const note = $("kaentake-note-text");
+    if (note) note.textContent = parts.length > 0 ? parts.join(" • ") : "Kaentake folder looks good.";
+    status.style.display = "none";
+  } else {
+    if (parts.length > 0) {
+      status.style.display = "";
+      status.textContent = parts.join(" • ");
+    } else {
+      status.style.display = "none";
+    }
+  }
+}
+
 async function setupServerHost() {
   const field = $("server-host");
   field.addEventListener("change", async () => {
@@ -148,11 +214,20 @@ async function setupServerHost() {
 }
 
 async function browseFolder() {
-  const path = await window.buns.selectFolder();
+  const selected = await window.buns.selectFolder();
+  // selectFolder returns the path, or { error } when the separation guard rejects it.
+  if (selected && typeof selected === "object" && selected.error) {
+    $("update-text").textContent = selected.error;
+    $("update-status").className = "update-status error";
+    await refreshProfileUI();
+    return;
+  }
+  const path = typeof selected === "string" ? selected : null;
   if (path) {
     $("path-display").textContent = path;
     $("path-display").title = path;
     $("path-display").style.color = "";
+    await refreshProfileUI();
     await checkForUpdates();
   }
 }
@@ -177,14 +252,27 @@ async function checkForUpdates() {
       enablePlay();
       break;
 
-    case "updates_available":
+    case "updates_available": {
       status.className = "update-status needs-update";
       icon.textContent = "\u26A0\uFE0F";
+      const manual = (result.updates || []).filter((u) => u.reason === "manual_copy_needed" || u.reason === "manual_copy_mismatch" || u.manual);
+      const downloadable = (result.updates || []).filter((u) => !(u.reason === "manual_copy_needed" || u.reason === "manual_copy_mismatch" || u.manual));
+      if (manual.length > 0 && downloadable.length === 0) {
+        // Verify-only: nothing to download, show the copy instructions instead.
+        const names = manual.map((u) => u.name).join(", ");
+        const note = (manual[0] && manual[0].manualNote) || "Copy from the upstream iw2d/kaentake v3.4.1 release zip; the launcher will hash-verify.";
+        text.textContent = `Manual copy needed (${names}): ${note}`;
+        currentUpdates = null;
+        if (manual.every((u) => u.reason === "manual_copy_mismatch")) disablePlay();
+        else enablePlay();
+        break;
+      }
       const sizeMB = (result.totalSize / 1024 / 1024).toFixed(0);
       text.textContent = `${result.updates.length} file${result.updates.length > 1 ? "s" : ""} to update (${sizeMB} MB)`;
-      currentUpdates = result.updates;
+      currentUpdates = downloadable;
       enableUpdate();
       break;
+    }
 
     case "no_path":
       status.className = "update-status error";

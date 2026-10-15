@@ -48,7 +48,15 @@
 
     <!-- Right panel: actions -->
     <div class="panel-right">
-      <!-- Server rates -->
+      <!-- Client profile: stock default, Kaentake opt-in (isolated folder) -->
+      <div class="path-section" id="profile-section">
+        <div class="path-label">Client</div>
+        <div class="path-row" id="profile-row">
+          <button class="btn-browse profile-btn" id="profile-stock" title="BunsMS — default client">BunsMS</button>
+          <button class="btn-browse profile-btn" id="profile-kaentake" title="Kaentake (experimental): unverified trial client; needs admin; AV may flag; separate folder required.">Kaentake <span class="hd-beta">EXPERIMENTAL</span></button>
+        </div>
+        <div class="path-display" id="profile-status" style="display:none"></div>
+      </div>
       <div class="rates-bar" id="rates-bar">
         <div class="rate"><span class="rate-value" id="rate-exp">--</span><span class="rate-label">EXP</span></div>
         <div class="rate"><span class="rate-value" id="rate-drop">--</span><span class="rate-label">DROP</span></div>
@@ -57,7 +65,7 @@
 
       <!-- Game path -->
       <div class="path-section">
-        <div class="path-label">Install Location</div>
+        <div class="path-label" id="path-label">Install Location</div>
         <div class="path-row">
           <div class="path-display" id="path-display">Searching...</div>
           <button class="btn-browse" id="btn-browse" title="Browse">&#128193;</button>
@@ -73,7 +81,7 @@
         </div>
       </div>
       <!-- HD Mode toggle -->
-      <div class="hd-section">
+      <div class="hd-section" id="hd-section">
         <label class="hd-toggle" title="HD Mode uses Ezorsia v2 for widescreen (beta)">
           <input type="checkbox" id="hd-checkbox" />
           <span class="hd-slider"></span>
@@ -109,6 +117,9 @@
             </select>
           </div>
         </div>
+      </div>
+      <div class="path-section" id="kaentake-note" style="display:none">
+        <div class="path-display" id="kaentake-note-text">HD Mode is BunsMS-only.</div>
       </div>
 
       <!-- Update status -->

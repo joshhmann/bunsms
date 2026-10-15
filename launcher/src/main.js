@@ -4,6 +4,16 @@ const fs = require("fs");
 const crypto = require("crypto");
 const https = require("https");
 const http = require("http");
+const {
+  PROFILES,
+  KAENTAKE_PORT,
+  filterManifest,
+  stampStockIni,
+  stampKaentakeIni,
+  separationCheck,
+  missingStockDeps,
+  assertDownloadable,
+} = require("./profiles");
 
 // API base: runtime override via the BUNSMS_API_BASE process env (NOT baked at
 // build time — Electron reads process.env at launch). Default prod
@@ -15,8 +25,109 @@ const NEWS_URL = `${API_BASE}/api/launcher/news`;
 const STATUS_URL = `${API_BASE}/api/server`;
 
 let mainWindow;
-let gamePath = "";
+let gamePath = ""; // cache of the ACTIVE profile's dir; see profileDir()/setProfilePath()
 
+// ── Profiles (design §2): stock default, Kaentake opt-in, separate folders ──
+function readStore() {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(app.getPath("userData"), "config.json"), "utf-8"));
+  } catch { return {}; }
+}
+
+// First run with profile support: seed profiles from the legacy top-level gamePath.
+function activeProfileId() {
+  const store = readStore();
+  return store.activeProfile === "kaentake" ? "kaentake" : "stock";
+}
+
+function profileDir(id) {
+  const store = readStore();
+  const dir = store.profiles?.[id || activeProfileId()]?.gamePath;
+  if (dir) return dir;
+  // Legacy fallback: top-level gamePath belongs to stock (§8 migration).
+  if ((id || activeProfileId()) === "stock" && store.gamePath) return store.gamePath;
+  return "";
+}
+
+function refreshGamePath() {
+  gamePath = profileDir() || "";
+  return gamePath;
+}
+
+function setProfilePath(id, dir) {
+  if (!PROFILES[id]) return { success: false, error: `Unknown profile: ${id}` };
+  const otherId = id === "stock" ? "kaentake" : "stock";
+  const otherDir = profileDir(otherId);
+  const present = (() => { try { return fs.readdirSync(dir); } catch { return []; } })();
+  const kaentakeIniText = (() => {
+    if (id !== "kaentake") return "";
+    try { return fs.readFileSync(path.join(dir, "config.ini"), "utf-8"); } catch { return ""; }
+  })();
+  const sep = separationCheck({ dir, otherDir, profileId: id, present, kaentakeIniText });
+  if (!sep.ok) return { success: false, error: sep.reason };
+  const store = readStore();
+  const profiles = { ...(store.profiles || {}), [id]: { gamePath: dir } };
+  saveConfig({ profiles, ...(id === "stock" ? { gamePath: dir } : {}) });
+  if (id === activeProfileId()) gamePath = dir;
+  const host = store.serverHost;
+  if (host && fs.existsSync(path.join(dir, "config.ini"))) stampHostIntoDir(id, dir, host);
+  return { success: true, ...(sep.warning ? { warning: sep.warning } : {}) };
+}
+
+function profileSummary(id) {
+  const dir = profileDir(id);
+  const def = PROFILES[id];
+  let present = [];
+  try { if (dir) present = fs.readdirSync(dir); } catch {}
+  const exeFound = !!dir && present.includes(def.exe);
+  const otherDir = profileDir(id === "stock" ? "kaentake" : "stock");
+  const kaentakeIniText = (() => {
+    if (id !== "kaentake" || !dir) return "";
+    try { return fs.readFileSync(path.join(dir, "config.ini"), "utf-8"); } catch { return ""; }
+  })();
+  const sep = dir
+    ? separationCheck({ dir, otherDir, profileId: id, present, kaentakeIniText })
+    : { ok: false, reason: "No folder selected for this profile yet." };
+  const missing = id === "kaentake" && dir
+    ? missingStockDeps(present, def.requiredStockFiles)
+    : [];
+  return {
+    id, label: def.label, path: dir || "", exeFound,
+    depsOk: missing.length === 0, missing,
+    separation: sep.ok ? (sep.warning ? { ok: true, warning: sep.warning } : "ok") : { ok: false, reason: sep.reason },
+  };
+}
+
+// Host writers, selected by profile configKind (never by sniffing file content).
+function stampHostIntoDir(id, dir, host) {
+  const iniPath = path.join(dir, "config.ini");
+  if (!fs.existsSync(iniPath)) return false;
+  try {
+    const ini = fs.readFileSync(iniPath, "utf-8");
+    const next = id === "kaentake" ? stampKaentakeIni(ini, host) : stampStockIni(ini, host);
+    fs.writeFileSync(iniPath, next);
+    return true;
+  } catch (err) {
+    console.error(`Failed to write host into ${iniPath}:`, err);
+    return false;
+  }
+}
+
+function stampHostIntoAllProfiles(host) {
+  const stamped = {};
+  for (const id of Object.keys(PROFILES)) {
+    const dir = profileDir(id);
+    stamped[id] = dir ? stampHostIntoDir(id, dir, host) : false;
+  }
+  return stamped;
+}
+
+// Kaentake's channel redirects are server-determined (WSPConnect hook rewrites only the
+// initial 63.251.217.x login target): this stamp controls the initial login routing only.
+const KAENTAKE_DEFAULT_PATHS = [
+  "C:\\KaentakeMS",
+  path.join(app.getPath("home"), "KaentakeMS"),
+];
 // Debug log file — writes to game folder so user can inspect
 let logStream = null;
 function log(msg) {
@@ -72,23 +183,46 @@ ipcMain.handle("window:close", () => mainWindow.close());
 
 ipcMain.handle("shell:openExternal", (_, url) => shell.openExternal(url));
 
-ipcMain.handle("game:findPath", () => {
-  // Check saved path first
-  const configPath = path.join(app.getPath("userData"), "config.json");
-  try {
-    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-    if (config.gamePath && fs.existsSync(config.gamePath)) {
-      gamePath = config.gamePath;
-      return { found: true, path: gamePath };
-    }
-  } catch {}
+// ── Profiles: new channels (pure additions; legacy names below delegate) ──
 
-  // Check default paths
-  for (const p of DEFAULT_PATHS) {
-    const exePath = path.join(p, "BunsMS.exe");
+ipcMain.handle("profile:get", () => {
+  refreshGamePath();
+  return { active: activeProfileId(), profiles: Object.keys(PROFILES).map(profileSummary) };
+});
+
+ipcMain.handle("profile:set", (_, id) => {
+  if (!PROFILES[id]) return { success: false, error: `Unknown profile: ${id}` };
+  saveConfig({ activeProfile: id });
+  refreshGamePath();
+  return { success: true, active: id, path: gamePath };
+});
+
+ipcMain.handle("profile:setPath", (_, id, dir) => setProfilePath(id, dir));
+
+ipcMain.handle("profile:deps", (_, id) => {
+  if (!PROFILES[id]) return { missing: [], error: `Unknown profile: ${id}` };
+  const dir = profileDir(id);
+  let present = [];
+  try { if (dir) present = fs.readdirSync(dir); } catch {}
+  return { missing: id === "kaentake" ? missingStockDeps(present, PROFILES.kaentake.requiredStockFiles) : [] };
+});
+
+ipcMain.handle("game:findPath", () => {
+  // Check saved path first (active profile; legacy top-level gamePath seeds stock)
+  refreshGamePath();
+  if (gamePath && fs.existsSync(gamePath)) {
+    return { found: true, path: gamePath };
+  }
+
+  // Check default paths for the active profile's exe
+  const id = activeProfileId();
+  const exe = PROFILES[id].exe;
+  const searchPaths = id === "kaentake" ? KAENTAKE_DEFAULT_PATHS : DEFAULT_PATHS;
+  for (const p of searchPaths) {
+    const exePath = path.join(p, exe);
     if (fs.existsSync(exePath)) {
-      gamePath = p;
-      saveConfig({ gamePath });
+      setProfilePath(id, p);
+      refreshGamePath();
       return { found: true, path: gamePath };
     }
   }
@@ -97,9 +231,8 @@ ipcMain.handle("game:findPath", () => {
 });
 
 ipcMain.handle("game:setPath", (_, newPath) => {
-  gamePath = newPath;
-  saveConfig({ gamePath });
-  return { success: true };
+  // Legacy stock alias: delegates to the stock profile (top-level mirror kept for downgrade).
+  return setProfilePath("stock", newPath);
 });
 
 const DEFAULT_SERVER_HOST = "213.188.212.103";
@@ -122,47 +255,66 @@ ipcMain.handle("server:setHost", (_, host) => {
   host = String(host || "").trim();
   if (!host) return { success: false, error: "Empty host" };
   saveConfig({ serverHost: host });
-  if (gamePath) writeServerHostToIni(host);
-  return { success: true, host };
+  refreshGamePath();
+  const stamped = stampHostIntoAllProfiles(host);
+  return { success: true, host, stamped };
 });
 
 function writeServerHostToIni(host) {
-  const iniPath = path.join(gamePath, "config.ini");
-  if (!fs.existsSync(iniPath)) return false;
-  try {
-    let ini = fs.readFileSync(iniPath, "utf-8");
-    if (/^ServerIP_Address=.*/m.test(ini)) {
-      ini = ini.replace(/^ServerIP_Address=.*/m, `ServerIP_Address=${host}`);
-    } else {
-      ini = ini.replace(/^(\[general\])/m, `$1\nServerIP_Address=${host}`);
-    }
-    fs.writeFileSync(iniPath, ini);
-    return true;
-  } catch (err) {
-    console.error("Failed to write ServerIP_Address:", err);
-    return false;
-  }
+  // Stock writer; delegates to the pure string transform (design §4).
+  refreshGamePath();
+  return stampHostIntoDir("stock", gamePath, host);
 }
 
 ipcMain.handle("game:selectFolder", async () => {
   const { dialog } = require("electron");
+  const active = activeProfileId();
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ["openDirectory"],
-    title: "Select BunsMS Installation Folder",
+    title: active === "kaentake" ? "Select Kaentake Installation Folder (isolated)" : "Select BunsMS Installation Folder",
   });
   if (result.canceled || !result.filePaths.length) return null;
   const selected = result.filePaths[0];
-  gamePath = selected;
-  saveConfig({ gamePath });
+  const res = setProfilePath(active, selected);
+  if (!res.success) return { error: res.error };
+  refreshGamePath();
   return selected;
 });
 
 ipcMain.handle("game:launch", () => {
+  refreshGamePath();
+  const id = activeProfileId();
+  const exeName = PROFILES[id].exe;
   if (!gamePath) return { success: false, error: "Game path not set" };
-  const exePath = path.join(gamePath, "BunsMS.exe");
+  const exePath = path.join(gamePath, exeName);
   if (!fs.existsSync(exePath))
-    return { success: false, error: "BunsMS.exe not found" };
+    return { success: false, error: `${exeName} not found` };
 
+  // Kaentake: hard separation stop before anything else. Electron cannot
+  // elevate — Kaentake needs run-as-admin; surface guidance, no silent fallback.
+  if (id === "kaentake") {
+    let present = [];
+    try { present = fs.readdirSync(gamePath); } catch {}
+    let iniText = "";
+    try { iniText = fs.readFileSync(path.join(gamePath, "config.ini"), "utf-8"); } catch {}
+    const sep = separationCheck({
+      dir: gamePath, otherDir: profileDir("stock"), profileId: "kaentake",
+      present, kaentakeIniText: iniText,
+    });
+    if (!sep.ok) return { success: false, error: sep.reason };
+    // Ensure host/port stamped before launch.
+    const host = readStore().serverHost || DEFAULT_SERVER_HOST;
+    stampHostIntoDir("kaentake", gamePath, host);
+    const { execFile } = require("child_process");
+    execFile(exePath, { cwd: gamePath }, (err) => {
+      if (err) console.error("Launch error:", err);
+    });
+    return {
+      success: true,
+      ...(sep.warning ? { warning: sep.warning } : {}),
+      note: "If Kaentake fails to start, right-click Kaentake.exe → Run as administrator (the injector requires elevation; the launcher cannot elevate it).",
+    };
+  }
   // Safety check: remove Ezorsia dinput8.dll if HD mode is off
   // Windows auto-loads any dinput8.dll in the exe directory, causing crashes
   let hdMode = false;
@@ -239,13 +391,18 @@ ipcMain.handle("settings:getHD", () => {
 });
 
 ipcMain.handle("settings:setHD", (_, enabled) => {
+  // HD is Ezorsia/stock-only: refuse to target a Kaentake dir. Cleanup below
+  // always runs against the STOCK dir (never the active Kaentake dir), so a
+  // Kaentake config.ini can never be wiped from here.
+  if (enabled && activeProfileId() === "kaentake") {
+    return { success: false, error: "HD Mode is BunsMS-only and does not apply to the Kaentake profile." };
+  }
   saveConfig({ hdMode: enabled });
-
-  // If disabling HD, remove HD files from game directory
-  if (!enabled && gamePath) {
+  const stockDir = profileDir("stock");
+  if (!enabled && stockDir) {
     const failed = [];
     for (const name of HD_FILES) {
-      const filePath = path.join(gamePath, name);
+      const filePath = path.join(stockDir, name);
       try {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       } catch {
@@ -270,11 +427,13 @@ ipcMain.handle("settings:getHDOptions", () => {
     stored = JSON.parse(fs.readFileSync(configPath, "utf-8"));
   } catch {}
 
-  // If config.ini exists in the game folder, treat it as the source of truth
+  // If config.ini exists in the STOCK folder, treat it as the source of truth
   // for sleepTime — the user may have edited it manually to fix a startup crash.
+  // Never sniff the Kaentake dir (different schema, no sleepTime).
   let iniSleepTime = null;
-  if (gamePath) {
-    const iniPath = path.join(gamePath, "config.ini");
+  const stockDirForSniff = profileDir("stock");
+  if (stockDirForSniff) {
+    const iniPath = path.join(stockDirForSniff, "config.ini");
     try {
       if (fs.existsSync(iniPath)) {
         const m = fs.readFileSync(iniPath, "utf-8").match(/^sleepTime=(\d+)/m);
@@ -291,15 +450,18 @@ ipcMain.handle("settings:getHDOptions", () => {
 });
 
 ipcMain.handle("settings:setHDOptions", (_, { resolution, fullscreen, sleepTime }) => {
+  // HD options only ever touch the stock dir (configKind gate).
+  const stockDir = profileDir("stock");
+  if (activeProfileId() === "kaentake" || (gamePath && stockDir && gamePath !== profileDir("stock"))) {
+    return { success: false, error: "HD options apply to the BunsMS profile only." };
+  }
   const patch = { hdResolution: resolution, hdFullscreen: fullscreen };
-  if (typeof sleepTime === "number" && sleepTime >= 0) patch.hdSleepTime = sleepTime;
-  saveConfig(patch);
 
   // Write config.ini in game directory if it exists. Only patch the specific
   // keys we manage — preserve everything else (sleepTime if not provided,
   // custom dlls, dev flags, etc.) so users can hand-edit other fields.
-  if (gamePath) {
-    const iniPath = path.join(gamePath, "config.ini");
+  if (stockDir) {
+    const iniPath = path.join(stockDir, "config.ini");
     if (fs.existsSync(iniPath)) {
       try {
         let ini = fs.readFileSync(iniPath, "utf-8");
@@ -321,6 +483,8 @@ ipcMain.handle("settings:setHDOptions", (_, { resolution, fullscreen, sleepTime 
 });
 
 ipcMain.handle("launcher:checkUpdates", async () => {
+  refreshGamePath();
+  const id = activeProfileId();
   if (!gamePath) return { status: "no_path" };
 
   // Read HD mode setting
@@ -330,24 +494,56 @@ ipcMain.handle("launcher:checkUpdates", async () => {
     hdMode = config.hdMode || false;
   } catch {}
 
-  // Proactively clean up HD files when HD mode is off — prevents crashes
+  // Proactively clean up HD files when HD mode is off — stock profile only,
+  // so a Kaentake dir is never touched here. Prevents crashes
   // if user manually placed files or launched the exe directly
-  if (!hdMode) {
+  if (id === "stock" && !hdMode) {
     for (const name of HD_FILES) {
       const filePath = path.join(gamePath, name);
       try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {}
     }
   }
 
+  // Kaentake separation gate also blocks update checks on a mixed dir.
+  if (id === "kaentake") {
+    let present = [];
+    try { present = fs.readdirSync(gamePath); } catch {}
+    let iniText = "";
+    try { iniText = fs.readFileSync(path.join(gamePath, "config.ini"), "utf-8"); } catch {}
+    const sep = separationCheck({
+      dir: gamePath, otherDir: profileDir("stock"), profileId: "kaentake",
+      present, kaentakeIniText: iniText,
+    });
+    if (!sep.ok) return { status: "error", error: sep.reason };
+  }
+
   try {
-    const manifest = await fetchJSON(MANIFEST_URL);
+    // The dashboard serves per-profile filtering (?profile=); until that ships,
+    // filter client-side too so stock behavior is unchanged either way.
+    const manifest = await fetchJSON(`${MANIFEST_URL}?profile=${id}`);
     if (!manifest || !manifest.files) return { status: "error", error: "Invalid manifest" };
 
+    const files = filterManifest(manifest.files, id, hdMode);
     const updates = [];
-    log(`Checking ${manifest.files.length} files (manifest v${manifest.version}), hdMode=${hdMode}`);
-    for (const file of manifest.files) {
-      // Skip HD files if HD mode is off
-      if (file.hd && !hdMode) continue;
+    log(`Checking ${files.length} files (manifest v${manifest.version}), profile=${id}, hdMode=${hdMode}`);
+    for (const file of files) {
+      // Manual-copy entries (no redistribution grant): verify-only, never download.
+      if (file.manual || !file.url) {
+        const localPath = path.join(gamePath, file.name);
+        if (!fs.existsSync(localPath)) {
+          log(`${file.name}: missing (manual copy needed)`);
+          updates.push({ ...file, reason: "manual_copy_needed" });
+          continue;
+        }
+        if (file.hash) {
+          const localHash = await hashFile(localPath);
+          if (localHash !== file.hash) {
+            log(`${file.name}: hash mismatch on manual copy`);
+            updates.push({ ...file, reason: "manual_copy_mismatch" });
+          }
+        }
+        continue;
+      }
 
       const localPath = path.join(gamePath, file.name);
       if (!fs.existsSync(localPath)) {
@@ -390,6 +586,7 @@ ipcMain.handle("launcher:checkUpdates", async () => {
 });
 
 ipcMain.handle("launcher:downloadUpdates", async (_, updates) => {
+  refreshGamePath();
   if (!gamePath || !updates?.length) return { success: false };
 
   // Pre-check: ensure target directory exists and is writable
@@ -407,6 +604,8 @@ ipcMain.handle("launcher:downloadUpdates", async (_, updates) => {
 
   for (let i = 0; i < updates.length; i++) {
     const file = updates[i];
+    // Manual-copy entries must never reach downloadFile (no URL, no grant).
+    try { assertDownloadable(file); } catch (err) { return { success: false, error: err.message }; }
     const destPath = path.join(gamePath, file.name);
 
     const sendProgress = (percent, status) => {
@@ -483,7 +682,7 @@ ipcMain.handle("launcher:downloadUpdates", async (_, updates) => {
   // config.ini (fresh downloads ship the prod-default copy from R2).
   try {
     const config = JSON.parse(fs.readFileSync(path.join(app.getPath("userData"), "config.json"), "utf-8"));
-    if (config.serverHost && gamePath) writeServerHostToIni(config.serverHost);
+    if (config.serverHost && gamePath) stampHostIntoDir(activeProfileId(), gamePath, config.serverHost);
   } catch {}
 
   return { success: true };
