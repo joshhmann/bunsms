@@ -1,5 +1,5 @@
-# Issue tracker: GitHub Issues (joshhmann/bunsms)
+# Issue tracker: markdown backlog (`server/docs/ROADMAP-BACKLOG.md`)
 
-- Specs publish as GitHub issues on `joshhmann/bunsms`.
+- Tickets live as checkbox items in `server/docs/ROADMAP-BACKLOG.md` (GitHub Issues are OFF for this repo).
 - Working branch for implementation: `solobots`.
-- No local triage-labels workflow; GitHub's native labels/milestones are used as-is.
+- No triage labels; items carry status checkboxes + owner fields directly in the file.
