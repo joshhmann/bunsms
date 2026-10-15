@@ -148,7 +148,7 @@ Verification:
   Journey login/gameplay feature audit. No account login was attempted;
   the separate Maplewright gameplay demo at `.187` was not modified.
 
-## Journey remote-player movement repair — 2026-10-14 (DEV only)
+## Journey remote-player movement repair — 2026-10-14 (promoted to PROD 2026-10-15)
 
 The browser engine treated the first remote movement as **50 physics updates**
 of buffering (400 ms at the 8 ms timestep), then drained one endpoint per
@@ -257,10 +257,45 @@ Limitations: the actual tutorial-map bot remained idle, so no live walking-bot
 but did not reach a bot-populated town. The experiment proves this browser
 mechanism under the server's documented 50 ms single-fragment input shape,
 not every live emitter path. Production's older binary/source provenance could
-not be certified; its unchanged JS/WASM hashes remain `d9154da1`/`180e21d7`.
+not be certified; the user explicitly authorized promotion despite that limit.
 Desktop Journey, native OpenStory/Kaentake, and the separate Maplewright
-`.187` surface were not tested or changed. Production promotion requires a
-separate decision after reviewing the dev evidence.
+`.187` surface were not tested or changed.
+
+Production promotion — 2026-10-15 UTC:
+- Promoted the exact verified dev JS/WASM pair above, without rebuilding, to
+  `/opt/buns/web-client/build` on `192.168.0.164`. All four live/dev hashes
+  matched the authorized values immediately before deployment.
+- Whole-directory `renameat2(RENAME_EXCHANGE)` retained the previous pair at
+  `/opt/buns/web-client/build.before-movement-20261015T005049Z`.
+  Old JS SHA256:
+  `d9154da1077a3e3349a04a57fdd6c9e03f343f56844eac244dad5ad55bd01329`;
+  old WASM SHA256:
+  `180e21d75edebc0611a40960df6d5ba78a68e9c2ba545e8443f9eb5cc88ceb57`.
+  No Java, DB, systemd, Caddy, or service restart changes were made.
+- Fresh cache-disabled Chromium at `https://buns.asslorde.com/` rendered login
+  and completed normal isolated-account login, channel selection, character
+  entry, and 1500 ms ordinary right-arrow movement. No page errors or runtime
+  abort occurred. Both root WSS connections returned HTTP 101; the captured
+  login target was `192.168.0.164:9494`, with a 16-byte v83 server handshake.
+- Publicly fetched JS/WASM SHA256 matched the promoted pair exactly. Page
+  and both build responses used `Cache-Control: no-cache, must-revalidate`.
+  `Range: bytes=0-63` on `/nx/Map.nx` returned HTTP 206 and
+  `Content-Range: bytes 0-63/1515032544`.
+- Repeated `cd web-client && python3 -m unittest test_movement -v` passed:
+  native actual-model/parser boundaries passed; uniform 50 ms input had
+  maximum hold 0 ms and final X=299.64. This was a **native regression**,
+  not a new production WASM synthetic replay. The prior DEV synthetic replay
+  (16.8 ms maximum pause versus 433.4 ms baseline) used byte-identical assets;
+  the controlled production replay was not repeated.
+- Host provenance and complete preserved-source delta are alongside the build:
+  `/opt/buns/web-client/movement-build-manifest-20261015.json`,
+  `/opt/buns/web-client/movement-applied-source-20261015.patch`, and
+  `/opt/buns/web-client/movement-production-smoke-20261015.json`.
+  Local evidence: `/tmp/jitter-prod-smoke-20261015.json` and
+  `/tmp/jitter-prod-live-smoke.webm`. No credentials are published.
+- Rollback, if needed: atomically exchange the live whole build directory
+  with the timestamped backup above using `renameat2(RENAME_EXCHANGE)`;
+  never restore JS and WASM individually.
 
 ## Patch Notes — 2026-10-14 (solobots `9b56e04`)
 
