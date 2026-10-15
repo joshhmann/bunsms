@@ -355,9 +355,11 @@ public enum SendOpcode {
     VICIOUS_HAMMER(0x162),
     // Custom-opcode registry: see server/docs/OPCODE_REGISTRY.md.
     // Reserved (not yet added): 0x372F (prism S2C), 0x3731 (cash-shop window S2C),
-    // 0x373D (WEATHER_SYNC), 0x373F (LAMP_PREVIEW), 0x17C (daily check-in S2C).
+    // 0x373D (WEATHER_SYNC), 0x373F (LAMP_PREVIEW).
+    // Claimed: DAILY_CHECKIN S2C (0x17C).
     // Stock ranges that are NOT custom: 0x145-0x14D (CASHSHOP_*), 0x8E (BLOW_WEATHER).
-    VEGA_SCROLL(0x166);
+    VEGA_SCROLL(0x166),
+    DAILY_CHECKIN(0x17C);
     private int code = -2;
 
     SendOpcode(int code) {

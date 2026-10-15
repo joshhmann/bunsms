@@ -231,6 +231,10 @@ public class Character extends AbstractCharacterObject {
     private int omokwins, omokties, omoklosses, matchcardwins, matchcardties, matchcardlosses;
     private int owlSearch;
     private long lastfametime, lastUsedCashItem, lastExpression = 0, lastHealed, lastDeathtime, jailExpiration = -1;
+    private int checkinDay = 0;        // last day claimed this cycle (0..28)
+    private int checkinClaimed = 0;    // 28-bit mask of days claimed this cycle
+    private long checkinLastClaim = 0; // epoch millis of the last claim (0 = never)
+    private static final long CHECKIN_PERIOD_MS = 86_400_000L;   // 24h
     private transient int localstr, localdex, localluk, localint_, localmagic, localwatk;
     private transient int equipmaxhp, equipmaxmp, equipstr, equipdex, equipluk, equipint_, equipmagic, equipwatk, localchairhp, localchairmp;
     private int localchairrate;
@@ -574,6 +578,43 @@ public class Character extends AbstractCharacterObject {
 
     public boolean isRecvPartySearchInviteEnabled() {
         return canRecvPartySearchInvite;
+    }
+
+    public int getCheckinDay()       { return checkinDay; }
+    public int getCheckinClaimed()   { return checkinClaimed; }
+    public long getCheckinLastClaim() { return checkinLastClaim; }
+
+    /**
+     * Normalize the streak for the current time; return the claimable day (1..28), or 0 if still in the
+     * 24h cooldown. Resets the cycle (clears day + mask) when the streak lapsed (>48h) or day 28 was
+     * already claimed. Mutates in-memory state only (persisted on a claim).
+     */
+    public int refreshCheckin() {
+        final int cycle = server.DailyCheckinRewards.CYCLE_DAYS;
+        if (checkinLastClaim <= 0) {           // never claimed -> fresh cycle, day 1 ready
+            checkinDay = 0; checkinClaimed = 0;
+            return 1;
+        }
+        long elapsed = System.currentTimeMillis() - checkinLastClaim;
+        if (elapsed < CHECKIN_PERIOD_MS)        return 0;                       // cooldown
+        if (elapsed >= 2L * CHECKIN_PERIOD_MS) { checkinDay = 0; checkinClaimed = 0; return 1; } // lapsed -> reset
+        if (checkinDay >= cycle)               { checkinDay = 0; checkinClaimed = 0; return 1; } // cycle done -> new cycle
+        return checkinDay + 1;                  // consecutive day available
+    }
+
+    /** Record a successful claim of day d: mark it, advance the streak, stamp the clock. */
+    public void applyCheckinClaim(int d) {
+        if (d < 1 || d > server.DailyCheckinRewards.CYCLE_DAYS) return;
+        checkinDay = d;
+        checkinClaimed |= (1 << (d - 1));
+        checkinLastClaim = System.currentTimeMillis();
+    }
+
+    /** Seconds remaining on the 24h cooldown, or 0 if a claim is available now. */
+    public long getCheckinCooldownSeconds() {
+        if (checkinLastClaim <= 0) return 0;
+        long remain = (checkinLastClaim + CHECKIN_PERIOD_MS) - System.currentTimeMillis();
+        return remain > 0 ? (remain + 999) / 1000 : 0;
     }
 
     public void resetPartySearchInvite(int fromLeaderid) {
@@ -6983,6 +7024,9 @@ public class Character extends AbstractCharacterObject {
                     ret.buddylist = new BuddyList(buddyCapacity);
                     ret.lastExpGainTime = rs.getTimestamp("lastExpGainTime").getTime();
                     ret.canRecvPartySearchInvite = rs.getBoolean("partySearch");
+                    try { ret.checkinDay = rs.getInt("checkinDay"); } catch (SQLException e) { ret.checkinDay = 0; }
+                    try { ret.checkinClaimed = rs.getInt("checkinClaimed"); } catch (SQLException e) { ret.checkinClaimed = 0; }
+                    try { ret.checkinLastClaim = rs.getLong("checkinLastClaim"); } catch (SQLException e) { ret.checkinLastClaim = 0; }
 
                     wserv = Server.getInstance().getWorld(ret.world);
 
@@ -8313,7 +8357,7 @@ public class Character extends AbstractCharacterObject {
             con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
 
             try {
-                try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET level = ?, fame = ?, str = ?, dex = ?, luk = ?, `int` = ?, exp = ?, gachaexp = ?, hp = ?, mp = ?, maxhp = ?, maxmp = ?, sp = ?, ap = ?, gm = ?, skincolor = ?, gender = ?, job = ?, hair = ?, face = ?, map = ?, meso = ?, hpMpUsed = ?, spawnpoint = ?, party = ?, buddyCapacity = ?, messengerid = ?, messengerposition = ?, mountlevel = ?, mountexp = ?, mounttiredness= ?, equipslots = ?, useslots = ?, setupslots = ?, etcslots = ?,  monsterbookcover = ?, vanquisherStage = ?, dojoPoints = ?, lastDojoStage = ?, finishedDojoTutorial = ?, vanquisherKills = ?, matchcardwins = ?, matchcardlosses = ?, matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?, jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?, partySearch = ? WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
+                try (PreparedStatement ps = con.prepareStatement("UPDATE characters SET level = ?, fame = ?, str = ?, dex = ?, luk = ?, `int` = ?, exp = ?, gachaexp = ?, hp = ?, mp = ?, maxhp = ?, maxmp = ?, sp = ?, ap = ?, gm = ?, skincolor = ?, gender = ?, job = ?, hair = ?, face = ?, map = ?, meso = ?, hpMpUsed = ?, spawnpoint = ?, party = ?, buddyCapacity = ?, messengerid = ?, messengerposition = ?, mountlevel = ?, mountexp = ?, mounttiredness= ?, equipslots = ?, useslots = ?, setupslots = ?, etcslots = ?,  monsterbookcover = ?, vanquisherStage = ?, dojoPoints = ?, lastDojoStage = ?, finishedDojoTutorial = ?, vanquisherKills = ?, matchcardwins = ?, matchcardlosses = ?, matchcardties = ?, omokwins = ?, omoklosses = ?, omokties = ?, dataString = ?, fquest = ?, jailexpire = ?, partnerId = ?, marriageItemId = ?, lastExpGainTime = ?, ariantPoints = ?, partySearch = ?, checkinDay = ?, checkinClaimed = ?, checkinLastClaim = ? WHERE id = ?", Statement.RETURN_GENERATED_KEYS)) {
                     ps.setInt(1, level);    // thanks CanIGetaPR for noticing an unnecessary "level" limitation when persisting DB data
                     ps.setInt(2, fame);
 
@@ -8427,7 +8471,10 @@ public class Character extends AbstractCharacterObject {
                     ps.setTimestamp(53, new Timestamp(lastExpGainTime));
                     ps.setInt(54, ariantPoints);
                     ps.setBoolean(55, canRecvPartySearchInvite);
-                    ps.setInt(56, id);
+                    ps.setInt(56, checkinDay);
+                    ps.setInt(57, checkinClaimed);
+                    ps.setLong(58, checkinLastClaim);
+                    ps.setInt(59, id);
 
                     int updateRows = ps.executeUpdate();
                     if (updateRows < 1) {

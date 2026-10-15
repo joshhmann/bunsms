@@ -49,6 +49,7 @@ import net.server.channel.handlers.CloseChalkboardHandler;
 import net.server.channel.handlers.CloseRangeDamageHandler;
 import net.server.channel.handlers.CoconutHandler;
 import net.server.channel.handlers.CouponCodeHandler;
+import net.server.channel.handlers.DailyCheckinHandler;
 import net.server.channel.handlers.DamageSummonHandler;
 import net.server.channel.handlers.DenyAllianceRequestHandler;
 import net.server.channel.handlers.DenyGuildRequestHandler;
@@ -448,5 +449,6 @@ public final class PacketProcessor {
         registerHandler(RecvOpcode.OPEN_ITEMUI, new RaiseUIStateHandler());
         registerHandler(RecvOpcode.USE_ITEMUI, new RaiseIncExpHandler());
         registerHandler(RecvOpcode.CHANGE_QUICKSLOT, new QuickslotKeyMappedModifiedHandler());
+        registerHandler(RecvOpcode.DAILY_CHECKIN, new DailyCheckinHandler());
     }
 }

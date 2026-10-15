@@ -24,8 +24,9 @@ package net.opcodes;
 public enum RecvOpcode {
     // Custom-opcode registry: see server/docs/OPCODE_REGISTRY.md.
     // Reserved (not yet added): 0x372E (prism C2S), 0x3730 (cash-shop window C2S),
-    // 0x373C/0x373E (weather request twins), 0x11A (daily check-in C2S — note stock
-    // Send HIT_SNOWBALL shares the numeric value in the opposite direction).
+    // 0x373C/0x373E (weather request twins).
+    // Claimed: DAILY_CHECKIN C2S (0x11A — note stock Send HIT_SNOWBALL shares the
+    // numeric value in the opposite direction; not a wire collision, do not renumber).
     // Grandfathered custom: CUSTOM_PACKET(0x3713).
     CUSTOM_PACKET(0x3713),//13 37 lol
 
@@ -207,7 +208,8 @@ public enum RecvOpcode {
     USE_ITEMUI(0xEE),
     MTS_OPERATION(0xFD),
     USE_MAPLELIFE(0x100),
-    USE_HAMMER(0x104);
+    USE_HAMMER(0x104),
+    DAILY_CHECKIN(0x11A);
 
     private int code = -2;
 

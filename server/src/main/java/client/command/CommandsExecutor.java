@@ -25,6 +25,7 @@ package client.command;
 
 import client.Client;
 import client.command.commands.gm0.ChangeLanguageCommand;
+import client.command.commands.gm0.CheckinCommand;
 import client.command.commands.gm0.DisposeCommand;
 import client.command.commands.gm0.DropLimitCommand;
 import client.command.commands.gm0.EnableAuthCommand;
@@ -387,6 +388,7 @@ public class CommandsExecutor {
         addCommand("recalchp", RecalcHpCommand.class);
         addCommand(new String[]{"world", "w"}, WorldChatCommand.class);
         addCommand("fm", FmCommand.class);
+        addCommand(new String[]{"checkin", "daily"}, CheckinCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }

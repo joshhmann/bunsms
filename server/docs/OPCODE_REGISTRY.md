@@ -20,8 +20,8 @@ this file plus the reservation comments in the enums are the reservation mechani
 
 | Opcode | Direction | Owner / feature | Status |
 |---|---|---|---|
-| `0x11A` | Recv | Daily check-in C2S | RESERVED, not yet in RecvOpcode. CAUTION: stock Send `HIT_SNOWBALL(0x11A)` (SendOpcode.java:288) shares the numeric value in the opposite direction — not a wire collision, do not "fix" by renumbering |
-| `0x17C` | Send | Daily check-in S2C | RESERVED, not yet in SendOpcode (Send max today is `0x166`) |
+| `0x11A` | Recv | Daily check-in C2S (`DAILY_CHECKIN`, server half canonical; window DLL-side) | CLAIMED in RecvOpcode. CAUTION: stock Send `HIT_SNOWBALL(0x11A)` shares the numeric value in the opposite direction — not a wire collision, do not "fix" by renumbering |
+| `0x17C` | Send | Daily check-in S2C (`DAILY_CHECKIN`, snapshot consumed by DLL window) | CLAIMED in SendOpcode |
 
 ## Pre-existing custom opcodes (grandfathered)
 

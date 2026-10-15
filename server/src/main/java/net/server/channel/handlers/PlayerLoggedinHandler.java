@@ -411,6 +411,7 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
 
             player.commitExcludedItems();
             showDueyNotification(c, player);
+            showDailyCheckinWindow(c, player);
 
             player.resetPlayerRates();
             if (YamlConfig.config.server.USE_ADD_RATES_BY_LEVEL) {
@@ -479,6 +480,17 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+    /** Daily Check-In auto-open: push the DLL-side window on login when a reward is ready (level-gated). */
+    private static void showDailyCheckinWindow(Client c, Character player) {
+        if (player.getLevel() < server.DailyCheckinRewards.MIN_LEVEL) {
+            return;
+        }
+        int claimable = player.refreshCheckin();
+        if (claimable >= 1) {
+            c.sendPacket(PacketCreator.dailyCheckinSnapshot(claimable, player.getCheckinClaimed(), 0));
         }
     }
 

@@ -105,4 +105,8 @@
         <sqlFile path="db/tables/025-killlog.sql"/>
     </changeSet>
 
+    <changeSet id="26" author="solobots">
+        <sqlFile path="db/tables/026-daily-checkin.sql" splitStatements="false" endDelimiter="$$"/>
+    </changeSet>
+
 </databaseChangeLog>
