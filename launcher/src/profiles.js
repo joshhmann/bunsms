@@ -1,8 +1,8 @@
 // ── Launcher client profiles (pure, Electron-free) ──
 // Stock path (BunsMS.exe, Ezorsia HD) is the default; Kaentake is opt-in and
-// lives in its own folder. No Kaentake binaries are shipped in this repo:
-// the manifest carries the 3 Kaentake entries as manual-copy-only
-// ({ manual: true, url: "" }) until a redistribution grant exists.
+// lives in its own folder. The 3 Kaentake entries are normally hosted
+// (attribution to upstream iw2d/kaentake kept in the manifest as courtesy).
+// Entries with no URL stay verify-only as a fallback, never a policy gate.
 "use strict";
 
 const KAENTAKE_PORT = 8484;
@@ -127,11 +127,13 @@ function missingStockDeps(present, required) {
   return (required || []).filter((n) => !have.has(n));
 }
 
-// Downloader guard: manual-copy entries have no URL and must never reach downloadFile.
+// Downloader guard (fallback only): entries with no URL have nothing to fetch.
+// Normally-hosted entries pass through; missing-URL entries report the upstream
+// release zip as the copy source and the launcher hash-verifies the copy.
 function assertDownloadable(file) {
-  if (file.manual || !file.url) {
+  if (!file.url) {
     throw new Error(
-      `${file.name} is manual-copy-only (no redistribution grant): copy it from the upstream v3.4.1 release zip — the launcher will hash-verify it.`
+      `${file.name} has no download URL: copy it from the upstream iw2d/kaentake v3.4.1 release zip — the launcher will hash-verify it.`
     );
   }
 }

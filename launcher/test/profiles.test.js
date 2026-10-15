@@ -62,7 +62,9 @@ const ezorsiaTemplate = fs.readFileSync(
   for (const n of ["Kaentake.exe", "Kaentake.dll", "Custom.wz"]) {
     const e = ka.find((f) => f.name === n);
     assert.ok(e, n + " present");
-    assert.equal(e.manual, true);
+    assert.ok(e.url, n + " normally hosted");
+    assert.ok(!e.manual, n + " not manual-gated");
+    assert.match(e.attribution || "", /iw2d/);
   }
 }
 
@@ -136,11 +138,11 @@ const ezorsiaTemplate = fs.readFileSync(
   assert.deepEqual(missingStockDeps(["MapleStory.exe"], required), ["Canvas.dll"]);
 }
 
-// ── manual:true entries must never reach downloadFile ──
+// ── downloader guard (fallback only): URL-less entries never reach downloadFile ──
 {
-  // The downloader guard: entries without a usable URL are rejected before download.
   const { assertDownloadable } = require("../src/profiles.js");
-  assert.throws(() => assertDownloadable({ name: "Kaentake.exe", manual: true, url: "" }), /manual/);
+  assert.throws(() => assertDownloadable({ name: "Kaentake.exe", url: "" }), /no download URL/);
+  assert.doesNotThrow(() => assertDownloadable({ name: "Kaentake.exe", url: "https://x/Kaentake.exe" }));
   assert.doesNotThrow(() => assertDownloadable({ name: "Character.wz", url: "https://x/y" }));
 }
 

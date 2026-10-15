@@ -153,37 +153,34 @@
       "name": "Kaentake.exe",
       "hash": "792e1023e5405454b978c83a0cb9b866add8df759596ed42309be6df93f50848",
       "size": 31744,
-      "url": "",
+      "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/Kaentake.exe",
       "profiles": [
         "kaentake"
       ],
       "experimental": true,
-      "manual": true,
-      "manualNote": "Copy Kaentake.exe from the upstream iw2d/kaentake v3.4.1 release zip (no redistribution grant yet); the launcher will hash-verify it."
+      "attribution": "Kaentake by iw2d (github.com/iw2d/kaentake), used with thanks for non-commercial friends-and-fun play."
     },
     {
       "name": "Kaentake.dll",
       "hash": "b05a9e1264971b11579d66eaee9e9ffdcf40f41300974d08e5a3b4c5b5af80be",
       "size": 113664,
-      "url": "",
+      "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/Kaentake.dll",
       "profiles": [
         "kaentake"
       ],
       "experimental": true,
-      "manual": true,
-      "manualNote": "Copy Kaentake.dll from the upstream iw2d/kaentake v3.4.1 release zip (no redistribution grant yet); the launcher will hash-verify it."
+      "attribution": "Kaentake by iw2d (github.com/iw2d/kaentake), used with thanks for non-commercial friends-and-fun play."
     },
     {
       "name": "Custom.wz",
       "hash": "791809613e8ec270723d43418e67aa26ed072f72313d6a3ffcd7879b77469000",
       "size": 45859,
-      "url": "",
+      "url": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/Custom.wz",
       "profiles": [
         "kaentake"
       ],
       "experimental": true,
-      "manual": true,
-      "manualNote": "Copy Custom.wz from the upstream iw2d/kaentake v3.4.1 release zip (must match the Kaentake.dll build); the launcher will hash-verify it."
+      "attribution": "Kaentake by iw2d (github.com/iw2d/kaentake), used with thanks for non-commercial friends-and-fun play."
     }
   ],
   "downloadBase": "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/"

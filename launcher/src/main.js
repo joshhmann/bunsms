@@ -527,8 +527,9 @@ ipcMain.handle("launcher:checkUpdates", async () => {
     const updates = [];
     log(`Checking ${files.length} files (manifest v${manifest.version}), profile=${id}, hdMode=${hdMode}`);
     for (const file of files) {
-      // Manual-copy entries (no redistribution grant): verify-only, never download.
-      if (file.manual || !file.url) {
+      // Fallback only: entries with no URL have nothing to fetch — verify a
+      // local copy if present, else report manual_copy_needed (never download).
+      if (!file.url) {
         const localPath = path.join(gamePath, file.name);
         if (!fs.existsSync(localPath)) {
           log(`${file.name}: missing (manual copy needed)`);
@@ -538,7 +539,7 @@ ipcMain.handle("launcher:checkUpdates", async () => {
         if (file.hash) {
           const localHash = await hashFile(localPath);
           if (localHash !== file.hash) {
-            log(`${file.name}: hash mismatch on manual copy`);
+            log(`${file.name}: hash mismatch on local copy`);
             updates.push({ ...file, reason: "manual_copy_mismatch" });
           }
         }
@@ -604,7 +605,8 @@ ipcMain.handle("launcher:downloadUpdates", async (_, updates) => {
 
   for (let i = 0; i < updates.length; i++) {
     const file = updates[i];
-    // Manual-copy entries must never reach downloadFile (no URL, no grant).
+    // Fallback-only guard: URL-less entries have nothing to fetch and must
+    // never reach downloadFile; normally-hosted entries download as usual.
     try { assertDownloadable(file); } catch (err) { return { success: false, error: err.message }; }
     const destPath = path.join(gamePath, file.name);
 
