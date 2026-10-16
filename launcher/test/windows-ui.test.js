@@ -70,6 +70,19 @@ async function run() {
     const host = await evaluate("window.buns.getServerHost()");
     assert.equal(host, "buns.asslorde.com", "The canonical default must not silently select a QA/LAN host");
     const title = await evaluate("document.title");
+    Object.assign(report, { profile, host, title });
+    report.networkIpc = await evaluate(`Promise.all([
+      ["status", () => window.buns.getStatus()],
+      ["news", () => window.buns.getNews()],
+      ["rates", () => window.buns.fetchConfig()]
+    ].map(async ([name, call]) => {
+      const startedUtc = new Date().toISOString(), start = Date.now();
+      try { const result = await call(); return { name, startedUtc, finishedUtc: new Date().toISOString(), durationMs: Date.now() - start, result }; }
+      catch (error) { return { name, startedUtc, finishedUtc: new Date().toISOString(), durationMs: Date.now() - start, error: String(error) }; }
+    }))`);
+    report.filePreflight = await evaluate("window.buns.checkUpdates()");
+    report.renderedAtCapture = await evaluate("document.body.innerText");
+    report.screenshotCapturedUtc = new Date().toISOString();
     const screenshot = await command("Page.captureScreenshot", { format: "png" });
     const screenshotName = `${uiLayer}-launcher.png`;
     fs.writeFileSync(path.join(output, screenshotName), Buffer.from(screenshot.data, "base64"));
