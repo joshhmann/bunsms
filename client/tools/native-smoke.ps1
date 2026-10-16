@@ -12,7 +12,10 @@ param(
     [string]$PreparedGameDirectory = '',
     [switch]$PublishedRuntimeControl,
     [switch]$ReferenceAssetControl,
-    [string[]]$DiagnosticFullArchives = @()
+    [string[]]$DiagnosticFullArchives = @(),
+    [object]$DiagnosticItemVariant = $null,
+    [string]$ItemImageVariantsUrl = '',
+    [string]$ItemImageVariantsSha256 = ''
 )
 $ErrorActionPreference = 'Stop'
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
@@ -173,6 +176,20 @@ try {
         if ($DiagnosticFullArchives.Count) {
             $report.inputKind = 'INTERNAL archive bisection: reference51 plus explicitly recorded full archives; NEVER a release/fallback'
         }
+        if ($DiagnosticItemVariant) {
+            $variantUrl = [uri]$DiagnosticItemVariant.url
+            if ($selected.Contains('Item.wz') -or $DiagnosticItemVariant.sha256 -notmatch '^[a-f0-9]{64}$' -or
+                $DiagnosticItemVariant.size -le 0 -or -not $variantUrl.IsAbsoluteUri -or $variantUrl.Scheme -ne 'https') {
+                throw 'Invalid/conflicting internal Item variant authority'
+            }
+            $assetFiles = @(foreach ($old in $assetFiles) {
+                if ($old.name -eq 'Item.wz') {
+                    [pscustomobject]@{ name = 'Item.wz'; size = $DiagnosticItemVariant.size; sha256 = $DiagnosticItemVariant.sha256 }
+                } else { $old }
+            })
+            $report.diagnosticItemVariant = $DiagnosticItemVariant
+            $report.inputKind = 'INTERNAL genuine Item-image diagnostic variant with reference51; NEVER a release/fallback'
+        }
     }
     $report.sourceCommit = $env:GITHUB_SHA
     $game = if ($PreparedGameDirectory) { $PreparedGameDirectory } else { Join-Path $OutputDirectory 'baseline' }
@@ -192,7 +209,7 @@ try {
             throw "Native filename escapes baseline directory: $($file.name)"
         }
         $encoded = (($file.name.Replace('\', '/') -split '/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
-        $url = if ($ReferenceAssetControl -and $selected.Contains($file.name)) { [uri]($manifest.files | Where-Object name -eq $file.name).url } elseif ($ReferenceAssetControl) { [uri]::new($referenceBase, $encoded) } elseif ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
+        $url = if ($ReferenceAssetControl -and $DiagnosticItemVariant -and $file.name -eq 'Item.wz') { [uri]$DiagnosticItemVariant.url } elseif ($ReferenceAssetControl -and $selected.Contains($file.name)) { [uri]($manifest.files | Where-Object name -eq $file.name).url } elseif ($ReferenceAssetControl) { [uri]::new($referenceBase, $encoded) } elseif ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
         if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https') { throw "Native file URL must be pinned HTTPS: $($file.name)" }
         New-Item -ItemType Directory -Force ([IO.Path]::GetDirectoryName($destination)) | Out-Null
         $report.currentDownload = [ordered]@{ name = $file.name; url = $url.AbsoluteUri; expectedSize = $file.size; expectedSha256 = $expectedHash; startedUtc = [DateTime]::UtcNow.ToString('O'); status = 'downloading' }
@@ -422,11 +439,19 @@ try {
     if (-not $ReferenceAssetControl -and $report.publishedControl.status -eq 'native-startup-observed' -and
         $report.status -eq 'failed' -and $report.nativeCaptureStartedUtc -and -not $report.nativeUiObserved) {
         try {
-            & (Join-Path $PSScriptRoot 'isolate-native-archives.ps1') -OutputDirectory $OutputDirectory -GameDirectory $game `
-                -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
-                -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
-                -ObserveSeconds $ObserveSeconds -GameHost $GameHost
-            $report.archiveBisection = Get-Content (Join-Path $OutputDirectory 'archive-bisection.json') -Raw | ConvertFrom-Json
+            if ($ItemImageVariantsUrl) {
+                & (Join-Path $PSScriptRoot 'probe-native-item-images.ps1') -OutputDirectory $OutputDirectory -GameDirectory $game `
+                    -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
+                    -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
+                    -ObserveSeconds $ObserveSeconds -GameHost $GameHost -VariantsUrl $ItemImageVariantsUrl -VariantsSha256 $ItemImageVariantsSha256
+                $report.itemImageProbes = Get-Content (Join-Path $OutputDirectory 'item-image-probes.json') -Raw | ConvertFrom-Json
+            } else {
+                & (Join-Path $PSScriptRoot 'isolate-native-archives.ps1') -OutputDirectory $OutputDirectory -GameDirectory $game `
+                    -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
+                    -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
+                    -ObserveSeconds $ObserveSeconds -GameHost $GameHost
+                $report.archiveBisection = Get-Content (Join-Path $OutputDirectory 'archive-bisection.json') -Raw | ConvertFrom-Json
+            }
         } catch { $report.archiveBisectionError = $_.Exception.ToString() }
     }
     $report.finishedUtc = [DateTime]::UtcNow.ToString('O')

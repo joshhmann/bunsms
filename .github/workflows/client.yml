@@ -31,6 +31,14 @@ on:
         description: "HTTPS base URL containing the provenance-pinned native files"
         type: string
         default: ""
+      item_image_variants_url:
+        description: "Optional immutable diagnostic Item-image variant descriptor HTTPS URL; never a player release"
+        type: string
+        default: ""
+      item_image_variants_sha256:
+        description: "Expected SHA256 of that exact diagnostic descriptor"
+        type: string
+        default: ""
       test_backend:
         description: "Start the pinned real Java/MySQL/XML QA backend on this same Windows runner; never connects to production DB"
         type: boolean
@@ -185,6 +193,8 @@ jobs:
           NATIVE_BASELINE_FILES_URL: ${{ inputs.native_baseline_files_url }}
           NATIVE_TEST_BACKEND: ${{ inputs.test_backend }}
           NATIVE_EXERCISE_LOGIN: ${{ inputs.exercise_login }}
+          NATIVE_ITEM_VARIANTS_URL: ${{ inputs.item_image_variants_url }}
+          NATIVE_ITEM_VARIANTS_SHA256: ${{ inputs.item_image_variants_sha256 }}
         run: |
           $nativeExitCode = 0
           try {
@@ -207,6 +217,8 @@ jobs:
               -RuntimeArtifact native-crt `
               -GameHost $gameHost `
               -ExerciseLogin:($env:NATIVE_EXERCISE_LOGIN -eq 'true') `
+              -ItemImageVariantsUrl $env:NATIVE_ITEM_VARIANTS_URL `
+              -ItemImageVariantsSha256 $env:NATIVE_ITEM_VARIANTS_SHA256 `
               -OutputDirectory native-smoke-output
             $nativeExitCode = $LASTEXITCODE
           } finally {
@@ -250,6 +262,10 @@ jobs:
             native-smoke-output/archive-bisection/*/*.png
             native-smoke-output/archive-bisection/*/*.log
             native-smoke-output/archive-bisection/*/crash-receipts/receipt.json
+            native-smoke-output/item-image-probes/*/*.json
+            native-smoke-output/item-image-probes/*/*.png
+            native-smoke-output/item-image-probes/*/*.log
+            native-smoke-output/item-image-probes/*/crash-receipts/receipt.json
             native-backend-output/*.json
             native-backend-output/*.log
           if-no-files-found: warn

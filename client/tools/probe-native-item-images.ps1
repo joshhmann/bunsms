@@ -1,0 +1,100 @@
+param(
+    [Parameter(Mandatory)][string]$OutputDirectory,
+    [Parameter(Mandatory)][string]$GameDirectory,
+    [Parameter(Mandatory)][uri]$BaselineUrl,
+    [Parameter(Mandatory)][string]$BaselineSha256,
+    [Parameter(Mandatory)][uri]$BaselineFilesBaseUrl,
+    [Parameter(Mandatory)][string]$KaentakeArtifact,
+    [Parameter(Mandatory)][string]$CompanionArtifact,
+    [Parameter(Mandatory)][string]$RuntimeArtifact,
+    [Parameter(Mandatory)][uri]$VariantsUrl,
+    [Parameter(Mandatory)][ValidatePattern('^[a-f0-9]{64}$')][string]$VariantsSha256,
+    [int]$ObserveSeconds = 90,
+    [string]$GameHost = '127.0.0.1'
+)
+$ErrorActionPreference = 'Stop'
+$result = [ordered]@{ status = 'running'; sourceCommit = $env:GITHUB_SHA; authorityUrl = $VariantsUrl.AbsoluteUri
+    authoritySha256 = $VariantsSha256; steps = [Collections.Generic.List[object]]::new()
+    scope = 'INTERNAL genuine image diagnostics only. Same published runtime/backend/observer; no item removal, remap, dummy art, memory/PE/guard patch, release or feature acceptance.' }
+try {
+    if ($VariantsUrl.Scheme -ne 'https') { throw 'Image variant authority must use pinned HTTPS' }
+    $authorityPath = Join-Path $OutputDirectory 'item-image-variants.json'
+    Invoke-WebRequest $VariantsUrl.AbsoluteUri -OutFile $authorityPath -TimeoutSec 60
+    if ((Get-FileHash $authorityPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $VariantsSha256) { throw 'Image variant authority SHA256 mismatch' }
+    $authority = Get-Content $authorityPath -Raw | ConvertFrom-Json
+    $full = Get-Content (Join-Path $OutputDirectory 'baseline-provenance.json') -Raw | ConvertFrom-Json
+    $reference = Get-Content (Join-Path $OutputDirectory 'reference-provenance.json') -Raw | ConvertFrom-Json
+    $fullItem = $full.files | Where-Object name -eq 'Item.wz'
+    $referenceItem = $reference.files | Where-Object name -eq 'Item.wz'
+    if ($authority.reference.sha256 -ne $referenceItem.sha256 -or $authority.reference.size -ne $referenceItem.size -or
+        $authority.rc3.sha256 -ne $fullItem.hash -or $authority.rc3.size -ne $fullItem.size -or -not $authority.variants.Count) {
+        throw 'Image variants do not match the exact working/failed Item authority'
+    }
+    $variants = @($authority.variants | Where-Object kind -eq 'on-reference')
+    if (-not $variants.Count) { throw 'No genuine on-reference image discriminators in descriptor' }
+    $result.notExercised = @($authority.variants | Where-Object kind -ne 'on-reference' | ForEach-Object id)
+    $expectedBackend = @(Get-Content (Join-Path $OutputDirectory 'kernel-backend-ready.json') -Raw | ConvertFrom-Json)
+    if ($expectedBackend.Count -ne 2 -or @($expectedBackend | Where-Object { $_.alive -ne $true }).Count) { throw 'Same live backend identity unavailable; STOP image attribution' }
+    $expectedJava = $expectedBackend | Where-Object role -eq 'java'
+    foreach ($old in $reference.files) {
+        $next = $full.files | Where-Object name -eq $old.name
+        if ($old.sha256 -eq $next.hash) { continue }
+        if ($old.name -notmatch '^[A-Za-z]+\.wz$') { throw 'Unexpected non-archive delta' }
+        Copy-Item (Join-Path (Join-Path $OutputDirectory 'private-asset-deltas/reference') $old.name) (Join-Path $GameDirectory $old.name) -Force
+    }
+    $root = Join-Path $OutputDirectory 'item-image-probes'
+    $cache = Join-Path $OutputDirectory 'private-item-variants'
+    New-Item -ItemType Directory -Force $root, $cache | Out-Null
+    $index = 0
+    foreach ($variant in $variants) {
+        $index++
+        $url = [uri]$variant.url
+        if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https' -or $variant.sha256 -notmatch '^[a-f0-9]{64}$' -or $variant.size -le 0) { throw 'Invalid image variant byte authority' }
+        if ($variant.sha256 -eq $referenceItem.sha256 -and $variant.size -eq $referenceItem.size) {
+            $result.steps.Add([pscustomobject]@{ id = $variant.id; sha256 = $variant.sha256; images = $variant.images
+                outcome = 'Exact already-proven reference bytes; no duplicate engine probe' })
+            continue
+        }
+        $cached = Join-Path $cache ('variant-{0:D2}.wz' -f $index)
+        if ($variant.sha256 -eq $fullItem.hash -and $variant.size -eq $fullItem.size) {
+            Copy-Item (Join-Path $OutputDirectory 'private-asset-deltas/full/Item.wz') $cached
+        } else { Invoke-WebRequest $url.AbsoluteUri -OutFile $cached -TimeoutSec 120 }
+        if ((Get-Item $cached).Length -ne $variant.size -or (Get-FileHash $cached -Algorithm SHA256).Hash.ToLowerInvariant() -ne $variant.sha256) { throw "Image variant size/SHA256 mismatch: $($variant.id)" }
+        Copy-Item $cached (Join-Path $GameDirectory 'Item.wz') -Force
+        $directory = Join-Path $root ('variant-{0:D2}' -f $index)
+        & (Join-Path $PSScriptRoot 'native-smoke.ps1') -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 `
+            -BaselineFilesBaseUrl $BaselineFilesBaseUrl -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact `
+            -RuntimeArtifact $RuntimeArtifact -OutputDirectory $directory -ObserveSeconds $ObserveSeconds -GameHost $GameHost `
+            -PreparedGameDirectory $GameDirectory -PublishedRuntimeControl -ReferenceAssetControl -DiagnosticItemVariant $variant | Out-Null
+        $receipt = Get-Content (Join-Path $directory 'result.json') -Raw | ConvertFrom-Json
+        $step = [pscustomobject]@{ id = $variant.id; kind = $variant.kind; images = $variant.images; sha256 = $variant.sha256; size = $variant.size
+            directory = $directory; status = $receipt.status; initializeSuccessObserved = $receipt.initializeSuccessObserved
+            nativeUiObserved = $receipt.nativeUiObserved; gameAliveAfterObservation = $receipt.gameAliveAfterObservation
+            capsAckObserved = $receipt.capsAckObserved; error = $receipt.error; outcome = 'inconclusive' }
+        $result.steps.Add($step)
+        if (-not $receipt.nativeCaptureStartedUtc -or -not $receipt.initializeSuccessObserved) { throw 'STOP: variant never reached comparable native initialization' }
+        $ready = @(Get-Content (Join-Path $directory 'kernel-backend-ready.json') -Raw | ConvertFrom-Json)
+        foreach ($expected in $expectedBackend) {
+            if (-not @($ready | Where-Object { $_.role -eq $expected.role -and $_.id -eq $expected.id -and $_.startUtc -eq $expected.startUtc -and $_.alive -eq $true }).Count) {
+                throw 'STOP: backend identity/lifetime changed; no image attribution'
+            }
+        }
+        $samples = @(Get-Content (Join-Path $directory 'kernel-backend-observations.log') | ForEach-Object { $_ | ConvertFrom-Json })
+        if (-not $samples.Count) { throw 'STOP: no concurrent backend/kernel evidence' }
+        foreach ($sample in $samples) {
+            if ($sample.backendProcesses.Count -ne 2 -or @($sample.backendProcesses | Where-Object { $_.alive -ne $true }).Count -or
+                -not @($sample.tcp | Where-Object { $_.localPort -eq 8484 -and $_.state -eq 'Listen' -and $_.owningPid -eq $expectedJava.id }).Count) {
+                throw 'STOP: same backend/listener stability not established during variant'
+            }
+        }
+        if ($receipt.status -eq 'native-startup-observed') { $step.outcome = 'startup-observed' }
+        elseif (-not $receipt.nativeUiObserved -or -not $receipt.gameAliveAfterObservation -or $receipt.errorDialogObserved) { $step.outcome = 'startup-failed' }
+        else { throw 'STOP: observer failure is not a comparable startup result' }
+    }
+    $result.status = 'image-variant-observations-complete'
+    $result.limit = 'Sufficiency/dependency observations only; compare genuine nodes and runtime consumer evidence before any root/fix claim. Final full cohort and all features still required.'
+} catch { $result.status = 'inconclusive'; $result.error = $_.Exception.ToString() }
+finally {
+    $result.finishedUtc = [DateTime]::UtcNow.ToString('O')
+    $result | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $OutputDirectory 'item-image-probes.json')
+}
