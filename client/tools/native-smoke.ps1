@@ -7,7 +7,8 @@ param(
     [Parameter(Mandatory)][string]$RuntimeArtifact,
     [string]$OutputDirectory = 'native-smoke-output',
     [ValidateRange(30, 180)][int]$ObserveSeconds = 90,
-    [string]$GameHost = 'buns.asslorde.com'
+    [string]$GameHost = 'buns.asslorde.com',
+    [switch]$ExerciseLogin
 )
 $ErrorActionPreference = 'Stop'
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
@@ -23,6 +24,7 @@ $report = [ordered]@{
 }
 $script:snapshotIndex = 0
 $networkJob = $null
+$script:qaPassword = $null
 
 
 function Save-Screenshot([int]$X, [int]$Y, [int]$Width, [int]$Height, [string]$Path) {
@@ -79,9 +81,29 @@ function Save-NativeSnapshot([int[]]$Ids) {
                 reason = 'Invoke the visible normal Windows Run button once; no registry, signature guard, or compatibility policy is changed' }
         }
     }
+    if ($ExerciseLogin -and -not $report.loginInput -and
+        (Get-Content $debugLog -Raw).Contains('BUNS_RUNTIME caps-ack ')) {
+        $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+        if ($window) {
+            $report.loginInput = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; username = 'bunsrcqa'; hwnd = $window.Handle; actualAuthentication = 'PENDING server/UI evidence' }
+            try {
+                [NativeSmoke]::ClickClient($window, 470, 245)
+                [System.Windows.Forms.SendKeys]::SendWait('bunsrcqa')
+                [NativeSmoke]::ClickClient($window, 470, 279)
+                [System.Windows.Forms.SendKeys]::SendWait($script:qaPassword)
+                [NativeSmoke]::ClickClient($window, 640, 245)
+                $report.loginInput.status = 'submitted-normal-OS-login-input'
+            } catch { $report.loginInput.status = 'failed'; $report.loginInput.error = $_.Exception.ToString(); throw }
+        }
+    }
 }
 
 try {
+    if ($ExerciseLogin) {
+        if ($GameHost -ne '127.0.0.1') { throw 'Disposable QA login input requires the isolated loopback test backend' }
+        $script:qaPassword = [Guid]::NewGuid().ToString('N').Substring(0, 10)
+        Write-Output "::add-mask::$script:qaPassword"
+    }
     $report.publicAccess = 'Activation deferred by user; unchanged public ports are not re-probed'
     if ($BaselineUrl.Scheme -ne 'https' -or $BaselineFilesBaseUrl.Scheme -ne 'https') {
         throw 'Native baseline provenance and bytes must use explicit SHA256-pinned HTTPS URLs'
@@ -190,6 +212,9 @@ try {
     $report.gameAliveAfterObservation = @($final.processes | Where-Object { $_.name -eq 'MapleStory' -and $_.alive }).Count -gt 0
     $report.nativeUiObserved = @($final.screenshots | Where-Object visualContent).Count -gt 0
     $report.errorDialogObserved = @($final.windows | Where-Object { $_.Visible -and $_.Class -eq '#32770' }).Count -gt 0
+    if ($ExerciseLogin -and $report.loginInput.status -ne 'submitted-normal-OS-login-input') {
+        throw 'Requested actual QA login input was not submitted; inspect observed native UI and input receipt'
+    }
     if (-not $report.initializeSuccessObserved -or -not $report.companionModuleObserved -or -not $report.nativeUiObserved -or
         -not $report.gameAliveAfterObservation -or $report.errorDialogObserved) {
         throw 'Native startup acceptance not met; inspect actual windows, screenshots, passive process/DBWIN observations, and the deferred public-activation state'

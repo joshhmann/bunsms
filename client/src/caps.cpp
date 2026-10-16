@@ -85,11 +85,10 @@ void SendAnnounceThroughOrig(void* sock) {
 }
 
 void __fastcall SendPacket_hook(void* pThis, void* /*edx*/, const COutPacket& o) {
-    // First genuine outgoing packet on this connection carries the announce
-    // ahead of it through the ORIGINAL (same seq/crypto treatment, in order).
-    // Hook fires only when the engine itself sends, so crypto is already up —
-    // no hello/IV race. Reentrant announce send is guarded above.
-    CapsPrepareReadiness();
+    // Only the custom announce waits for readiness. Native handshake/game
+    // packets never perform asset I/O or wait for the prerequisite probe here.
+    // Once ready, announce through the original crypto/sequence path before
+    // the next genuine packet. Reentrant announce sends remain guarded.
     if (g_readyKnown && !g_announced && !g_sendingAnnounce) {
         SendAnnounceThroughOrig(pThis);
     }
@@ -148,12 +147,10 @@ void CapsHooksReady() {
 
 void CapsPrepareReadiness() {
     if (g_readyKnown || g_readyThread.load() != GetCurrentThreadId()) return;
-    try {
-        if (!get_rm()) return;
-        Ztl_variant_t value = get_rm()->GetObjectA(const_cast<wchar_t*>(L"UI/Basic.img/BtOK2/normal/0"));
-        IWzCanvasPtr sentinel = get_unknown(value);
-        if (!sentinel) return; // Root WZ namespace is not mounted yet.
-    } catch (...) { return; }
+    // Pinned SetUp initializes ResMan before Gr2D, then creates CWndMan.
+    // The sole redraw driver probes once after both real objects exist.
+    // No WZ lookup is repeated per frame while either subsystem is absent.
+    if (!get_rm() || !get_gr()) return;
 
     const bool checkin = DailyCheckin_ResourcesReady();
     const bool cash = CashShopWnd_ResourcesReady();
@@ -174,7 +171,6 @@ void CapsPrepareReadiness() {
 }
 
 void CapsSendAnnounce() {
-    CapsPrepareReadiness();
     if (!g_readyKnown) return;
     // Manual send (diagnostic / fallback). The hook path above is primary;
     // this also resets first so a failed send can't leave a stale mask.

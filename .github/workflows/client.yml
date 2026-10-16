@@ -35,6 +35,10 @@ on:
         description: "Start the pinned real Java/MySQL/XML QA backend on this same Windows runner; never connects to production DB"
         type: boolean
         default: false
+      exercise_login:
+        description: "Submit normal OS login input to an own disposable GM0 account on the isolated loopback backend; not a gameplay pass"
+        type: boolean
+        default: false
       backend_bundle_url:
         description: "Frozen QA server archive HTTPS URL"
         type: string
@@ -167,6 +171,7 @@ jobs:
           NATIVE_BASELINE_SHA256: ${{ inputs.native_baseline_sha256 }}
           NATIVE_BASELINE_FILES_URL: ${{ inputs.native_baseline_files_url }}
           NATIVE_TEST_BACKEND: ${{ inputs.test_backend }}
+          NATIVE_EXERCISE_LOGIN: ${{ inputs.exercise_login }}
         run: |
           $nativeExitCode = 0
           try {
@@ -188,6 +193,7 @@ jobs:
               -CompanionArtifact native-companion `
               -RuntimeArtifact native-crt `
               -GameHost $gameHost `
+              -ExerciseLogin:($env:NATIVE_EXERCISE_LOGIN -eq 'true') `
               -OutputDirectory native-smoke-output
             $nativeExitCode = $LASTEXITCODE
           } finally {
