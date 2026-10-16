@@ -30,17 +30,31 @@ try {
         $authority.rc3.sha256 -ne $fullItem.hash -or $authority.rc3.size -ne $fullItem.size -or -not $authority.variants.Count) {
         throw 'Image variants do not match the exact working/failed Item authority'
     }
-    $variants = @($authority.variants | Where-Object kind -eq 'on-reference')
-    if (-not $variants.Count) { throw 'No genuine on-reference image discriminators in descriptor' }
-    $result.notExercised = @($authority.variants | Where-Object kind -ne 'on-reference' | ForEach-Object id)
+    $fullSupport = $authority.supportCohort -eq 'full-rc3'
+    if ($fullSupport) {
+        $control = @($authority.variants | Where-Object { $_.id -eq $authority.controlVariantId -and $_.kind -eq 'full-support-control' })
+        if ($control.Count -ne 1) { throw 'Full-support experiment needs one explicit no-new-cards control' }
+        $reencoded = @($authority.variants | Where-Object { $_.id -eq $authority.reencodingControlVariantId -and $_.kind -eq 'on-full-support' })
+        if ($reencoded.Count -ne 1) { throw 'Full-support experiment needs the explicit semantically unchanged re-encoding control' }
+        $variants = @($control) + @($reencoded) + @($authority.variants | Where-Object { $_.kind -eq 'on-full-support' -and $_.id -ne $authority.reencodingControlVariantId })
+    } else {
+        $variants = @($authority.variants | Where-Object kind -eq 'on-reference')
+    }
+    if (-not $variants.Count) { throw 'No genuine discriminators in descriptor' }
+    $result.supportCohort = if ($fullSupport) { 'FULL rc3 other archives; actual pairing inventory retained separately' } else { 'working-reference51 other archives' }
+    $selectedIds = @($variants | ForEach-Object id)
+    $result.notExercised = @($authority.variants | Where-Object { $_.id -notin $selectedIds } | ForEach-Object id)
     $expectedBackend = @(Get-Content (Join-Path $OutputDirectory 'kernel-backend-ready.json') -Raw | ConvertFrom-Json)
     if ($expectedBackend.Count -ne 2 -or @($expectedBackend | Where-Object { $_.alive -ne $true }).Count) { throw 'Same live backend identity unavailable; STOP image attribution' }
     $expectedJava = $expectedBackend | Where-Object role -eq 'java'
+    $fullArchiveNames = [Collections.Generic.List[string]]::new()
     foreach ($old in $reference.files) {
         $next = $full.files | Where-Object name -eq $old.name
         if ($old.sha256 -eq $next.hash) { continue }
         if ($old.name -notmatch '^[A-Za-z]+\.wz$') { throw 'Unexpected non-archive delta' }
-        Copy-Item (Join-Path (Join-Path $OutputDirectory 'private-asset-deltas/reference') $old.name) (Join-Path $GameDirectory $old.name) -Force
+        $cohort = if ($fullSupport) { 'full' } else { 'reference' }
+        Copy-Item (Join-Path (Join-Path $OutputDirectory "private-asset-deltas/$cohort") $old.name) (Join-Path $GameDirectory $old.name) -Force
+        if ($fullSupport -and $old.name -ne 'Item.wz') { $fullArchiveNames.Add($old.name) }
     }
     $root = Join-Path $OutputDirectory 'item-image-probes'
     $cache = Join-Path $OutputDirectory 'private-item-variants'
@@ -65,9 +79,10 @@ try {
         & (Join-Path $PSScriptRoot 'native-smoke.ps1') -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 `
             -BaselineFilesBaseUrl $BaselineFilesBaseUrl -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact `
             -RuntimeArtifact $RuntimeArtifact -OutputDirectory $directory -ObserveSeconds $ObserveSeconds -GameHost $GameHost `
-            -PreparedGameDirectory $GameDirectory -PublishedRuntimeControl -ReferenceAssetControl -DiagnosticItemVariant $variant | Out-Null
+            -PreparedGameDirectory $GameDirectory -PublishedRuntimeControl -ReferenceAssetControl `
+            -DiagnosticFullArchives ($fullArchiveNames.ToArray()) -DiagnosticItemVariant $variant | Out-Null
         $receipt = Get-Content (Join-Path $directory 'result.json') -Raw | ConvertFrom-Json
-        $step = [pscustomobject]@{ id = $variant.id; kind = $variant.kind; images = $variant.images; sha256 = $variant.sha256; size = $variant.size
+        $step = [pscustomobject]@{ id = $variant.id; kind = $variant.kind; images = $variant.images; nodes = $variant.nodes; sha256 = $variant.sha256; size = $variant.size
             directory = $directory; status = $receipt.status; initializeSuccessObserved = $receipt.initializeSuccessObserved
             nativeUiObserved = $receipt.nativeUiObserved; gameAliveAfterObservation = $receipt.gameAliveAfterObservation
             capsAckObserved = $receipt.capsAckObserved; error = $receipt.error; outcome = 'inconclusive' }
@@ -90,6 +105,12 @@ try {
         if ($receipt.status -eq 'native-startup-observed') { $step.outcome = 'startup-observed' }
         elseif (-not $receipt.nativeUiObserved -or -not $receipt.gameAliveAfterObservation -or $receipt.errorDialogObserved) { $step.outcome = 'startup-failed' }
         else { throw 'STOP: observer failure is not a comparable startup result' }
+        if ($fullSupport -and $variant.id -eq $authority.controlVariantId -and $step.outcome -ne 'startup-observed') {
+            throw 'STOP: full-support no-new-cards control failed; do not attribute card/group failures or continue unpaired node probes'
+        }
+        if ($fullSupport -and $variant.id -eq $authority.reencodingControlVariantId -and $step.outcome -ne 'startup-observed') {
+            throw 'STOP: semantically unchanged old-card re-encoding failed; investigate writer/representation compatibility before any card/schema/root attribution'
+        }
     }
     $result.status = 'image-variant-observations-complete'
     $result.limit = 'Sufficiency/dependency observations only; compare genuine nodes and runtime consumer evidence before any root/fix claim. Final full cohort and all features still required.'
