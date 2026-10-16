@@ -1100,6 +1100,15 @@ public class AbstractPlayerInteraction {
         exped.removeChannelExpedition(getPlayer().getClient().getChannelServer());
     }
 
+    // Boss-pack Wave 0: attempts viewer backing 3004015.js. Index mapping matches
+    // MapleRoot (boss.id - 1 -> BossLogEntry.getIndex()).
+    public int getBossLogEntries(int boss) {
+        java.util.Optional<server.expeditions.ExpeditionBossLog.BossLogEntry> ble = java.util.Arrays.stream(
+                server.expeditions.ExpeditionBossLog.BossLogEntry.values())
+                .filter(bossLogEntry -> bossLogEntry.getIndex() == (boss + 1)).findFirst();
+        return ble.isEmpty() ? -1 : server.expeditions.ExpeditionBossLog.getPlayerEntryCount(getPlayer().getId(), ble.get());
+    }
+
     public Expedition getExpedition(ExpeditionType type) {
         return getPlayer().getClient().getChannelServer().getExpedition(type);
     }

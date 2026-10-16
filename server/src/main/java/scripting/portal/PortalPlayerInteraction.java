@@ -80,4 +80,25 @@ public class PortalPlayerInteraction extends AbstractPlayerInteraction {
     public void playPortalSound() {
         c.sendPacket(PacketCreator.playPortalSound());
     }
+
+    // Boss-pack Wave 0 (DKBONUS1/YOSHIJQ entry doors): hour-cycle gate ported
+    // from MapleRoot so DKC2Bonus1.js/YOSHIJQ1.js resolve at runtime.
+    private static final int START_HOUR = 0;
+    private static final int CYCLE_MINUTES = 60;
+    private static final int WINDOW_DURATION = 5;
+
+    public boolean isDoorOpen() {
+        long totalMinutes = System.currentTimeMillis() / (1000 * 60);
+        long minutesInCurrentCycle = (totalMinutes - (long) START_HOUR * 60) % CYCLE_MINUTES;
+        return minutesInCurrentCycle >= 0 && minutesInCurrentCycle < WINDOW_DURATION;
+    }
+
+    public long timeUntilNextOpen() {
+        long totalMinutes = System.currentTimeMillis() / (1000 * 60);
+        long minutesInCurrentCycle = (totalMinutes - (long) START_HOUR * 60) % CYCLE_MINUTES;
+        if (minutesInCurrentCycle < WINDOW_DURATION) {
+            return 0;
+        }
+        return CYCLE_MINUTES - minutesInCurrentCycle;
+    }
 }

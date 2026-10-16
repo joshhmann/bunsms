@@ -53,6 +53,7 @@ import java.awt.*;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -110,6 +111,10 @@ public class EventInstanceManager {
     // forces deletion of items not supposed to be held outside of the event, dealt on a player's leaving moment.
     private final Set<Integer> exclusiveItems = new HashSet<>();
 
+    // Boss-pack Wave 0: per-boss damage leaderboard backing Tana (3004006.js)
+    // sendDmgDealt display. Fed from Monster.distributeExperience on boss kills.
+    private HashMap<Integer, AtomicLong> dmgDealt = new HashMap<>();
+    private long totalDmg = 0;
     public EventInstanceManager(EventManager em, String name) {
         this.em = em;
         this.name = name;
@@ -597,6 +602,44 @@ public class EventInstanceManager {
     public int getKillCount(Character chr) {
         Integer kc = killCount.get(chr);
         return (kc == null) ? 0 : kc;
+    }
+
+    public HashMap<Integer, AtomicLong> getDmgDealt() {
+        return dmgDealt;
+    }
+
+    public String sendDmgDealt(int world) {
+        String dealt = "Damage Dealt:\r\n";
+        net.server.PlayerStorage storage = net.server.Server.getInstance().getWorld(world).getPlayerStorage();
+        int x = 1;
+        java.text.DecimalFormat dec = new java.text.DecimalFormat("#.##");
+        java.text.DecimalFormat com = new java.text.DecimalFormat("#,###");
+        for (java.util.Map.Entry<Integer, AtomicLong> e : dmgDealt.entrySet()) {
+            dealt += x + ". #b" + storage.getCharacterById(e.getKey()) + "#k - #r"
+                    + (com.format(e.getValue().get())) + "#k (" + dec.format(e.getValue().get() * 100.0 / totalDmg) + "%) damage dealt\r\n";
+            x++;
+        }
+        return dealt + "\r\n";
+    }
+
+    public void addDmgDealt(HashMap<Integer, AtomicLong> toAdd, long mobHp) {
+        for (java.util.Map.Entry<Integer, AtomicLong> entry : toAdd.entrySet()) {
+            Integer key = entry.getKey();
+            AtomicLong value = entry.getValue();
+            dmgDealt.merge(key, value, (v1, v2) -> new AtomicLong(v1.addAndGet(v2.get())));
+        }
+        totalDmg += mobHp;
+        dmgDealt = sortDamageMap(dmgDealt);
+    }
+
+    private static HashMap<Integer, AtomicLong> sortDamageMap(java.util.Map<Integer, AtomicLong> unsortMap) {
+        java.util.List<java.util.Map.Entry<Integer, AtomicLong>> list = new java.util.LinkedList<>(unsortMap.entrySet());
+        list.sort((o1, o2) -> Long.compare(o2.getValue().get(), o1.getValue().get()));
+        HashMap<Integer, AtomicLong> sortedMap = new java.util.LinkedHashMap<>();
+        for (java.util.Map.Entry<Integer, AtomicLong> entry : list) {
+            sortedMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedMap;
     }
 
     public void dispose() {

@@ -42,29 +42,51 @@ import static java.util.concurrent.TimeUnit.HOURS;
 public class ExpeditionBossLog {
 
     public enum BossLogEntry {
-        ZAKUM(2, 1, false),
-        HORNTAIL(2, 1, false),
-        PINKBEAN(1, 1, false),
-        SCARGA(1, 1, false),
-        PAPULATUS(2, 1, false);
+        ZAKUM(1, 5, 25, 24, false),
+        HORNTAIL(2, 6, 20, 24, false),
+        PINKBEAN(3, 7, 20, 24, false),
+        SCARGA(4, 1, 10, 24, false),
+        PAPULATUS(5, 2, 30, 24, false),
+        VONLEON(6, 8, 18, 24, false),
+        CYGNUS(7, 9, 16, 24, false),
+        WILLSPIDER(8, 11, 8, 24, false),
+        VERUS(9, 12, 8, 24, false),
+        DARKNELL(10, 13, 8, 24, false),
+        KREXEL(11, 3, 20, 24, false),
+        CASTELLAN(12, 4, 20, 24, false),
+        LUCID(13, 10, 8, 24, false),
+        NLUCID(14, 10, 12, 24, false),
+        NWILLSPIDER(15, 10, 12, 24, false),
+        NVERUS(16, 10, 12, 24, false),
+        NDARKNELL(17, 10, 12, 24, false),
+        MAGNUS(18, 10, 8, 24, false);
 
         private final int entries;
+        private final int ordinal;
         private final int timeLength;
         private final int minChannel;
         private final int maxChannel;
         private final boolean week;
+        private final int index;
 
-        BossLogEntry(int entries, int timeLength, boolean week) {
-            this(entries, 0, Integer.MAX_VALUE, timeLength, week);
+        BossLogEntry(int index, int ordinal, int entries, int timeLength, boolean week) {
+            this(index, ordinal, entries, 0, Integer.MAX_VALUE, timeLength, week);
         }
 
-        BossLogEntry(int entries, int minChannel, int maxChannel, int timeLength, boolean week) {
+        BossLogEntry(int index, int ordinal, int entries, int minChannel, int maxChannel, int timeLength, boolean week) {
+            this.index = index;
+            this.ordinal = ordinal;
             this.entries = entries;
             this.minChannel = minChannel;
             this.maxChannel = maxChannel;
             this.timeLength = timeLength;
             this.week = week;
         }
+
+        public int getIndex() { return this.index; }
+        public int getEntries() { return this.entries; }
+        public int getOrdinal() { return this.ordinal; }
+        public boolean getIsWeekly() { return this.week; }
 
         private static List<Pair<Timestamp, BossLogEntry>> getBossLogResetTimestamps(Calendar timeNow, boolean week) {
             List<Pair<Timestamp, BossLogEntry>> resetTimestamps = new LinkedList<>();
@@ -141,6 +163,10 @@ public class ExpeditionBossLog {
 
     private static String getBossLogTable(boolean week) {
         return week ? "bosslog_weekly" : "bosslog_daily";
+    }
+
+    public static int getPlayerEntryCount(int cid, BossLogEntry boss) {
+        return countPlayerEntries(cid, boss);
     }
 
     private static int countPlayerEntries(int cid, BossLogEntry boss) {

@@ -117,4 +117,8 @@
         <sqlFile path="db/tables/028-coloring-prism.sql" splitStatements="false" endDelimiter="$$"/>
     </changeSet>
 
+    <changeSet id="29" author="bosspack-wave0">
+        <sqlFile path="db/tables/029-boss-pack-entries.sql"/>
+    </changeSet>
+
 </databaseChangeLog>
