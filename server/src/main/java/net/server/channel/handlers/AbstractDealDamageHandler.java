@@ -981,9 +981,12 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
 
                 // Ticket #12 (contract v1): long-aware magnitude guard. Legacy lines
                 // keep the stock 1.5x-warn / 5x-point bounds against the MaxDMG
-                // guess; long lines from flagged senders are uncapped by design
-                // (mob-HP-long is a separate project) so only absurd values —
-                // beyond 100x the guess or the int wire range — alert/point.
+                // guess; negotiated long lines are uncapped by the int wire range
+                // by design, so the ONLY bounds are the negotiated magnitude
+                // limit (2^53, Monster.MAX_MONSTER_HP) and an absurdity bound
+                // (100x the guess) that cannot false-positive on valid overflow
+                // hits. No int-range condition on the long contract: every valid
+                // negotiated line above 2^31 is legitimate traffic.
                 // Overflow-safe: the guess is long, bounds use division, never
                 // maxWithCrit * N.
                 long magnitude = Math.abs(damage);
@@ -994,8 +997,12 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     if (maxWithCrit > 0 && magnitude / maxWithCrit >= 5) {
                         AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
                     }
-                } else if ((maxWithCrit > 0 && magnitude / Math.max(maxWithCrit, 1L) >= 100) || magnitude > Integer.MAX_VALUE) {
-                    AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Long-line DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                } else {
+                    if (magnitude > Monster.MAX_MONSTER_HP) {
+                        AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Long-line DMG exceeds negotiated limit: " + magnitude + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                    } else if (maxWithCrit > 0 && magnitude / Math.max(maxWithCrit, 1L) >= 100) {
+                        AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Long-line DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                    }
                 }
                 // Keep the crit display encoding on the stored line (negative ==
                 // crit). Long lines already carry the sign from readDamageLine;

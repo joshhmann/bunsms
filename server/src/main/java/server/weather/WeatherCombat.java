@@ -104,15 +104,27 @@ public final class WeatherCombat {
      * documented.
      */
     public static long scaleDamageToMonster(long damage) {
-        if (damage <= 0 || !isNight()) {
+        if (damage <= 0 || !gameplayEnabled() || !isNight()) {
             return damage;
         }
         return applyLong(damage, NIGHT_MOB_DEFENCE);
     }
 
+    /**
+     * Master switch for ALL silent weather gameplay (damage/EXP/spawn/debuff/
+     * nocturnal). Default false; sky packets are unaffected (separate caps).
+     */
+    public static boolean gameplayEnabled() {
+        try {
+            return config.YamlConfig.config.server.USE_WEATHER_GAMEPLAY_EFFECTS;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** Scale damage a monster deals to a player. */
     public static int scaleDamageToPlayer(int damage) {
-        if (damage <= 0) {
+        if (damage <= 0 || !gameplayEnabled()) {
             return damage;
         }
         return isNight() ? apply(damage, NIGHT_MOB_DAMAGE) : damage;
@@ -120,27 +132,18 @@ public final class WeatherCombat {
 
     /** Scale the experience a kill awards. */
     public static int scaleExp(int exp) {
-        if (exp <= 0) {
+        if (exp <= 0 || !gameplayEnabled()) {
             return exp;
         }
         return isNight() ? apply(exp, NIGHT_EXP) : exp;
     }
 
     /**
-     * Mob density multiplier: 1.0 by day, more at night.
-     *
-     * <p>Keyed on the {@link #isNight()} BOOLEAN and not on the raw night curve, which
-     * matters more than it looks. {@code SpawnPoint.getMobCapacity()} ceils the spawn
-     * multiplier, so a fractional ramp would step the per-point capacity up the moment
-     * the curve left zero, i.e. one minute after dusk begins at 17:00. A boolean at the
-     * midpoint puts the single step at roughly 18:00, where the sky is visibly dark.
-     *
-     * <p>Called for every spawn point of every cached map on every channel every ten
-     * seconds, so it has to stay cheap: {@link WeatherService#nightLevel()} is arithmetic
-     * over {@code System.currentTimeMillis()} with no allocation and no lock.
+     * Mob density multiplier: gameplay-gated like the other scalars (1.0 when
+     * the flag is off, regardless of clock).
      */
     public static double spawnMultiplier() {
-        return isNight() ? NIGHT_SPAWN : 1.0;
+        return gameplayEnabled() && isNight() ? NIGHT_SPAWN : 1.0;
     }
 
     // ---------------------------------------------------------------- internals

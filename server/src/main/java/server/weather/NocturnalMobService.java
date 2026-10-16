@@ -108,10 +108,9 @@ public final class NocturnalMobService {
 
     /** Called once per WeatherTask tick. Only occupied maps are considered at night. */
     public static void refreshWorld(World world) {
-        if (world == null || world.getPlayerStorage() == null) {
+        if (world == null || world.getPlayerStorage() == null || !WeatherCombat.gameplayEnabled()) {
             return;
         }
-
         synchronized (LOCK) {
             if (!WeatherService.isNight()) {
                 despawnAll();
@@ -141,7 +140,7 @@ public final class NocturnalMobService {
 
     /** Called on map entry so an eligible field is ready immediately at night. */
     public static void refreshMap(MapleMap map) {
-        if (map == null) {
+        if (map == null || !WeatherCombat.gameplayEnabled()) {
             return;
         }
         synchronized (LOCK) {

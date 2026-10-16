@@ -137,7 +137,10 @@ public class ServerConfig {
     public boolean USE_MAKER_FEE_HEURISTICS;
     //Buyback Configuration
     public int MAXIMUM_TRANSACTIONS_FOR_BUYBACK;
-    //Custom Configuration
+    //Weather/time gameplay (ticket #13): night combat/EXP/spawn scalars, blizzard
+    //slow, nocturnal encounters. Default FALSE: silent gameplay changes must be
+    //opted into, never imposed on legacy clients/sessions by timetable alone.
+    public boolean USE_WEATHER_GAMEPLAY_EFFECTS;
     public boolean USE_ENABLE_CUSTOM_NPC_SCRIPT;
     public boolean USE_STARTER_MERGE;
 

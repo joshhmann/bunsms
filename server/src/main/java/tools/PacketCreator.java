@@ -6855,6 +6855,8 @@ public class PacketCreator {
         p.writeByte(1); // direction ?
         p.writeInt(damage);
         p.writeInt(remainingHp);
+        // Legacy int form (delivery-audit agreed): explicit narrowing at the
+        // legacy protocol boundary; byte-identical for all int-range HP.
         p.writeInt((int) Math.min(mob.getMaxHp(), Integer.MAX_VALUE));
         return p;
     }
