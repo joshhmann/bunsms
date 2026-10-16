@@ -63,6 +63,23 @@ CI artifact contains only `Kaentake.exe`, `Kaentake.dll`, `Custom.wz`, and
 the source/patch provenance JSON. Renderer build side-outputs are not runtime
 replacements and must not overwrite the verified stock engine DLLs.
 
+Actual Windows startup capture is an **explicit manual** `client.yml`
+dispatch with `native_smoke=true`, `native_baseline_url` pointing to an
+unpromoted complete native provenance JSON (`files`: `name`, `sha256`, `size`),
+its exact `native_baseline_sha256`, and `native_baseline_files_url` containing
+those pinned bytes. Ordinary push/PR builds do not download that baseline.
+The smoke job verifies every native file and canonical executable / renderer
+pins, overlays only the built Kaentake pair, Custom.wz and BunsMS.dll,
+then launches the real Kaentake path under Windows debug-event capture.
+It records child PIDs, module loads, native initialization/ACK messages,
+exceptions and exit codes, HWND/child text, actual client-area screenshots,
+and explicitly labeled controller cleanup. A black window or DLL load alone
+is not a pass; an ACK absent before credentials is recorded as absent, not
+invented. The same runner makes read-only public TCP/greeting measurements
+for `buns.asslorde.com:8484,7575-7577` without credentials or port changes.
+Hardware/desktop/DX8 failures remain failed captures with their real
+artifacts; compilation is never substituted for UI or feature proof.
+
 ## Paired release (§5)
 
 Client and server ship together; an old DLL against a new server (or

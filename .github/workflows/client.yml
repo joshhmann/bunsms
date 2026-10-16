@@ -14,6 +14,23 @@ on:
       - "client/**"
       - ".github/workflows/client.yml"
   workflow_dispatch:
+    inputs:
+      native_smoke:
+        description: "Run bounded actual Windows client startup capture (downloads the explicit baseline only when enabled)"
+        type: boolean
+        default: false
+      native_baseline_url:
+        description: "Unpromoted complete native provenance JSON HTTPS URL (files: name, sha256, size)"
+        type: string
+        default: ""
+      native_baseline_sha256:
+        description: "Expected SHA256 of that exact native provenance JSON"
+        type: string
+        default: ""
+      native_baseline_files_url:
+        description: "HTTPS base URL containing the provenance-pinned native files"
+        type: string
+        default: ""
 
 jobs:
   build-windows:
@@ -64,3 +81,43 @@ jobs:
           path: |
             client/build/Release/BunsMS.dll
             client/build/Release/BunsMS.pdb
+
+  native-smoke:
+    if: github.event_name == 'workflow_dispatch' && inputs.native_smoke
+    needs: build-windows
+    runs-on: windows-2022
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Kaentake-runtime
+          path: native-runtime
+      - uses: actions/download-artifact@v4
+        with:
+          name: BunsMS-dll
+          path: native-companion
+      - name: Capture actual native Windows startup and public TCP vantage
+        shell: pwsh
+        env:
+          NATIVE_BASELINE_URL: ${{ inputs.native_baseline_url }}
+          NATIVE_BASELINE_SHA256: ${{ inputs.native_baseline_sha256 }}
+          NATIVE_BASELINE_FILES_URL: ${{ inputs.native_baseline_files_url }}
+        run: |
+          ./client/tools/native-smoke.ps1 `
+            -BaselineUrl $env:NATIVE_BASELINE_URL `
+            -BaselineSha256 $env:NATIVE_BASELINE_SHA256 `
+            -BaselineFilesBaseUrl $env:NATIVE_BASELINE_FILES_URL `
+            -KaentakeArtifact native-runtime `
+            -CompanionArtifact native-companion `
+            -OutputDirectory native-smoke-output
+      - name: Publish actual native startup evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-windows-smoke
+          path: |
+            native-smoke-output/*.json
+            native-smoke-output/*.png
+            native-smoke-output/*.log
+          if-no-files-found: warn
