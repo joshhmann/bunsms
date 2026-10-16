@@ -93,9 +93,9 @@ try {
         $supportNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         foreach ($support in $supportFiles) {
             $supportUrl = [uri]$support.url
-            if ($support.name -notin @('String.wz', 'Skill.wz') -or -not $supportNames.Add($support.name) -or $support.sha256 -notmatch '^[a-f0-9]{64}$' -or
+            if ($support.name -notin @('String.wz', 'Skill.wz', 'Character.wz', 'Effect.wz', 'Map.wz', 'Mob.wz', 'Npc.wz') -or -not $supportNames.Add($support.name) -or $support.sha256 -notmatch '^[a-f0-9]{64}$' -or
                 $support.size -le 0 -or -not $supportUrl.IsAbsoluteUri -or $supportUrl.Scheme -ne 'https') {
-                throw 'Invalid diagnostic String/Skill byte authority'
+                throw 'Invalid diagnostic support-archive byte authority'
             }
             $supportCache = Join-Path $cache ("support-$($support.sha256).wz")
             if (-not (Test-Path $supportCache)) {
@@ -105,7 +105,7 @@ try {
                 } else { Invoke-WebRequest $supportUrl.AbsoluteUri -OutFile $supportCache -TimeoutSec 120 }
             }
             if ((Get-Item $supportCache).Length -ne $support.size -or (Get-FileHash $supportCache -Algorithm SHA256).Hash.ToLowerInvariant() -ne $support.sha256) {
-                throw "Diagnostic String/Skill size/SHA256 mismatch: $($variant.id)"
+                throw "Diagnostic support-archive size/SHA256 mismatch: $($variant.id)"
             }
             Copy-Item $supportCache (Join-Path $GameDirectory $support.name) -Force
         }

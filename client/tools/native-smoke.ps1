@@ -259,9 +259,9 @@ try {
         $supportByName = @{}
         foreach ($support in $DiagnosticSupportFiles) {
             $supportUrl = [uri]$support.url
-            if ($support.name -notin @('String.wz', 'Skill.wz') -or $supportByName.ContainsKey($support.name) -or $selected.Contains($support.name) -or
+            if ($support.name -notin @('String.wz', 'Skill.wz', 'Character.wz', 'Effect.wz', 'Map.wz', 'Mob.wz', 'Npc.wz') -or $supportByName.ContainsKey($support.name) -or $selected.Contains($support.name) -or
                 $support.sha256 -notmatch '^[a-f0-9]{64}$' -or $support.size -le 0 -or -not $supportUrl.IsAbsoluteUri -or $supportUrl.Scheme -ne 'https') {
-                throw 'Invalid/conflicting diagnostic String/Skill authority'
+                throw 'Invalid/conflicting diagnostic support-archive authority'
             }
             $supportByName[$support.name] = $support
         }
