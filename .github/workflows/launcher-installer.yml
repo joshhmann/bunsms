@@ -58,12 +58,40 @@ jobs:
       - name: Exercise actual installed Windows launcher UI
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          $started = Get-Date
+          $evidence = 'launcher-ui-evidence'
+          New-Item -ItemType Directory -Force $evidence | Out-Null
           $installer = @(Get-ChildItem launcher/dist -Filter '*.exe')
           if ($installer.Count -ne 1) { throw 'Expected exactly one testing RC installer' }
-          $install = Join-Path $env:RUNNER_TEMP 'BunsRcInstalled'
-          $process = Start-Process $installer[0].FullName -ArgumentList @('/S', "/D=$install") -PassThru -Wait
-          if ($process.ExitCode -ne 0) { throw "RC installer failed: $($process.ExitCode)" }
-          node launcher/test/windows-ui.test.js "$install/BunsMS Testing RC.exe" launcher-ui-evidence
+          $record = [ordered]@{
+            installer = $installer[0].FullName
+            size = $installer[0].Length
+            sha256 = (Get-FileHash $installer[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            signature = (Get-AuthenticodeSignature $installer[0].FullName).Status.ToString()
+            os = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber
+            startedUtc = [DateTime]::UtcNow.ToString('O')
+            status = 'not-completed'
+          }
+          try {
+            $install = Join-Path $env:RUNNER_TEMP 'BunsRcInstalled'
+            $process = Start-Process $installer[0].FullName -ArgumentList @('/S', "/D=$install") -PassThru -Wait
+            $record.exitCode = $process.ExitCode
+            $record.exitCodeHex = '{0:X8}' -f ([long]$process.ExitCode -band 0xffffffffL)
+            if ($process.ExitCode -ne 0) { throw "RC installer failed: $($process.ExitCode) ($($record.exitCodeHex))" }
+            node launcher/test/windows-ui.test.js "$install/BunsMS Testing RC.exe" $evidence
+            if ($LASTEXITCODE) { throw 'Actual installed Electron UI check failed' }
+            $record.status = 'installed-ui-observed'
+          } catch {
+            $record.status = 'failed'
+            $record.error = $_.Exception.ToString()
+            throw
+          } finally {
+            $record.applicationErrorEvents = @(Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = $started; Id = @(1000, 1001) } -ErrorAction SilentlyContinue |
+              Where-Object { $_.Message -match 'BunsMS|BunsRcInstalled' } |
+              Select-Object TimeCreated, Id, ProviderName, Message)
+            $record | ConvertTo-Json -Depth 12 | Set-Content "$evidence/installer-result.json" -Encoding utf8NoBOM
+          }
 
       - name: Upload actual installed launcher evidence
         if: always()
@@ -74,6 +102,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload installer artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bunsms-launcher-installer
