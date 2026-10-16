@@ -57,10 +57,10 @@ jobs:
           name: BunsMS-dll
           # BunsMS.dll + .pdb ONLY. The WzLib Gr2D_DX8to9 shims build into the
           # same dir as a side effect but MUST NOT ship: staging them under
-          # stock engine filenames shadows the real GR2D_DX8.DLL and breaks
-          # Kaentake's pattern scan (proven 2026-10-16: modal failure under
-          # Wine32). BunsMS.dll links Detours+WzLib statically; it has no
-          # load-time dependency on the shims (no references in our sources).
+          # stock engine filenames can shadow the verified runtime. The shim
+          # lacks Kaentake's expected renderer signatures; this is not a claim
+          # that it caused the separately observed stock-runtime scan failure.
+          # BunsMS.dll has no load-time dependency on these renderer shims.
           path: |
             client/build/Release/BunsMS.dll
             client/build/Release/BunsMS.pdb
