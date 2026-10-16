@@ -26,6 +26,10 @@ on:
         description: 'Drive installed GUI/native folder picker through actual complete asset download, preflight and OS start; not gameplay acceptance'
         type: boolean
         default: false
+      news_security_smoke:
+        description: 'Exercise inert rendering of the explicit immutable HTTPS news fixture only; no fake game/backend status'
+        type: boolean
+        default: false
 
 jobs:
   build-installer:
@@ -69,12 +73,17 @@ jobs:
       - name: Isolate official unpacked Electron UI
         if: always()
         shell: pwsh
+        env:
+          BUNS_NEWS_SECURITY_SMOKE: ${{ inputs.news_security_smoke }}
+          BUNS_NEWS_FIXTURE_API_BASE: ${{ inputs.api_base }}
         run: node launcher/test/windows-ui.test.js "launcher/dist/win-unpacked/BunsMS Testing RC.exe" launcher-ui-evidence/unpacked unpacked
       - name: Exercise actual installed Windows launcher UI
         if: always()
         shell: pwsh
         env:
           FULL_GUI_INSTALL: ${{ inputs.full_install_smoke }}
+          BUNS_NEWS_SECURITY_SMOKE: ${{ inputs.news_security_smoke }}
+          BUNS_NEWS_FIXTURE_API_BASE: ${{ inputs.api_base }}
         run: |
           $ErrorActionPreference = 'Stop'
           $started = Get-Date
