@@ -15,6 +15,9 @@ const {
   separationCheck,
   requiredClientFiles,
   isProfileConfig,
+  readProfileHost,
+  readIniValue,
+  setIniSectionValues,
 } = require("./profiles");
 
 // RC metadata is packaged, not an ephemeral build environment variable.
@@ -242,7 +245,7 @@ ipcMain.handle("server:getHost", () => {
     try {
       const ini = fs.readFileSync(path.join(dir, "config.ini"), "utf-8");
       if (isProfileConfig(id, ini)) {
-        const host = ini.match(id === "kaentake" ? /^host=(.+)$/mi : /^ServerIP_Address=(.+)$/mi)?.[1].trim();
+        const host = readProfileHost(id, ini);
         if (host) return host;
       }
     } catch (error) {
@@ -292,7 +295,7 @@ ipcMain.handle("game:launch", async () => {
     if (files.some((file) => file.name.toLowerCase() === "config.ini")) {
       const iniPath = await clientFilePath(dir, "config.ini");
       const ini = await fs.promises.readFile(iniPath, "utf-8");
-      const host = storedHost || ini.match(id === "kaentake" ? /^host=(.+)$/mi : /^ServerIP_Address=(.+)$/mi)?.[1].trim() || DEFAULT_SERVER_HOST;
+      const host = storedHost || readProfileHost(id, ini) || DEFAULT_SERVER_HOST;
       await stampHostIntoDir(id, dir, host);
     }
     const exePath = await clientFilePath(dir, PROFILES[id].exe);
@@ -393,8 +396,8 @@ ipcMain.handle("settings:getHDOptions", () => {
     const iniPath = path.join(stockDirForSniff, "config.ini");
     try {
       if (fs.existsSync(iniPath)) {
-        const m = fs.readFileSync(iniPath, "utf-8").match(/^sleepTime=(\d+)/m);
-        if (m) iniSleepTime = parseInt(m[1]);
+        const value = readIniValue(fs.readFileSync(iniPath, "utf-8"), "debug", "sleepTime");
+        if (value !== null && /^\d+/.test(value)) iniSleepTime = parseInt(value);
       }
     } catch {}
   }
@@ -423,11 +426,9 @@ ipcMain.handle("settings:setHDOptions", (_, { resolution, fullscreen, sleepTime 
       try {
         let ini = fs.readFileSync(iniPath, "utf-8");
         const [w, h] = resolution.split("x");
-        ini = ini.replace(/^width=.*/m, `width=${w}`);
-        ini = ini.replace(/^height=.*/m, `height=${h}`);
-        ini = ini.replace(/^WindowedMode=.*/m, `WindowedMode=${fullscreen ? "false" : "true"}`);
+        ini = setIniSectionValues(ini, "general", { width: w, height: h, WindowedMode: fullscreen ? "false" : "true" });
         if (typeof sleepTime === "number" && sleepTime >= 0) {
-          ini = ini.replace(/^sleepTime=\d+/m, `sleepTime=${sleepTime}`);
+          ini = setIniSectionValues(ini, "debug", { sleepTime });
         }
         fs.writeFileSync(iniPath, ini);
       } catch (err) {

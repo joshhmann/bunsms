@@ -10,6 +10,9 @@ const {
   separationCheck,
   requiredClientFiles,
   isProfileConfig,
+  readProfileHost,
+  readIniValue,
+  setIniSectionValues,
 } = require("../src/profiles.js");
 
 const manifest = JSON.parse(
@@ -51,7 +54,7 @@ const ezorsiaTemplate = fs.readFileSync(
 }
 
 
-// ── stampStockIni: byte-identical to current writeServerHostToIni logic ──
+// ── stock host stamping preserves unrelated settings ──
 {
   const out = stampStockIni(ezorsiaTemplate, "1.2.3.4");
   assert.match(out, /^ServerIP_Address=1\.2\.3\.4$/m);
@@ -75,6 +78,39 @@ const ezorsiaTemplate = fs.readFileSync(
   assert.match(out2, /^host=10\.0\.0\.2$/m);
   // Idempotent.
   assert.equal(stampKaentakeIni(out, "10.0.0.1"), out);
+}
+
+{
+  const wrongSection = "[config]\nport=7575\n[aux]\nhost=192.168.0.187\ncustom=keep\n";
+  assert.equal(isProfileConfig("kaentake", wrongSection), false);
+  assert.equal(readProfileHost("kaentake", wrongSection), null);
+  const repaired = stampKaentakeIni(wrongSection, "127.0.0.1");
+  assert.equal(repaired.replace(/^host=127\.0\.0\.1\n/m, ""), wrongSection);
+  assert.equal(isProfileConfig("kaentake", repaired), true);
+  assert.equal(readProfileHost("kaentake", repaired), "127.0.0.1");
+  assert.equal(readIniValue(repaired, "config", "port"), "7575");
+}
+
+{
+  const ini = "[aux]\r\nhost=aux.invalid\r\nport=9999\r\nwidth=640\r\n[CONFIG]\r\nHOST=buns.asslorde.com\r\nPORT=7575\r\nwidth=1366\r\nheight=768\r\n";
+  const updated = stampKaentakeIni(ini, "127.0.0.1");
+  assert.equal(updated, ini.replace("HOST=buns.asslorde.com", "HOST=127.0.0.1"));
+  assert.equal(readProfileHost("kaentake", updated), "127.0.0.1");
+  assert.equal(isProfileConfig("kaentake", "[config]\nhost=127.0.0.1\n[aux]\nport=8484\n"), false);
+}
+
+{
+  const wrongSection = "[general]\nwidth=1366\n[aux]\nServerIP_Address=192.168.0.187\n";
+  assert.equal(isProfileConfig("stock", wrongSection), false);
+  assert.equal(readProfileHost("stock", wrongSection), null);
+  const updated = stampStockIni(wrongSection, "127.0.0.1");
+  assert.equal(updated.replace(/^ServerIP_Address=127\.0\.0\.1\n/m, ""), wrongSection);
+  assert.equal(readProfileHost("stock", updated), "127.0.0.1");
+  const display = "[aux]\nwidth=1\nheight=2\nsleepTime=3\n[general]\nwidth=800\nheight=600\n[debug]\nsleepTime=4\n";
+  const sized = setIniSectionValues(display, "general", { width: 1366, height: 768, WindowedMode: "true" });
+  const rendered = setIniSectionValues(sized, "debug", { sleepTime: 0 });
+  assert.equal(rendered.replace(/^WindowedMode=true\n/m, "").replace(/^width=1366$/m, "width=800").replace(/^height=768$/m, "height=600").replace(/^sleepTime=0$/m, "sleepTime=4"), display);
+  assert.equal(readIniValue(rendered, "debug", "sleepTime"), "0");
 }
 
 // ── separationCheck ──
