@@ -21,7 +21,7 @@ on:
       manifest_url:
         description: 'Immutable testing RC complete-client manifest; never the production patch API'
         type: string
-        default: 'https://buns.asslorde.com/client/candidates/full-content-rc1/launcher-manifest.json'
+        default: 'https://buns.asslorde.com/rc-assets/client/r/6c3565cf54c95fcae3049aaee5eb6d8492dc9c8a3f8d1b44d72a58dabd8a37f6/qa/matched-full-rc5-runtime-source-launcher-manifest.json'
       full_install_smoke:
         description: 'Drive installed GUI/native folder picker through actual complete asset download, preflight and OS start; not gameplay acceptance'
         type: boolean

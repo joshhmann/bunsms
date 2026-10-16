@@ -24,6 +24,7 @@ const {
 // Explicit operator environment overrides are never renderer-controlled.
 const API_BASE = process.env.BUNSMS_API_BASE || release.apiBase;
 const MANIFEST_URL = process.env.BUNSMS_MANIFEST_URL || release.manifestUrl;
+const STOCK_MANIFEST_URL = process.env.BUNSMS_MANIFEST_URL || release.stockManifestUrl;
 const NEWS_URL = `${API_BASE}/api/launcher/news`;
 const STATUS_URL = `${API_BASE}/api/server`;
 
@@ -632,7 +633,7 @@ async function inspectProfile(id, dir) {
       if (names.some((name) => name.toLowerCase() === "dinput8.dll"))
         throw new Error("HD mode is disabled but its dinput8.dll is still present. Use the HD setting to remove it or select an isolated rollback folder.");
     }
-    const url = new URL(MANIFEST_URL);
+    const url = new URL(id === "stock" ? STOCK_MANIFEST_URL : MANIFEST_URL);
     url.searchParams.set("profile", id); // New launcher always names its profile.
     const manifest = await fetchJSON(url.href);
     const files = Object.freeze(requiredClientFiles(manifest, id, hdMode).map((file) => {
