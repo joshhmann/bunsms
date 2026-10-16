@@ -15,12 +15,16 @@ import {
 import { tmpdir } from "os";
 import { dirname, join } from "path";
 import {
-  ASSET_DIR,
+  acquirePublishLock,
   assetUrl,
   bumpPatch,
   hashFileStream,
+  promoteStagedFile,
   readManifest,
+  releasePublishLock,
   resolveAssetPath,
+  resolveStagingPath,
+  verifyStagedBytes,
   writeManifestAtomic,
 } from "@/lib/assets";
 import type { ManifestRead } from "@/lib/assets";
@@ -35,6 +39,9 @@ const MAX_BYTES = 1024 * 1024 * 1024;
 const SERVER_TARBALL = "server-wz.tar.gz";
 
 export async function POST(request: NextRequest) {
+  const url = new URL(request.url);
+  const releaseId = url.searchParams.get("releaseId") || randomUUID().slice(0, 8);
+
   let form: FormData;
   try {
     form = await request.formData();
@@ -89,45 +96,48 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
-  if (!isServerTarball) {
-    try {
-      resolveAssetPath(name);
-    } catch {
-      return NextResponse.json({ error: `Invalid asset name: ${name}` }, { status: 400 });
-    }
+  try {
+    resolveAssetPath(name);
+  } catch {
+    return NextResponse.json({ error: `Invalid asset key: ${name}` }, { status: 400 });
+  }
+  if (!existsSync(resolveAssetPath(name)) && !manifestEntry && !isServerTarball) {
+    return NextResponse.json({ error: `${name} is not a known asset` }, { status: 400 });
   }
 
-  // Stream the upload to a temp file so we don't buffer it all in memory.
+  // Stream the upload to a temp file (chunk-by-chunk, no full buffering),
+  // then move it into the release staging dir. NOTHING goes live here:
+  // promotion happens below after expected-hash verification under the
+  // publish lock. Partial temp cleaned on failure.
   const tempPath = join(tmpdir(), `wz-upload-${randomUUID()}.bin`);
   try {
     const readable = Readable.fromWeb(file.stream() as never);
     await pipeline(readable, createWriteStream(tempPath));
-    const { hash, size } = await hashFileStream(tempPath);
+    const staged = resolveStagingPath(releaseId, name);
+    mkdirSync(dirname(staged), { recursive: true });
+    renameSync(tempPath, staged);
+    const { hash, size } = await hashFileStream(staged);
 
-    let newVersion: string | undefined;
-
-    if (isServerTarball) {
-      // Stage the tarball into the asset dir next to client files so the
-      // game-server path has no R2 dependency; no game-server restart here
-      // (restarts are owner-operated, never triggered by publish).
-      mkdirSync(ASSET_DIR, { recursive: true });
-      const dest = join(ASSET_DIR, SERVER_TARBALL);
-      const staged = `${dest}.tmp.${process.pid}`;
-      const { renameSync } = await import("fs");
-      renameSync(tempPath, staged);
-      renameSync(staged, dest);
-      writeFileSync(join(ASSET_DIR, "server-wz.version"), new Date().toISOString());
-    } else if (manifestEntry) {
-      const dest = resolveAssetPath(name);
-      mkdirSync(dirname(dest), { recursive: true });
-      renameSync(tempPath, dest);
-      manifestEntry.hash = hash;
-      manifestEntry.size = size;
-      manifestEntry.url = assetUrl(name);
-      manifest.version = bumpPatch(manifest.version);
-      manifest.updatedAt = new Date().toISOString();
-      newVersion = manifest.version;
-
+    // Promote staged bytes to live under the publish lock after verifying
+    // the staged bytes hash to what we just measured (self-consistency:
+    // guards against a concurrent writer swapping the staging file).
+    acquirePublishLock();
+    try {
+      await verifyStagedBytes(staged, { hash, size });
+      const promoted = promoteStagedFile(releaseId, name);
+      if (isServerTarball) {
+        writeFileSync(
+          resolveAssetPath("server-wz.version"),
+          new Date().toISOString()
+        );
+      } else if (manifestEntry) {
+        manifestEntry.hash = promoted.hash;
+        manifestEntry.size = promoted.size;
+        manifestEntry.url = assetUrl(name);
+        manifest.version = bumpPatch(manifest.version);
+        manifest.updatedAt = new Date().toISOString();
+        manifest.downloadBase = `${process.env.ASSET_BASE_URL || "https://buns.asslorde.com"}/client/`;
+      }
       const manifestPath = writeManifestAtomic(manifest);
 
       // WZ → NX only for *.wz files; dlls / config / exe stay launcher-only.
@@ -138,14 +148,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         ok: true,
         name,
-        hash,
-        size,
-        version: newVersion,
+        hash: promoted.hash,
+        size: promoted.size,
+        version: manifest.version,
         manifestPath,
+        releaseId,
       });
+    } finally {
+      releasePublishLock();
     }
-
-    return NextResponse.json({ ok: true, name, hash, size, version: newVersion });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });

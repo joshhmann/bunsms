@@ -3,11 +3,16 @@ import { query } from "@/lib/db";
 import {
   ASSET_BASE_URL,
   ASSET_DIR,
+  acquirePublishLock,
   assetUrl,
   bumpPatch,
   hashFileStream,
+  promoteStagedFile,
   readManifest,
-  stageAssetFile,
+  releasePublishLock,
+  resolveAssetPath,
+  resolveStagingPath,
+  verifyStagedBytes,
   writeManifestAtomic,
 } from "@/lib/assets";
 import type { ManifestRead } from "@/lib/assets";
@@ -35,9 +40,8 @@ import {
   rmSync,
   statSync,
 } from "fs";
-import { join } from "path";
+import { dirname, join } from "path";
 import { tmpdir } from "os";
-
 const ASSET_BASE = process.env.ASSET_BASE_URL || "https://buns.asslorde.com";
 
 const STATUS_DIR = process.env.COSMIC_ROOT || "/cosmic";
@@ -417,16 +421,16 @@ async function runPublishJob(jobId: string) {
       `Repacked server-wz.tar.gz (${(newTarBuffer.length / 1024 / 1024).toFixed(1)}MB)`
     );
 
-    // 7. Stage new tar into the asset dir (atomic); drop version marker.
-    update("Staging server WZ...");
-    stageAssetFile("server-wz.tar.gz", newTarPath);
-    update("Staged server WZ", "Staged server-wz.tar.gz into asset dir");
-
-    // 8. Version marker
+    // 7. Stage new tar into the release (NOT live); promotion happens with
+    // the client WZ below after expected-hash verification.
+    update("Staging server WZ into release...");
+    mkdirSync(dirname(resolveStagingPath(jobId, "server-wz.tar.gz")), { recursive: true });
+    writeFileSync(resolveStagingPath(jobId, "server-wz.tar.gz"), readFileSync(newTarPath));
+    update("Staged server WZ", "Staged server-wz.tar.gz into release");
+    // 8. Version marker (staged alongside; promoted with the tar below).
     const version = new Date().toISOString();
-    mkdirSync(ASSET_DIR, { recursive: true });
-    writeFileSync(join(ASSET_DIR, "server-wz.version"), version);
-    update("Version marker", `Wrote version marker: ${version}`);
+    writeFileSync(resolveStagingPath(jobId, "server-wz.version"), version);
+    update("Version marker", `Staged version marker: ${version}`);
 
     // 9. Patch client WZ files
     const manifestUpdates: Record<string, { hash: string; size: number }> = {};
@@ -538,10 +542,11 @@ async function runPublishJob(jobId: string) {
       saveWzFile(charWz, charWzOut);
       update("Patched", "Patched Character.wz with custom items");
 
-      update("Staging Character.wz into asset dir...");
-      stageAssetFile("Character.wz", charWzOut);
-      manifestUpdates["Character.wz"] = await hashFileStream(join(ASSET_DIR, "Character.wz"));
-      update("Staged Character.wz", "Staged patched Character.wz into asset dir");
+      update("Staging Character.wz into release...");
+      mkdirSync(dirname(resolveStagingPath(jobId, "Character.wz")), { recursive: true });
+      writeFileSync(resolveStagingPath(jobId, "Character.wz"), readFileSync(charWzOut));
+      manifestUpdates["Character.wz"] = await hashFileStream(charWzOut);
+      update("Staged Character.wz", "Staged patched Character.wz into release");
 
       // 9b. Copy and patch String.wz from the asset dir
       update("Loading String.wz...");
@@ -562,44 +567,64 @@ async function runPublishJob(jobId: string) {
       saveWzFile(strWz, strWzOut);
       update("Patched String.wz", "Patched String.wz with item names");
 
-      update("Staging String.wz into asset dir...");
-      stageAssetFile("String.wz", strWzOut);
-      manifestUpdates["String.wz"] = await hashFileStream(join(ASSET_DIR, "String.wz"));
-      update("Staged String.wz", "Staged patched String.wz into asset dir");
+      update("Staging String.wz into release...");
+      mkdirSync(dirname(resolveStagingPath(jobId, "String.wz")), { recursive: true });
+      writeFileSync(resolveStagingPath(jobId, "String.wz"), readFileSync(strWzOut));
+      manifestUpdates["String.wz"] = await hashFileStream(strWzOut);
+      update("Staged String.wz", "Staged patched String.wz into release");
 
-      // 9b.5. Trigger WZ→NX conversion for the browser client at play.buns.asslorde.com.
+      // 9b.5. Trigger WZ→NX conversion for the browser client.
       // Fire-and-forget; the workflow coalesces rapid successive dispatches.
-      const changedWz = Object.keys(manifestUpdates).filter((n) => n.endsWith(".wz"));
-      if (changedWz.length > 0) {
-        update("Triggering WZ→NX conversion", `Dispatching wz-to-nx for: ${changedWz.join(", ")}`);
-        dispatchWzToNx(changedWz).catch(() => {});
-      }
+      // NX dispatch fires only AFTER successful promotion below (moved down).
 
-      // 9c. Update launcher manifest via single authority (atomic write).
-      if (Object.keys(manifestUpdates).length > 0) {
-        update("Updating launcher manifest...");
+      // 9c. Verify staged bytes against expected hashes, promote atomically
+      // (server tar + client WZ together), then record the manifest (single
+      // authority, version bump). Wrong hash leaves live bytes AND manifest
+      // unchanged. Previous live bytes retained under releases/prev-<jobId>/.
+      update("Verifying staged bytes...");
+      try {
+        acquirePublishLock();
         try {
+          const tarStaged = resolveStagingPath(jobId, "server-wz.tar.gz");
+          const tarHash = await hashFileStream(tarStaged);
+          await verifyStagedBytes(tarStaged, tarHash);
+          for (const [name, exp] of Object.entries(manifestUpdates)) {
+            await verifyStagedBytes(resolveStagingPath(jobId, name), exp);
+          }
+          update("Verified", `Staged bytes match expected hashes`);
+          promoteStagedFile(jobId, "server-wz.tar.gz");
+          writeFileSync(
+            resolveAssetPath("server-wz.version"),
+            readFileSync(resolveStagingPath(jobId, "server-wz.version"))
+          );
+          update("Promoted server WZ", "Promoted server-wz.tar.gz + version marker to live");
           const { manifest }: ManifestRead = readManifest();
-
           for (const file of manifest.files || []) {
             const upd = manifestUpdates[file.name];
             if (upd) {
-              file.hash = upd.hash;
-              file.size = upd.size;
+              const promoted = promoteStagedFile(jobId, file.name);
+              file.hash = promoted.hash;
+              file.size = promoted.size;
               file.url = assetUrl(file.name);
             }
           }
-
           manifest.version = bumpPatch(manifest.version);
           manifest.updatedAt = new Date().toISOString();
           manifest.downloadBase = `${ASSET_BASE}/client/`;
-
           const manifestPath = writeManifestAtomic(manifest);
           update("Manifest updated", `Updated launcher manifest to v${manifest.version} (${manifestPath})`);
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          update("Manifest warning", `Warning: manifest update failed: ${message}`);
+          const changedWz = Object.keys(manifestUpdates).filter((n) => n.endsWith(".wz"));
+          if (changedWz.length > 0) {
+            update("Triggering WZ→NX conversion", `Dispatching wz-to-nx for: ${changedWz.join(", ")}`);
+            dispatchWzToNx(changedWz).catch(() => {});
+          }
+        } finally {
+          releasePublishLock();
         }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        update("Publish failed", `Staged verification/promotion failed, live unchanged: ${message}`);
+        throw err;
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);

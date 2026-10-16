@@ -7,7 +7,12 @@ import {
   bumpPatch,
   hashFileStream,
   readManifest,
-  stageAssetFile,
+  acquirePublishLock,
+  promoteStagedFile,
+  releasePublishLock,
+  resolveAssetPath,
+  resolveStagingPath,
+  verifyStagedBytes,
   writeManifestAtomic,
 } from "@/lib/assets";
 import type { ManifestRead } from "@/lib/assets";
@@ -29,7 +34,8 @@ import {
   existsSync,
   statSync,
 } from "fs";
-import { join } from "path";
+import { dirname, join } from "path";
+import { randomUUID } from "crypto";
 import { tmpdir } from "os";
 
 async function copyFromAssets(fileKey: string, outputPath: string): Promise<void> {
@@ -70,6 +76,7 @@ async function downloadPng(url: string): Promise<Buffer> {
 }
 
 async function runPublishJob() {
+  const releaseId = randomUUID().slice(0, 8);
   const workDir = join(tmpdir(), `reactor-publish-${Date.now()}`);
   const status: PublishStatus = {
     status: "running",
@@ -193,7 +200,8 @@ async function runPublishJob() {
 
     // 6. Stage into asset dir
     update("Staging into asset dir...");
-    stageAssetFile("server-wz.tar.gz", newTarPath);
+    mkdirSync(dirname(resolveStagingPath(releaseId, "server-wz.tar.gz")), { recursive: true });
+    writeFileSync(resolveStagingPath(releaseId, "server-wz.tar.gz"), readFileSync(newTarPath));
     update("Staged", "Staged server-wz.tar.gz into asset dir");
 
     // 7. Mark only reactors that actually went through the pipeline (had an
@@ -258,42 +266,52 @@ async function runPublishJob() {
         saveWzFile(reactorWz, patchedPath);
         update("Patched Reactor.wz", `Patched with ${rows.length} custom reactor(s)`);
 
-        update("Staging Reactor.wz into asset dir...");
-        stageAssetFile("Reactor.wz", patchedPath);
-        manifestUpdates["Reactor.wz"] = await hashFileStream(join(ASSET_DIR, "Reactor.wz"));
-        update("Staged Reactor.wz", "Staged patched Reactor.wz into asset dir");
+        update("Staging Reactor.wz into release...");
+        mkdirSync(dirname(resolveStagingPath(releaseId, "Reactor.wz")), { recursive: true });
+        writeFileSync(resolveStagingPath(releaseId, "Reactor.wz"), readFileSync(patchedPath));
+        manifestUpdates["Reactor.wz"] = await hashFileStream(patchedPath);
+        update("Staged Reactor.wz", "Staged patched Reactor.wz into release");
 
-        // Trigger WZ→NX conversion for the browser client
-        const changedWz = Object.keys(manifestUpdates).filter((n) => n.endsWith(".wz"));
-        if (changedWz.length > 0) {
-          dispatchWzToNx(changedWz).catch(() => {});
-          update("Triggering WZ→NX conversion", `Dispatched wz-to-nx for: ${changedWz.join(", ")}`);
-        }
-
-        // Bump launcher manifest via single authority (atomic write).
-        if (Object.keys(manifestUpdates).length > 0) {
-          update("Updating launcher manifest...");
-          try {
-            const { manifest }: ManifestRead = readManifest();
-            for (const file of manifest.files || []) {
-              const upd = manifestUpdates[file.name];
-              if (upd && upd.hash !== undefined && upd.size !== undefined) {
-                file.hash = upd.hash;
-                file.size = upd.size;
-                file.url = assetUrl(file.name);
-              }
+        // Verify staged bytes (tar + WZ) against expected hashes, promote
+        // atomically, then record the manifest. Wrong hash leaves live
+        // unchanged. Previous live bytes retained under releases/prev-<id>/.
+        update("Verifying staged bytes...");
+        acquirePublishLock();
+        try {
+          const tarHash = await hashFileStream(newTarPath);
+          await verifyStagedBytes(resolveStagingPath(releaseId, "server-wz.tar.gz"), tarHash);
+          for (const [name, exp] of Object.entries(manifestUpdates)) {
+            if (exp.hash !== undefined && exp.size !== undefined) {
+              await verifyStagedBytes(resolveStagingPath(releaseId, name), { hash: exp.hash, size: exp.size });
             }
-
-            manifest.version = bumpPatch(manifest.version);
-            manifest.updatedAt = new Date().toISOString();
-            manifest.downloadBase = `${ASSET_BASE}/client/`;
-
-            writeManifestAtomic(manifest);
-            update("Manifest updated", `Launcher manifest → v${manifest.version}`);
-          } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            update("Manifest warning", `Manifest update failed: ${message}`);
           }
+          update("Verified", "Staged bytes match expected hashes");
+          promoteStagedFile(releaseId, "server-wz.tar.gz");
+          writeFileSync(resolveAssetPath("server-wz.version"), version);
+          update("Promoted server tar", "Promoted server-wz.tar.gz + version marker to live");
+          const { manifest }: ManifestRead = readManifest();
+          for (const file of manifest.files || []) {
+            const upd = manifestUpdates[file.name];
+            if (upd && upd.hash !== undefined && upd.size !== undefined) {
+              const promoted = promoteStagedFile(releaseId, file.name);
+              file.hash = promoted.hash;
+              file.size = promoted.size;
+              file.url = assetUrl(file.name);
+            }
+          }
+          manifest.version = bumpPatch(manifest.version);
+          manifest.updatedAt = new Date().toISOString();
+          manifest.downloadBase = `${ASSET_BASE}/client/`;
+          writeManifestAtomic(manifest);
+          update("Manifest updated", `Launcher manifest → v${manifest.version}`);
+          // Trigger WZ→NX conversion for the browser client (after promotion).
+          const changedWz = Object.keys(manifestUpdates).filter((n) => n.endsWith(".wz"));
+          if (changedWz.length > 0) {
+            dispatchWzToNx(changedWz).catch(() => {});
+            update("Triggering WZ→NX conversion", `Dispatched wz-to-nx for: ${changedWz.join(", ")}`);
+          }
+        } finally {
+          releasePublishLock();
         }
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);

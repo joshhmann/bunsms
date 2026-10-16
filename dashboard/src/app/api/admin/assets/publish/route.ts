@@ -3,12 +3,16 @@ import { execute, query } from "@/lib/db";
 import {
   ASSET_BASE_URL,
   ASSET_DIR,
+  acquirePublishLock,
   assetUrl,
   bumpPatch,
   hashFileStream,
+  promoteStagedFile,
   readManifest,
+  releasePublishLock,
   resolveAssetPath,
-  stageAssetFile,
+  resolveStagingPath,
+  verifyStagedBytes,
   writeManifestAtomic,
 } from "@/lib/assets";
 import type { ManifestRead } from "@/lib/assets";
@@ -414,15 +418,15 @@ async function runPublishJob(jobId: string) {
         `Repacked server-wz.tar.gz (${(newTarBuffer.length / 1024 / 1024).toFixed(1)}MB)`
       );
 
-      update("Staging server WZ into asset dir...");
-      stageAssetFile("server-wz.tar.gz", newTarPath);
-      update("Staged server tar", "Staged server-wz.tar.gz into asset dir");
+      update("Staging server WZ into release...");
+      mkdirSync(dirname(resolveStagingPath(jobId, "server-wz.tar.gz")), { recursive: true });
+      writeFileSync(resolveStagingPath(jobId, "server-wz.tar.gz"), readFileSync(newTarPath));
+      update("Staged server tar", "Staged server-wz.tar.gz into release");
 
-      // Version marker so the server's startup script picks up the new bundle.
+      // Version marker staged alongside; promoted with the tar below.
       const ver = new Date().toISOString();
-      mkdirSync(ASSET_DIR, { recursive: true });
-      writeFileSync(join(ASSET_DIR, "server-wz.version"), ver);
-      update("Server version marker", `Wrote version marker: ${ver}`);
+      writeFileSync(resolveStagingPath(jobId, "server-wz.version"), ver);
+      update("Server version marker", `Staged version marker: ${ver}`);
     }
 
     // ---------- Client-side WZ patches ----------
@@ -455,9 +459,10 @@ async function runPublishJob(jobId: string) {
       const charWzOut = join(workDir, "Character-patched.wz");
       saveWzFile(charWz, charWzOut);
 
-      update("Staging Character.wz into asset dir...");
-      stageAssetFile("Character.wz", charWzOut);
-      manifestUpdates["Character.wz"] = await hashFileStream(join(ASSET_DIR, "Character.wz"));
+      update("Staging Character.wz into release...");
+      mkdirSync(dirname(resolveStagingPath(jobId, "Character.wz")), { recursive: true });
+      writeFileSync(resolveStagingPath(jobId, "Character.wz"), readFileSync(charWzOut));
+      manifestUpdates["Character.wz"] = await hashFileStream(charWzOut);
       update("Staged Character.wz", "Staged patched Character.wz into asset dir");
     }
 
@@ -484,9 +489,10 @@ async function runPublishJob(jobId: string) {
       const npcWzOut = join(workDir, "Npc-patched.wz");
       saveWzFile(npcWz, npcWzOut);
 
-      update("Staging Npc.wz into asset dir...");
-      stageAssetFile("Npc.wz", npcWzOut);
-      manifestUpdates["Npc.wz"] = await hashFileStream(join(ASSET_DIR, "Npc.wz"));
+      update("Staging Npc.wz into release...");
+      mkdirSync(dirname(resolveStagingPath(jobId, "Npc.wz")), { recursive: true });
+      writeFileSync(resolveStagingPath(jobId, "Npc.wz"), readFileSync(npcWzOut));
+      manifestUpdates["Npc.wz"] = await hashFileStream(npcWzOut);
       update("Staged Npc.wz", "Staged patched Npc.wz into asset dir");
     }
 
@@ -538,9 +544,10 @@ async function runPublishJob(jobId: string) {
         `Rebuilt Etc/${ETC_BUCKET_NAME} with ${bucketItems.length} item(s)`
       );
 
-      update("Staging Item.wz into asset dir...");
-      stageAssetFile("Item.wz", itemWzOut);
-      manifestUpdates["Item.wz"] = await hashFileStream(join(ASSET_DIR, "Item.wz"));
+      update("Staging Item.wz into release...");
+      mkdirSync(dirname(resolveStagingPath(jobId, "Item.wz")), { recursive: true });
+      writeFileSync(resolveStagingPath(jobId, "Item.wz"), readFileSync(itemWzOut));
+      manifestUpdates["Item.wz"] = await hashFileStream(itemWzOut);
       update("Staged Item.wz", "Staged patched Item.wz into asset dir");
     }
 
@@ -607,9 +614,10 @@ async function runPublishJob(jobId: string) {
       const strWzOut = join(workDir, "String-patched.wz");
       saveWzFile(strWz, strWzOut);
 
-      update("Staging String.wz into asset dir...");
-      stageAssetFile("String.wz", strWzOut);
-      manifestUpdates["String.wz"] = await hashFileStream(join(ASSET_DIR, "String.wz"));
+      update("Staging String.wz into release...");
+      mkdirSync(dirname(resolveStagingPath(jobId, "String.wz")), { recursive: true });
+      writeFileSync(resolveStagingPath(jobId, "String.wz"), readFileSync(strWzOut));
+      manifestUpdates["String.wz"] = await hashFileStream(strWzOut);
       update("Staged String.wz", "Staged patched String.wz into asset dir");
     }
 
@@ -624,35 +632,48 @@ async function runPublishJob(jobId: string) {
       dispatchWzToNx(changedWz).catch(() => {});
     }
 
-    update("Updating launcher manifest...");
+    update("Verifying staged bytes, promoting, updating manifest...");
     let version = "?";
     try {
-      const { manifest }: ManifestRead = readManifest();
-
-      for (const file of manifest.files || []) {
-        const upd = manifestUpdates[file.name];
-        if (upd) {
-          file.hash = upd.hash;
-          file.size = upd.size;
-          file.url = assetUrl(file.name);
+      acquirePublishLock();
+      try {
+        for (const [name, exp] of Object.entries(manifestUpdates)) {
+          await verifyStagedBytes(resolveStagingPath(jobId, name), exp);
         }
+        update("Verified", "Staged bytes match expected hashes");
+        if (needServerTar) {
+          promoteStagedFile(jobId, "server-wz.tar.gz");
+          writeFileSync(
+            resolveAssetPath("server-wz.version"),
+            readFileSync(resolveStagingPath(jobId, "server-wz.version"))
+          );
+          update("Promoted server tar", "Promoted server-wz.tar.gz + version marker to live");
+        }
+        const { manifest }: ManifestRead = readManifest();
+        for (const file of manifest.files || []) {
+          const upd = manifestUpdates[file.name];
+          if (upd) {
+            const promoted = promoteStagedFile(jobId, file.name);
+            file.hash = promoted.hash;
+            file.size = promoted.size;
+            file.url = assetUrl(file.name);
+          }
+        }
+        if (changedWz.length > 0) {
+          manifest.version = bumpPatch(manifest.version);
+          manifest.updatedAt = new Date().toISOString();
+        }
+        manifest.downloadBase = `${ASSET_BASE}/client/`;
+        version = manifest.version;
+        const manifestPath = writeManifestAtomic(manifest);
+        update("Manifest updated", `Updated launcher manifest to v${version} (${manifestPath})`);
+      } finally {
+        releasePublishLock();
       }
-
-      if (changedWz.length > 0) {
-        manifest.version = bumpPatch(manifest.version);
-        manifest.updatedAt = new Date().toISOString();
-      }
-      manifest.downloadBase = `${ASSET_BASE}/client/`;
-      version = manifest.version;
-
-      const manifestPath = writeManifestAtomic(manifest);
-      update("Manifest updated", `Updated launcher manifest to v${version} (${manifestPath})`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      update(
-        "Manifest warning",
-        `Warning: manifest update failed: ${message}`
-      );
+      update("Publish failed", `Staged verification/promotion failed, live unchanged: ${message}`);
+      throw err;
     }
 
     update("Marking assets as published...");

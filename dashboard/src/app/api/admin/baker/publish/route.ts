@@ -6,7 +6,12 @@ import {
   bumpPatch,
   hashFileStream,
   readManifest,
-  stageAssetFile,
+  acquirePublishLock,
+  promoteStagedFile,
+  releasePublishLock,
+  resolveAssetPath,
+  resolveStagingPath,
+  verifyStagedBytes,
   writeManifestAtomic,
 } from "@/lib/assets";
 import type { ManifestRead } from "@/lib/assets";
@@ -15,7 +20,7 @@ import { parseWzFile, saveWzFile, addNpcToStringWz } from "@/lib/wz/patcher";
 import { addNpcToWz, generateNpcXml, processNpcSprite } from "@/lib/wz/npc-builder";
 import { execute, query } from "@/lib/db";
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from "fs";
-import { join } from "path";
+import { dirname, join } from "path";
 import { tmpdir } from "os";
 
 const NPC_ID = 9900200;
@@ -29,6 +34,8 @@ async function copyFromAssets(fileKey: string, outputPath: string): Promise<void
 
 export async function POST() {
   const actions: string[] = [];
+  const { randomUUID } = await import("crypto");
+  const releaseId = randomUUID().slice(0, 8);
 
   try {
     // 1. Load the sprite PNG
@@ -57,8 +64,9 @@ export async function POST() {
     saveWzFile(npcWz, patchedNpcPath);
     actions.push("Patched Npc.wz with Baker sprite");
 
-    stageAssetFile("Npc.wz", patchedNpcPath);
-    const npcStaged = await hashFileStream(join(ASSET_DIR, "Npc.wz"));
+    mkdirSync(dirname(resolveStagingPath(releaseId, "Npc.wz")), { recursive: true });
+    writeFileSync(resolveStagingPath(releaseId, "Npc.wz"), readFileSync(patchedNpcPath));
+    const npcStaged = await hashFileStream(patchedNpcPath);
     actions.push("Staged patched Npc.wz into asset dir");
 
     // 3. Patch String.wz (add NPC name)
@@ -72,11 +80,24 @@ export async function POST() {
     saveWzFile(stringWz, patchedStringPath);
     actions.push("Patched String.wz with Baker name");
 
-    stageAssetFile("String.wz", patchedStringPath);
-    const stringStaged = await hashFileStream(join(ASSET_DIR, "String.wz"));
+    mkdirSync(dirname(resolveStagingPath(releaseId, "String.wz")), { recursive: true });
+    writeFileSync(resolveStagingPath(releaseId, "String.wz"), readFileSync(patchedStringPath));
+    const stringStaged = await hashFileStream(patchedStringPath);
     actions.push("Staged patched String.wz into asset dir");
 
-    // 3.5. Trigger WZ→NX conversion for the browser client
+    // 3.5. Verify staged bytes, promote atomically, then dispatch NX.
+    // Wrong hash leaves live bytes AND manifest unchanged.
+    acquirePublishLock();
+    try {
+      await verifyStagedBytes(resolveStagingPath(releaseId, "Npc.wz"), npcStaged);
+      await verifyStagedBytes(resolveStagingPath(releaseId, "String.wz"), stringStaged);
+      actions.push("Verified staged bytes match expected hashes");
+      promoteStagedFile(releaseId, "Npc.wz");
+      promoteStagedFile(releaseId, "String.wz");
+      actions.push("Promoted Npc.wz + String.wz to live");
+    } finally {
+      releasePublishLock();
+    }
     dispatchWzToNx(["Npc.wz", "String.wz"]).catch(() => {});
     actions.push("Dispatched wz-to-nx for Npc.wz, String.wz");
 

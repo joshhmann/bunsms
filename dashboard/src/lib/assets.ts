@@ -90,6 +90,10 @@ export interface ManifestRead {
 }
 
 function manifestPaths(): { volume: string; bundled: string } {
+  // Writable dir mount wins (shared, survives redeploys); legacy single-file
+  // /cosmic/launcher-manifest.json is read-only fallback for continuity.
+  const writable = join(process.env.COSMIC_ROOT || "/cosmic", "manifest-writable", "launcher-manifest.json");
+  if (existsSync(writable)) return { volume: writable, bundled: join(process.cwd(), "launcher-manifest.json") };
   const volume = join(process.env.COSMIC_ROOT || "/cosmic", "launcher-manifest.json");
   const bundled = join(process.cwd(), "launcher-manifest.json");
   return { volume, bundled };
