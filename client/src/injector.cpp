@@ -21,21 +21,22 @@ ZALLOCEX(ZAllocAnonSelector, addr::kZAllocAnon)
 ZALLOCEX(ZAllocStrSelector<char>, addr::kZAllocStrChar)
 ZALLOCEX(ZAllocStrSelector<wchar_t>, addr::kZAllocStrWChar)
 
+// Init tri-state (load contract): 0 = not run, 1 = success, 2 = failed.
+// Failed stays FALSE forever (no retry of partially installed hooks).
+// AttachSystemHooks returns bool — every spine attach propagates failure.
+static volatile LONG g_initState = 0;
 extern "C" __declspec(dllexport) BOOL __cdecl BunsMS_Initialize(void) {
-    static volatile LONG s_done = 0;
-    // One-shot: first caller runs the attach; later calls report success
-    // without re-attaching. Set AFTER AttachSystemHooks returns (not before),
-    // so a repeat call after a completed init is the only TRUE-without-work
-    // path. NOTE (honest): AttachSystemHooks and friends return void — TRUE
-    // means "init reached/completed without exception", NOT per-hook verified
-    // success. The Kaentake side must treat TRUE as reached-init; per-site
-    // verification is the co-load smoke pass, not this return value.
-    // Contract still says main thread; the Interlocked only guards against
-    // accidental double-call, not a concurrency design.
-    if (InterlockedCompareExchange(&s_done, 1, 0) != 0)
-        return TRUE;
-    AttachSystemHooks();
-    return TRUE;
+    // Main-thread-only contract; the Interlocked guards accidental double-call.
+    LONG prev = InterlockedCompareExchange(&g_initState, 1, 0);
+    if (prev == 1)
+        return TRUE;  // completed init — success without re-attaching
+    if (prev == 2)
+        return FALSE; // failed init — fail closed, do not retry partial hooks
+    if (!AttachSystemHooks()) {
+        g_initState = 2;
+        return FALSE;
+    }
+    return TRUE; // g_initState already 1 (latched above before attach ran)
 }
 
 // Paired-release version stamp (spec §5): CLIENT_DLL_VERSION comes from
