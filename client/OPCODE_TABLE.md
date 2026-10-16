@@ -11,6 +11,8 @@ table together. **No opcode values change here.**
 |---|---|---|---|
 | `0x372E` / `0x372F` | Recv / Send | Coloring prism (`COLORING_PRISM_ACTION` / `COLORING_PRISM_SYNC`; dump-side alias `WEAPON_TINT_ACTION` / `WEAPON_TINT_SYNC`; item 5782000) | CLAIMED (ticket #11) |
 | `0x3730` / `0x3731` | Recv / Send | Cash-shop window (`CASHSHOP_WINDOW_ACTION` / `CASHSHOP_WINDOW_SYNC`) | CLAIMED (ticket #10) |
+| `0x373A` | Recv (C2S) | Capability announce (`CLIENT_CAPS_ANNOUNCE`; int dllVersion + int featureMask; FIRST packet per socket) | CLAIMED — wired this slice (`caps.cpp`; delivery-audit contract v1) |
+| `0x373B` | Send (S2C) | Capability ack (`CLIENT_CAPS_ACK`; int serverVersion + int acceptedMask; reply-only, never unsolicited) | CLAIMED — wired this slice (`caps.cpp`; delivery-audit contract v1) |
 | `0x373C` / `0x373E` | Recv (request twins) | Weather/lamp system, unused request side | RESERVED |
 | `0x373D` | Send | Weather sync (`WEATHER_SYNC` / `LP_WeatherSync`) | CLAIMED (ticket #13) |
 | `0x373F` | Send | Lamp preview (`LAMP_PREVIEW` / `LP_LampPreview`) | CLAIMED (ticket #13) |

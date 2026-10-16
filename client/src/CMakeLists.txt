@@ -6,6 +6,7 @@ add_library(injector SHARED
     tick.cpp
     inlink.cpp
     screen.cpp
+    caps.cpp
     dailycheckin.cpp
     debug.cpp
     hook.cpp

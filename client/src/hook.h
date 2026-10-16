@@ -56,6 +56,7 @@ void AttachSystemHooks();
 // Feature attach entries, installed from system.cpp in spec §2.3 order.
 void AttachDailyCheckinMod();
 void AttachInlinkMod();
+void AttachCapsMod();
 
 
 template <typename T>
