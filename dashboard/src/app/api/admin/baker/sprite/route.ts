@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { writeFileSync } from "fs";
+import { NextResponse } from "next/server";
+import { AssetError, publishRelease } from "@/lib/assets";
+import { stageMultipart } from "@/lib/asset-multipart";
+import { isPrivateRequestAuthorized } from "@/lib/auth";
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File;
-    if (!file) {
-      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    if (!await isPrivateRequestAuthorized(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const upload = await stageMultipart(request);
+    if (upload.expected.length !== 1 || upload.keys[0] !== "assets/npc/baker-sprite.png") {
+      throw new AssetError("Provide the Baker sprite and its independently expected hash/size");
     }
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    writeFileSync("/tmp/baker-sprite.png", buffer);
-
-    return NextResponse.json({ success: true, size: buffer.length });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const result = await publishRelease(upload.releaseId, upload.expected);
+    const asset = result.assets[0];
+    return NextResponse.json({ success: true, releaseId: result.releaseId, url: asset.url, size: asset.size });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: error instanceof AssetError ? error.status : 500 });
   }
 }

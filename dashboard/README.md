@@ -1,134 +1,85 @@
-# BunsMS 🍑
+# BunsMS dashboard
 
-MapleStory v83 private server with an **AI Game Master** that autonomously tunes the game world in real time.
+Next.js 15 / React 19 private administration and AI Game Master for Cosmic v83.
+The measured application host is LXC 164 (`192.168.0.164`), behind the existing
+`.70` Caddy edge. The public domain remains `https://buns.asslorde.com`.
 
-**Live:** [buns.asslorde.com](https://buns.asslorde.com)
+## Exposure
 
-![Next.js 15](https://img.shields.io/badge/Next.js-15-black) ![React 19](https://img.shields.io/badge/React-19-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6) ![Claude Agent SDK](https://img.shields.io/badge/Claude-Agent%20SDK-orange) ![Fly.io](https://img.shields.io/badge/Fly.io-deployed-purple)
+The public edge preserves the browser root/WSS and asset service. Only launcher
+manifest/news and server-status read APIs are forwarded to this dashboard.
+Administration, GM tools, uploads, publication, migration and game control stay
+private and authenticated. Do not publish a dashboard/control port or use a
+public origin as a write endpoint.
 
----
+The admin UI provides characters/items/mobs/maps/drops/config/scripts, generated
+art/reactors, and the streaming AI Game Master. JWT/session and private GM-secret
+authentication apply to mutation APIs. Large streaming upload handlers perform
+authentication themselves because Next middleware otherwise clones/buffers the
+request body before route execution.
 
-## What is BunsMS?
+## Asset publication
 
-**BunsMS** is a cheeky MapleStory v83 server where The Baker 🍑 (an AI Game Master) watches over the world — tuning rates, spawning events, and keeping things spicy.
+Read [the complete selfhost operating contract](../server/docs/SELFHOST-ASSETS.md)
+before deployment or publication. All affected producers use one independently
+expected-hash-verified immutable-object/retained-manifest transaction, including
+art, raw WZ, GM, item/assets/Baker/reactor jobs, server overlays and actual browser
+NX conversion. There is no R2 runtime fallback, direct-live rsync registration,
+URL-only publish, duplicate local-publish route or manual byte-copy rollback.
 
-- Classic v83 experience (4th job, PQs, bossing)
-- AI-driven dynamic events, rate adjustments, and economy balancing
-- Public registration, admin dashboard, and full server management
+- `GET /api/launcher/manifest` defaults to stock. Kaentake is explicit opt-in.
+- The private authority supplies the complete writer allowlist, not a filtered
+  public manifest.
+- The first release preserves every approved seed byte/version/timestamp;
+  later updates retain prior complete SELFHOST manifests and immutable bytes.
+- Generated files and Browser NX become visible through the same manifest
+  switch. A dispatched conversion/background job is not publication success.
+- Private server apply is acknowledged separately; failure does not set a
+  publication job/DB flag to done. Progress lives under the shared asset mount,
+  not `/cosmic` in the image filesystem.
+- `GAME_SERVER_HOST=server` is internal health only.
+  `GAME_CLIENT_HOST=buns.asslorde.com` is the explicit advertised production
+  client domain; unset means the API omits it. Local `.164`/loopback overrides
+  remain supported. Public native activation deferred by owner.
 
----
+## Development and source deployment
 
-## Architecture
-
-```
-Public (Fly.io)                    Admin (Fly.io, auth-gated)
-┌──────────────────┐               ┌──────────────────────────┐
-│  Landing Page    │               │  Dashboard  │ Characters │
-│  Registration    │               │  Items      │ Mobs       │
-│  Server Status   │               │  Maps       │ Drops      │
-└────────┬─────────┘               │  Config     │ Scripts    │
-         │                         │  Game Master (AI)        │
-         │                         └────────────┬─────────────┘
-         │                                      │
-         └──────────────┬───────────────────────┘
-                        │
-              ┌─────────┴─────────┐
-              │  MySQL (Fly.io)   │
-              │  buns-ms-db      │
-              │  70+ tables       │
-              └───────────────────┘
-```
-
-**Deploy:** Push to `main` → GitHub Actions → Fly.io (automatic)
-
----
-
-## Features
-
-### Public Pages
-- **Landing page** — Server info, rates, status indicator, download link
-- **Registration** — Create game accounts (bcrypt hashed, Java-compatible)
-- **Login** — Admin authentication (JWT, httpOnly cookies)
-
-### Admin Dashboard (auth required)
-| Page | Description |
-|------|-------------|
-| **Dashboard** | Server overview with stat cards and quick actions |
-| **Characters** | Browse, search, edit player stats, levels, jobs, inventory |
-| **Items** | Full item database with category filtering and sprite previews |
-| **Mobs** | Monster database with stats, boss flags, and linked drop tables |
-| **Maps** | Map viewer with spawns, portals, footholds. Visual editor with Konva.js |
-| **Drops** | Drop table editor — add, remove, inline-edit drop rates |
-| **Config** | 450+ server settings: rates, feature flags, channels |
-| **Scripts** | NPC, event, portal, quest script editor with CodeMirror |
-| **Game Master** | AI-powered game management with streaming tool calls |
-
-### AI Game Master
-An autonomous AI agent with 40+ tools that can:
-- Analyze economy health, player progression, and game balance
-- Create dynamic events (boss invasions, bonus drops, treasure hunts)
-- Manage drop tables, mob stats, shop prices, server rates
-- Track goals across sessions and review past decisions
-- Run on a schedule (1h–24h intervals) or on-demand
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 15 (App Router) |
-| Frontend | React 19, Tailwind CSS 4 |
-| State | Zustand 5 |
-| Auth | JWT (jose), bcrypt |
-| Database | MySQL 8.4 (Fly.io) |
-| AI | Claude Agent SDK |
-| Hosting | Fly.io (IAD region) |
-| CI/CD | GitHub Actions |
-
----
-
-## Development
-
-```bash
+```sh
 npm install
 npm run dev
 ```
 
-Dashboard reads DB config from `../Cosmic/config.yaml` by default. Override with `COSMIC_ROOT=/path/to/Cosmic`.
+Configure actual `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_NAME`, JWT/admin
+credentials and model-provider configuration for the intended isolated/private
+stack. Do not copy example/test credentials into production or print them.
+`COSMIC_ROOT` is a local server-source/config setting, not the shared asset or
+manifest authority.
 
-### Environment Variables
+Use the repository's `docker-compose.test.yml` and `deployment/` templates with
+operator-provisioned environment/secret files. Required shared storage is
+`ASSET_DIR` plus the writable **directory** containing `LAUNCHER_MANIFEST_PATH`;
+UID 1001 must be able to create temporary files and atomically rename within it.
+Mounting one read-only JSON file is not supported. The private Unix control
+socket and persistent game overlay-state directory are separate mounts.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `DB_HOST` | prod | MySQL host |
-| `DB_PASS` | prod | MySQL password |
-| `DB_PORT` | prod | MySQL port (default 3306) |
-| `JWT_SECRET` | prod | JWT signing secret |
-| `ADMIN_USER` | prod | Admin username |
-| `ADMIN_PASS_HASH` | prod | bcrypt hash of admin password |
-| `COSMIC_ROOT` | dev | Path to Cosmic server |
+The pinned WZ tools and approved native/NX provenance inputs are required for
+real content publication. CI uses provisioned private SSH/known-host credentials
+and an actually reachable runner; missing configuration fails closed. It does
+not use Fly, a public mutation tunnel, or a made-up self-hosted runner. DB/schema,
+Java/content and browser-NX activation remain their separately approved gates.
 
-All production secrets are managed via GitHub Secrets → Fly.io.
+## Focused verification
 
----
-
-## Deployment
-
-Merging to `main` triggers automatic deployment via GitHub Actions:
-
-1. GitHub Actions reads secrets
-2. Sets Fly.io secrets via `flyctl secrets set --stage`
-3. Builds Docker image (multi-stage, standalone Next.js)
-4. Deploys to Fly.io
-
-### Manual deploy
-```bash
-fly deploy --remote-only
+```sh
+npx tsc --noEmit
+bun test test/assets.test.ts test/game-control.test.ts test/server-strings.test.ts
 ```
 
----
-
-## License
-
-Private project. Not licensed for redistribution.
+`test/assets.integration.test.ts` additionally requires explicit approved native
+WZ/NX directories and hash manifests, the pinned real converter tools, and a
+real server tar; it must not silently substitute mock conversion. It exercises
+actual production publishers, full NX readback and retained rollback against
+isolated storage/SQL. `test/production-stream.mjs` runs inside the actual built
+Node20 standalone image and checks real HTTP publication/rollback plus bounded
+memory for a 500 MiB upload. These are isolated service tests, not a claim of
+Windows gameplay, public native connectivity, or live Java/DB activation.

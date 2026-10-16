@@ -117,5 +117,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Next clones/buffers middleware request bodies before the route executes.
+  // These exact streaming routes authenticate headers themselves before reading bytes.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/launcher/upload/?$|api/admin/wz/upload/?$|api/admin/baker/sprite/?$).*)"],
 };

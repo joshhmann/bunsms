@@ -1,23 +1,23 @@
-// Server-side WZ XML browsing — companion to explorer.ts but reading from
-// the extracted server-wz.tar.gz mirror at /cosmic/wz-cache/server-xml/wz/.
+// Server-side WZ XML browsing reads the verified committed server tar object.
+// Extracted mirrors are private caches, never another publication authority.
 //
 // The server tarball contains XML mirrors of every .img the game server
 // reads. Browsing it lets you confirm "did my published item make it into
 // the server's view?" in addition to what the client sees.
 
 import {
-  createWriteStream,
   existsSync,
   mkdirSync,
+  mkdtempSync,
+  renameSync,
   readFileSync,
   readdirSync,
   rmSync,
   statSync,
 } from "fs";
-import { Readable } from "stream";
-import { pipeline } from "stream/promises";
-import { execSync } from "child_process";
-import { dirname, join, relative, sep } from "path";
+import { execFileSync } from "child_process";
+import { join, relative, sep } from "path";
+import { ASSET_DIR, readManifest, resolveRevisionPath } from "@/lib/assets";
 
 import type {
   DirChild,
@@ -28,84 +28,28 @@ import type {
   SearchResult,
 } from "./explorer";
 
-const ASSET_BASE =
-  process.env.ASSET_BASE_URL || "https://buns.asslorde.com";
-const ASSET_PUBLIC_URL = `${ASSET_BASE}/client`;
+const CACHE_ROOT = join(ASSET_DIR, "cache", "server-xml");
+let WZ_ROOT = "";
+let cachedHash = "";
 
-const CACHE_ROOT = join(process.env.COSMIC_ROOT || "/cosmic", "wz-cache");
-const TAR_PATH = join(CACHE_ROOT, "server-wz.tar.gz");
-const EXTRACT_ROOT = join(CACHE_ROOT, "server-xml");
-// Tarball top-level dir is `wz/`, so resolved entries live here:
-const WZ_ROOT = join(EXTRACT_ROOT, "wz");
-
-const ETAG_CHECK_TTL_MS = 60 * 1000;
-
-interface ServerXmlState {
-  etag: string | null;
-  fetchedAt: number;
-}
-let STATE: ServerXmlState = { etag: null, fetchedAt: 0 };
-let IN_FLIGHT: Promise<void> | null = null;
-
-// ---------- Download + extract ----------
-
-async function fetchEtag(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, { method: "HEAD" });
-    if (!res.ok) return null;
-    return res.headers.get("etag");
-  } catch {
-    return null;
-  }
-}
-
-async function downloadTar(): Promise<void> {
-  const res = await fetch(`${ASSET_PUBLIC_URL}/server-wz.tar.gz`);
-  if (!res.ok) {
-    throw new Error(`server-wz.tar.gz fetch failed: HTTP ${res.status}`);
-  }
-  if (!res.body) throw new Error("server-wz.tar.gz: no body");
-  mkdirSync(dirname(TAR_PATH), { recursive: true });
-  const readable = Readable.fromWeb(res.body as any);
-  await pipeline(readable, createWriteStream(TAR_PATH));
-}
-
-function extractTar(): void {
-  // Wipe + re-extract so we never serve stale files mixed with fresh ones.
-  if (existsSync(EXTRACT_ROOT)) {
-    rmSync(EXTRACT_ROOT, { recursive: true, force: true });
-  }
-  mkdirSync(EXTRACT_ROOT, { recursive: true });
-  execSync(`tar xzf "${TAR_PATH}" -C "${EXTRACT_ROOT}"`, { timeout: 300000 });
-}
-
-/** Ensure the server-xml mirror is on disk and reasonably fresh. */
+/** Resolve one complete retained server overlay; publish a cache only after extraction. */
 export async function ensureServerXml(): Promise<void> {
-  if (IN_FLIGHT) return IN_FLIGHT;
-  if (
-    existsSync(WZ_ROOT) &&
-    Date.now() - STATE.fetchedAt < ETAG_CHECK_TTL_MS
-  ) {
-    return;
-  }
-
-  IN_FLIGHT = (async () => {
+  const asset = readManifest().manifest.assets?.["server-wz.tar.gz"];
+  if (!asset) throw new Error("No committed server-wz.tar.gz");
+  if (cachedHash === asset.hash && existsSync(WZ_ROOT)) return;
+  const destination = join(CACHE_ROOT, asset.hash);
+  if (!existsSync(destination)) {
+    mkdirSync(CACHE_ROOT, { recursive: true });
+    const partial = mkdtempSync(join(CACHE_ROOT, `${asset.hash}.partial-`));
     try {
-      const remoteEtag = await fetchEtag(`${ASSET_PUBLIC_URL}/server-wz.tar.gz`);
-      const fresh =
-        existsSync(WZ_ROOT) && remoteEtag && STATE.etag === remoteEtag;
-      if (fresh) {
-        STATE = { etag: STATE.etag, fetchedAt: Date.now() };
-        return;
-      }
-      await downloadTar();
-      extractTar();
-      STATE = { etag: remoteEtag, fetchedAt: Date.now() };
-    } finally {
-      IN_FLIGHT = null;
-    }
-  })();
-  return IN_FLIGHT;
+      execFileSync("tar", ["xzf", resolveRevisionPath(asset.key, asset.hash), "-C", partial, "--no-same-owner", "--no-same-permissions"], { timeout: 300000 });
+      try { renameSync(partial, destination); }
+      catch (error) { if (!existsSync(destination)) throw error; }
+    } finally { rmSync(partial, { recursive: true, force: true }); }
+  }
+  WZ_ROOT = join(destination, "wz");
+  if (!existsSync(WZ_ROOT)) throw new Error("Committed server tar has no wz directory");
+  cachedHash = asset.hash;
 }
 
 // ---------- Tree listing ----------

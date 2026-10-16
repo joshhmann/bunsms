@@ -4,6 +4,8 @@ import { readFileSync } from "fs";
 import { parse as parseYaml } from "yaml";
 import { query } from "@/lib/db";
 import { PATHS } from "@/lib/cosmic";
+import { isPrivateRequestAuthorized } from "@/lib/auth";
+import { restartGameServer } from "@/lib/game-control";
 
 const GAME_HOST = process.env.GAME_SERVER_HOST || "192.168.0.157";
 const LOGIN_PORT = 8484;
@@ -99,10 +101,16 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  // No programmatic server control on this topology (LXC, no Fly Machines
-  // API). Restarts are owner-operated on the host.
-  return NextResponse.json(
-    { error: "Server control is manual on this topology (LXC). Restart the game server on the host." },
-    { status: 501 },
-  );
+  try {
+    if (!await isPrivateRequestAuthorized(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const body: unknown = await request.json();
+    if (!body || typeof body !== "object" || !("action" in body) || body.action !== "restart") {
+      return NextResponse.json({ error: "Only restart is supported by private game control" }, { status: 400 });
+    }
+    return NextResponse.json(await restartGameServer());
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Game apply failed" }, { status: 502 });
+  }
 }

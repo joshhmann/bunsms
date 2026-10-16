@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { existsSync } from "fs";
 import { query, execute } from "@/lib/db";
 import { PATHS } from "@/lib/cosmic";
+import { restartGameServer } from "@/lib/game-control";
 
 interface GmNpc {
   id: number;
@@ -181,7 +182,11 @@ export async function POST(request: NextRequest) {
          VALUES (0, ?, ?, 'n', ?, 0, ?, ?, ?, ?, ?, 0, -1)`,
         [mapId, chosenId, cy, foothold, rx0, rx1, x, y],
       );
-      spawnMessage = ` Spawned on map ${mapId} at (${x}, ${y}). Restart the server manually to apply (no auto-restart on this topology).`;
+      const apply = await restartGameServer();
+      if (!apply.success) {
+        return NextResponse.json({ error: apply.error || "Server restart failed", created: true, applied: false, id: result.insertId, npcId: chosenId }, { status: 503 });
+      }
+      spawnMessage = ` Spawned on map ${mapId} at (${x}, ${y}); private server restart acknowledged.`;
     }
 
     return NextResponse.json(
@@ -337,7 +342,12 @@ export async function DELETE(request: NextRequest) {
       [npcIdToDelete],
     );
 
-    // No auto-restart on this topology (LXC, no Fly Machines API).
+    if (plifeResult.affectedRows > 0) {
+      const apply = await restartGameServer();
+      if (!apply.success) {
+        return NextResponse.json({ error: apply.error || "Server restart failed", deleted: true, applied: false, npcId: npcIdToDelete }, { status: 503 });
+      }
+    }
 
     return NextResponse.json({
       success: true,

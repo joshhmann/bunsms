@@ -1,149 +1,75 @@
-name: WZ → NX conversion
+name: Publish verified WZ and NX release
 
-# Triggered after publish endpoints upload patched WZ files to R2. Runs the
-# NoLifeWzToNx converter inside Docker on the patched WZ files and uploads the
-# resulting .nx files back to R2 under the `nx/` prefix so the browser client
-# (play.bunsms.com) picks them up. `UI.nx` is NEVER regenerated — the v83 UI.wz
-# converts to a UI.nx without login fields (known-broken); the v154+ UI.nx
-# already in R2 must stay as-is.
-
+# Native sources and operations must already be approved under
+# /opt/buns/publication-inputs/<candidate_id> on the private LXC. The host CLI
+# hashes them before staging; the synchronous Unix worker uses committed pinned
+# tools and commits WZ + full16 NX once. No R2, live rsync or dispatch success.
+# CI SSH routing/credentials are a REQUIRED deployment prerequisite, not present
+# in the historical repository. Operator workstation SSH remains usable directly.
 on:
   workflow_dispatch:
     inputs:
-      files:
-        description: 'Space-separated WZ filenames to convert (e.g. "Character.wz String.wz"). Empty = all patchable (Character, String, Npc, Reactor).'
+      candidate_id:
+        description: 'Approved private LXC publication-inputs directory ID (contains native files and operations.json)'
         type: string
-        required: false
-        default: ''
-  repository_dispatch:
-    types: [wz-to-nx]
+        required: true
 
+permissions:
+  contents: read
 concurrency:
-  # Collapse overlapping runs so back-to-back publishes coalesce into one
-  # conversion instead of queueing up 30-minute jobs.
-  group: wz-to-nx
+  group: private-asset-publication
   cancel-in-progress: false
 
 jobs:
-  convert:
+  prepare:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
     steps:
-      - name: Checkout (with submodules for wz-converter)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          submodules: recursive
-
-      - name: Resolve input file list
-        id: files
+          ref: ${{ github.sha }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Exercise isolated input verification and preservation guards
+        run: python3 -m unittest discover -s tools/tests -p test_prepare_nx_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: private-publication-source-contract
+          path: |
+            tools/publish_assets.sh
+            tools/prepare_nx_release.py
+            deployment/
+          if-no-files-found: error
+  publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment: private-lxc
+    timeout-minutes: 150
+    steps:
+      - name: Require configured private SSH route and pinned host key
         env:
-          MANUAL_FILES: ${{ inputs.files }}
-          PAYLOAD_FILES: ${{ toJSON(github.event.client_payload.files) }}
+          SSH_HOST: ${{ vars.BUNS_SSH_HOST }}
+          SSH_USER: ${{ vars.BUNS_SSH_USER }}
+          SSH_PORT: ${{ vars.BUNS_SSH_PORT }}
+          SSH_PRIVATE_KEY: ${{ secrets.BUNS_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.BUNS_SSH_KNOWN_HOSTS }}
+          CANDIDATE: ${{ inputs.candidate_id }}
+          SOURCE_SHA: ${{ github.sha }}
         run: |
-          set -eu
-          # Priority: repository_dispatch client_payload.files (array) > workflow_dispatch input > default set
-          if [ -n "${PAYLOAD_FILES:-}" ] && [ "${PAYLOAD_FILES}" != "null" ]; then
-            files=$(echo "$PAYLOAD_FILES" | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin) or []))')
-          else
-            files="${MANUAL_FILES:-}"
-          fi
-          if [ -z "${files// }" ]; then
-            # Default: the WZ files that the publish endpoints actually patch
-            files="Character.wz String.wz Npc.wz Reactor.wz"
-          fi
-          echo "Selected WZ files: $files"
-          echo "files=$files" >> "$GITHUB_OUTPUT"
-
-      - name: Install AWS CLI
-        run: |
-          if ! command -v aws >/dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y --no-install-recommends awscli
-          fi
-          aws --version
-
-      - name: Download WZ files from R2
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_KEY }}
-          AWS_DEFAULT_REGION: auto
-          AWS_EC2_METADATA_DISABLED: 'true'
-          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-          FILES: ${{ steps.files.outputs.files }}
-        run: |
-          set -eu
-          mkdir -p work/wz work/nx
-          for f in $FILES; do
-            echo "::group::Downloading $f"
-            aws s3 cp "s3://$R2_BUCKET/$f" "work/wz/$f" --endpoint-url "$R2_ENDPOINT"
-            echo "::endgroup::"
-          done
-          ls -lh work/wz/
-
-      - name: Build wz-converter image
-        run: |
-          cd web-client/vendor/maplestory-wasm/scripts/wz-converter
-          docker build -t wz-converter:ci .
-
-      - name: Convert WZ → NX
-        run: |
-          set -eu
-          docker run --rm \
-            -v "$PWD/work:/work" \
-            -e MODE=client \
-            wz-converter:ci
-          # container-convert.sh writes to /work/nxFiles, NOT /work/nx — keep
-          # this listing aligned with the upload step or the workflow silently
-          # "succeeds" while uploading nothing (which is exactly how publishes
-          # were quietly failing to refresh play.bunsms.com).
-          ls -lh work/nxFiles/
-
-      - name: Upload NX files to R2 (skip UI.nx)
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_KEY }}
-          AWS_DEFAULT_REGION: auto
-          AWS_EC2_METADATA_DISABLED: 'true'
-          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-        run: |
-          set -eu
-          shopt -s nullglob
-          nx_files=(work/nxFiles/*.nx)
-          if [ ${#nx_files[@]} -eq 0 ]; then
-            echo "No .nx files produced by converter — failing loudly instead of silently uploading nothing." >&2
-            exit 1
-          fi
-          for nx in "${nx_files[@]}"; do
-            base=$(basename "$nx")
-            if [ "$base" = "UI.nx" ]; then
-              echo "Skipping UI.nx — must stay as v154+ version already in R2"
-              continue
-            fi
-            echo "::group::Uploading $base → nx/$base"
-            aws s3 cp "$nx" "s3://$R2_BUCKET/nx/$base" \
-              --endpoint-url "$R2_ENDPOINT" \
-              --content-type application/octet-stream \
-              --cache-control 'public, max-age=3600'
-            echo "::endgroup::"
-          done
-
-      - name: Summary
+          set -euo pipefail
+          set +x
+          [[ "$CANDIDATE" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{7,95}$ ]]
+          [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          test -n "$SSH_HOST" && test -n "$SSH_USER" && test -n "$SSH_PORT"
+          test -n "$SSH_PRIVATE_KEY" && test -n "$SSH_KNOWN_HOSTS"
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/buns_deploy"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/buns_deploy" "$HOME/.ssh/known_hosts"
+          # A private/unreachable host fails here; no label claims a runner exists.
+          ssh -i "$HOME/.ssh/buns_deploy" -p "$SSH_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" \
+            "sudo -n /usr/local/sbin/buns-private-deploy publish '$CANDIDATE' '$SOURCE_SHA'"
+      - name: Remove ephemeral SSH credential
         if: always()
-        run: |
-          shopt -s nullglob
-          {
-            echo "### WZ → NX conversion"
-            echo
-            echo "Converted files:"
-            for nx in work/nxFiles/*.nx; do
-              base=$(basename "$nx")
-              size=$(du -h "$nx" | cut -f1)
-              if [ "$base" = "UI.nx" ]; then
-                echo "- ~~$base~~ ($size) — skipped upload"
-              else
-                echo "- $base ($size) → \`nx/$base\`"
-              fi
-            done
-          } >> "$GITHUB_STEP_SUMMARY"
+        run: rm -f "$HOME/.ssh/buns_deploy"

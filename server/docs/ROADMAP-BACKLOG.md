@@ -101,7 +101,7 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   runtime proof the injector-based clients (tickets 11–13) build on.
   Dependencies: None (parallel). Blocks: ticket 11, ticket 12-client, ticket 13-client.
 
-- [ ] **Ticket 15 — R2 uploads (NX/community pack)** — Owner: unassigned
+- [ ] **Ticket 15 — Verified selfhost content intake (NX/community pack)** — Owner: unassigned
   Scope: Inventory-then-fit TengaMS 4.9G / Community IMG 6.3G against WZ
   symlink + manifest + launcher hosting; settled NX set stages to the
   self-hosted asset dir (ticket 17 replaced R2); record hashes. Do not
@@ -118,30 +118,28 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   Parallel investigation, no build/deploy.
   Dependencies: None (parallel). Informs: ticket 14, tickets 11–13 estimates.
 
-- [x] **Ticket 17 — Self-hosted asset serving (R2 replacement)** — Owner: selfhost-assets-spec
-  Scope: IMPLEMENTED on branch `selfhost-assets` (2026-10-16, actually
-  exercised — not a status claim): single manifest authority (19 files,
-  `?profile=` server-side filter with stock default, atomic staged publish
-  with expected-hash verify + previous-bytes retention, Caddy+middleware
-  POST containment), `/client/*` static on .164 (systemd `buns-web.service`,
-  nested keys + immutable revision paths), public Caddy rules on .70
-  (GET/HEAD-only `/api/launcher/manifest|news`, `/api/server`; admin/ops
-  stay LAN-only), all publish flows migrated off R2 (no Fly restart calls;
-  game-server restart is owner-manual on LXC), seed 19/19 hash-verified from
-  R2 bytes + local Kaentake triple, canonical `BunsMS.exe`/`config.ini`
-  object names (bytes preserved). R2 objects NOT deleted (rollback standby).
-  Proven: tsc clean, launcher profiles tests pass, 16-assertion staged-cycle
-  proof (wrong-hash reject, atomic promote, rollback), live stock-default 16
-  + kaentake 15, Map.wz full-SHA + tail-206, candidate-3/4 staged unpromoted.
-  Native reachability truth (corrected — prior "public CLOSED" WITHDRAWN):
-  LAN 192.168.0.164:8484 OPEN (measured); public :8484 from a LAN vantage
-  proves nothing externally (hairpin/NAT-reflection may be disabled) — status
-  is UNVERIFIED until an independent non-LAN vantage probes it. Caddy is
-  HTTP-only (no TCP proxy) but that alone cannot rule out an OPNsense NAT
-  forward. `/api/server` `running` = in-compose check only (documented in
-  response + `gameHost`/`gamePort` fields for launcher preference). External
-  friends need LAN/VPN until external reachability is measured. Ticket 15
-  STAYS OPEN (content pending); no 'all tickets complete' claim from cutover.
+- [ ] **Ticket 17 — Self-hosted asset serving and atomic publication** — Owner: selfhost-publication-review (source); selfhost-assets-spec (operations)
+  Source repair branch: `selfhost-assets-repair`, based on frozen `faa818c`.
+  The accepted `de4d851` fixed review remains changes-requested; old throwaway
+  cycle counts and manual byte-copy rollback do not close its findings.
+  Repair implements one verified immutable object/retained-manifest boundary,
+  stock-default/private-complete profiles, authenticated streaming upload/CLI,
+  all art/GM/raw-WZ/four publisher callers, actual pinned WZ→NX I/O and a
+  committed complete NX authority, server tar/marker/baseline application, and
+  exact retained overlay rollback with persistent pending recovery.
+  Source-compose/systemd/CI/runbook parity is part of the repair, not a manual
+  substitute for a missing API. Isolated actual-handler/SQL/byte-service,
+  CLI/GM, real converter/cohort, and actual-entrypoint checks are permanent.
+  Final fixed-commit independent review and gated service/content activation
+  are distinct from the previous live read-serving receipt.
+  Network contract is final: existing domains/ports, canonical advertised
+  production client host `buns.asslorde.com`, explicit LAN/loopback overrides,
+  no Tailscale/NAT changes. Public native activation deferred by owner.
+  Internal Docker `server` is health only, never a client endpoint.
+  Original R2 objects are retained but never used as runtime/rollback fallback.
+  See [SELFHOST-ASSETS.md](SELFHOST-ASSETS.md) for the protocol and evidence
+  boundaries. Ticket 15/content and native/browser activation retain their
+  separate owner gates; this ticket does not claim all roadmap work complete.
 
 ## Dependency graph (summary)
 
@@ -151,4 +149,4 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
 - Step-0 injector decision → 3 window, 10 window, 11 → 12 → 13 (last).
 - 14 smoke → 11/12-client/13-client. 16 informs 14.
 - 15 after 2 + 4 + WZ story settled.
-- 17 (selfhost) done first: publish flows for 3/4/9/11-13 target the asset dir, not R2.
+- 17 source/activation gates precede downstream publication for 3/4/9/11–13; all use the verified selfhost authority, never direct-live/R2 paths.

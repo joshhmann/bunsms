@@ -1,35 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { readFile } from "fs/promises";
 import { getGeneratedItem } from "@/lib/gm/generated-items";
+import { requireItemId, resolveArtPath } from "@/lib/art";
 
 export const dynamic = "force-dynamic";
 
-/**
- * GET /api/admin/items/generated/{id}/concept
- *
- * Serves the concept PNG from /tmp/generated-items/{id}/concept.png — used
- * when R2 is not configured (local dev) so the review UI can still preview.
- * In prod, concept_image_url points directly at R2 and this route isn't hit.
- */
+/** Serve only explicitly committed concept bytes; legacy references require migration. */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const item = await getGeneratedItem(parseInt(id));
-  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
-  if (item.concept_image_url) {
-    return NextResponse.redirect(item.concept_image_url);
+  let generationId: number;
+  try { generationId = requireItemId(id); }
+  catch { return NextResponse.json({ error: "Invalid generation id" }, { status: 400 }); }
+  const item = await getGeneratedItem(generationId);
+  if (!item?.concept_image_url) return NextResponse.json({ error: "Concept not found" }, { status: 404 });
+  try {
+    const bytes = await readFile(resolveArtPath(item.concept_image_url));
+    return new NextResponse(bytes, { headers: { "Content-Type": "image/png", "Cache-Control": "private, max-age=60" } });
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 409 });
   }
-
-  const path = join("/tmp", "generated-items", id, "concept.png");
-  if (!existsSync(path)) {
-    return NextResponse.json({ error: "Concept not found locally" }, { status: 404 });
-  }
-  const buf = readFileSync(path);
-  return new NextResponse(new Uint8Array(buf), {
-    headers: { "Content-Type": "image/png", "Cache-Control": "private, max-age=60" },
-  });
 }

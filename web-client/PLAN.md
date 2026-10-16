@@ -1,128 +1,36 @@
-# Web client (browser WASM) — remaining work
+# Browser hosting and asset-release boundaries
 
-Context: `web-client/` hosts the browser-playable MapleStory WASM client. Users visit
-`https://play.buns.asslorde.com`, the page serves static HTML + WASM + a combined WebSocket
-TCP proxy (to the buns-ms-game app at 213.188.212.103:8484). NX game assets stream
-from Cloudflare R2 at `https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/nx/` via
-HTTPS Range requests cached in the browser's IndexedDB.
+The earlier Fly/R2 deployment/conversion plan is superseded by the measured LXC
+164 application host and `.70` Caddy edge. Use the existing production/development
+domains and browser-root/WSS routes. Do not add Tailscale, NAT changes, public
+write ports or a new public control endpoint.
 
-## What's done
+## Asset authority
 
-- [x] All 16 NX files uploaded to R2 under `nx/` prefix (~4.2 GB, free tier).
-- [x] R2 bucket CORS configured for `http://localhost:8000`, `buns.asslorde.com`, `play.buns.asslorde.com`.
-- [x] WASM client rewritten to fetch chunks via HTTPS Range when `NxBaseUrl` is set
-  (`src/client/LazyFS/lazyfs.js`). WebSocket path preserved as fallback. Committed to
-  `themrzmaster/maplestory-wasm@master` (SHA `cde7764`).
-- [x] Buns-branded loading screen (`web/index.html`) with foreground prefetch of
-  ~108 MB of NX metadata before WASM boots, plus a corner indicator driving a
-  background prefill that caches the remaining ~4.1 GB while the user plays.
-- [x] Combined aiohttp static + WS TCP proxy (`web-client/server.py`). Target allow-list
-  covers BunsMS login + 3 channels. Single port (8080).
-- [x] First Fly deploy using artifact-copy approach. App running at
-  `https://buns.asslorde.com` (machine id `1851d7dc295d38`, iad, shared-cpu-1x@256MB).
-- [x] Submodule `web-client/vendor/maplestory-wasm` pinned at `cde7764`.
-- [x] Multi-stage Dockerfile: emscripten/emsdk builds WASM from the submodule, then
-  python:3.11-slim runtime copies the artifacts + `config.prod.json → config.json`.
-- [x] `deploy-web` job in `.github/workflows/deploy.yml` with `submodules: recursive`.
-  Dispatch via `gh workflow run deploy.yml -f web=true`.
+See [SELFHOST-ASSETS.md](../server/docs/SELFHOST-ASSETS.md) for the common immutable
+publication protocol and deployment runbook. The Python service serves validated
+nested native/art/server keys and retained revision URLs, supports Range/HEAD,
+and never hashes a large WZ file on the public event loop. Mutable aliases
+revalidate; retained revision URLs remain immutable across publication/rollback.
 
-- [x] Local Dockerfile build verified end-to-end (`docker build -t buns-ms-web:submodule .`
-  → full emscripten compile ~26 s; runtime container serves `/healthz`, `/`,
-  `/web/config.json`, and `/build/JourneyClient.{js,wasm}` with correct content types).
-  Dropped the `apt-get install git` step — not needed (CMake doesn't invoke git, and
-  the source is COPY'd in, not cloned).
+Browser `/nx/<name>` resolves the committed complete `nx/*` cohort after its
+first publication. Until then it uses the explicitly approved existing local NX
+baseline, not a remote-storage fallback. Real WZ conversion consumes the verified
+candidate and checks coverage/preservation before one shared authority switch;
+UI remains protected. Dispatch acknowledgement is not publication. Failed
+conversion leaves the prior authority unchanged; retained SELFHOST rollback
+selects exact native/art/server/NX objects without copying old bytes live.
 
-## What's left (in order)
+The separate private Unix controller supplies conversion and server-only apply
+commands. It is not registered on the public browser app. Source configuration
+must preserve the current static-root cohort, WSS target/allowlist, and ports.
+Source repair checks do not authorize changing the live browser NX cohort or
+restarting Java/DB before the relevant owner gates.
 
-### 1. DNS + TLS for `play.buns.asslorde.com`
+## Native endpoint is a separate contract
 
-Nothing here requires my code — it's all user actions in Cloudflare + one flyctl call.
-
-1. Cloudflare DNS: add record
-   - Type: CNAME
-   - Name: `play`
-   - Target: `buns.asslorde.com`
-   - Proxy: orange cloud ON (Cloudflare terminates TLS, passes to Fly; WebSockets
-     work on Cloudflare free plan)
-2. Fly cert:
-   ```
-   flyctl certs create play.buns.asslorde.com --app buns-ms-web
-   flyctl certs check play.buns.asslorde.com --app buns-ms-web
-   ```
-   Wait until "Certificate Status: Ready".
-3. Browse `https://play.buns.asslorde.com/`. Loading screen should appear → prefetch →
-   login.
-
-### 2. WZ → NX conversion workflow  *(task #6 in the task board)*
-
-Right now the NX files in R2 are static: last regenerated manually from
-`maplestory-wasm/assets/`. Every time the dashboard's `/api/admin/items/publish`
-endpoint repacks `Character.wz` / `String.wz` and re-uploads them to R2, the matching
-`.nx` in R2 becomes stale for the browser client.
-
-Plan:
-- New workflow `.github/workflows/wz-to-nx.yml` in bunsms.
-- Triggers: `repository_dispatch` (type `wz-to-nx`) + `workflow_dispatch` (manual).
-- Steps:
-  1. Install `rclone` or AWS CLI, point at R2 S3-compat endpoint with the existing
-     `R2_ACCESS_KEY` / `R2_SECRET_KEY` / `R2_ENDPOINT` secrets (already in GH).
-  2. Download the 12 client WZ files from R2 to a scratch dir.
-  3. Build `scripts/wz-converter/Dockerfile` from `themrzmaster/maplestory-wasm`
-     (already headless, debian:bookworm-slim + g++ + NoLifeWzToNx). Run it over
-     the scratch dir.
-  4. Upload the resulting `.nx` files to `nx/` in R2. **CRITICAL: skip `UI.nx`**
-     — the v83 `UI.wz` converts to a UI.nx without login fields (known-broken);
-     the v154+ `UI.nx` must stay as-is. Either skip the input or drop the output.
-  5. Concurrency group to prevent overlapping runs.
-- Expected runtime: 30–60 min on free GHA runner.
-
-### 3. Wire publish → conversion trigger  *(task #7)*
-
-In `dashboard/src/app/api/admin/items/publish/route.ts`, after the final R2 upload of
-the patched WZ files (around line 586 per the exploration), dispatch the `wz-to-nx`
-workflow:
-
-```ts
-await fetch(
-  'https://api.github.com/repos/joshhmann/bunsms/dispatches',
-  {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${process.env.GH_DISPATCH_TOKEN}`,
-      Accept: 'application/vnd.github+json',
-    },
-    body: JSON.stringify({ event_type: 'wz-to-nx' }),
-  }
-);
-```
-
-Same token used by `delegate_code_change` (GH_DISPATCH_TOKEN); already has
-`actions:write`. Add rate-limiting (e.g. debounce to once per 10 min) to prevent
-conversion storms. Mirror the same dispatch in the GM tool
-`publish_client_update` (`dashboard/src/lib/gamemaster/engine.ts`).
-
-### 4. Monitoring + ops polish  *(nice-to-have)*
-
-- Add `/healthz` to Fly health check (already done via `[[http_service.checks]]`).
-- Log WS proxy target rejections separately for abuse metrics.
-- Consider a `/metrics` endpoint exposing R2 hit ratio from LazyFS stats.
-- Decide on Cloudflare cache-control headers for `/build/JourneyClient.wasm` — right
-  now aiohttp sends `no-store` by default which defeats CDN caching.
-
-## Gotchas captured this session
-
-- **Wrangler CLI caps single-PUT at 300 MiB**. Use the dashboard's `uploadFileToR2`
-  (in `dashboard/src/lib/r2.ts`) with UNSIGNED-PAYLOAD for big files — or
-  `dashboard/scripts/upload-nx-r2.ts` already written for this.
-- **CMake + `--pre-js`**: changes to `lazyfs.js` don't invalidate the build without the
-  `set_target_properties(JourneyClient PROPERTIES LINK_DEPENDS …)` line added in
-  `src/client/CMakeLists.txt`. Already upstreamed to maplestory-wasm master.
-- **IndexedDB cache keys include chunk size**: prevents stale chunks from a previous
-  build leaking oversized data into a new read and overflowing the result buffer.
-  Format: `${filename}:v${etag}:c${chunkSize}:${chunkIndex}`. The prefetcher must
-  match this format exactly.
-- **UI.nx is v154+**, unlike every other NX file (which is v83). Do NOT regenerate
-  UI.nx from v83 UI.wz — the result has no login fields and the browser can't log in.
-- **Port 443 in WebSocket URL**: `wss://play.buns.asslorde.com:443/` works. The C++ URL
-  builder always appends `:port`; 443 is harmless with `wss://`.
-- **Fly `--ha=false`** pins one machine. Remove if you want multi-region failover.
+The canonical advertised production native hostname is `buns.asslorde.com`,
+distinct from Docker's internal health name `server`. Explicit LAN/loopback test
+overrides remain supported. Public native activation deferred by owner; browser
+HTTPS/WSS availability is not evidence of native public TCP connectivity. No
+network decision remains open and no port changes are part of this repair.

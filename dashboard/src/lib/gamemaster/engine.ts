@@ -1,6 +1,17 @@
 import OpenAI from "openai";
 import { query as dbQuery, execute } from "@/lib/db";
 import type { GMSession, GMLogEntry } from "./types";
+import { restartGameServer } from "@/lib/game-control";
+
+interface ClientUpdateFile { name: string; hash: string; size: number; path?: string }
+
+function isClientUpdateFile(value: unknown): value is ClientUpdateFile {
+  if (!value || typeof value !== "object") return false;
+  return "name" in value && typeof value.name === "string"
+    && "hash" in value && typeof value.hash === "string" && /^[a-f0-9]{64}$/.test(value.hash)
+    && "size" in value && typeof value.size === "number" && Number.isSafeInteger(value.size) && value.size >= 0
+    && (!("path" in value) || typeof value.path === "string");
+}
 
 const BASE = process.env.COSMIC_DASHBOARD_URL || "http://localhost:3000";
 const DEFAULT_MODEL = "moonshotai/kimi-k2.5";
@@ -436,30 +447,32 @@ export const toolHandlers: Record<string, (args: any) => Promise<string>> = {
     });
   },
 
-  publish_client_update: async ({ version, message, files }) => {
-    // Staged publish: stage bytes first (returns releaseId), then register
-    // with EXPECTED hashes for verification + atomic promotion. Live bytes
-    // and manifest stay unchanged on any hash mismatch.
-    const staged = files && Array.isArray(files) ? files.filter((f: any) => f.path) : [];
-    let releaseId: string | undefined;
-    if (staged.length > 0) {
-      const uploadResult = await api("/api/launcher/upload", {
-        method: "POST",
-        body: JSON.stringify({ files: staged }),
-      });
-      if (uploadResult.error) return JSON.stringify({ error: uploadResult.error });
-      releaseId = uploadResult.releaseId;
+  publish_client_update: async ({ message, files, releaseId, operations }) => {
+    if (!Array.isArray(files) || files.length === 0) {
+      return JSON.stringify({ error: "Provide changed files with expected SHA-256 and size, plus either local source paths or an existing staged releaseId" });
     }
-
-    const register = (staged as any[]).map((f: any) => ({ name: f.name, hash: f.hash, size: f.size }));
-    if (register.some((r: any) => !r.hash || !r.size)) {
-      return JSON.stringify({ error: "register requires expected hash and size per file" });
+    const candidates: unknown[] = files;
+    if (!candidates.every(isClientUpdateFile)) {
+      return JSON.stringify({ error: "Every file requires name, expected lowercase SHA-256 hash and non-negative integer size" });
+    }
+    if (releaseId) {
+      if (candidates.some((file) => file.path)) return JSON.stringify({ error: "Use source paths OR an existing releaseId, not both" });
+    } else {
+      if (candidates.some((file) => !file.path)) {
+        return JSON.stringify({ error: "Every file requires a local source path when releaseId is absent" });
+      }
+      const uploaded = await api("/api/launcher/upload", {
+        method: "POST", body: JSON.stringify({ files }),
+      });
+      if (uploaded.error || !uploaded.releaseId) return JSON.stringify({ error: uploaded.error || "Staging did not return a releaseId" });
+      releaseId = uploaded.releaseId;
     }
     const result = await api("/api/launcher/manifest", {
       method: "POST",
-      body: JSON.stringify({ register, releaseId, version }),
+      body: JSON.stringify({ register: candidates.map(({ name, hash, size }) => ({ name, hash, size })), releaseId, operations }),
     });
-    return JSON.stringify({ ...result, message: message || "Client update published" });
+    if (result.error) return JSON.stringify(result);
+    return JSON.stringify({ ...result, message: message || "Client release committed" });
   },
 
   generate_item: async ({ description, weapon_type, name, stats, requirements }) =>
@@ -975,7 +988,7 @@ const toolSchemas: OpenAI.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "add_map_spawn",
-      description: "Add a mob or NPC spawn to a map. Written to plife DB table. Restart the game server manually to make new spawns visible (no auto-restart on this topology). IMPORTANT: You MUST provide the correct foothold (fh) value — use get_map to find existing spawns and copy the fh from a nearby spawn at similar x,y coordinates. An fh of 0 makes NPCs non-interactive.",
+      description: "Add a mob or NPC spawn to a map. Written to plife DB table and applied through a private server restart at session end. IMPORTANT: You MUST provide the correct foothold (fh) value — use get_map to find existing spawns and copy the fh from a nearby spawn at similar x,y coordinates. An fh of 0 makes NPCs non-interactive.",
       parameters: {
         type: "object",
         properties: {
@@ -1028,7 +1041,7 @@ const toolSchemas: OpenAI.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "add_map_reactor",
-      description: "Place a reactor (breakable object) on a map. Stored in preactor DB table. Use search_reactors to find reactor IDs, and get_map to find valid x,y coordinates. Restart the game server manually to make new reactors visible (no auto-restart on this topology).",
+      description: "Place a reactor (breakable object) on a map. Stored in preactor DB table and applied through a private server restart at session end. Use search_reactors to find reactor IDs, and get_map to find valid x,y coordinates.",
       parameters: {
         type: "object",
         properties: {
@@ -1446,7 +1459,7 @@ teleporter: {"greeting":"Where to?","destinations":[{"mapId":100000000,"name":"H
     type: "function",
     function: {
       name: "create_treasure_hunt",
-      description: "Create a treasure hunt event: place breakable reactor boxes across multiple maps with item rewards. Bundles reactor placement, drop configuration, announcement, and event tracking with auto-expiry. Restart the game server manually to make reactors visible (no auto-restart on this topology). If you omit reactorId, a visible reactor is auto-selected. If you omit x/y coordinates for a location, valid coordinates are auto-picked from existing map spawns. You can just provide mapId and count per location.",
+      description: "Create a treasure hunt event: place breakable reactor boxes across multiple maps with item rewards. Bundles reactor placement, drop configuration, announcement, and event tracking with auto-expiry. A private server restart at session end applies reactor changes; failures are reported. If you omit reactorId, a visible reactor is auto-selected. If you omit x/y coordinates for a location, valid coordinates are auto-picked from existing map spawns.",
       parameters: {
         type: "object",
         properties: {
@@ -1569,26 +1582,46 @@ teleporter: {"greeting":"Where to?","destinations":[{"mapId":100000000,"name":"H
     type: "function",
     function: {
       name: "publish_client_update",
-      description: "Publish a client update by bumping the launcher manifest version. IMPORTANT: Most GM changes (drops, shops, spawns, rates, mob stats) are DB-only or config-only and do NOT need this. Only use for WZ-level changes (new items/mobs that need client-side data) or client exe patches. Players must re-launch to get updates.",
+      description: "Publish actual changed client bytes from local source paths or an existing staged releaseId. Every file requires independently expected SHA-256 and size. WZ changes also require approved conversion operations. No version-only publication. DB-only changes do not need this tool.",
       parameters: {
         type: "object",
         properties: {
-          version: { type: "string", description: "New version string (e.g. '1.1.0')" },
+          releaseId: { type: "string", description: "Existing staged release ID; omit when supplying local source paths" },
           message: { type: "string", description: "What changed for players" },
           files: {
             type: "array",
-            description: "Files that changed (only if you know the new hash/size)",
+            minItems: 1,
+            description: "Actual changed files with independent expected metadata and either a path per file or an existing releaseId",
             items: {
               type: "object",
               properties: {
                 name: { type: "string", description: "Filename (e.g. 'Item.wz')" },
+                path: { type: "string", description: "Dashboard-readable absolute source path; required unless releaseId is supplied" },
                 hash: { type: "string", description: "New SHA256 hash" },
                 size: { type: "number", description: "New file size in bytes" },
               },
+              required: ["name", "hash", "size"],
+            },
+          },
+          operations: {
+            type: "array",
+            description: "Approved WZ-to-NX operations for WZ changes",
+            items: {
+              type: "object",
+              properties: {
+                target_wz: { type: "string" },
+                target_image: { type: "string" },
+                op: { type: "string", enum: ["import_image", "set_subtree"] },
+                target_node: { type: "string" },
+                source_image: { type: "string" },
+                source_node: { type: "string" },
+                source_wz: { type: "string" },
+              },
+              required: ["target_wz", "target_image"],
             },
           },
         },
-        required: ["version", "message"],
+        required: ["files", "message"],
       },
     },
   },
@@ -2292,7 +2325,7 @@ All events created with \`create_event\` or \`create_treasure_hunt\` are tracked
 - Prefer setting expiry on all events to prevent stale content buildup.
 
 ## Auto-Restart — Spawns & Reactors Apply Automatically
-When you place reactors (\`add_map_reactor\`, \`create_treasure_hunt\`) or spawn mobs/NPCs (\`add_map_spawn\`, \`create_event\` with mobs), reactor/spawn changes need a **manual game-server restart** to become visible (no auto-restart on this LXC topology). Place content, then restart the server on the host.
+When you place reactors (\`add_map_reactor\`, \`create_treasure_hunt\`) or spawn mobs/NPCs (\`add_map_spawn\`, \`create_event\` with mobs), the engine requests a private game-server restart at session end. A failed acknowledgement is an apply failure, not successful live content.
 - Drop changes (\`add_mob_drop\`, global drops) are live immediately — no restart needed.
 - NPC config changes (\`update_custom_npc\`) are live immediately — no restart needed.
 - Rate changes are live immediately — no restart needed.
@@ -2300,7 +2333,7 @@ When you place reactors (\`add_map_reactor\`, \`create_treasure_hunt\`) or spawn
 ## Reactor Events — Your Secret Weapon
 For fine-grained control (or if you want reactors without a full treasure hunt), you can manage reactors individually:
 - Search existing reactor templates with \`search_reactors\` (421 vanilla + any custom-created ones, marked [Custom])
-- **Create brand new reactors** with \`create_custom_reactor\` — describe what you want and an AI generates a unique pixel-art sprite. Animations, server files, drops are all auto-generated. The full publish pipeline runs automatically (client WZ → asset dir → manifest bump; server restart is manual).
+- **Create brand new reactors** with \`create_custom_reactor\` — describe what you want and an AI generates a unique pixel-art sprite. Animations, server files and drops are generated, then a publish job verifies and commits the WZ/NX release and requests a private restart. A started job is not yet published; inspect its final status.
 - Place them on maps with \`add_map_reactor\`
 - Configure their drops with \`add_reactor_drop\`
 - Players discover them, break them, get loot — pure dopamine
@@ -2329,7 +2362,7 @@ Players physically hit the reactor object on the map and it drops items. This is
 
 **Finding reactors**: Use \`search_reactors\` and ONLY pick reactors where \`visible=true\`. Many vanilla reactors have a 1x1 pixel sprite and are invisible to players. Custom reactors (marked [Custom]) are always visible. If using \`create_treasure_hunt\`, you can omit the reactorId and a visible reactor will be auto-selected.
 
-**Creating unique reactors**: If none of the vanilla reactors fit your vision, use \`create_custom_reactor\` to generate one. Give it a descriptive name and a detailed visual description (e.g. "a glowing enchanted mushroom with purple spots" or "a frozen treasure chest covered in ice crystals"). The system generates a pixel-art sprite via AI, builds all animation frames, writes server files, stages to the asset dir, bumps the client manifest — all automatically (server restart is manual). The reactor is fully usable within ~2 minutes.
+**Creating unique reactors**: If none of the vanilla reactors fit your vision, use \`create_custom_reactor\`. Give it a descriptive name and detailed visual description. The system generates a sprite, builds animation frames, writes server files, and starts a verified WZ/NX publication job. Treat content as live only after that job commits and reports successful apply.
 
 **Prefer custom reactors over vanilla ones for events.** Custom reactors make the server feel unique and hand-crafted — players notice when a reactor looks like something they've never seen before. For seasonal events, themed treasure hunts, or special drop mechanics, always consider creating a custom reactor that matches the event's theme (e.g. a pumpkin for Halloween, a snowflake crystal for winter, a dragon egg for a boss event). It takes ~2 minutes and makes the event feel 10x more polished than reusing a generic vanilla box.
 
@@ -2912,9 +2945,6 @@ export async function runGameMaster(
     addLog({ type: "text", text: `Error: ${err.message}` });
   }
 
-  session.completedAt = new Date().toISOString();
-  await persistSessionEnd(session);
-
   // Sweep any custom reactors stuck in published=0 — a prior create_custom_reactor
   // may have failed its inline publish (e.g. asset staging failed at the time) and
   // left an unusable reactor in the DB. Publishing handles its own server restart,
@@ -2926,24 +2956,37 @@ export async function runGameMaster(
         "SELECT COUNT(*) AS n FROM custom_reactors WHERE published = 0"
       );
       if ((unpublished[0]?.n ?? 0) > 0) {
-        const res = await api("/api/admin/reactors/publish", { method: "POST" });
-        if (res?.status === "started") {
+        const current = await api("/api/admin/reactors/publish");
+        if (current.status === "running") {
           publishTriggered = true;
-          addLog({ type: "text", text: `[System] ${unpublished[0].n} unpublished custom reactor(s) detected — publish job started (will restart server when done).` });
-        } else if (res?.error) {
-          addLog({ type: "text", text: `[System] Custom reactor publish could not start: ${res.error}` });
+          addLog({ type: "text", text: "[System] Reactor publication is still running; its final status will report commit and server apply." });
+        } else {
+          const res = await api("/api/admin/reactors/publish", { method: "POST" });
+          if (res?.status !== "started") throw new Error(res?.error || "Reactor publication did not start");
+          publishTriggered = true;
+          addLog({ type: "text", text: `[System] ${unpublished[0].n} unpublished custom reactor(s) detected — publish job started; not yet committed or applied.` });
         }
       }
-    } catch (err: any) {
-      addLog({ type: "text", text: `[System] Custom reactor publish sweep failed: ${err.message}` });
+    } catch (err) {
+      session.status = "error";
+      session.error = `Custom reactor publication failed: ${err instanceof Error ? err.message : String(err)}`;
+      addLog({ type: "text", text: `[System] ${session.error}` });
     }
   }
 
-  // No auto-restart on this topology (LXC, no Fly Machines API).
-  // Owner restarts the game server manually to apply reactor/spawn changes.
   if (needsRestart && !publishTriggered && session.status === "complete") {
-    addLog({ type: "text", text: "[System] Reactor/spawn changes staged — restart the game server manually to apply." });
+    try {
+      const result = await restartGameServer();
+      if (!result.success) throw new Error(result.error || "Game-server restart failed");
+      addLog({ type: "text", text: "[System] Game server restart acknowledged; reactor/spawn changes applied." });
+    } catch (err) {
+      session.status = "error";
+      session.error = `Applying reactor/spawn changes failed: ${err instanceof Error ? err.message : String(err)}`;
+      addLog({ type: "text", text: `[System] ${session.error}` });
+    }
   }
+  session.completedAt = new Date().toISOString();
+  await persistSessionEnd(session);
 
   return session;
 }

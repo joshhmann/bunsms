@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { execute, query } from "@/lib/db";
-import { mkdirSync, renameSync, writeFileSync } from "fs";
-import { dirname, join } from "path";
-import { ASSET_DIR } from "@/lib/assets";
+import { publishBuffers } from "@/lib/assets";
 import { ASSET_RANGES, type AssetType } from "@/lib/assets/ranges";
 
 export const dynamic = "force-dynamic";
@@ -162,8 +160,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsedAttrs.error }, { status: 400 });
   }
 
-  const inGameId = parseInt(inGameIdRaw, 10);
-  if (!Number.isFinite(inGameId) || inGameId < range.start || inGameId > range.end) {
+  const inGameId = Number(inGameIdRaw);
+  if (!/^[0-9]+$/.test(inGameIdRaw) || !Number.isSafeInteger(inGameId) || inGameId < range.start || inGameId > range.end) {
     return NextResponse.json(
       {
         error: `in_game_id must be an integer in [${range.start}, ${range.end}] for ${assetType}`,
@@ -208,20 +206,15 @@ export async function POST(request: NextRequest) {
 
   const ext = FILE_EXT_BY_TYPE[assetType];
   const fileKey = `assets/${assetType}/${String(inGameId).padStart(8, "0")}.${ext}`;
-  // Stage art bytes into the self-hosted asset dir (atomic tmp + rename);
-  // publish flows read them back via ASSET_BASE_URL file fetches, never R2.
-  const dest = join(ASSET_DIR, fileKey);
-  mkdirSync(dirname(dest), { recursive: true });
-  const tmp = `${dest}.tmp.${process.pid}`;
-  writeFileSync(tmp, buf);
-  renameSync(tmp, dest);
+  const publication = await publishBuffers([{ key: fileKey, data: buf }]);
+  const published = publication.assets.find((asset) => asset.key === fileKey)!;
 
   const attrsJson = parsedAttrs.attrs ? JSON.stringify(parsedAttrs.attrs) : null;
 
   await execute(
     `INSERT INTO custom_assets
-       (asset_type, in_game_id, name, source_version, file_key, file_hash, file_size, notes, attrs, uploaded_by, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ready')`,
+       (asset_type, in_game_id, name, source_version, file_key, file_hash, file_size, preview_url, notes, attrs, uploaded_by, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ready')`,
     [
       assetType,
       inGameId,
@@ -230,6 +223,7 @@ export async function POST(request: NextRequest) {
       fileKey,
       fileHash,
       buf.length,
+      ext === "png" ? published.url : null,
       notes,
       attrsJson,
       uploadedBy,

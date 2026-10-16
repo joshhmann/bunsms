@@ -47,3 +47,5 @@ dashboard/test-weapon-local.ts
 .DS_Store
 Thumbs.db
 .wrangler/
+__pycache__/
+*.pyc

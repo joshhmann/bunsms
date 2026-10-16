@@ -1,22 +1,9 @@
 import { NextResponse } from "next/server";
 import { query, execute } from "@/lib/db";
-import {
-  ASSET_BASE_URL,
-  ASSET_DIR,
-  assetUrl,
-  bumpPatch,
-  hashFileStream,
-  readManifest,
-  acquirePublishLock,
-  promoteStagedFile,
-  releasePublishLock,
-  resolveAssetPath,
-  resolveStagingPath,
-  verifyStagedBytes,
-  writeManifestAtomic,
-} from "@/lib/assets";
-import type { ManifestRead } from "@/lib/assets";
-import { dispatchWzToNx } from "@/lib/wz-to-nx";
+import { ASSET_DIR, AssetError, hashFileStream, lockPublicationJob, readManifest, resolveAssetPath, writePublicationStatus } from "@/lib/assets";
+import { publishWzFiles } from "@/lib/wz-to-nx";
+import { restartGameServer } from "@/lib/game-control";
+import { resolveArtPath } from "@/lib/art";
 import { parseWzFile, saveWzFile, addReactorToWz } from "@/lib/wz";
 import { generateReactorFrames } from "@/lib/wz/reactor-animator";
 import { generateReactorXml, generateReactorScript } from "@/lib/wz/reactor-builder";
@@ -24,42 +11,39 @@ import type { AnimationStyle } from "@/lib/wz/reactor-animator";
 import type { ScriptTemplate } from "@/lib/wz/reactor-builder";
 
 import { execSync } from "child_process";
-import { Readable } from "stream";
-import { createWriteStream } from "fs";
-import { pipeline } from "stream/promises";
+import { randomUUID } from "crypto";
 import {
   writeFileSync,
+  copyFileSync,
   readFileSync,
   mkdirSync,
   existsSync,
   statSync,
+  rmSync,
 } from "fs";
-import { dirname, join } from "path";
-import { randomUUID } from "crypto";
+import { join } from "path";
 import { tmpdir } from "os";
 
 async function copyFromAssets(fileKey: string, outputPath: string): Promise<void> {
-  const src = join(ASSET_DIR, fileKey);
-  if (!existsSync(src)) throw new Error(`Asset not staged: ${fileKey} (missing in ${ASSET_DIR})`);
-  writeFileSync(outputPath, readFileSync(src));
+  copyFileSync(resolveAssetPath(fileKey), outputPath);
 }
 
-const ASSET_BASE = process.env.ASSET_BASE_URL || "https://buns.asslorde.com";
 
-const STATUS_DIR = process.env.COSMIC_ROOT || "/cosmic";
-const STATUS_FILE = join(STATUS_DIR, "reactor-publish-status.json");
+const STATUS_FILE = join(ASSET_DIR, "jobs", "reactor-publish-status.json");
 
 interface PublishStatus {
+  id: string;
   status: "running" | "done" | "error";
   step: string;
   actions: string[];
   error?: string;
   startedAt: string;
   finishedAt?: string;
+  releaseId?: string;
 }
 
 function writeStatus(s: PublishStatus) {
-  try { writeFileSync(STATUS_FILE, JSON.stringify(s), "utf-8"); } catch {}
+  writePublicationStatus("reactor-publish-status.json", s);
 }
 
 function readStatus(): PublishStatus | null {
@@ -70,15 +54,13 @@ function readStatus(): PublishStatus | null {
 }
 
 async function downloadPng(url: string): Promise<Buffer> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to download ${url}: ${res.status}`);
-  return Buffer.from(await res.arrayBuffer());
+  return readFileSync(resolveArtPath(url));
 }
 
-async function runPublishJob() {
-  const releaseId = randomUUID().slice(0, 8);
-  const workDir = join(tmpdir(), `reactor-publish-${Date.now()}`);
+async function runPublishJob(jobId: string) {
+  const workDir = join(tmpdir(), `reactor-publish-${jobId}`);
   const status: PublishStatus = {
+    id: jobId,
     status: "running",
     step: "Starting...",
     actions: [],
@@ -92,6 +74,7 @@ async function runPublishJob() {
   }
 
   try {
+    const baseReleaseId = readManifest().manifest.releaseId ?? null;
     // 1. Fetch custom reactors
     update("Fetching custom reactors...");
     const rows = await query<any>(
@@ -110,11 +93,8 @@ async function runPublishJob() {
     update("Downloading server WZ files...");
     mkdirSync(workDir, { recursive: true });
     const tarPath = join(workDir, "server-wz.tar.gz");
-    const stagedTar = join(ASSET_DIR, "server-wz.tar.gz");
-    if (!existsSync(stagedTar)) throw new Error(`server-wz.tar.gz not found in asset dir (${ASSET_DIR})`);
-    const tarBuffer = readFileSync(stagedTar);
-    writeFileSync(tarPath, tarBuffer);
-    update("Downloaded", `Downloaded server-wz.tar.gz (${(tarBuffer.length / 1024 / 1024).toFixed(1)}MB)`);
+    copyFileSync(resolveAssetPath("server-wz.tar.gz"), tarPath);
+    update("Loaded", `Loaded server-wz.tar.gz (${(statSync(tarPath).size / 1024 / 1024).toFixed(1)}MB)`);
 
     // 3. Extract
     update("Extracting...");
@@ -137,11 +117,12 @@ async function runPublishJob() {
     }
 
     const processedIds: number[] = [];
+    const sprites = new Map<number, Buffer>();
     for (const row of rows) {
       const reactorId = row.reactor_id;
       update(`Processing reactor ${reactorId} (${row.name})...`);
 
-      // Download idle PNG from R2
+      // Read the verified committed idle PNG.
       let idlePng: Buffer;
       if (row.idle_png_url) {
         idlePng = await downloadPng(row.idle_png_url);
@@ -150,6 +131,7 @@ async function runPublishJob() {
         continue;
       }
       processedIds.push(reactorId);
+      sprites.set(reactorId, idlePng);
 
       // Generate animation frames
       const frames = generateReactorFrames(idlePng, row.animation_style as AnimationStyle);
@@ -195,35 +177,10 @@ async function runPublishJob() {
       `cd "${workDir}" && COPYFILE_DISABLE=1 tar czf "${newTarPath}" --exclude='.DS_Store' --exclude='._*' ${packDirs.join(" ")}`,
       { timeout: 300000 }
     );
-    const newTarBuffer = readFileSync(newTarPath);
-    update("Repacked", `Repacked (${(newTarBuffer.length / 1024 / 1024).toFixed(1)}MB)`);
-
-    // 6. Stage into asset dir
-    update("Staging into asset dir...");
-    mkdirSync(dirname(resolveStagingPath(releaseId, "server-wz.tar.gz")), { recursive: true });
-    writeFileSync(resolveStagingPath(releaseId, "server-wz.tar.gz"), readFileSync(newTarPath));
-    update("Staged", "Staged server-wz.tar.gz into asset dir");
-
-    // 7. Mark only reactors that actually went through the pipeline (had an
-    // idle PNG). Rows skipped above have no server XML and no client sprite —
-    // flagging them published would let the placement gate pass them through
-    // and break maps. See 2026-04-19 Henesys/Kerning incident.
-    if (processedIds.length > 0) {
-      await execute(
-        `UPDATE custom_reactors SET published = 1 WHERE reactor_id IN (${processedIds.join(",")})`
-      );
-    }
-
-    // 8. Version marker
-    const version = new Date().toISOString();
-    mkdirSync(ASSET_DIR, { recursive: true });
-    writeFileSync(join(ASSET_DIR, "server-wz.version"), version);
-
-    // 9. Patch client Reactor.wz + upload to R2 + bump manifest
-    const manifestUpdates: Record<string, { hash?: string; size?: number }> = {};
-    {
-      try {
-        update("Downloading Reactor.wz from R2 (~54MB)...");
+    const tarExpectation = await hashFileStream(newTarPath);
+    update("Repacked", `Repacked (${(tarExpectation.size / 1024 / 1024).toFixed(1)}MB)`);
+    if (!processedIds.length) throw new Error("No reactors have publishable sprites");
+        update("Loading committed Reactor.wz (~54MB)...");
         const reactorWzPath = join(workDir, "Reactor.wz");
         await copyFromAssets("Reactor.wz", reactorWzPath);
         update("Downloaded Reactor.wz", `Downloaded (${(statSync(reactorWzPath).size / 1024 / 1024).toFixed(0)}MB)`);
@@ -231,19 +188,8 @@ async function runPublishJob() {
         update("Patching Reactor.wz with custom reactors...");
         const reactorWz = parseWzFile(reactorWzPath);
 
-        for (const row of rows) {
-          let idlePng: Buffer | undefined;
-          // Try local file first, then R2
-          const localPng = join("/tmp", "reactor-sprites", `reactor-${row.reactor_id}-idle.png`);
-          if (existsSync(localPng)) {
-            idlePng = readFileSync(localPng);
-          } else if (row.idle_png_url) {
-            try {
-              const res = await fetch(row.idle_png_url);
-              if (res.ok) idlePng = Buffer.from(await res.arrayBuffer());
-            } catch {}
-          }
-          if (!idlePng) continue;
+        for (const row of rows.filter((row) => processedIds.includes(row.reactor_id))) {
+          const idlePng = sprites.get(row.reactor_id)!;
 
           const frames = generateReactorFrames(idlePng, row.animation_style as AnimationStyle);
           addReactorToWz(reactorWz, {
@@ -266,91 +212,53 @@ async function runPublishJob() {
         saveWzFile(reactorWz, patchedPath);
         update("Patched Reactor.wz", `Patched with ${rows.length} custom reactor(s)`);
 
-        update("Staging Reactor.wz into release...");
-        mkdirSync(dirname(resolveStagingPath(releaseId, "Reactor.wz")), { recursive: true });
-        writeFileSync(resolveStagingPath(releaseId, "Reactor.wz"), readFileSync(patchedPath));
-        manifestUpdates["Reactor.wz"] = await hashFileStream(patchedPath);
-        update("Staged Reactor.wz", "Staged patched Reactor.wz into release");
-
-        // Verify staged bytes (tar + WZ) against expected hashes, promote
-        // atomically, then record the manifest. Wrong hash leaves live
-        // unchanged. Previous live bytes retained under releases/prev-<id>/.
-        update("Verifying staged bytes...");
-        acquirePublishLock();
-        try {
-          const tarHash = await hashFileStream(newTarPath);
-          await verifyStagedBytes(resolveStagingPath(releaseId, "server-wz.tar.gz"), tarHash);
-          for (const [name, exp] of Object.entries(manifestUpdates)) {
-            if (exp.hash !== undefined && exp.size !== undefined) {
-              await verifyStagedBytes(resolveStagingPath(releaseId, name), { hash: exp.hash, size: exp.size });
-            }
-          }
-          update("Verified", "Staged bytes match expected hashes");
-          promoteStagedFile(releaseId, "server-wz.tar.gz");
-          writeFileSync(resolveAssetPath("server-wz.version"), version);
-          update("Promoted server tar", "Promoted server-wz.tar.gz + version marker to live");
-          const { manifest }: ManifestRead = readManifest();
-          for (const file of manifest.files || []) {
-            const upd = manifestUpdates[file.name];
-            if (upd && upd.hash !== undefined && upd.size !== undefined) {
-              const promoted = promoteStagedFile(releaseId, file.name);
-              file.hash = promoted.hash;
-              file.size = promoted.size;
-              file.url = assetUrl(file.name);
-            }
-          }
-          manifest.version = bumpPatch(manifest.version);
-          manifest.updatedAt = new Date().toISOString();
-          manifest.downloadBase = `${ASSET_BASE}/client/`;
-          writeManifestAtomic(manifest);
-          update("Manifest updated", `Launcher manifest → v${manifest.version}`);
-          // Trigger WZ→NX conversion for the browser client (after promotion).
-          const changedWz = Object.keys(manifestUpdates).filter((n) => n.endsWith(".wz"));
-          if (changedWz.length > 0) {
-            dispatchWzToNx(changedWz).catch(() => {});
-            update("Triggering WZ→NX conversion", `Dispatched wz-to-nx for: ${changedWz.join(", ")}`);
-          }
-        } finally {
-          releasePublishLock();
-        }
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        update("Client WZ warning", `Client WZ patching failed: ${message}. Server-side publish still succeeded.`);
-      }
-    }
-
-    // Game-server restart is owner-operated (LXC topology has no Fly
-    // Machines API). Publish stops here.
-    update("Restart skipped", "Game-server restart is manual on this topology — restart manually to pick up new WZ.");
+    const released = await publishWzFiles([
+      { key: "server-wz.tar.gz", path: newTarPath, ...tarExpectation },
+      { key: "Reactor.wz", path: patchedPath, ...await hashFileStream(patchedPath) },
+    ], processedIds.map((id) => ({
+      op: "import_image" as const, target_wz: "Reactor.wz",
+      target_image: `${String(id).padStart(7, "0")}.img`,
+    })), { baseReleaseId });
+    status.releaseId = released.releaseId;
+    update("Applying server release", `Committed release ${released.releaseId}`);
+    const applied = await restartGameServer();
+    if (!applied.success) throw new Error(applied.error || "Server apply failed");
+    await execute(
+      `UPDATE custom_reactors SET published = 1 WHERE reactor_id IN (${processedIds.map(() => "?").join(",")})`,
+      processedIds,
+    );
 
     status.status = "done";
     status.step = "Complete";
     status.finishedAt = new Date().toISOString();
-    status.actions.push(`Published ${rows.length} reactor(s) — client WZ patched, manifest bumped, server restarted.`);
+    status.actions.push(`Published ${processedIds.length} reactor(s); release ${released.releaseId} committed and server applied.`);
     writeStatus(status);
 
     // Cleanup
-    try { execSync(`rm -rf "${workDir}"`, { timeout: 10000 }); } catch {}
+    rmSync(workDir, { recursive: true, force: true });
   } catch (err: any) {
     status.status = "error";
     status.error = err.message;
     status.finishedAt = new Date().toISOString();
     writeStatus(status);
-    try { execSync(`rm -rf "${workDir}"`, { timeout: 10000 }); } catch {}
+    rmSync(workDir, { recursive: true, force: true });
   }
 }
 
 // POST: Start publish job
 export async function POST() {
-  const current = readStatus();
-  if (current?.status === "running") {
-    return NextResponse.json({ error: "Publish already running" }, { status: 409 });
+  const jobId = randomUUID();
+  let unlock: (() => void) | undefined;
+  try {
+    unlock = await lockPublicationJob("reactor-publish-status.json");
+    writeStatus({ id: jobId, status: "running", step: "Starting...", actions: [], startedAt: new Date().toISOString() });
+  } catch (error) {
+    unlock?.();
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: error instanceof AssetError ? error.status : 500 });
   }
+  runPublishJob(jobId).catch((error) => console.error("Reactor publication failed:", error)).finally(unlock);
 
-  // Fire and forget
-  runPublishJob();
-
-  return NextResponse.json({ status: "started" });
+  return NextResponse.json({ status: "started", id: jobId });
 }
 
 // GET: Check publish status

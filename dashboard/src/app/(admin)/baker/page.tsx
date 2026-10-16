@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { hashBrowserFile } from "@/lib/hash-file";
 
 interface BakerConfig {
   enabled: number;
@@ -83,10 +84,20 @@ export default function BakerPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    await fetch("/api/admin/baker/sprite", { method: "POST", body: formData });
-    setUploading(false);
+    try {
+      const expected = await hashBrowserFile(file);
+      const formData = new FormData();
+      formData.append("expected", JSON.stringify([{ key: "assets/npc/baker-sprite.png", ...expected }]));
+      formData.append("file", file);
+      const response = await fetch("/api/admin/baker/sprite", { method: "POST", body: formData });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+      setPublishResult(`Sprite committed in release ${result.releaseId}. Publish Baker to apply its WZ/server changes.`);
+    } catch (error) {
+      setPublishResult(`Sprite upload failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setUploading(false);
+    }
   }
 
   if (!config) return <div className="p-8 text-text-secondary">Loading...</div>;

@@ -2069,7 +2069,7 @@ export function buildEtcBucketImg(items: EtcItemEntry[], ks: Buffer): Buffer {
   w.writeCompressedInt(items.length);
 
   for (const item of items) {
-    w.writeStringBlock(String(item.itemId), 0x00, 0x01);
+    w.writeStringBlock(padItemId(item.itemId), 0x00, 0x01);
     w.writeByte(9);
     const itemLenPos = w.pos;
     w.writeInt32(0);
@@ -2088,12 +2088,13 @@ export function buildEtcBucketImg(items: EtcItemEntry[], ks: Buffer): Buffer {
     const price = item.price ?? 0;
     const quest = item.quest ?? 0;
     const childCount =
-      (item.iconPng ? 1 : 0) + 2 + (quest ? 1 : 0); // icon? + slotMax + price + quest?
+      (item.iconPng ? 2 : 0) + 2 + (quest ? 1 : 0); // inventory/drop icons + slotMax + price + quest?
     w.writeCompressedInt(childCount);
 
     if (item.iconPng) {
       const icon = decodePngToIcon(item.iconPng);
       writeIconCanvas(w, "icon", icon, 0, icon.height);
+      writeIconCanvas(w, "iconRaw", icon, 0, icon.height);
     }
     w.writeStringBlock("slotMax", 0x00, 0x01);
     w.writeByte(3);

@@ -2,6 +2,8 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { execute, query } from "@/lib/db";
+import { readFileSync } from "node:fs";
+import { timingSafeEqual } from "node:crypto";
 
 const COOKIE_NAME = "buns_session";
 const JWT_EXPIRY = "7d";
@@ -104,6 +106,26 @@ export async function verifyToken(token: string) {
   } catch {
     return null;
   }
+}
+
+export function privateApiSecret(): string {
+  const secret = process.env.GM_API_SECRET || (process.env.GM_SECRET_FILE
+    ? readFileSync(process.env.GM_SECRET_FILE, "utf8").trim() : "");
+  if (!secret) throw new Error("Private API secret is not configured");
+  return secret;
+}
+
+/** Header-only Node authorization, before consuming any streamed upload body. */
+export async function isPrivateRequestAuthorized(request: Request): Promise<boolean> {
+  const supplied = request.headers.get("x-gm-secret");
+  if (supplied) {
+    const expected = Buffer.from(privateApiSecret());
+    const actual = Buffer.from(supplied);
+    if (actual.length === expected.length && timingSafeEqual(actual, expected)) return true;
+  }
+  const token = request.headers.get("cookie")?.split(";").map((part) => part.trim())
+    .find((part) => part.startsWith(`${COOKIE_NAME}=`))?.slice(COOKIE_NAME.length + 1);
+  return !!token && !!await verifyToken(token);
 }
 
 export async function getSession() {

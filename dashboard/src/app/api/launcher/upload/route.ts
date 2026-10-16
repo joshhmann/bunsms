@@ -1,77 +1,36 @@
 import { NextResponse } from "next/server";
-import { existsSync, readFileSync } from "fs";
-import { randomUUID } from "crypto";
-import { resolveAssetPath, storeStagedStream } from "@/lib/assets";
+import { AssetError, beginRelease, publishRelease, readManifest, stageFile } from "@/lib/assets";
+import { stageMultipart } from "@/lib/asset-multipart";
+import { isPrivateRequestAuthorized } from "@/lib/auth";
 
-// POST: stage client-asset bytes into a release staging dir
-// (multipart form data or JSON with server-filesystem paths).
-// Staged bytes are NOT live until verified + promoted via the manifest
-// `register` mode (expected-hash check, atomic promotion, version bump).
 export async function POST(request: Request) {
-  const contentType = request.headers.get("content-type") || "";
-  const url = new URL(request.url);
-  const releaseId = url.searchParams.get("releaseId") || randomUUID().slice(0, 8);
-
-  // JSON mode: stage files already on the server filesystem (seeded/patched dir).
-  if (contentType.includes("application/json")) {
-    const body = await request.json();
-
-    if (!body.files || !Array.isArray(body.files)) {
-      return NextResponse.json({ error: "No files provided" }, { status: 400 });
-    }
-
-    const results = [];
-    for (const file of body.files) {
-      if (file.path && existsSync(file.path)) {
-        const name = file.name;
-        if (!name) {
-          return NextResponse.json({ error: "file.name is required" }, { status: 400 });
-        }
-        try {
-          resolveAssetPath(name);
-        } catch {
-          return NextResponse.json({ error: `Invalid asset key: ${name}` }, { status: 400 });
-        }
-        const data = readFileSync(file.path);
-        const blob = new Blob([new Uint8Array(data)]);
-        const staged = await storeStagedStream(
-          releaseId,
-          name,
-          blob.stream() as ReadableStream<Uint8Array>
-        );
-        results.push({ name, staged });
-      }
-    }
-
-    return NextResponse.json({ releaseId, results });
-  }
-
-  // Multipart mode: direct file upload, streamed chunk-by-chunk to a staging
-  // path (never live, partial cleaned on failure).
   try {
-    const formData = await request.formData();
-    const results = [];
-
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        const name = value.name || key;
-        try {
-          resolveAssetPath(name);
-        } catch {
-          return NextResponse.json({ error: `Invalid asset key: ${name}` }, { status: 400 });
-        }
-        const staged = await storeStagedStream(
-          releaseId,
-          name,
-          value.stream() as ReadableStream<Uint8Array>
-        );
-        results.push({ name, staged });
+    if (!await isPrivateRequestAuthorized(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (request.headers.get("content-type")?.includes("application/json")) {
+      const body = await request.json();
+      if (!Array.isArray(body.files) || !body.files.length) throw new AssetError("At least one source file is required");
+      const allowed = new Set(readManifest().manifest.files.map((file) => file.name));
+      allowed.add("server-wz.tar.gz"); allowed.add("server-wz-baseline.tar.gz");
+      const releaseId = body.releaseId || beginRelease(body.baseReleaseId !== undefined ? { baseReleaseId: body.baseReleaseId } : {});
+      for (const file of body.files) {
+        if (!file || !allowed.has(file.name) || typeof file.path !== "string") throw new AssetError("A tracked source name and path are required");
+        await stageFile(releaseId, file.name, file.path);
       }
+      return NextResponse.json({ releaseId, results: body.files.map((file: { name: string }) => ({ name: file.name, staged: true })) });
     }
-
-    return NextResponse.json({ releaseId, results });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    const upload = await stageMultipart(request);
+    if (upload.fields.mode === "art") {
+      if (!upload.expected.length || upload.keys.some((key) => !/^(custom-items|assets|reactors)\//.test(key))) {
+        throw new AssetError("Art upload requires expected metadata and a generated-art key");
+      }
+      const result = await publishRelease(upload.releaseId, upload.expected);
+      return NextResponse.json({ success: true, releaseId: result.releaseId, assets: result.assets });
+    }
+    const allowed = new Set(readManifest().manifest.files.map((file) => file.name));
+    allowed.add("server-wz.tar.gz"); allowed.add("server-wz-baseline.tar.gz");
+    if (upload.keys.some((key) => !allowed.has(key))) throw new AssetError("Only tracked launcher/server files may be staged here");
+    return NextResponse.json({ releaseId: upload.releaseId, results: upload.keys.map((name) => ({ name, staged: true })) });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: error instanceof AssetError ? error.status : 500 });
   }
 }

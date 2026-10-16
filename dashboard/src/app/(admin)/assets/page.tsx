@@ -24,6 +24,7 @@ interface Asset {
 }
 
 interface PublishStatus {
+  id?: string;
   status: "idle" | "running" | "done" | "error";
   step?: string;
   actions?: string[];
@@ -79,6 +80,7 @@ export default function AssetsPage() {
 
   const [publishStatus, setPublishStatus] = useState<PublishStatus>({ status: "idle" });
   const [publishing, setPublishing] = useState(false);
+  const publishJobId = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,12 +112,15 @@ export default function AssetsPage() {
 
   // Poll publish status while running
   useEffect(() => {
+    if (!publishing) return;
     let timer: ReturnType<typeof setInterval> | null = null;
     const tick = async () => {
+      if (!publishJobId.current) return;
       try {
         const res = await fetch("/api/admin/assets/publish");
-        if (!res.ok) return;
+        if (!res.ok) throw new Error(`Publication status HTTP ${res.status}`);
         const data: PublishStatus = await res.json();
+        if (data.id !== publishJobId.current) throw new Error("Publication status does not acknowledge this job");
         setPublishStatus(data);
         if (data.status !== "running" && timer) {
           clearInterval(timer);
@@ -123,14 +128,16 @@ export default function AssetsPage() {
           setPublishing(false);
           load();
         }
-      } catch {}
+      } catch (error) {
+        clearInterval(timer ?? undefined);
+        setPublishing(false);
+        setPublishStatus({ status: "error", error: error instanceof Error ? error.message : "Publication status failed" });
+      }
     };
     tick();
-    if (publishing) {
-      timer = setInterval(tick, 2000);
-    }
+    timer = setInterval(tick, 2000);
     return () => {
-      if (timer) clearInterval(timer);
+      clearInterval(timer ?? undefined);
     };
   }, [publishing, load]);
 
@@ -141,17 +148,17 @@ export default function AssetsPage() {
       )
     )
       return;
+    publishJobId.current = null;
     setPublishing(true);
     setPublishStatus({ status: "running", step: "Starting..." });
     try {
       const res = await fetch("/api/admin/assets/publish", { method: "POST" });
-      if (!res.ok) {
-        setPublishing(false);
-        const data = await res.json().catch(() => ({}));
-        alert(data.error || `HTTP ${res.status}`);
-      }
+      const data = await res.json();
+      if (!res.ok || data.error || !data.id) throw new Error(data.error || `Publication did not start (HTTP ${res.status})`);
+      publishJobId.current = data.id;
     } catch (e: any) {
       setPublishing(false);
+      setPublishStatus({ status: "error", error: e.message });
       alert(e.message);
     }
   };
