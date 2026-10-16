@@ -56,7 +56,7 @@ public final class BotAttackEffects {
      * @param speed        the attack-speed byte (2..9)
      * @param hitDelay     ms before the damage numbers land (also the drop delay)
      */
-    public static boolean meleeStrike(Character bot, Map<Monster, List<Integer>> hits, int skillId,
+    public static boolean meleeStrike(Character bot, Map<Monster, List<Long>> hits, int skillId,
                                       int skillLevel, int bodyActionId, int facingMask, int speed, short hitDelay) {
         if (notReady(bot, hits)) {
             return false;
@@ -67,7 +67,7 @@ public final class BotAttackEffects {
     }
 
     /* Ranged version (bow/crossbow/gun/claw): like melee, plus the flying projectile. */
-    public static boolean rangedStrike(Character bot, Map<Monster, List<Integer>> hits, int skillId,
+    public static boolean rangedStrike(Character bot, Map<Monster, List<Long>> hits, int skillId,
                                        int skillLevel, int projectile, int bodyActionId, int facingMask,
                                        int speed, short hitDelay) {
         if (notReady(bot, hits)) {
@@ -83,7 +83,7 @@ public final class BotAttackEffects {
      * int is -1 for normal skills but a real value for keydown CHARGE skills (Big Bang) - the
      * client over-reads the packet and crashes if a charge skill is sent without it.
      */
-    public static boolean magicStrike(Character bot, Map<Monster, List<Integer>> hits, int skillId,
+    public static boolean magicStrike(Character bot, Map<Monster, List<Long>> hits, int skillId,
                                       int skillLevel, int bodyActionId, int facingMask, int speed, short hitDelay) {
         if (notReady(bot, hits)) {
             return false;
@@ -94,20 +94,20 @@ public final class BotAttackEffects {
         return broadcastAndApply(bot, packet, hits, hitDelay);
     }
 
-    private static boolean notReady(Character bot, Map<Monster, List<Integer>> hits) {
+    private static boolean notReady(Character bot, Map<Monster, List<Long>> hits) {
         return bot == null || bot.getMap() == null || hits == null || hits.isEmpty();
     }
 
     /* numAttacked (mobs, high nibble) | numDamage (lines per mob, low nibble). */
-    private static int numAttackedAndDamage(Map<Monster, List<Integer>> hits) {
+    private static int numAttackedAndDamage(Map<Monster, List<Long>> hits) {
         int numDamage = hits.values().iterator().next().size();
         return (hits.size() << 4) | numDamage;
     }
 
     /* Packet target map: each mob's object id -> its damage line(s). */
-    private static Map<Integer, AttackTarget> toTargets(Map<Monster, List<Integer>> hits, short hitDelay) {
+    private static Map<Integer, AttackTarget> toTargets(Map<Monster, List<Long>> hits, short hitDelay) {
         Map<Integer, AttackTarget> targets = new HashMap<>();
-        for (Map.Entry<Monster, List<Integer>> hit : hits.entrySet()) {
+        for (Map.Entry<Monster, List<Long>> hit : hits.entrySet()) {
             targets.put(hit.getKey().getObjectId(), new AttackTarget(hitDelay, hit.getValue()));
         }
         return targets;
@@ -115,16 +115,18 @@ public final class BotAttackEffects {
 
     /* Broadcast once, then apply each mob's summed damage + loot. True if any mob died. */
     private static boolean broadcastAndApply(Character bot, Packet packet,
-                                             Map<Monster, List<Integer>> hits, short hitDelay) {
+                                             Map<Monster, List<Long>> hits, short hitDelay) {
         bot.getMap().broadcastMessage(bot, packet, /* repeatToSource */ false);
         GCMovement.markAlerted(bot); // hold the 5s ALERT pose so the bot's own idle/move broadcasts don't cancel it
         boolean anyKilled = false;
-        for (Map.Entry<Monster, List<Integer>> hit : hits.entrySet()) {
-            int total = 0;
-            for (int line : hit.getValue()) {
-                total += BotAttackData.decodeDamageLine(line); // crit lines arrive negative-encoded
+        for (Map.Entry<Monster, List<Long>> hit : hits.entrySet()) {
+            // Ticket #12: lines are long (negative == crit); mob HP is still
+            // int, so the applied sum clamps at the int boundary.
+            long total = 0;
+            for (Long line : hit.getValue()) {
+                total += line == null ? 0L : Math.abs(line); // crit lines arrive negative-encoded
             }
-            if (applyDamageAndLoot(bot, hit.getKey(), total, hitDelay)) {
+            if (applyDamageAndLoot(bot, hit.getKey(), (int) Math.min(total, Integer.MAX_VALUE), hitDelay)) {
                 anyKilled = true;
             }
         }

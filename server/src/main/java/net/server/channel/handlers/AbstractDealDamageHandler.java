@@ -149,8 +149,53 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         }
     }
 
-    // TODO: add position
-    public record AttackTarget(short delay, List<Integer> damageLines) {}
+    // Ticket #12 (damage cap -> long, server half): per-line damage is a 64-bit
+    // magnitude with the crit flag carried as a negative sign (legacy v83 crit
+    // encoding is -INT_MAX + raw - 1; overflow lines keep the INT_MAX sentinel
+    // semantics). Negative values here mean "crit", never "heal".
+    public record AttackTarget(short delay, List<Long> damageLines) {}
+
+    // Clamp a long magnitude to the int range still used by HP/aggro/packet-int
+    // boundaries. INT_MAX stays the overflow sentinel on the wire.
+    protected static int clampToInt(long value) {
+        if (value > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        if (value < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        return (int) value;
+    }
+
+    // Ticket #12, C2S half (paired release with the DLL client hook): a
+    // long-capable client appends the real 64-bit line (little-endian, positive
+    // magnitude) after each vanilla damage int, so each line is 12 bytes
+    // instead of 4. A legacy/vanilla client sends int32 lines only. The format
+    // is negotiated once per packet from its total length (see parseDamage);
+    // the 8-byte real is NEVER read from a packet that does not carry it
+    // (spectator/browser int32 packets are left alone). Returns the signed
+    // line: negative == crit, magnitude == real damage.
+    protected static long readDamageLine(InPacket p, boolean longLines) {
+        int raw = p.readInt();
+        if (longLines) {
+            long real = p.readLong();
+            if (real > 0) {
+                return raw < 0 ? -real : real;
+            }
+            // Non-positive real: fall through to the legacy int32 below.
+        }
+        return decodeLegacyLine(raw);
+    }
+
+    // Legacy v83 crit encoding: crit lines are stored negative
+    // (-INT_MAX + raw - 1); the sign means "crit", never "heal".
+    private static long decodeLegacyLine(int raw) {
+        long damage = raw;
+        if (damage < 0) {
+            damage += Integer.MAX_VALUE;
+        }
+        return raw < 0 ? -damage : damage;
+    }
 
     protected void applyAttack(AttackInfo attack, final Character player, int attackCount) {
         final MapleMap map = player.getMap();
@@ -212,9 +257,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             if (!player.isAlive()) {
                 return;
             }
-
-            int totDamage = 0;
-
+            // Ticket #12: totals are long so two INT_MAX-sentinel lines cannot
+            // wrap negative; int boundaries (HP/aggro/addHP) clamp at the edge.
+            long totDamage = 0;
             if (attack.skill == ChiefBandit.MESO_EXPLOSION) {
                 removeExplodedMesos(map, attack);
             }
@@ -254,24 +299,24 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         monster.refreshMobPosition();
                     }
 
-                    int totDamageToOneMonster = 0;
-                    List<Integer> onedList = target.getValue().damageLines();
+                    long totDamageToOneMonster = 0;
+                    List<Long> onedList = target.getValue().damageLines();
 
                     if (attack.magic) { // thanks BHB, Alex (CanIGetaPR) for noticing no immunity status check here
                         if (monster.isBuffed(MonsterStatus.MAGIC_IMMUNITY)) {
-                            Collections.fill(onedList, 1);
+                            Collections.fill(onedList, 1L);
                         }
                     } else {
                         if (monster.isBuffed(MonsterStatus.WEAPON_IMMUNITY)) {
-                            Collections.fill(onedList, 1);
+                            Collections.fill(onedList, 1L);
                         }
                     }
 
                     if (MobId.isDojoBoss(monster.getId())) {
                         if (attack.skill == 1009 || attack.skill == 10001009 || attack.skill == 20001009) {
-                            int dmgLimit = (int) Math.ceil(0.3 * monster.getMaxHp());
-                            List<Integer> _onedList = new LinkedList<>();
-                            for (Integer i : onedList) {
+                            long dmgLimit = (long) Math.ceil(0.3 * monster.getMaxHp());
+                            List<Long> _onedList = new LinkedList<>();
+                            for (Long i : onedList) {
                                 _onedList.add(i < dmgLimit ? i : dmgLimit);
                             }
 
@@ -279,31 +324,25 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
                     }
 
-                    for (Integer eachd : onedList) {
-                        if (eachd < 0) {
-                            eachd += Integer.MAX_VALUE;
-                        }
-                        totDamageToOneMonster += eachd;
+                    // Lines arrive decoded (negative == crit, set in parseDamage);
+                    // HP applies the positive magnitude.
+                    for (Long eachd : onedList) {
+                        long trackedDamage = eachd == null ? 0L : Math.abs(eachd);
+                        totDamageToOneMonster += trackedDamage;
                     }
                     totDamage += totDamageToOneMonster;
-                    monster.aggroMonsterDamage(player, totDamageToOneMonster);
+                    monster.aggroMonsterDamage(player, clampToInt(totDamageToOneMonster));
                     if (player.getBuffedValue(BuffStat.PICKPOCKET) != null && (attack.skill == 0 || attack.skill == Rogue.DOUBLE_STAB || attack.skill == Bandit.SAVAGE_BLOW || attack.skill == ChiefBandit.ASSAULTER || attack.skill == ChiefBandit.BAND_OF_THIEVES || attack.skill == Shadower.ASSASSINATE || attack.skill == Shadower.TAUNT || attack.skill == Shadower.BOOMERANG_STEP)) {
                         Skill pickpocket = SkillFactory.getSkill(ChiefBandit.PICKPOCKET);
                         int picklv = (player.isGM()) ? pickpocket.getMaxLevel() : player.getSkillLevel(pickpocket);
                         if (picklv > 0) {
                             short delay = 0;
                             final int maxmeso = player.getBuffedValue(BuffStat.PICKPOCKET);
-                            for (Integer eachd : onedList) {
-                                eachd += Integer.MAX_VALUE;
+                            for (Long eachd : onedList) {
+                                // Decoded magnitude; negative lines are crits.
+                                long eachdf = eachd == null ? 0L : Math.abs(eachd);
 
                                 if (pickpocket.getEffect(picklv).makeChanceResult()) {
-                                    final int eachdf;
-                                    if (eachd < 0) {
-                                        eachdf = eachd + Integer.MAX_VALUE;
-                                    } else {
-                                        eachdf = eachd;
-                                    }
-
                                     int meso = Math.min((int) Math.max(((double) eachdf / (double) 20000) * (double) maxmeso, 1), maxmeso);
                                     Point position = new Point((int) (monster.getPosition().getX() + Randomizer.nextInt(100) - 50), (int) (monster.getPosition().getY()));
                                     map.spawnMesoDrop(meso, position, monster, player, true, (byte) 2, delay);
@@ -312,7 +351,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             }
                         }
                     } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE || attack.skill == Assassin.DRAIN) {
-                        player.addHP(Math.min(monster.getMaxHp(), Math.min((int) ((double) totDamage * (double) SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100.0), player.getCurrentMaxHp() / 2)));
+                        player.addHP(Math.min(monster.getMaxHp(), Math.min(clampToInt(totDamage * SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100L), player.getCurrentMaxHp() / 2)));
                     } else if (attack.skill == Bandit.STEAL) {
                         Skill steal = SkillFactory.getSkill(Bandit.STEAL);
                         if (monster.getStolen().size() < 1) { // One steal per mob <3
@@ -422,7 +461,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         Skill skill;
                         if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
                             skill = SkillFactory.getSkill(21100005);
-                            player.addHP(((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 100));
+                            player.addHP(clampToInt((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 100));
                         }
                     } else if (job == 412 || job == 422 || job == 1411) {
                         Skill type = SkillFactory.getSkill(player.getJob().getId() == 412 ? 4120005 : (player.getJob().getId() == 1411 ? 14110004 : 4220005));
@@ -515,10 +554,13 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
                     } else {
                         if (attack.skill == Aran.BODY_PRESSURE) {
-                            map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), totDamageToOneMonster));
+                            map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), clampToInt(totDamageToOneMonster)));
                         }
 
-                        map.damageMonster(player, monster, totDamageToOneMonster, target.getValue().delay());
+                        // Mob HP is int (AtomicInteger) in this codebase, so the
+                        // applied damage clamps here; the long half lives in the
+                        // parsed/broadcast totals until the mob-HP-long project.
+                        map.damageMonster(player, monster, clampToInt(totDamageToOneMonster), target.getValue().delay());
                     }
                     if (monster.isBuffed(MonsterStatus.WEAPON_REFLECT) && !attack.magic) {
                         for (MobSkillId msId : monster.getSkills()) {
@@ -753,13 +795,27 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 calcDmgMax = fixed;
             }
         }
+        // Ticket #12: the per-line long is negotiated once per packet from its
+        // exact remaining length. A long-capable client widens every damage
+        // line from 4 to 12 bytes (vanilla int + real long); everything else in
+        // the target block is fixed-size (oid 4 + skip 4 + two positions 4+4 +
+        // delay 2 + trailer 4, plus the Poison Bomb tail when present).
+        // Legacy/vanilla int32 packets (including spectator/browser traffic)
+        // match the 4-byte form and are NEVER reinterpreted; anything that
+        // matches neither form falls back to legacy so the stream is never
+        // over-read.
+        int totalLines = ret.numAttacked * ret.numDamage;
+        int perTargetOverhead = 4 + 4 + 4 + 4 + 2 + 4;
+        int tailBytes = ret.skill == NightWalker.POISON_BOMB ? 8 : 0;
+        long longFormBytes = (long) perTargetOverhead * ret.numAttacked + 12L * totalLines + tailBytes;
+        boolean longLines = totalLines > 0 && p.available() == longFormBytes;
         for (int i = 0; i < ret.numAttacked; i++) {
             int oid = p.readInt();
             p.skip(4);
             Point curPos = p.readPos();
             Point nextPos = p.readPos();
             short delay = p.readShort();
-            List<Integer> damageLines = new ArrayList<>();
+            List<Long> damageLines = new ArrayList<>();
             final Monster monster = chr.getMap().getMonsterByOid(oid);
             if (chr.getBuffEffect(BuffStat.WK_CHARGE) != null) {
                 // Charge, so now we need to check elemental effectiveness
@@ -831,7 +887,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
             }
 
             for (int j = 0; j < ret.numDamage; j++) {
-                int damage = p.readInt();
+                long damage = readDamageLine(p, longLines);
                 long hitDmgMax = calcDmgMax;
                 if (ret.skill == Buccaneer.BARRAGE || ret.skill == ThunderBreaker.BARRAGE) {
                     if (j > 3) {
@@ -859,22 +915,23 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     maxWithCrit *= 2;
                 }
 
-                // Warn if the damage is over 1.5x what we calculated above.
-                if (damage > maxWithCrit * 1.5) {
-                    AutobanFactory.DAMAGE_HACK.alert(chr, "DMG: " + damage + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
-                }
+                // Ticket #12: magnitude DAMAGE_HACK checks are removed. The
+                // Cosmic MaxDMG guess cannot model uncapped lines, so every
+                // legit overflow hit logged "DMG: ... MaxDMG: ..." spam. Only
+                // the "too many lines" check below stays.
+                long magnitude = Math.abs(damage);
 
-                // Add a ab point if its over 5x what we calculated.
-                if (damage > maxWithCrit * 5) {
-                    AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "DMG: " + damage + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
-                }
-
-                if (ret.skill == Marksman.SNIPE || (canCrit && damage > hitDmgMax)) {
+                // Keep the crit display encoding on the stored line (negative ==
+                // crit). Long lines already carry the sign from readDamageLine;
+                // legacy int32 lines encode crits that beat the single-hit max.
+                if (ret.skill == Marksman.SNIPE) {
+                    damage = magnitude;
+                } else if (!longLines && canCrit && magnitude > hitDmgMax) {
                     // If the skill is a crit, inverse the damage to make it show up on clients.
-                    damage = -Integer.MAX_VALUE + damage - 1;
+                    damage = -(Integer.MAX_VALUE - magnitude + 1);
                 }
 
-                if(effect != null) {
+                if (effect != null) {
                     int maxattack = Math.max(effect.getBulletCount(), effect.getAttackCount());
                     if (shadowPartner) {
                         maxattack = maxattack * 2;
@@ -898,20 +955,24 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         return ret;
     }
 
+    // Meso explosion C2S stays readInt-only: the client encode path for this
+    // skill does not append longs (IMPLEMENTATION.md section 6). S2C still
+    // writes int+long uniformly (see PacketCreator.addAttackBody), and the
+    // long half is the int value widened.
     private AttackInfo parseMesoExplosion(InPacket p, AttackInfo attackInfo) {
         p.skip(6);
 
-        Map<Integer, List<Integer>> targetDamage = new HashMap<>();
+        Map<Integer, List<Long>> targetDamage = new HashMap<>();
         for (int i = 0; i < attackInfo.numAttacked; i++) {
             int mobOid = p.readInt();
             p.skip(4);
             Point curPos = p.readPos();
             Point nextPos = p.readPos();
             int damageLines = p.readByte();
-            List<Integer> allDamageNumbers = new ArrayList<>();
+            List<Long> allDamageNumbers = new ArrayList<>();
             for (int j = 0; j < damageLines; j++) {
                 int damage = p.readInt();
-                allDamageNumbers.add(damage);
+                allDamageNumbers.add((long) damage); // still readInt only
             }
             p.skip(4);
             targetDamage.put(mobOid, allDamageNumbers);

@@ -237,17 +237,17 @@ public final class BotAttackDriver {
         int linesPerMob = shadowDoubled(bot, profile.numDamage);
         double critChance = BotAttackConfig.critChanceFor(bot.getJob());
         ThreadLocalRandom rng = ThreadLocalRandom.current();
-        Map<Monster, List<Integer>> hits = new LinkedHashMap<>();
+        Map<Monster, List<Long>> hits = new LinkedHashMap<>();
         int reported = 0;
         for (Monster mob : targets) {
-            List<Integer> lines = new ArrayList<>(linesPerMob);
+            List<Long> lines = new ArrayList<>(linesPerMob);
             for (int i = 0; i < linesPerMob; i++) {
                 int dmg = profile.rollDamage(bot.getLevel(), bot.getJob());
                 if (rng.nextDouble() < critChance) {
                     dmg = (int) Math.round(dmg * BotAttackConfig.CRIT_MULTIPLIER);
-                    lines.add(BotAttackData.encodeCritLine(dmg)); // negative -> client shows a crit
+                    lines.add((long) BotAttackData.encodeCritLine(dmg)); // negative -> client shows a crit
                 } else {
-                    lines.add(dmg);
+                    lines.add((long) dmg);
                 }
                 reported += dmg;
             }

@@ -2372,6 +2372,18 @@ public class PacketCreator {
         return p;
     }
 
+    // Ticket #12: clamp a 64-bit damage magnitude to the vanilla int slot.
+    // INT_MAX is the overflow sentinel; the real value rides in the long slot.
+    private static int clampPacketDamage(long damage) {
+        if (damage > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        if (damage < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        return (int) damage;
+    }
+
     private static void addAttackBody(OutPacket p, Character chr, int skill, int skilllevel, int stance,
                                       int numAttackedAndDamage, int projectile, Map<Integer, AttackTarget> targets,
                                       int speed, int direction, int display) {
@@ -2396,8 +2408,25 @@ public class PacketCreator {
                 if (skill == ChiefBandit.MESO_EXPLOSION) {
                     p.writeByte(value.damageLines().size());
                 }
-                for (Integer damageLine : value.damageLines()) {
-                    p.writeInt(damageLine);
+                for (Long damageLine : value.damageLines()) {
+                    // Ticket #12, S2C half (paired release with the DLL client
+                    // hook): the vanilla damage int stays first on the vanilla
+                    // opcodes so legacy/spectator clients keep decoding it; the
+                    // real 64-bit magnitude follows (little-endian writeLong).
+                    // Overflow lines keep the INT_MAX sentinel in the int slot;
+                    // crits keep the sign bit on the int slot only, with the
+                    // positive magnitude in the long slot. Vanilla clients read
+                    // just the int and skip/display the clamped value; the DLL
+                    // hook reads int+long per line.
+                    long line = damageLine != null ? damageLine : 0L;
+                    boolean crit = line < 0;
+                    long mag = Math.abs(line);
+                    int n = clampPacketDamage(mag);
+                    if (crit) {
+                        n |= Integer.MIN_VALUE; // spectator crit flag
+                    }
+                    p.writeInt(n);
+                    p.writeLong(mag);
                 }
             }
         }

@@ -139,14 +139,17 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
                 }
             }
         }
+        // Ticket #12: the first line is a long (negative == crit); the Sacrifice
+        // HP cost applies its magnitude, clamped to the int HP boundary.
         if (attack.numAttacked > 0 && attack.skill == DragonKnight.SACRIFICE) {
-            int totDamageToOneMonster = 0; // sacrifice attacks only 1 mob with 1 attack
+            long totDamageToOneMonster = 0; // sacrifice attacks only 1 mob with 1 attack
             final Iterator<AttackTarget> dmgIt = attack.targets.values().iterator();
             if (dmgIt.hasNext()) {
-                totDamageToOneMonster = dmgIt.next().damageLines().getFirst();
+                Long firstLine = dmgIt.next().damageLines().getFirst();
+                totDamageToOneMonster = firstLine == null ? 0L : Math.abs(firstLine);
             }
 
-            chr.safeAddHP(-1 * totDamageToOneMonster * attack.getAttackEffect(chr, null).getX() / 100);
+            chr.safeAddHP(-clampToInt(totDamageToOneMonster * attack.getAttackEffect(chr, null).getX() / 100));
         }
         if (attack.numAttacked > 0 && attack.skill == 1211002) {
             boolean advcharge_prob = false;
