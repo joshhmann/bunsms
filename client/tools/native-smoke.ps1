@@ -606,8 +606,10 @@ try {
         $report.networkObserver = 'Concurrent backend query handles and kernel TCP owner/address/port samples; no debugger, detour, socket replacement, or backend restart'
     }
     $callback = [Action[int[]]]{ param([int[]]$Ids) Save-NativeSnapshot $Ids }
+    $captureSeconds = if ($ExerciseLogin) { [Math]::Max($ObserveSeconds, 300) } else { $ObserveSeconds }
+    $report.observeSeconds = $captureSeconds
     $report.nativeCaptureStartedUtc = [DateTime]::UtcNow.ToString('O')
-    $report.processIds = [NativeSmoke]::Capture((Join-Path $game 'Kaentake.exe'), $game, $ObserveSeconds, $debugLog, $callback)
+    $report.processIds = [NativeSmoke]::Capture((Join-Path $game 'Kaentake.exe'), $game, $captureSeconds, $debugLog, $callback)
     Save-NativeSnapshot ([NativeSmoke]::LastProcessIds)
     $events = Get-Content $debugLog -Raw
     $report.naturalExits = @([regex]::Matches($events, '(?m)^EXIT_PROCESS pid=(\d+) code=(-?\d+) reason=natural-before-controller-cleanup\r?$') | ForEach-Object {
