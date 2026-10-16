@@ -41,6 +41,10 @@ try {
         $variants = @($authority.variants | Where-Object kind -eq 'on-reference')
     }
     if (-not $variants.Count) { throw 'No genuine discriminators in descriptor' }
+    if ($authority.isolateRemainingFullArchives -eq $true -and
+        ($fullSupport -or $variants.Count -ne 1 -or $variants[0].id -ne $authority.controlVariantId)) {
+        throw 'Archive isolation requires one explicit reference-context working control'
+    }
     $result.supportCohort = if ($fullSupport) { 'FULL rc3 other archives; actual pairing inventory retained separately' } else { 'working-reference51 other archives' }
     $selectedIds = @($variants | ForEach-Object id)
     $result.notExercised = @($authority.variants | Where-Object { $_.id -notin $selectedIds } | ForEach-Object id)
@@ -138,6 +142,13 @@ try {
         if ($variant.id -eq $authority.reencodingControlVariantId -and $step.outcome -ne 'startup-observed') {
             throw 'STOP: semantically unchanged old-card re-encoding failed; investigate writer/representation compatibility before any card/schema/root attribution'
         }
+    }
+    if ($authority.isolateRemainingFullArchives -eq $true) {
+        & (Join-Path $PSScriptRoot 'isolate-native-archives.ps1') -OutputDirectory $OutputDirectory -GameDirectory $GameDirectory `
+            -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
+            -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
+            -ObserveSeconds $ObserveSeconds -GameHost $GameHost -BaseItemVariant $variants[0] -BaseSupportFiles $supportFiles
+        $result.archiveIsolation = Get-Content (Join-Path $OutputDirectory 'archive-bisection.json') -Raw | ConvertFrom-Json
     }
     $result.status = 'image-variant-observations-complete'
     $result.limit = 'Sufficiency/dependency observations only; compare genuine nodes and runtime consumer evidence before any root/fix claim. Final full cohort and all features still required.'

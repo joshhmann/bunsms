@@ -390,6 +390,15 @@ try {
                         -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
                         -ObserveSeconds $ObserveSeconds -GameHost $GameHost -VariantsUrl $ItemImageVariantsUrl -VariantsSha256 $ItemImageVariantsSha256
                     $report.itemImageProbes = Get-Content (Join-Path $OutputDirectory 'item-image-probes.json') -Raw | ConvertFrom-Json
+                    if ($context.isolateRemainingFullArchives -eq $true) {
+                        $report.archiveBisection = $report.itemImageProbes.archiveIsolation
+                        $report.inputKind = 'INTERNAL constant pinned Item/String control plus remaining full archives; no release or compiled-runtime acceptance'
+                        if ($report.archiveBisection.status -ne 'remaining-full-archives-startup-observed') {
+                            throw 'Remaining-full-archive experiment stopped; inspect constant-base control and bounded archive observations, not an assumed node/root cause'
+                        }
+                        $report.status = 'remaining-full-archive-observations-complete'
+                        return
+                    }
                     $report.inputKind = 'INTERNAL reference context plus descriptor-pinned Item/String overrides; no full-support game attempt or compiled runtime overlay'
                     if ($report.itemImageProbes.status -ne 'image-variant-observations-complete' -or
                         @($report.itemImageProbes.steps | Where-Object outcome -eq 'startup-failed').Count) {
