@@ -137,11 +137,12 @@ async function findGamePath() {
       try {
         const st = await window.buns.getStatus();
         const gh = st && st.gameHost;
-        // Guard: prefer API gameHost only if LAN/private/localhost (reachable
-        // from this machine). Docker-internal names (e.g. "server") and
-        // unverified public names fall through to the field default.
+        // Guard (generic): prefer API gameHost when it is a usable hostname
+        // (dotted-quad or dotted domain). Empty/unusable data falls through
+        // to the field default. Source must supply the explicit canonical
+        // domain; no Docker-health special-casing lives here.
         const ok = typeof gh === "string" &&
-          /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.|localhost|.*\.local)$/.test(gh);
+          (/^\d+\.\d+\.\d+\.\d+$/.test(gh) || /^[^.]+\.[^.]+/.test(gh));
         if (ok) $("server-host").value = gh;
         else $("server-host").value = await window.buns.getServerHost();
       } catch {
@@ -225,7 +226,7 @@ async function setupServerHost() {
     }
   });
   $("btn-server-default").onclick = async () => {
-    await window.buns.setServerHost("192.168.0.164");
+    await window.buns.setServerHost("buns.asslorde.com");
     field.value = await window.buns.getServerHost();
   };
 }

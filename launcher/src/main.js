@@ -235,15 +235,14 @@ ipcMain.handle("game:setPath", (_, newPath) => {
   return setProfilePath("stock", newPath);
 });
 
-// Default server host (measured 2026-10-16): LAN baseline 192.168.0.164.
-// LAN 192.168.0.164:8484 + 7575-77 OPEN; external reachability UNVERIFIED
-// (LAN-origin probes prove nothing either way); /api/server
-// "running" is docker-internal health, NOT external reachability. Docs state
-// LAN-or-VPN-required; website/downloads being public does NOT mean native
-// TCP is public. Stored server:setHost always wins once set (explicit user
-// override preserved). Fixed port 8484; no NAT/L4 changes here. The legacy
-// Fly IP 213.188.212.103 is RETIRED as a default (kept nowhere).
-const DEFAULT_SERVER_HOST = "192.168.0.164";
+// Default server host (user priority 2026-10-16): canonical PROD
+// buns.asslorde.com. Same domains; public ports come LATER — no
+// Tailscale/VPN/router/NAT/port work in this pass. Stored server:setHost
+// always wins once set (explicit QA override .164/127 preserved). Fixed
+// port 8484. Legacy Fly IP retired (kept nowhere). API gameHost, when the
+// dashboard supplies it, must be the explicit canonical domain — never the
+// Docker-health hostname, never a silent LAN fallback on timeout.
+const DEFAULT_SERVER_HOST = "buns.asslorde.com";
 
 // Server host: written into config.ini ServerIP_Address so the HD DLL routes
 // the compiled client (fixed login port 8484) at the chosen host. The launcher
@@ -371,7 +370,7 @@ ipcMain.handle("server:status", async () => {
       online: data?.status === "running",
       players: data?.players || 0,
       // gameHost: dashboard-measured game host (optional additive field).
-      // Renderer preference: stored-config → this → LAN fallback.
+      // Renderer preference: stored-config → this → prod default.
       gameHost: typeof data?.gameHost === "string" ? data.gameHost : undefined,
       gamePort: data?.gamePort || 8484,
     };
