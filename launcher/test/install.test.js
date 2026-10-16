@@ -80,6 +80,7 @@ async function run() {
     });
     await transferStarted;
     publish("second", "second-verified-companion");
+    assert.equal(await invoke("server:getHost"), "192.168.0.187");
     assert.equal(invoke("profile:setPath", "kaentake", changed).success, true);
     invoke("profile:set", "stock");
     releaseDownload();

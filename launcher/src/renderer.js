@@ -130,20 +130,9 @@ async function findGamePath() {
     $("path-display").textContent = "Not found - click browse to set";
     $("path-display").style.color = "var(--orange)";
   }
-  // Preserve stored choices; otherwise prefer the API's explicit native host.
-  try {
-    const stored = await window.buns.getServerHostStored();
-    if (stored) {
-      $("server-host").value = stored;
-    } else {
-      const status = await window.buns.getStatus();
-      const host = status && status.gameHost;
-      $("server-host").value = typeof host === "string" && host
-        ? host : await window.buns.getServerHost();
-    }
-  } catch {
-    $("server-host").value = await window.buns.getServerHost();
-  }
+  // Canonical default or explicit stored/profile INI choice; never infer a
+  // different destination from the production backend's status endpoint.
+  $("server-host").value = await window.buns.getServerHost();
 }
 
 // ── Isolated client profiles ──

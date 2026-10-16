@@ -1,0 +1,46 @@
+--- a/src/system.cpp
++++ b/src/system.cpp
+@@ -255,6 +255,13 @@
+         return Connect_orig(socket, address, length);
+     const auto* original = reinterpret_cast<const sockaddr_in*>(address);
+     const auto& bytes = original->sin_addr.S_un.S_un_b;
++    static volatile LONG observedConnections = 0;
++    const bool trace = InterlockedIncrement(&observedConnections) <= 16;
++    if (trace) {
++        const int savedError = WSAGetLastError();
++        DebugMessage("BUNS_RUNTIME routing-connect socket=%u destination=%u.%u.%u.%u port=%u\n", static_cast<unsigned>(socket), bytes.s_b1, bytes.s_b2, bytes.s_b3, bytes.s_b4, ntohs(original->sin_port));
++        WSASetLastError(savedError);
++    }
+     if (bytes.s_b1 != 63 || bytes.s_b2 != 251 || bytes.s_b3 != 217 || bytes.s_b4 < 2 || bytes.s_b4 > 4)
+         return Connect_orig(socket, address, length);
+     const auto& server = ResolveServerAddress();
+@@ -270,8 +277,14 @@
+     sockaddr_in redirected = *original;
+     redirected.sin_addr = server.address;
+     if (g_nServerPort) redirected.sin_port = htons(static_cast<u_short>(g_nServerPort));
++    if (trace) {
++        const int savedError = WSAGetLastError();
++        DebugMessage("BUNS_RUNTIME routing-target socket=%u host=%s resolved=%08lX port=%u\n", static_cast<unsigned>(socket), g_sServerHost ? g_sServerHost : CONSTANTS_DEFAULT_HOST, server.address.S_un.S_addr, ntohs(redirected.sin_port));
++        WSASetLastError(savedError);
++    }
+     const int result = Connect_orig(socket, reinterpret_cast<const sockaddr*>(&redirected), sizeof(redirected));
+     const int error = WSAGetLastError();
++    if (trace) DebugMessage("BUNS_RUNTIME routing-return socket=%u result=%d error=%d\n", static_cast<unsigned>(socket), result, error);
+     if (result == SOCKET_ERROR && error != WSAEWOULDBLOCK && error != WSAEINPROGRESS && error != WSAEALREADY)
+         ForgetRedirect(socket);
+     WSASetLastError(error);
+@@ -299,9 +312,11 @@
+ }
+ 
+ static void InstallRoutingHooks() {
+-    if (!ATTACH_HOOK(Connect_orig, Connect_hook) ||
+-        !ATTACH_HOOK(GetPeerName_orig, GetPeerName_hook) ||
+-        !ATTACH_HOOK(CloseSocket_orig, CloseSocket_hook)) {
++    const bool connected = ATTACH_HOOK(Connect_orig, Connect_hook);
++    const bool peer = connected && ATTACH_HOOK(GetPeerName_orig, GetPeerName_hook);
++    const bool closed = peer && ATTACH_HOOK(CloseSocket_orig, CloseSocket_hook);
++    DebugMessage("BUNS_RUNTIME routing-attached connect=%d peer=%d close=%d\n", connected, peer, closed);
++    if (!connected || !peer || !closed) {
+         // Post-unpack/main-thread seam: never a modal or network work in DllMain.
+         ErrorMessage("Could not install required Winsock routing hooks.");
+         ExitProcess(ERROR_DLL_INIT_FAILED);

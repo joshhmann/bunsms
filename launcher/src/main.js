@@ -232,18 +232,23 @@ ipcMain.handle("game:setPath", (_, newPath) => {
 // Explicit stored QA/user overrides remain authoritative; never fall back to LAN.
 const DEFAULT_SERVER_HOST = "buns.asslorde.com";
 
-// Server host: written into config.ini ServerIP_Address so the HD DLL routes
-// the compiled client (fixed login port 8484) at the chosen host. The launcher
-// owns this file after download (manifest ships a prod-default copy), so the
-// recipe is coherent: host here + host:8484 reachable + port-forward only if
-// the operator remaps 8484 elsewhere.
-ipcMain.handle("server:getHostStored", () => readStore().serverHost || null);
+// Explicit stored choice wins; otherwise display the same profile-owned host
+// that launch preserves. Backend status is not authority to select a LAN host.
 ipcMain.handle("server:getHost", () => {
-  const configPath = path.join(app.getPath("userData"), "config.json");
-  try {
-    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-    if (config.serverHost) return config.serverHost;
-  } catch {}
+  const stored = readStore().serverHost;
+  if (stored) return stored;
+  const id = activeProfileId(), dir = profileDir(id);
+  if (dir) {
+    try {
+      const ini = fs.readFileSync(path.join(dir, "config.ini"), "utf-8");
+      if (isProfileConfig(id, ini)) {
+        const host = ini.match(id === "kaentake" ? /^host=(.+)$/mi : /^ServerIP_Address=(.+)$/mi)?.[1].trim();
+        if (host) return host;
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
   return DEFAULT_SERVER_HOST;
 });
 
