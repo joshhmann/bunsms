@@ -342,6 +342,26 @@ try {
                         @($report.itemImageProbes.steps | Where-Object outcome -eq 'startup-failed').Count) {
                         throw 'Reference-only asset experiment stopped; inspect actual pinned variant observations'
                     }
+                    if ($ExerciseLogin) {
+                        $lastStep = @($report.itemImageProbes.steps)[-1]
+                        $loginVariants = @($context.variants | Where-Object id -eq $lastStep.id)
+                        if ($loginVariants.Count -ne 1) { throw 'Ordinary login needs the exact successfully observed variant authority' }
+                        $loginVariant = $loginVariants[0]
+                        $loginSupport = @($loginVariant.supportFiles | Where-Object { $_ })
+                        $loginDirectory = Join-Path $OutputDirectory 'ordinary-login'
+                        & $PSCommandPath -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
+                            -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
+                            -OutputDirectory $loginDirectory -ObserveSeconds 180 -GameHost $GameHost `
+                            -PreparedGameDirectory $game -PublishedRuntimeControl -ReferenceAssetControl `
+                            -DiagnosticItemVariant $loginVariant -DiagnosticSupportFiles $loginSupport -ExerciseLogin
+                        $login = Get-Content (Join-Path $loginDirectory 'result.json') -Raw | ConvertFrom-Json
+                        $report.ordinaryLogin = [pscustomobject]@{ directory = $loginDirectory; status = $login.status; error = $login.error
+                            input = $login.loginInput; foregroundAttempt = $login.foregroundAttempt
+                            acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
+                        if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
+                            throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
+                        }
+                    }
                     $report.status = 'reference-image-observations-complete'
                     return
                 }
