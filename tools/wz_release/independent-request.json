@@ -29,9 +29,9 @@
     },
     {
       "name": "Mob.wz",
-      "size": 1021634352,
-      "sha256": "6d1ad3e4a3e5eead47abc0a3fd33f66b8bb5abcb2ceb1e876808618ee6ead3ec",
-      "url": "https://buns.asslorde.com/rc-assets/client/r/6d1ad3e4a3e5eead47abc0a3fd33f66b8bb5abcb2ceb1e876808618ee6ead3ec/Mob.wz"
+      "size": 1021972201,
+      "sha256": "b686faaa5565eea3cd940c31e2a03dff5b6ca21b08d6f5bb9d9a74ed174eef66",
+      "url": "https://buns.asslorde.com/rc-assets/client/r/b686faaa5565eea3cd940c31e2a03dff5b6ca21b08d6f5bb9d9a74ed174eef66/Mob.wz"
     },
     {
       "name": "Morph.wz",
@@ -59,21 +59,21 @@
     },
     {
       "name": "Skill.wz",
-      "size": 77207764,
-      "sha256": "faf5a3e9a13947e2531e9fc78003a3636a6aacf08d5bdeadc3112ec8bfb81c08",
-      "url": "https://buns.asslorde.com/rc-assets/client/r/faf5a3e9a13947e2531e9fc78003a3636a6aacf08d5bdeadc3112ec8bfb81c08/Skill.wz"
+      "size": 78982090,
+      "sha256": "caf29710d207932e5ea43d8063f5d612ca0964901b6b18d993abe5f317b11e64",
+      "url": "https://buns.asslorde.com/rc-assets/client/r/caf29710d207932e5ea43d8063f5d612ca0964901b6b18d993abe5f317b11e64/Skill.wz"
     },
     {
       "name": "Sound.wz",
-      "size": 436373290,
-      "sha256": "2e1c33cd30e8c4835872aaa7c1a1092b3d0fcff178332440dd1e2c788dc2400a",
-      "url": "https://buns.asslorde.com/rc-assets/client/r/2e1c33cd30e8c4835872aaa7c1a1092b3d0fcff178332440dd1e2c788dc2400a/Sound.wz"
+      "size": 436392542,
+      "sha256": "367089d1aaf682507d53559e64f62f5b09ca4eec9c67a68e877636b761a3ab57",
+      "url": "https://buns.asslorde.com/rc-assets/client/r/367089d1aaf682507d53559e64f62f5b09ca4eec9c67a68e877636b761a3ab57/Sound.wz"
     },
     {
       "name": "String.wz",
-      "size": 3698914,
-      "sha256": "7f155551080adef1a01823c5d2ed81b435ef3d51c4f675c2531da1375bf19496",
-      "url": "https://buns.asslorde.com/rc-assets/client/r/7f155551080adef1a01823c5d2ed81b435ef3d51c4f675c2531da1375bf19496/String.wz"
+      "size": 3698955,
+      "sha256": "56edda37c1abb72af7e56f660dd25cbcf4449d709e0c541dfdebe9028899fcce",
+      "url": "https://buns.asslorde.com/rc-assets/client/r/56edda37c1abb72af7e56f660dd25cbcf4449d709e0c541dfdebe9028899fcce/String.wz"
     },
     {
       "name": "UI.wz",
@@ -363,6 +363,7 @@
     "Mob.wz/8610012.img",
     "Mob.wz/8610013.img",
     "Mob.wz/8610014.img",
+    "Mob.wz/8610015.img",
     "Mob.wz/8610022.img",
     "Mob.wz/8643000.img",
     "Mob.wz/8643010.img",
@@ -181793,6 +181794,42 @@
       "value": 2388164
     },
     {
+      "path": "Mob.wz/8610015.img/info",
+      "type": "property"
+    },
+    {
+      "path": "Mob.wz/8610015.img/info/fs",
+      "type": "float"
+    },
+    {
+      "path": "Mob.wz/8610015.img/stand/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Mob.wz/8610015.img/attack1/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Mob.wz/8610015.img/hit1/0",
+      "type": "canvas"
+    },
+    {
+      "path": "String.wz/Mob.img/8610015/name",
+      "type": "string"
+    },
+    {
+      "path": "Sound.wz/Mob.img/8610015/Attack1",
+      "type": "sound"
+    },
+    {
+      "path": "Sound.wz/Mob.img/8610015/Damage",
+      "type": "sound"
+    },
+    {
+      "path": "Sound.wz/Mob.img/8610015/Die",
+      "type": "sound"
+    },
+    {
       "path": "Mob.wz/8850013.img/info",
       "type": "property"
     },
@@ -181898,6 +181935,414 @@
     },
     {
       "path": "Mob.wz/8889014.img/info",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/110/level/11",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/112/level/7",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/112/level/9",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/112/level/10",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/113/level/9",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/113/level/10",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/35",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/36",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/37",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/38",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/39",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/40",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/41",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/42",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/43",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/44",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/45",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/46",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/47",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/48",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/49",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/50",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/51",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/52",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/53",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/54",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/55",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/56",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/57",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/58",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/59",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/60",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/61",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/62",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/63",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/114/level/64",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/24",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/25",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/26",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/27",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/28",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/29",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/30",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/31",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/32",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/33",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/123/level/34",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/126/level/13",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/126/level/14",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/126/level/15",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/126/level/16",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/126/level/17",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/127/level/15",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/127/level/16",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/127/level/17",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/127/level/18",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/127/level/19",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/145/level/6",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/177",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/178",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/179",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/180",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/181",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/182",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/183",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/184",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/185",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/186",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/187",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/188",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/189",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/190",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/191",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/192",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/193",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/194",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/195",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/196",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/197",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/198",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/199",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/200",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/201",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/202",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/203",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/204",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/205",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/206",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/207",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/208",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/209",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/210",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/211",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/212",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/214",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/215",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/216",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/217",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/218",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/219",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/220",
+      "type": "property"
+    },
+    {
+      "path": "Skill.wz/MobSkill.img/200/level/223",
       "type": "property"
     },
     {
@@ -197701,5 +198146,8 @@
       "type": "string"
     }
   ],
-  "policy": "Independent established C# reader; decode every canvas/audio leaf in each touched image, plus every catalog icon/name and runtime-required node. No Python writer code runs on verifier."
+  "policy": "Independent established C# reader; decode every canvas/audio leaf in each touched image, plus every catalog icon/name and runtime-required node. No Python writer code runs on verifier.",
+  "candidate_full_source_commit": "dd8de8515ce44f799563ba688ae16a5230b02fcc",
+  "candidate_common_sealed_release": "5a773ad8-ca59-4e0a-b678-c27c1242ec0d",
+  "qualification_policy": "FULL all15contracts/entire1843catalog; retain all genuine prefix and Ifrit checks. Existing49inheritedSoundaliases and5boundedVoice4dispositions remain reportable failures, NOTsuppressed. Fresh report qualifies ONLY these exact hashes, not native engine/UI/visibility."
 }
