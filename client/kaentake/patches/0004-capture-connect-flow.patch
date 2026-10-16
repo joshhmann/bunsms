@@ -197,7 +197,26 @@
  
 --- a/src/launcher.cpp
 +++ b/src/launcher.cpp
-@@ -19,6 +19,7 @@
+@@ -3,6 +3,18 @@
+ #include <windows.h>
+ #include <detours.h>
+ 
++
++static BOOL CaptureChildExitCode(HANDLE child, DWORD* code) {
++    const BOOL result = GetExitCodeProcess(child, code);
++    const DWORD error = GetLastError();
++    if (result) {
++        DebugMessage("BUNS_RUNTIME flow child-exit game-pid=%lu code=0x%08lX\n", GetProcessId(child), *code);
++    } else {
++        DebugMessage("BUNS_RUNTIME flow child-exit-query-failed error=%lu\n", error);
++    }
++    SetLastError(error);
++    return result;
++}
+ 
+ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
+     STARTUPINFOA si;
+@@ -19,11 +31,12 @@
          LocalFree(sErrorMessage);
          return 1;
      }
@@ -205,11 +224,9 @@
      ResumeThread(pi.hThread);
      WaitForSingleObject(pi.hProcess, INFINITE);
  
-@@ -27,5 +28,6 @@
+     DWORD dwExitCode;
+-    if (!GetExitCodeProcess(pi.hProcess, &dwExitCode)) {
++    if (!CaptureChildExitCode(pi.hProcess, &dwExitCode)) {
          ErrorMessage("GetExitCodeProcess failed [%d]", GetLastError());
          return 1;
      }
-+    DebugMessage("BUNS_RUNTIME flow child-exit game-pid=%lu code=0x%08lX\n", pi.dwProcessId, dwExitCode);
-     return 0;
- }
-\ No newline at end of file
