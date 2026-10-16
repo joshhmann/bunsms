@@ -97,7 +97,6 @@ public:
         if (address.vt == VT_I4 || address.vt == VT_UI4)
             return reinterpret_cast<unsigned char*>(static_cast<uintptr_t>(address.ulVal));
         _com_issue_error(E_UNEXPECTED);
-        return nullptr;
     }
 };
 struct Clone {
