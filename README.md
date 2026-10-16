@@ -544,13 +544,17 @@ presence; no table entry implies unexercised functionality works.
   data files before Java startup; source/URLs/full hashes are in the single
   coordination contract. No seal activates production. Frozen rc3/old artifacts
   remain preserved and unqualified; fresh native engine acceptance is mandatory.
-- Exact native controls isolate the current pre-login failure to Item.wz, not a
-  proved bad node. Its five-image/47-added-item delta is preserved in immutable
-  internal diagnostics; no accepted content is cut. Fresh Windows MapleLib
-  run38926333427 reports57 errors, including46 known consumed gaps and reader
-  vector/walk limitations, not native-engine acceptance. The oracle now retains
-  individual child failures while continuing siblings and checks exact vector
-  coordinates; a fresh real Windows execution is required for those changes.
+- Exact native controls isolate the pre-login failure to Consume/0238.img, not a
+  proved bad card. Full-context raw/reencoded no-card controls precede genuine
+  card groups; missing Book prerequisites and representation remain separate
+  hypotheses, with no accepted card cut/remap or fabricated definition.
+- Fresh actual Windows MapleLib run38931713976 reads511 images/35375 BGRA
+  canvases/4998 sounds. It retains95 failures:46 consumed gaps plus49 Sound
+  aliases identical to official/working baselines; exact vector checks now run.
+  This is diagnostic coverage, never native-engine or release qualification.
+- 144 genuine source JSON snapshots/33 lossless PNGs now cover the three Summons
+  and nine Lotus targets. Materialization/new pins/native combat-cue proof remain
+  required; original1×1 art and frozen rc3 receipts are preserved.
 - Upstream review remains pinned16ab7b7/selective GROUPA0874223/GROUPB60b869c,
   not unrelated-history parity or new AI/voting/Flux/Tripo3D scope. Evan review
   remains complete REVIEW ONLY, not playable-class scope.
