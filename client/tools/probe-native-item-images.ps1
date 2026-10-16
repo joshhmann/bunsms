@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $result = [ordered]@{ status = 'running'; sourceCommit = $env:GITHUB_SHA; authorityUrl = $VariantsUrl.AbsoluteUri
     authoritySha256 = $VariantsSha256; steps = [Collections.Generic.List[object]]::new()
-    scope = 'INTERNAL genuine image diagnostics only. Same published runtime/backend/observer; no item removal, remap, dummy art, memory/PE/guard patch, release or feature acceptance.' }
+    scope = 'INTERNAL data diagnostics only. Same published runtime/backend/observer; no release content cuts, remap, dummy art, memory/PE/guard patch or feature acceptance.' }
 try {
     if ($VariantsUrl.Scheme -ne 'https') { throw 'Image variant authority must use pinned HTTPS' }
     $authorityPath = Join-Path $OutputDirectory 'item-image-variants.json'
@@ -74,7 +74,7 @@ try {
         if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https' -or $variant.sha256 -notmatch '^[a-f0-9]{64}$' -or $variant.size -le 0) { throw 'Invalid image variant byte authority' }
         $supportFiles = @($variant.supportFiles | Where-Object { $_ })
         if ($supportFiles.Count -and -not $fullSupport -and $authority.supportCohort -ne 'reference') {
-            throw 'Paired String files require an explicitly pinned reference or full-rc3 context'
+            throw 'Diagnostic support files require an explicitly pinned reference or full-rc3 context'
         }
         if (-not $fullSupport -and -not $supportFiles.Count -and $variant.sha256 -eq $referenceItem.sha256 -and $variant.size -eq $referenceItem.size) {
             $result.steps.Add([pscustomobject]@{ id = $variant.id; sha256 = $variant.sha256; images = $variant.images
@@ -93,9 +93,9 @@ try {
         $supportNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         foreach ($support in $supportFiles) {
             $supportUrl = [uri]$support.url
-            if ($support.name -ne 'String.wz' -or -not $supportNames.Add($support.name) -or $support.sha256 -notmatch '^[a-f0-9]{64}$' -or
+            if ($support.name -notin @('String.wz', 'Skill.wz') -or -not $supportNames.Add($support.name) -or $support.sha256 -notmatch '^[a-f0-9]{64}$' -or
                 $support.size -le 0 -or -not $supportUrl.IsAbsoluteUri -or $supportUrl.Scheme -ne 'https') {
-                throw 'Invalid paired String.MonsterBook byte authority'
+                throw 'Invalid diagnostic String/Skill byte authority'
             }
             $supportCache = Join-Path $cache ("support-$($support.sha256).wz")
             if (-not (Test-Path $supportCache)) {
@@ -105,7 +105,7 @@ try {
                 } else { Invoke-WebRequest $supportUrl.AbsoluteUri -OutFile $supportCache -TimeoutSec 120 }
             }
             if ((Get-Item $supportCache).Length -ne $support.size -or (Get-FileHash $supportCache -Algorithm SHA256).Hash.ToLowerInvariant() -ne $support.sha256) {
-                throw "Paired String.MonsterBook size/SHA256 mismatch: $($variant.id)"
+                throw "Diagnostic String/Skill size/SHA256 mismatch: $($variant.id)"
             }
             Copy-Item $supportCache (Join-Path $GameDirectory $support.name) -Force
         }
@@ -141,10 +141,10 @@ try {
         elseif (-not $receipt.nativeUiObserved -or -not $receipt.gameAliveAfterObservation -or $receipt.errorDialogObserved) { $step.outcome = 'startup-failed' }
         else { throw 'STOP: observer failure is not a comparable startup result' }
         if ($variant.id -eq $authority.controlVariantId -and $step.outcome -ne 'startup-observed') {
-            throw 'STOP: unchanged-card-image prerequisite failed; do not run or interpret the re-encoding comparison'
+            throw 'STOP: unchanged-data prerequisite failed; do not run or interpret the re-encoding comparison'
         }
         if ($variant.id -eq $authority.reencodingControlVariantId -and $step.outcome -ne 'startup-observed') {
-            throw 'STOP: semantically unchanged old-card re-encoding failed; investigate writer/representation compatibility before any card/schema/root attribution'
+            throw 'STOP: semantically unchanged re-encoding failed; investigate writer/representation compatibility before any node/schema/root attribution'
         }
     }
     if ($isolateRemaining) {

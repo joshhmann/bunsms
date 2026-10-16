@@ -259,9 +259,9 @@ try {
         $supportByName = @{}
         foreach ($support in $DiagnosticSupportFiles) {
             $supportUrl = [uri]$support.url
-            if ($support.name -ne 'String.wz' -or $supportByName.ContainsKey($support.name) -or $selected.Contains($support.name) -or
+            if ($support.name -notin @('String.wz', 'Skill.wz') -or $supportByName.ContainsKey($support.name) -or $selected.Contains($support.name) -or
                 $support.sha256 -notmatch '^[a-f0-9]{64}$' -or $support.size -le 0 -or -not $supportUrl.IsAbsoluteUri -or $supportUrl.Scheme -ne 'https') {
-                throw 'Invalid/conflicting paired String.MonsterBook diagnostic authority'
+                throw 'Invalid/conflicting diagnostic String/Skill authority'
             }
             $supportByName[$support.name] = $support
         }
@@ -399,7 +399,7 @@ try {
                         $report.status = 'remaining-full-archive-observations-complete'
                         return
                     }
-                    $report.inputKind = 'INTERNAL reference context plus descriptor-pinned Item/String overrides; no full-support game attempt or compiled runtime overlay'
+                    $report.inputKind = 'INTERNAL reference context plus descriptor-pinned Item/support-archive overrides; no full-support game attempt or compiled runtime overlay'
                     if ($report.itemImageProbes.status -ne 'image-variant-observations-complete' -or
                         @($report.itemImageProbes.steps | Where-Object outcome -eq 'startup-failed').Count) {
                         throw 'Reference-only asset experiment stopped; inspect actual pinned variant observations'
