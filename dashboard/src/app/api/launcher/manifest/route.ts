@@ -38,7 +38,7 @@ const VALID_PROFILES: Record<string, true> = { stock: true, kaentake: true };
 export async function GET(request: NextRequest) {
   try {
     const profile = request.nextUrl.searchParams.get("profile");
-    const { manifest } = readManifest();
+    const { manifest, path } = readManifest();
     if (profile && !VALID_PROFILES[profile]) {
       return NextResponse.json({ error: `Unknown profile: ${profile}` }, { status: 400 });
     }
@@ -47,8 +47,11 @@ export async function GET(request: NextRequest) {
     const effective = profile ?? "stock";
     const files = manifest.files.filter((f) => (f.profiles ?? ["stock"]).includes(effective));
     const out: Manifest = { ...manifest, files };
+    // Authority disclosure: volume path = live authority, build path =
+    // bootstrap seed (publish to the volume before cutover).
+    const authority = path.includes("/cosmic/") ? "volume" : "bundled-bootstrap-seed";
     return NextResponse.json(out, {
-      headers: { "Access-Control-Allow-Origin": "*" },
+      headers: { "Access-Control-Allow-Origin": "*", "X-Manifest-Authority": `${authority}:${path}` },
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

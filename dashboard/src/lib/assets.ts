@@ -90,16 +90,23 @@ export interface ManifestRead {
 }
 
 function manifestPaths(): { volume: string; bundled: string } {
-  // Writable dir mount wins (shared, survives redeploys); legacy single-file
-  // /cosmic/launcher-manifest.json is read-only fallback for continuity.
-  const writable = join(process.env.COSMIC_ROOT || "/cosmic", "manifest-writable", "launcher-manifest.json");
+  // Authority order: writable dir mount (shared, survives redeploys) →
+  // legacy single-file mount (read-only continuity) → bundled build copy.
+  const cosmic = process.env.COSMIC_ROOT || "/cosmic";
+  const writable = join(cosmic, "manifest-writable", "launcher-manifest.json");
   if (existsSync(writable)) return { volume: writable, bundled: join(process.cwd(), "launcher-manifest.json") };
-  const volume = join(process.env.COSMIC_ROOT || "/cosmic", "launcher-manifest.json");
+  const volume = join(cosmic, "launcher-manifest.json");
   const bundled = join(process.cwd(), "launcher-manifest.json");
   return { volume, bundled };
 }
 
-/** Single authority read: volume wins, bundled fallback (same rule as before). */
+/**
+ * Single authority read. Resolution order: writable volume → legacy volume
+ * file → bundled build copy. The bundled copy is a BOOTSTRAP SEED for first
+ * boot only: if it is served, callers can tell via `path` (it ends with the
+ * build dir, not /cosmic/), and operators MUST publish the live manifest to
+ * the volume before cutover. It is never silently treated as live authority.
+ */
 export function readManifest(): ManifestRead {
   const { volume, bundled } = manifestPaths();
   const path = existsSync(volume) ? volume : bundled;

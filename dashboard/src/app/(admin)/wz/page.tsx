@@ -214,8 +214,8 @@ function UploadModal({
   const sizeSuspicious =
     sizeChangePct !== null && (sizeChangePct < -50 || sizeChangePct > 100);
 
-  // Cloudflare body cap is 100 MB on Free/Pro. Surface the wrangler-and-register
-  // path before the request even hits the network for anything close to that.
+  // Large files beat the browser upload path: surface the rsync-and-register
+  // flow before the request even hits the network for anything close to that.
   const CLOUDFLARE_LIMIT_BYTES = 95 * 1024 * 1024;
   const tooBigForBrowser =
     !!file && file.size >= CLOUDFLARE_LIMIT_BYTES;
@@ -402,10 +402,10 @@ function UploadModal({
               File is too large for browser upload (Cloudflare caps request bodies at 100 MB).
             </p>
             <p className="mb-2">
-              Push the binary to R2 directly with wrangler, then click <b>Register from R2</b> below to update the manifest.
+              Sync the binary to the asset host with rsync, then click <b>Register staged bytes</b> below to verify hashes and update the manifest.
             </p>
             <pre className="overflow-x-auto rounded bg-black/30 px-2 py-1.5 font-mono text-[11px] text-text-primary">
-              npx wrangler r2 object put bunsms-client/{name} --file {name} --remote
+              rsync -av --checksum {name} $ASSET_HOST:/opt/buns/client-assets/
             </pre>
           </div>
         )}
@@ -426,10 +426,10 @@ function UploadModal({
           <button
             onClick={registerExisting}
             disabled={busy}
-            title="Re-read the file from R2 and refresh the manifest entry. Use after uploading via wrangler."
+            title="Verify staged bytes against expected hashes and refresh the manifest entry. Use after rsyncing to the asset host."
             className="rounded-lg border border-border bg-bg-card px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-card-hover disabled:opacity-40"
           >
-            {busy ? "…" : "Register from R2"}
+            {busy ? "…" : "Register staged bytes"}
           </button>
           <button
             onClick={onClose}

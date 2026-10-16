@@ -437,36 +437,27 @@ export const toolHandlers: Record<string, (args: any) => Promise<string>> = {
   },
 
   publish_client_update: async ({ version, message, files }) => {
-    // Read current manifest, bump version, optionally update file entries
-    const current = await api("/api/launcher/manifest");
-    const manifest = { ...current };
-    manifest.version = version || manifest.version;
-    manifest.updatedAt = new Date().toISOString();
-
-    // If specific files changed, update their hashes/sizes
-    if (files && Array.isArray(files)) {
-      for (const update of files) {
-        const entry = manifest.files?.find((f: any) => f.name === update.name);
-        if (entry) {
-          if (update.hash) entry.hash = update.hash;
-          if (update.size) entry.size = update.size;
-        }
-      }
-    }
-
-    // Upload changed files to R2 if available
-    if (files && Array.isArray(files)) {
+    // Staged publish: stage bytes first (returns releaseId), then register
+    // with EXPECTED hashes for verification + atomic promotion. Live bytes
+    // and manifest stay unchanged on any hash mismatch.
+    const staged = files && Array.isArray(files) ? files.filter((f: any) => f.path) : [];
+    let releaseId: string | undefined;
+    if (staged.length > 0) {
       const uploadResult = await api("/api/launcher/upload", {
         method: "POST",
-        body: JSON.stringify({ files: files.filter((f: any) => f.path) }),
+        body: JSON.stringify({ files: staged }),
       });
       if (uploadResult.error) return JSON.stringify({ error: uploadResult.error });
+      releaseId = uploadResult.releaseId;
     }
 
-    // Save manifest to volume for immediate serving
+    const register = (staged as any[]).map((f: any) => ({ name: f.name, hash: f.hash, size: f.size }));
+    if (register.some((r: any) => !r.hash || !r.size)) {
+      return JSON.stringify({ error: "register requires expected hash and size per file" });
+    }
     const result = await api("/api/launcher/manifest", {
       method: "POST",
-      body: JSON.stringify({ manifest }),
+      body: JSON.stringify({ register, releaseId, version }),
     });
     return JSON.stringify({ ...result, message: message || "Client update published" });
   },

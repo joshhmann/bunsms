@@ -22,13 +22,13 @@ const PUBLIC_PATHS = [
   "/api/rankings",
 ];
 
-// Launcher download surface: public reads only. Mutation (POST/PUT/DELETE)
-// always requires session/session or x-gm-secret auth below — the manifest
-// POST accepts full-replacement payloads and must never be anonymous.
+// Launcher manifest/news: public reads only. Client bytes are served by the
+// dedicated aiohttp asset service (/client/*), not by Next. Mutation
+// (POST/PUT/DELETE) always requires session JWT or x-gm-secret auth below —
+// the manifest POST accepts replacement payloads and must never be anonymous.
 const PUBLIC_LAUNCHER_GETS = [
   "/api/launcher/manifest",
   "/api/launcher/news",
-  "/api/launcher/download/",
 ];
 
 // Exact-match paths and prefix-match paths kept separate — a single "/"
