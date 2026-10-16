@@ -9,6 +9,7 @@
 #include "dispatcher.h"
 #include "tick.h"
 #include "caps.h"
+#include "dailycheckin.h"
 
 // Fail-closed: false if ANY attach fails (later attaches skipped — no
 // half-hooked client pretends active).
