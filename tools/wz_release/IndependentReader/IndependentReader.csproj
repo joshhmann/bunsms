@@ -5,6 +5,8 @@
     <LangVersion>latest</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <MapleLibRoot Condition="'$(MapleLibRoot)' == ''">../../../../reader-src</MapleLibRoot>
+    <AppConfig>$(MapleLibRoot)/MapleLib/app.config</AppConfig>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="MapleLib"><HintPath>$(MapleLibRoot)/MapleLib/bin/Release/MapleLib.dll</HintPath></Reference>
