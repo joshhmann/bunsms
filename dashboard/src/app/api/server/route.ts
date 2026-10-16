@@ -7,6 +7,12 @@ import { PATHS } from "@/lib/cosmic";
 
 const GAME_HOST = process.env.GAME_SERVER_HOST || "192.168.0.157";
 const LOGIN_PORT = 8484;
+// Operator-configured CLIENT-advertised host: what launchers should connect
+// to. Deliberately separate from GAME_HOST (the internal TCP health target,
+// often a Docker DNS name like `server` that is useless to clients). Unset =
+// field omitted (never advertise Docker DNS); LAN/VPN truth until external
+// reachability is measured.
+const CLIENT_HOST = process.env.GAME_CLIENT_HOST || "";
 
 /** Check if the game server is reachable by TCP connecting to the login port */
 function tcpCheck(host: string, port: number, timeout = 5000): Promise<boolean> {
@@ -67,7 +73,7 @@ export async function GET() {
       maxLevel = (m as any)?.max || 0;
     } catch {}
 
-    return NextResponse.json({
+    const body: Record<string, unknown> = {
       status: online ? "running" : "stopped",
       gmModel,
       rates,
@@ -75,14 +81,16 @@ export async function GET() {
       accounts,
       characters,
       maxLevel,
-      // Measured game host as the dashboard sees it (in-compose TCP check
-      // target). `status` proves in-compose reachability ONLY — not public
-      // reachability. Launchers prefer stored-config, then this field, then
-      // LAN fallback. External friends need LAN/VPN until a measured TCP
-      // forward exists.
-      gameHost: GAME_HOST,
-      gamePort: LOGIN_PORT,
-    });
+    };
+    // `status` proves in-compose reachability ONLY — not public reachability.
+    // gameHost/gamePort are present only when the operator configured an
+    // explicit client-advertised endpoint (GAME_CLIENT_HOST). Launchers prefer
+    // stored-config, then these fields, then measured LAN fallback.
+    if (CLIENT_HOST) {
+      body.gameHost = CLIENT_HOST;
+      body.gamePort = LOGIN_PORT;
+    }
+    return NextResponse.json(body);
   } catch {
     return NextResponse.json({
       status: "stopped",
