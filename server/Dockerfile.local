@@ -11,6 +11,7 @@ WORKDIR /opt/server
 # WZ files mounted via docker-compose volume (not baked in)
 COPY --from=jar /opt/cosmic/target/Cosmic.jar ./Server.jar
 COPY scripts ./scripts/
+COPY cashshop ./cashshop/
 # SoloMapling bots load data files (yaml/txt/csv) via relative
 # src/main/java/soloMapling/... paths at runtime (cwd /opt/server).
 # Ship the tree (sources included, harmless) so cold-boot waves work.

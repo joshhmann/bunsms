@@ -47,6 +47,9 @@ COPY --from=jar /opt/cosmic/target/Cosmic.jar ./Server.jar
 # CACHE_BUST ensures Docker doesn't serve stale script layers from build cache
 ARG CACHE_BUST=0
 COPY scripts ./scripts/
+# Cash-shop catalog: 1843-row TSV the window server half loads at startup
+# (cashshop/catalog.tsv, -Dcashshop-path override). Ship it like scripts.
+COPY cashshop ./cashshop/
 # Config is read on server startup, so you can mount over it for quicker redeploy.
 COPY config.yaml ./
 # Production entrypoint that patches config from env vars
