@@ -19,6 +19,10 @@ on:
         description: "Run bounded actual Windows client startup capture (downloads the explicit baseline only when enabled)"
         type: boolean
         default: false
+      published_runtime:
+        description: "Exercise the exact published full cohort without reference priming or a freshly compiled runtime overlay"
+        type: boolean
+        default: false
       native_baseline_url:
         description: "Unpromoted complete native provenance JSON HTTPS URL (files: name, sha256, size)"
         type: string
@@ -193,6 +197,7 @@ jobs:
           NATIVE_BASELINE_FILES_URL: ${{ inputs.native_baseline_files_url }}
           NATIVE_TEST_BACKEND: ${{ inputs.test_backend }}
           NATIVE_EXERCISE_LOGIN: ${{ inputs.exercise_login }}
+          NATIVE_PUBLISHED_RUNTIME: ${{ inputs.published_runtime }}
           NATIVE_ITEM_VARIANTS_URL: ${{ inputs.item_image_variants_url }}
           NATIVE_ITEM_VARIANTS_SHA256: ${{ inputs.item_image_variants_sha256 }}
         run: |
@@ -217,6 +222,7 @@ jobs:
               -RuntimeArtifact native-crt `
               -GameHost $gameHost `
               -ExerciseLogin:($env:NATIVE_EXERCISE_LOGIN -eq 'true') `
+              -PublishedRuntimeControl:($env:NATIVE_PUBLISHED_RUNTIME -eq 'true') `
               -ItemImageVariantsUrl $env:NATIVE_ITEM_VARIANTS_URL `
               -ItemImageVariantsSha256 $env:NATIVE_ITEM_VARIANTS_SHA256 `
               -OutputDirectory native-smoke-output
