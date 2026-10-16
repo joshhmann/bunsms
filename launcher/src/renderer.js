@@ -385,27 +385,32 @@ async function loadNews() {
       return;
     }
 
-    list.innerHTML = news.map((item) => {
-      const typeClass = {
-        rates: "news-type-rates",
-        event: "news-type-event",
-        drops: "news-type-drops",
-        update: "news-type-update",
-      }[item.type] || "news-type-update";
-
-      const date = new Date(item.date);
-      const ago = timeAgo(date);
-
-      return `
-        <div class="news-item">
-          <div class="news-item-header">
-            <span class="news-item-type ${typeClass}">${item.type || "update"}</span>
-            <span class="news-item-date">${ago}</span>
-          </div>
-          <div class="news-item-text">${item.text}</div>
-        </div>
-      `;
-    }).join("");
+    const fragment = document.createDocumentFragment();
+    const typeClasses = {
+      rates: "news-type-rates",
+      event: "news-type-event",
+      drops: "news-type-drops",
+      update: "news-type-update",
+    };
+    for (const item of news) {
+      const row = document.createElement("div");
+      row.className = "news-item";
+      const header = document.createElement("div");
+      header.className = "news-item-header";
+      const type = document.createElement("span");
+      type.className = `news-item-type ${typeClasses[item.type] || "news-type-update"}`;
+      type.textContent = item.type || "update";
+      const date = document.createElement("span");
+      date.className = "news-item-date";
+      date.textContent = timeAgo(new Date(item.date));
+      const text = document.createElement("div");
+      text.className = "news-item-text";
+      text.textContent = item.text;
+      header.append(type, date);
+      row.append(header, text);
+      fragment.append(row);
+    }
+    list.replaceChildren(fragment);
   } catch {
     list.innerHTML = `<div class="news-item news-loading">Could not load news</div>`;
   }
