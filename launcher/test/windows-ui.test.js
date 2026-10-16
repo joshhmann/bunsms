@@ -63,6 +63,7 @@ async function run() {
     // This debugger is attached ONLY to Electron, never to the native game.
     const scriptUrls = new Map();
     let startupWrapped = false;
+    let breakpoint = null;
     connection.addEventListener("message", async ({ data }) => {
       const message = JSON.parse(data);
       if (message.method === "Debugger.scriptParsed") scriptUrls.set(message.params.scriptId, message.params.url);
@@ -70,6 +71,8 @@ async function run() {
       try {
         const frame = message.params.callFrames[0];
         if (!startupWrapped && (scriptUrls.get(frame.location.scriptId) || "").endsWith("/renderer.js")) {
+          await command("Debugger.removeBreakpoint", { breakpointId: breakpoint.breakpointId });
+          breakpoint = null;
           const wrapped = await command("Debugger.evaluateOnCallFrame", {
             callFrameId: frame.callFrameId,
             expression: `(() => {
@@ -95,12 +98,12 @@ async function run() {
       finally { await command("Debugger.resume").catch(() => {}); }
     });
     await command("Debugger.enable");
-    const breakpoint = await command("Debugger.setInstrumentationBreakpoint", { instrumentation: "beforeScriptExecution" });
+    breakpoint = await command("Debugger.setInstrumentationBreakpoint", { instrumentation: "beforeScriptExecution" });
     await command("Page.reload", { ignoreCache: true });
     while (!startupWrapped && Date.now() < deadline) await delay(50);
     if (!startupWrapped) throw new Error("Actual renderer startup observation could not be established");
     report.actualStartup = await evaluate("globalThis.__bunsActualStartup");
-    await command("Debugger.removeBreakpoint", { breakpointId: breakpoint.breakpointId });
+    if (breakpoint) await command("Debugger.removeBreakpoint", { breakpointId: breakpoint.breakpointId });
     await command("Debugger.disable");
     let profile;
     while (Date.now() < deadline) {
