@@ -173,7 +173,24 @@ function Save-NativeSnapshot([int[]]$Ids) {
                     } catch { $report.termsAction.status = 'failed'; $report.termsAction.error = $_.Exception.ToString(); throw }
                 }
             } else {
-                $report.termsAction = [pscustomobject]@{ status = 'already-accepted-account-state'; observation = $state }
+                $report.termsAction = [pscustomobject]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'already-accepted-account-state'; observation = $state }
+            }
+        }
+    }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.termsAction -and -not $report.genderAction -and
+        ([datetime]$row.utc) -gt ([datetime]$report.termsAction.utc).AddSeconds(2)) {
+        $state = Read-QAAccountState
+        $report.accountBeforeGender = $state
+        if ($state.status -eq 'observed' -and $state.account.tos -eq 1 -and
+            $state.account.gender -eq 10 -and $state.account.loggedin -eq 2) {
+            $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+            if ($window) {
+                $report.genderAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                    scope = 'Owned disposable QA account; normal OK on the observed default Male dialog, never a database state change or synthetic acceptance packet' }
+                try {
+                    [NativeSmoke]::ClickClient($window, 577, 364)
+                    $report.genderAction.status = 'submitted-normal-gender-confirm'
+                } catch { $report.genderAction.status = 'failed'; $report.genderAction.error = $_.Exception.ToString(); throw }
             }
         }
     }
@@ -419,7 +436,7 @@ try {
                         $login = Get-Content (Join-Path $loginDirectory 'result.json') -Raw | ConvertFrom-Json
                         $report.ordinaryLogin = [pscustomobject]@{ directory = $loginDirectory; status = $login.status; error = $login.error
                             input = $login.loginInput; foregroundAttempt = $login.foregroundAttempt
-                            termsAction = $login.termsAction; accountAfterObservation = $login.accountAfterObservation
+                            termsAction = $login.termsAction; genderAction = $login.genderAction; accountAfterObservation = $login.accountAfterObservation
                             acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
                         if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
                             throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
@@ -559,6 +576,11 @@ try {
         $report.accountAfterObservation = Read-QAAccountState
         $report.accountAfterObservation | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $OutputDirectory 'qa-account-state.json')
         if ($report.termsAction.status -eq 'failed') { throw 'Normal owned QA terms interaction failed; inspect actual UI and read-only account state' }
+        if ($report.genderAction.status -eq 'failed') { throw 'Normal owned QA gender interaction failed; inspect actual UI and read-only account state' }
+        if ($report.genderAction.status -eq 'submitted-normal-gender-confirm' -and
+            $report.accountAfterObservation.status -eq 'observed' -and $report.accountAfterObservation.account.gender -eq 10) {
+            throw 'Normal QA gender confirmation did not persist; inspect actual UI before advancing account acceptance'
+        }
     }
     if ($ExerciseLogin -and $report.loginInput.status -ne 'submitted-normal-OS-login-input') {
         throw 'Requested actual QA login input was not submitted; inspect observed native UI and input receipt'
