@@ -10,7 +10,8 @@ param(
     [string]$GameHost = 'buns.asslorde.com',
     [switch]$ExerciseLogin,
     [string]$PreparedGameDirectory = '',
-    [switch]$PublishedRuntimeControl
+    [switch]$PublishedRuntimeControl,
+    [switch]$ReferenceAssetControl
 )
 $ErrorActionPreference = 'Stop'
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
@@ -137,6 +138,22 @@ try {
     $isClientManifest = $manifest.completeProfiles -contains 'kaentake'
     if ($PublishedRuntimeControl -and -not $isClientManifest) { throw 'Published runtime control requires a pinned complete client manifest' }
     $report.inputKind = if ($PublishedRuntimeControl) { 'Exact published runtime control A; NOT a feature-release fallback' } elseif ($isClientManifest) { 'Pinned complete full-content client manifest; compiled runtime overlay B for causal QA' } else { 'Pinned complete native provenance' }
+    $assetFiles = $manifest.files
+    $referenceUrl = [uri]'https://buns.asslorde.com/client/candidates/wz-candidate-6/provenance-manifest.json'
+    $referenceBase = [uri]'https://buns.asslorde.com/client/candidates/wz-candidate-6/'
+    $referenceSha256 = 'a23ed4910cc0d19e63d3ce0f625eb5320be93c6807940d75be1440ee46bef810'
+    if ($ReferenceAssetControl) {
+        if (-not $PublishedRuntimeControl -or -not $PreparedGameDirectory -or -not $isClientManifest) {
+            throw 'Reference assets are only an internal prepared exact-published-runtime control'
+        }
+        $referencePath = Join-Path (Split-Path $PreparedGameDirectory -Parent) 'reference-provenance.json'
+        if ((Get-FileHash $referencePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $referenceSha256) {
+            throw 'Previously working reference provenance SHA256 mismatch'
+        }
+        $assetFiles = (Get-Content $referencePath -Raw | ConvertFrom-Json).files
+        $report.referenceAssetAuthority = [pscustomobject]@{ url = $referenceUrl.AbsoluteUri; sha256 = $referenceSha256 }
+        $report.inputKind = 'INTERNAL previously working reference51 assets + exact published e363 runtime; NOT a release/fallback'
+    }
     $report.sourceCommit = $env:GITHUB_SHA
     $game = if ($PreparedGameDirectory) { $PreparedGameDirectory } else { Join-Path $OutputDirectory 'baseline' }
     New-Item -ItemType Directory -Force $game | Out-Null
@@ -144,8 +161,8 @@ try {
     $base = [uri]($BaselineFilesBaseUrl.AbsoluteUri.TrimEnd('/') + '/')
     $verifiedFiles = [Collections.Generic.List[object]]::new()
     $report.verifiedBaselineFiles = $verifiedFiles
-    foreach ($file in $manifest.files) {
-        $expectedHash = if ($isClientManifest) { $file.hash } else { $file.sha256 }
+    foreach ($file in $assetFiles) {
+        $expectedHash = if ($isClientManifest -and -not $ReferenceAssetControl) { $file.hash } else { $file.sha256 }
         if (-not $file.name -or $expectedHash -notmatch '^[0-9a-fA-F]{64}$' -or $file.size -le 0) {
             throw 'Invalid native provenance file record'
         }
@@ -155,7 +172,7 @@ try {
             throw "Native filename escapes baseline directory: $($file.name)"
         }
         $encoded = (($file.name.Replace('\', '/') -split '/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
-        $url = if ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
+        $url = if ($ReferenceAssetControl) { [uri]::new($referenceBase, $encoded) } elseif ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
         if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https') { throw "Native file URL must be pinned HTTPS: $($file.name)" }
         New-Item -ItemType Directory -Force ([IO.Path]::GetDirectoryName($destination)) | Out-Null
         $report.currentDownload = [ordered]@{ name = $file.name; url = $url.AbsoluteUri; expectedSize = $file.size; expectedSha256 = $expectedHash; startedUtc = [DateTime]::UtcNow.ToString('O'); status = 'downloading' }
@@ -192,16 +209,61 @@ try {
         $report.publishedRuntimeSource = $published.runtimeSourceCommit
         if (-not $PublishedRuntimeControl) {
             $controlDirectory = Join-Path $OutputDirectory 'published-control'
+            # Keep the runtime/backend/observer fixed; only the eleven proven archive deltas change.
+            $referencePath = Join-Path $OutputDirectory 'reference-provenance.json'
+            Invoke-WebRequest $referenceUrl.AbsoluteUri -OutFile $referencePath -TimeoutSec 60
+            if ((Get-FileHash $referencePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $referenceSha256) {
+                throw 'Previously working reference provenance SHA256 mismatch'
+            }
+            $reference = Get-Content $referencePath -Raw | ConvertFrom-Json
+            $deltaRoot = Join-Path $OutputDirectory 'private-asset-deltas'
+            $referenceRoot = Join-Path $deltaRoot 'reference'
+            $fullRoot = Join-Path $deltaRoot 'full'
+            New-Item -ItemType Directory -Force $referenceRoot, $fullRoot | Out-Null
+            $deltas = [Collections.Generic.List[object]]::new()
+            $report.assetDeltas = $deltas
+            foreach ($old in $reference.files) {
+                $current = @($manifest.files | Where-Object name -eq $old.name)
+                if ($current.Count -ne 1) { throw "Reference file absent/ambiguous in full manifest: $($old.name)" }
+                if ($old.sha256 -eq $current[0].hash -and $old.size -eq $current[0].size) { continue }
+                if ($old.name -notmatch '^[A-Za-z]+\.wz$') { throw "Non-archive delta invalidates this experiment: $($old.name)" }
+                $cached = Join-Path $referenceRoot $old.name
+                $referenceFileUrl = [uri]::new($referenceBase, [uri]::EscapeDataString($old.name))
+                $report.currentDownload = [ordered]@{ name = $old.name; url = $referenceFileUrl.AbsoluteUri; expectedSize = $old.size; expectedSha256 = $old.sha256; status = 'downloading-reference-delta' }
+                Invoke-WebRequest $referenceFileUrl.AbsoluteUri -OutFile $cached -TimeoutSec 900
+                if ((Get-Item $cached).Length -ne $old.size -or (Get-FileHash $cached -Algorithm SHA256).Hash.ToLowerInvariant() -ne $old.sha256) {
+                    throw "Reference archive size/SHA256 mismatch: $($old.name)"
+                }
+                $report.currentDownload.status = 'verified'
+                $deltas.Add([pscustomobject]@{ name = $old.name; referenceSha256 = $old.sha256; referenceSize = $old.size; fullSha256 = $current[0].hash; fullSize = $current[0].size })
+            }
+            foreach ($delta in $deltas) {
+                Move-Item (Join-Path $game $delta.name) (Join-Path $fullRoot $delta.name)
+                Copy-Item (Join-Path $referenceRoot $delta.name) (Join-Path $game $delta.name)
+            }
             $password = $script:qaPassword
             & $PSCommandPath -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
                 -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
                 -OutputDirectory $controlDirectory -ObserveSeconds $ObserveSeconds -GameHost $GameHost `
-                -PreparedGameDirectory $game -PublishedRuntimeControl
+                -PreparedGameDirectory $game -PublishedRuntimeControl -ReferenceAssetControl
             $controlExit = $LASTEXITCODE
             $script:qaPassword = $password
             $script:snapshotIndex = 0
             $control = Get-Content (Join-Path $controlDirectory 'result.json') -Raw | ConvertFrom-Json
             $report.publishedControl = [pscustomobject]@{ source = $published.runtimeSourceCommit; exitCode = $controlExit; status = $control.status; nativeUiObserved = $control.nativeUiObserved; initializeSuccessObserved = $control.initializeSuccessObserved; capsAckObserved = $control.capsAckObserved; error = $control.error; directory = $controlDirectory }
+            if ($control.status -ne 'native-startup-observed') {
+                throw 'Previously working reference51 control did not boot now: STOP asset attribution/bisection; reconsider environment/observer before any asset fix'
+            }
+            foreach ($delta in $deltas) {
+                Copy-Item (Join-Path $fullRoot $delta.name) (Join-Path $game $delta.name) -Force
+                if ((Get-Item (Join-Path $game $delta.name)).Length -ne $delta.fullSize -or
+                    (Get-FileHash (Join-Path $game $delta.name) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $delta.fullSha256) {
+                    throw "Full archive restore failed: $($delta.name)"
+                }
+            }
+            $PublishedRuntimeControl = $true
+            $report.publishedRuntimeControl = $true
+            $report.inputKind = 'INTERNAL full65 assets vs working reference51; SAME exact published e363 runtime/backend/observer; NO compiled overlay or release fallback'
         }
     }
     if (-not $PublishedRuntimeControl) {
@@ -219,7 +281,13 @@ try {
         }
         Copy-Item $crtManifest (Join-Path $game 'msvc-runtime-provenance.json')
     } else {
-        $report.publishedRuntimeFiles = @($verifiedFiles | Where-Object { $_.name -in @('Kaentake.exe', 'Kaentake.dll', 'Custom.wz', 'BunsMS.dll') -or $_.name -match '^(msvcp|vcruntime|vccorlib|concrt)[^/\\]*\.dll$' })
+        $report.publishedRuntimeFiles = @(foreach ($file in $manifest.files | Where-Object { $_.name -in @('Kaentake.exe', 'Kaentake.dll', 'Custom.wz', 'BunsMS.dll') -or $_.name -match '^(msvcp|vcruntime|vccorlib|concrt)[^/\\]*\.dll$' }) {
+            $path = Join-Path $game $file.name
+            $sha = (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ((Get-Item $path).Length -ne $file.size -or $sha -ne $file.hash) { throw "Exact published runtime changed: $($file.name)" }
+            [pscustomobject]@{ name = $file.name; size = $file.size; sha256 = $sha }
+        })
+        if ($report.publishedRuntimeFiles.Count -ne 13) { throw 'Exact published native runtime control requires all thirteen pinned runtime files' }
     }
     "[config]`nhost=$GameHost`nport=8484`n" | Set-Content (Join-Path $game 'config.ini') -Encoding ascii
     $configPath = Join-Path $game 'config.ini'
