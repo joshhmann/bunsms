@@ -160,6 +160,23 @@ playability acceptance. Java/MySQL are used only by the isolated same-runner CI
 backend helper; players retain the existing Linux-hosted server deployment and
 never install a backend with the launcher.
 
+News `type` and `text` are untrusted plaintext: the renderer creates DOM elements
+and assigns `textContent`, never interpolates those fields as markup. The
+installer workflow's `news_security_smoke` mode consumes a pinned, canonical
+HTTPS news fixture through the real installed preload/renderer and checks literal
+text plus an inert benign execution marker. Run `38941281591` reproduced marker
+execution before the repair; `38941631111` verified literal rendering, zero
+executable news elements and no marker execution after it. This was observed on
+Windows Server 2022 build 20348, not a Windows 10/11 compatibility claim.
+
+Mutable INI reads and writes honor section ownership: Kaentake routing belongs
+to `[config]`; stock routing/display settings belong to `[general]`, and stock
+sleep timing to `[debug]`. Same-named keys in auxiliary sections neither satisfy
+configuration preflight nor get rewritten. Regression tests cover auxiliary
+bytes, mixed-case sections, CRLF, resolution and explicit QA-port preservation.
+The corrected installer and final full matched asset cohort still require the
+complete download/launch and native gameplay qualification described above.
+
 ### Native feature readiness
 
 Successful hook/route/ABI installation permits a main-thread prerequisite probe,
