@@ -20,11 +20,14 @@ FetchContent_Declare(kaentake
         COMMAND "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_SOURCE_DIR}/patches/0001-load-buns-companion.patch"
         COMMAND "${GIT_EXECUTABLE}" apply --check "${CMAKE_CURRENT_SOURCE_DIR}/patches/0003-resolve-domain-host.patch"
         COMMAND "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_SOURCE_DIR}/patches/0003-resolve-domain-host.patch"
+        COMMAND "${GIT_EXECUTABLE}" apply --check "${CMAKE_CURRENT_SOURCE_DIR}/patches/0004-capture-connect-flow.patch"
+        COMMAND "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_SOURCE_DIR}/patches/0004-capture-connect-flow.patch"
 )
 
 file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/patches/0001-load-buns-companion.patch" companion_patch_sha256)
 file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/patches/0003-resolve-domain-host.patch" resolver_patch_sha256)
+file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/patches/0004-capture-connect-flow.patch" connect_diagnostic_patch_sha256)
 file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/kaentake-build.json" CONTENT
-    "{\n  \"upstreamCommit\": \"2a43a01e7f4cdd75cda08ab533049230760d7cfa\",\n  \"companionPatchSha256\": \"${companion_patch_sha256}\",\n  \"resolverPatchSha256\": \"${resolver_patch_sha256}\",\n  \"diagnosticOnly\": false,\n  \"companionEntry\": \"BunsMS_Initialize\"\n}\n"
+    "{\n  \"upstreamCommit\": \"2a43a01e7f4cdd75cda08ab533049230760d7cfa\",\n  \"companionPatchSha256\": \"${companion_patch_sha256}\",\n  \"resolverPatchSha256\": \"${resolver_patch_sha256}\",\n  \"connectDiagnosticPatchSha256\": \"${connect_diagnostic_patch_sha256}\",\n  \"diagnosticOnly\": true,\n  \"companionEntry\": \"BunsMS_Initialize\"\n}\n"
 )
 FetchContent_MakeAvailable(kaentake)
