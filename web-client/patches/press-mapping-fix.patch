@@ -1,0 +1,80 @@
+diff --git a/src/client/IO/Window.cpp b/src/client/IO/Window.cpp
+index 9161c4a..e6514ec 100644
+--- a/src/client/IO/Window.cpp
++++ b/src/client/IO/Window.cpp
+@@ -48,20 +48,41 @@ namespace jrc
+ 
+         DoubleclickState doubleclick_state;
+ 
+-        Point<int16_t> logical_cursor(GLFWwindow* window, double x, double y)
++        struct BackingSize
+         {
+-#ifdef MS_PLATFORM_WASM
+-            const int width = EM_ASM_INT({ return Module.canvas.width; });
+-            const int height = EM_ASM_INT({ return Module.canvas.height; });
+-#else
+             int width = 0;
+             int height = 0;
+-            glfwGetWindowSize(window, &width, &height);
+-#endif
+-            return Viewport::input_position(x, y, width, height,
++        };
++
++        BackingSize backing_size(GLFWwindow* window)
++        {
++            BackingSize size;
++ #ifdef MS_PLATFORM_WASM
++            // GLFW reports mouse coordinates in backing pixels
++            // (CSS position scaled by canvas.width/rect.width per axis),
++            // so the mapping must divide by the same backing size the GL
++            // viewport uses. Sample once per event: the shell and the emsdk
++            // runtime can reassert canvas.width between separate reads.
++            (void)window;
++            size.width = EM_ASM_INT({ return Module.canvas.width; });
++            size.height = EM_ASM_INT({ return Module.canvas.height; });
++ #else
++            glfwGetWindowSize(window, &size.width, &size.height);
++ #endif
++            return size;
++        }
++
++        Point<int16_t> logical_cursor(BackingSize size, double x, double y)
++        {
++            return Viewport::input_position(x, y, size.width, size.height,
+                 Constants::viewwidth(), Constants::viewheight(), Constants::VIEWYOFFSET);
+         }
+ 
++        Point<int16_t> logical_cursor(GLFWwindow* window, double x, double y)
++        {
++            return logical_cursor(backing_size(window), x, y);
++        }
++
+         void sync_logical_view()
+         {
+ #ifdef MS_PLATFORM_WASM
+@@ -99,12 +120,11 @@ namespace jrc
+             }
+             static int backing_width = 0;
+             static int backing_height = 0;
+-            const int next_width = EM_ASM_INT({ return Module.canvas.width; });
+-            const int next_height = EM_ASM_INT({ return Module.canvas.height; });
+-            if (next_width != backing_width || next_height != backing_height)
++            const BackingSize next = backing_size(nullptr);
++            if (next.width != backing_width || next.height != backing_height)
+             {
+-                backing_width = next_width;
+-                backing_height = next_height;
++                backing_width = next.width;
++                backing_height = next.height;
+                 glViewport(0, 0, backing_width, backing_height);
+             }
+ #endif
+@@ -163,7 +183,7 @@ namespace jrc
+         double xpos = 0.0;
+         double ypos = 0.0;
+         glfwGetCursorPos(window, &xpos, &ypos);
+-        const Point<int16_t> position = logical_cursor(window, xpos, ypos);
++        const Point<int16_t> position = logical_cursor(backing_size(window), xpos, ypos);
+         UI::get().send_cursor(position);
+         switch (button)
+         {
