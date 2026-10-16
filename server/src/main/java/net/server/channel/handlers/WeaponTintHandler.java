@@ -66,7 +66,7 @@ public final class WeaponTintHandler extends AbstractPacketHandler {
         }
         int action = p.readByte();
         switch (action) {
-            case ACTION_REQUEST -> chr.sendPacket(ColorPrismPackets.snapshot(chr));
+            case ACTION_REQUEST -> ColorPrismPackets.sendSnapshot(chr, c);
             case ACTION_APPLY -> handleApply(p, c, chr);
             case ACTION_RESTORE -> handleRestore(p, c, chr);
             case ACTION_APPLY_LOOK -> handleApplyLook(p, c, chr);

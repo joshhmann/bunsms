@@ -1,6 +1,8 @@
 package server.colorprism;
 
 import client.Character;
+import client.Client;
+import client.ClientCaps;
 import client.inventory.Equip;
 import client.inventory.InventoryType;
 import client.inventory.Item;
@@ -67,28 +69,59 @@ public final class ColorPrismPackets {
         return p;
     }
 
-    /**
-     * Sends every PRISM_SYNC-capable character on the map their own snapshot,
-     * INCLUDING empty palettes (entry count 0): a restore-to-empty must clear
-     * remote clients' tint tables, or they retain the stale tint forever.
-     * Contract v1: legacy sessions never receive 0x372F (unsolicited or
-     * otherwise).
-     */
-    public static void broadcastMapTable(MapleMap map) {
+    /** The palette belongs to subject; only the receiving connection needs PRISM_SYNC. */
+    public static void sendSnapshot(Character subject, Client recipient) {
+        if (recipient != null && recipient.hasCaps(ClientCaps.PRISM_SYNC)) {
+            recipient.sendPacket(snapshot(subject));
+        }
+    }
+
+    /** Includes empty palettes so observers discard an owner's restored tint. */
+    public static void broadcastSnapshot(Character subject) {
+        Packet packet = null;
+        Client owner = subject.getClient();
+        if (owner != null && owner.hasCaps(ClientCaps.PRISM_SYNC)) {
+            packet = snapshot(subject);
+            owner.sendPacket(packet);
+        }
+        MapleMap map = subject.getMap();
         if (map == null) {
             return;
         }
-        for (Character chr : new ArrayList<>(map.getCharacters())) {
-            if (chr != null && chr.getClient() != null
-                    && chr.getClient().hasCaps(client.ClientCaps.PRISM_SYNC)) {
-                chr.sendPacket(snapshot(chr));
+        for (Character observer : map.getAllPlayers()) {
+            if (observer == subject) {
+                continue;
+            }
+            Client recipient = observer.getClient();
+            if (recipient != null && recipient.hasCaps(ClientCaps.PRISM_SYNC)) {
+                if (packet == null) {
+                    packet = snapshot(subject);
+                }
+                recipient.sendPacket(packet);
             }
         }
     }
 
-    /** True when the snapshot would carry at least one entry. */
-    public static boolean hasTintEntries(Character chr) {
-        return !collectEntries(chr).isEmpty();
+    /** Exchange the arrival's palette and existing actors' palettes in both directions. */
+    public static void onMapEntry(Character arrival) {
+        MapleMap map = arrival.getMap();
+        if (map == null) {
+            return;
+        }
+        Client arrivingClient = arrival.getClient();
+        Packet arrivalPacket = null;
+        for (Character existing : map.getAllPlayers()) {
+            if (existing != arrival) {
+                sendSnapshot(existing, arrivingClient);
+            }
+            Client recipient = existing.getClient();
+            if (recipient != null && recipient.hasCaps(ClientCaps.PRISM_SYNC)) {
+                if (arrivalPacket == null) {
+                    arrivalPacket = snapshot(arrival);
+                }
+                recipient.sendPacket(arrivalPacket);
+            }
+        }
     }
 
     static List<int[]> collectEntries(Character chr) {

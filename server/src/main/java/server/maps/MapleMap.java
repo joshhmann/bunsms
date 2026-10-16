@@ -2856,7 +2856,7 @@ public class MapleMap {
         announcePlayerDiseases(chr.getClient());
         // Coloring prism (ticket #11): both directions — arrival needs everyone's tints,
         // everyone already here needs the arrival's.
-        server.colorprism.ColorPrismPackets.broadcastMapTable(this);
+        server.colorprism.ColorPrismPackets.onMapEntry(chr);
         // Day/night + weather. Sent to the ARRIVAL only, not broadcast: the sky is a
         // world-level fact, so everyone already on this map has it. Snapped rather than
         // faded, because a two second dusk fade after every portal reads as a bug.
