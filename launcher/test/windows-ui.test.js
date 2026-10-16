@@ -19,7 +19,7 @@ async function run() {
   const port = listener.address().port;
   await new Promise((resolve) => listener.close(resolve));
   const report = { startedUtc: new Date().toISOString(), executable, uiLayer, status: "not-completed", fullNativeGameplay: `PENDING; this check verifies ${uiLayer} launcher UI only` };
-  const child = spawn(executable, [`--remote-debugging-port=${port}`], { stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawn(executable, [`--remote-debugging-port=${port}`, "--enable-logging=stderr"], { stdio: ["ignore", "pipe", "pipe"] });
   let processError, diagnostics = "", connection;
   child.on("error", (error) => { processError = error; });
   for (const stream of [child.stdout, child.stderr]) stream.on("data", (bytes) => { diagnostics = (diagnostics + bytes.toString()).slice(-16384); });
@@ -54,60 +54,13 @@ async function run() {
       connection.send(JSON.stringify({ id, method, params }));
     });
     await command("Runtime.enable");
+    report.rendererObservation = { attachedUtc: new Date().toISOString(),
+      scope: "Chromium stderr collected from OS start; CDP runtime events from attachment. No page reload, source breakpoint, init monkeypatch, or claim that early Runtime events were replayed." };
     const evaluate = async (expression) => {
       const value = await command("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
       if (value.exceptionDetails) throw new Error(JSON.stringify(value.exceptionDetails));
       return value.result.value;
     };
-    // Observe the real renderer startup promise before executing its script.
-    // This debugger is attached ONLY to Electron, never to the native game.
-    const scriptUrls = new Map();
-    let startupWrapped = false;
-    let breakpoint = null;
-    connection.addEventListener("message", async ({ data }) => {
-      const message = JSON.parse(data);
-      if (message.method === "Debugger.scriptParsed") scriptUrls.set(message.params.scriptId, message.params.url);
-      if (message.method !== "Debugger.paused") return;
-      if (!breakpoint || !(message.params.hitBreakpoints || []).includes(breakpoint.breakpointId)) return;
-      const ownedBreakpoint = breakpoint;
-      breakpoint = null; // Only this pause owns evaluation/resume, even across async replies.
-      report.startupPause = { utc: new Date().toISOString(), reason: message.params.reason, hitBreakpoints: message.params.hitBreakpoints };
-      try {
-        const frame = message.params.callFrames[0];
-        if (!startupWrapped && (scriptUrls.get(frame.location.scriptId) || "").endsWith("/renderer.js")) {
-          await command("Debugger.removeBreakpoint", { breakpointId: ownedBreakpoint.breakpointId });
-          const wrapped = await command("Debugger.evaluateOnCallFrame", {
-            callFrameId: frame.callFrameId,
-            expression: `(() => {
-              let finish;
-              globalThis.__bunsActualStartup = new Promise(resolve => { finish = resolve; });
-              const actualInit = init;
-              init = function(...args) {
-                const startedUtc = new Date().toISOString();
-                return actualInit.apply(this, args).then(value => {
-                  finish({ status: "resolved", startedUtc, finishedUtc: new Date().toISOString() });
-                  return value;
-                }, error => {
-                  finish({ status: "rejected", startedUtc, finishedUtc: new Date().toISOString(), error: String(error), stack: error.stack });
-                  throw error;
-                });
-              };
-            })()`
-          });
-          if (wrapped.exceptionDetails) report.startupObserverError = wrapped.exceptionDetails;
-          else startupWrapped = true;
-        }
-      } catch (error) { report.startupObserverError = String(error); }
-      finally { await command("Debugger.resume").catch(() => {}); }
-    });
-    await command("Debugger.enable");
-    breakpoint = await command("Debugger.setBreakpointByUrl", { lineNumber: 422, urlRegex: "/renderer\\.js$" });
-    await command("Page.reload", { ignoreCache: true });
-    while (!startupWrapped && Date.now() < deadline) await delay(50);
-    if (!startupWrapped) throw new Error("Actual renderer startup observation could not be established");
-    report.actualStartup = await evaluate("globalThis.__bunsActualStartup");
-    if (breakpoint) await command("Debugger.removeBreakpoint", { breakpointId: breakpoint.breakpointId });
-    await command("Debugger.disable");
     let profile;
     while (Date.now() < deadline) {
       profile = await evaluate("typeof window.buns === 'object' ? window.buns.getProfile() : null");
