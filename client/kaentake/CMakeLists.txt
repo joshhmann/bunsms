@@ -36,4 +36,3 @@ file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/kaentake-build.json" CONTENT
 )
 FetchContent_MakeAvailable(kaentake)
 target_include_directories(injector PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
-target_link_options(injector PRIVATE "/EXPORT:Kaentake_SetPrismItemEffBridge=_Kaentake_SetPrismItemEffBridge")

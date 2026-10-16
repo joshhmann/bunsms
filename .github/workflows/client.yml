@@ -73,6 +73,23 @@ jobs:
 
       - name: Build pinned Kaentake runtime
         run: cmake --build client/build-kaentake --config Release --target injector launcher
+      - name: Verify exact native companion and bridge export ABIs
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
+          $dumpbin = & $vswhere -latest -find 'VC/Tools/MSVC/**/bin/Hostx64/x86/dumpbin.exe' | Select-Object -First 1
+          if (-not $dumpbin) { throw 'MSVC dumpbin is unavailable' }
+          foreach ($check in @(
+            @{ path = 'client/build/Release/BunsMS.dll'; name = 'BunsMS_Initialize' },
+            @{ path = 'client/build-kaentake/Release/Kaentake.dll'; name = 'Kaentake_SetPrismItemEffBridge' }
+          )) {
+            $exports = & $dumpbin /exports $check.path
+            if ($LASTEXITCODE) { throw "Cannot read exports: $($check.path)" }
+            $exports | Write-Output
+            if (-not ($exports -match ("\s" + [regex]::Escape($check.name) + "\s*$"))) {
+              throw "Required exact native export absent: $($check.name)"
+            }
+          }
 
       - name: Publish Kaentake runtime artifact
         uses: actions/upload-artifact@v4
