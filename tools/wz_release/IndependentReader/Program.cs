@@ -105,7 +105,12 @@ internal static class Program
             Decode(path, node);
             IEnumerable<WzImageProperty> children = node is WzImage image ? image.WzProperties : (node as WzImageProperty)?.WzProperties;
             if (children != null)
-                foreach (var child in children) Walk(path + "/" + child.Name, child, ancestors);
+                foreach (var child in children)
+                {
+                    string childPath = path + "/" + child.Name;
+                    try { Walk(childPath, child, ancestors); }
+                    catch (Exception error) { Errors.Add(new JObject { ["path"] = childPath, ["error"] = error.ToString() }); }
+                }
         }
         finally { ancestors.Remove(node); }
     }
@@ -187,6 +192,9 @@ internal static class Program
                         "int" => node.GetInt() == (int)wanted,
                         "float" => node.GetFloat() == (float)wanted,
                         "string" => node.GetString() == (string)wanted,
+                        "vector" => wanted is JArray coordinates && coordinates.Count == 2 &&
+                            coordinates[0].Type == JTokenType.Integer && coordinates[1].Type == JTokenType.Integer &&
+                            node is WzVectorProperty vector && vector.X.Value == (int)coordinates[0] && vector.Y.Value == (int)coordinates[1],
                         _ => throw new InvalidDataException("Unsupported exact value contract: " + expected)
                     };
                     if (!matches) throw new InvalidDataException("Deployed metadata value differs: " + path);

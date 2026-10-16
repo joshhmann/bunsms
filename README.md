@@ -544,6 +544,13 @@ presence; no table entry implies unexercised functionality works.
   data files before Java startup; source/URLs/full hashes are in the single
   coordination contract. No seal activates production. Frozen rc3/old artifacts
   remain preserved and unqualified; fresh native engine acceptance is mandatory.
+- Exact native controls isolate the current pre-login failure to Item.wz, not a
+  proved bad node. Its five-image/47-added-item delta is preserved in immutable
+  internal diagnostics; no accepted content is cut. Fresh Windows MapleLib
+  run38926333427 reports57 errors, including46 known consumed gaps and reader
+  vector/walk limitations, not native-engine acceptance. The oracle now retains
+  individual child failures while continuing siblings and checks exact vector
+  coordinates; a fresh real Windows execution is required for those changes.
 - Upstream review remains pinned16ab7b7/selective GROUPA0874223/GROUPB60b869c,
   not unrelated-history parity or new AI/voting/Flux/Tripo3D scope. Evan review
   remains complete REVIEW ONLY, not playable-class scope.
