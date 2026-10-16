@@ -21,7 +21,8 @@ rules noted per row.
 | Address | Owner | Use | Evidence | Transcribed from |
 |---|---|---|---|---|
 | `0x004965F1` | dispatcher | `CClientSocket::ProcessPacket` — hooked exactly once | SEH | spec §2.2; dailycheckin bundle `kAddr_ClientSocket_ProcessPkt` agrees |
-| `0x009F84D0` | tick | `CWvsApp::CallUpdate` — hooked exactly once | SEH | spec §2.2 (Kaentake `CallUpdate` MEMBER_HOOK agrees) |
+| `0x009F84D0` | RETIRED — never hooked | `CWvsApp::CallUpdate`: Kaentake's Run_hook calls its own plain copy, never this VA — a Detour here would never fire under co-load (parent-confirmed call-graph) | — | retired 2026-10-16, superseded by Redraw row |
+| `0x009E4547` | tick | `CWndMan::RedrawInvalidatedWindows` — hooked exactly once. Called every frame by BOTH native Run and Kaentake Run_hook reimpl (bypass.cpp:309); zero Kaentake hooks on this site (verified: direct call only) | XREF (call sites in both Run bodies) | Kaentake bypass.cpp:308-309 |
 | `0x004065A6` | shared | `COutPacket::Encode4` | XREF | spec §2.2 |
 | `0x00406629` | shared | `CInPacket::Decode4` | XREF | spec §2.2 |
 | `0x00989588` | dailycheckin | `play_ui_sound` | BUNDLE | dailycheckin.zip `kAddr_play_ui_sound` |

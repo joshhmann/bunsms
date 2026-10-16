@@ -32,7 +32,14 @@ inline constexpr uintptr_t kZAllocStrWChar  = 0x00BF0BA8; // ZAllocStrSelector<w
 inline constexpr uintptr_t kClientSocket_ProcessPacket = 0x004965F1; // CClientSocket::ProcessPacket (SEH)
 
 // --- Tick (owned by tick.cpp; hooked EXACTLY ONCE) -------------------------
-inline constexpr uintptr_t kWvsApp_CallUpdate = 0x009F84D0; // CWvsApp::CallUpdate (SEH)
+// SEAM (parent-confirmed call-graph): Kaentake Detours CWvsApp::Run and its
+// Run_hook calls its OWN plain CallUpdate_hook, never native 0x009F84D0 — a
+// tick Detour there would never execute under co-load. BOTH Run
+// implementations (native + Kaentake reimpl bypass.cpp:309) call
+// CWndMan::RedrawInvalidatedWindows (0x009E4547) every frame on the main
+// thread, and Kaentake installs NO hook there (verified: only a direct call).
+// One site, both profiles, zero Kaentake overlap. XREF (CallUpdate row) retired.
+inline constexpr uintptr_t kWndMan_RedrawInvalidatedWindows = 0x009E4547; // XREF
 
 // --- Daily check-in (§3.1; bundle: dailycheckin.zip README + source) -------
 namespace dailycheckin {

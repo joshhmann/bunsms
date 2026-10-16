@@ -6,17 +6,18 @@
 
 namespace {
 
-using CallUpdate_t = void(__thiscall*)(void*, int);
-CallUpdate_t g_CallUpdateOrig = reinterpret_cast<CallUpdate_t>(addr::kWvsApp_CallUpdate);
+using Redraw_t = void(__cdecl*)(void);
+Redraw_t g_RedrawOrig = reinterpret_cast<Redraw_t>(addr::kWndMan_RedrawInvalidatedWindows);
 
-void __fastcall CallUpdate_hook(void* pThis, void* /*edx*/, int tCurTime) {
-    // Feature ticks BEFORE the stage loop (spec §2.3 order).
+void __cdecl Redraw_hook() {
+    // Feature ticks BEFORE the redraw (same §2.3 order the CallUpdate
+    // hook used: daily check-in first; later slices append here).
     DailyCheckin_Tick();
-    g_CallUpdateOrig(pThis, tCurTime);
+    g_RedrawOrig();
 }
 
 } // namespace
 
 void InstallTick() {
-    ATTACH_HOOK(g_CallUpdateOrig, CallUpdate_hook);
+    ATTACH_HOOK(g_RedrawOrig, Redraw_hook);
 }
