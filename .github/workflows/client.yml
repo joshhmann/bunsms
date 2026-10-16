@@ -31,6 +31,22 @@ jobs:
         run: cmake --build --preset release-win32
         working-directory: client
 
+      - name: Configure pinned Kaentake runtime
+        run: cmake -S client/kaentake -B client/build-kaentake -G "Visual Studio 17 2022" -A Win32
+
+      - name: Build pinned Kaentake runtime
+        run: cmake --build client/build-kaentake --config Release --target injector launcher
+
+      - name: Publish Kaentake runtime artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Kaentake-runtime
+          path: |
+            client/build-kaentake/Release/Kaentake.exe
+            client/build-kaentake/Release/Kaentake.dll
+            client/build-kaentake/Release/Custom.wz
+            client/build-kaentake/kaentake-build.json
+
       - name: Opcode drift gate
         run: python tools/check_opcodes.py
         working-directory: client

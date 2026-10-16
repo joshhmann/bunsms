@@ -4,6 +4,7 @@
 *.wz
 *.exe
 *.zip
+/client/build-kaentake/
 
 # Launcher build artifacts
 launcher/dist/

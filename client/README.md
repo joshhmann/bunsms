@@ -19,10 +19,11 @@ client/
 ├── external/            # Detours + WzLib submodules (checkout: recursive)
 ├── src/                 # injector + spine + feature modules
 │   ├── pch, injector, system, hook, debug
-│   ├── dispatcher / tick (single ProcessPacket hook / single CallUpdate hook)
+│   ├── dispatcher / tick (single ProcessPacket / redraw hooks)
 │   ├── addresses.h      # single address table — no raw VAs elsewhere
 │   ├── wvs/ + ztl/      # minimal engine layouts the features need
 │   └── dailycheckin.*   # §3.1 (more modules land per slice)
+├── kaentake/            # pinned upstream runtime + ordered integration patches
 └── tools/
     └── check_opcodes.py # opcode drift gate (runs in client.yml)
 ```
@@ -46,6 +47,22 @@ cmake --build --preset release-win32
 `build/Release/BunsMS.dll` (+ `.pdb`) is the artifact CI publishes.
 Checkout requires `submodules: recursive` (Detours + WzLib).
 
+The required Kaentake runtime has a separate build tree to preserve upstream's
+target names and exact dependency revisions:
+
+```bat
+cmake -S kaentake -B build-kaentake -G "Visual Studio 17 2022" -A Win32
+cmake --build build-kaentake --config Release --target injector launcher
+```
+
+`kaentake/CMakeLists.txt` fetches upstream commit
+`2a43a01e7f4cdd75cda08ab533049230760d7cfa` with its pinned submodules, checks
+and applies the repository-owned ordered patches, then builds every upstream
+module unchanged except those patches. The separate `Kaentake-runtime`
+CI artifact contains only `Kaentake.exe`, `Kaentake.dll`, `Custom.wz`, and
+the source/patch provenance JSON. Renderer build side-outputs are not runtime
+replacements and must not overwrite the verified stock engine DLLs.
+
 ## Paired release (§5)
 
 Client and server ship together; an old DLL against a new server (or
@@ -66,12 +83,23 @@ hash/size per release. WZ art ships as profile-tagged `.wz` entries through
 the existing `publish_client.sh` flow (never regenerate `UI.nx` from v83
 `UI.wz`).
 
+Kaentake remains the launcher and primary runtime; placing `BunsMS.dll` beside
+an unmodified upstream launcher is not a load mechanism. The patched Kaentake
+DLL first completes all upstream client hooks at its post-unpack
+`SetUnhandledExceptionFilter` signal (`0x00796FDD`), then loads the companion
+from MapleStory.exe's directory and calls the exact exported ABI
+`BOOL __cdecl BunsMS_Initialize(void)`. The companion's DllMain must not install
+client hooks or its own competing bootstrap. Initialization is one-shot on
+the game thread, after allocator initialization and outside DllMain; the
+module stays loaded for the process lifetime. Missing/failed companion
+initialization is an explicit launch failure, never a silent vanilla fallback.
+Ship the patched Kaentake DLL and compatible BunsMS DLL in the same pinned
+release; no dinput8 proxy is required for this path.
+
 ## License notes
 
 - `external/Detours` (Microsoft, MIT) + `external/WzLib` (iw2d) are
   **submodules, not vendored code** — their own license terms apply.
-- Kaentake declares **no license**: reference + runtime shape only. No
-  Kaentake lines are vendored in this tree (`hook.*` is clean-room,
-  Kaentake-shaped; `wvs/`/`ztl/` layouts are engine facts, not creative
-  expression — minimal headers only, grown on demand).
+- `kaentake/` records the user-approved pinned upstream patch build used for
+  this private client; upstream credit remains with the Kaentake artifact.
 - Suite/GPLv3 components are untouched by this tree.

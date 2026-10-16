@@ -1,0 +1,54 @@
+--- a/src/system.cpp
++++ b/src/system.cpp
+@@ -1,6 +1,7 @@
+ #include "pch.h"
+ #include "hook.h"
+ #include "constants.h"
++#include "debug.h"
+ 
+ #define WIN32_LEAN_AND_MEAN
+ #include <windows.h>
+@@ -12,13 +13,42 @@
+ #pragma comment(lib, "ws2_32.lib")
+ 
+ 
++
++// Called by the game after unpacking and allocator initialization, not DllMain.
++// Kaentake finishes installing every upstream hook before the companion starts.
++static void LoadBunsCompanion() {
++    wchar_t path[MAX_PATH];
++    DWORD length = GetModuleFileNameW(nullptr, path, MAX_PATH);
++    wchar_t* filename = length && length < MAX_PATH ? wcsrchr(path, L'\\') : nullptr;
++    if (!filename || FAILED(StringCchCopyW(filename + 1, MAX_PATH - (filename + 1 - path), L"BunsMS.dll"))) {
++        ErrorMessage("Could not resolve BunsMS.dll beside MapleStory.exe.");
++        ExitProcess(ERROR_BAD_PATHNAME);
++    }
++    HMODULE module = LoadLibraryW(path);
++    if (!module) {
++        DWORD error = GetLastError();
++        ErrorMessage("Could not load required BunsMS.dll [%lu].", error);
++        ExitProcess(error ? error : ERROR_DLL_INIT_FAILED);
++    }
++    using Initialize = BOOL(__cdecl*)();
++    auto initialize = reinterpret_cast<Initialize>(GetProcAddress(module, "BunsMS_Initialize"));
++    if (!initialize || !initialize()) {
++        ErrorMessage("BunsMS.dll does not provide a successful BunsMS_Initialize entrypoint.");
++        ExitProcess(ERROR_DLL_INIT_FAILED);
++    }
++    // Keep the module loaded until process exit: native hooks retain its code.
++}
++
+ typedef decltype(&SetUnhandledExceptionFilter) SetUnhandledExceptionFilter_t;
+ static SetUnhandledExceptionFilter_t SetUnhandledExceptionFilter_orig = reinterpret_cast<SetUnhandledExceptionFilter_t>(GetAddress("KERNEL32", "SetUnhandledExceptionFilter"));
+ 
+ LPTOP_LEVEL_EXCEPTION_FILTER WINAPI SetUnhandledExceptionFilter_hook(LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter) {
+     // ZExceptionHandler::ZExceptionHandler - after dynamic initializers for ZAllocEx<T>::_s_alloc
+-    if (reinterpret_cast<uintptr_t>(_ReturnAddress()) == 0x00796FDD) {
++    static bool clientHooksInstalled = false;
++    if (!clientHooksInstalled && reinterpret_cast<uintptr_t>(_ReturnAddress()) == 0x00796FDD) {
++        clientHooksInstalled = true;
+         AttachClientHooks();
++        LoadBunsCompanion();
+     }
+     return SetUnhandledExceptionFilter_orig(lpTopLevelExceptionFilter);
+ }
