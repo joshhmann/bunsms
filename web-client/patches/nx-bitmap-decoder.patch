@@ -1,0 +1,76 @@
+--- a/src/nlnx/bitmap.cpp
++++ b/src/nlnx/bitmap.cpp
+@@ -20,6 +20,8 @@
+ #include "file_impl.hpp"
+ #include <lz4.h>
+ #include <unistd.h>
++#include <climits>
++#include <stdexcept>
+ #include <vector>
+ 
+ namespace nl
+@@ -40,25 +42,55 @@
+ 		return m_file != nullptr;
+ 	}
+ 	std::vector<char> bitmap_buf;
++	std::vector<char> bitmap_src;
+ 	void const* bitmap::data() const
+ 	{
++		// Absent node: legacy contract, no pixels exist.
+ 		if (!m_file)
+ 			return nullptr;
+ 		_file_data* fd = static_cast<_file_data*>(m_file);
+ 
+-		auto const l = length();
++		// Raw byte count implied by the node header dimensions.
++		// Computed in 64 bits: only values the LZ4 int API can represent
++		// are decoded; anything wider cannot be passed to the decoder.
++		uint64_t raw64 = static_cast<uint64_t>(m_width) * m_height * 4u;
++		if (raw64 == 0)
++			return nullptr;
++		if (raw64 > static_cast<uint64_t>(INT_MAX))
++			throw std::runtime_error("Bitmap dimensions undecodable");
++		auto const l = static_cast<uint32_t>(raw64);
++
++		// On-disk layout: uint32 LE compressed length at m_offset,
++		// then exactly that many compressed bytes.
++		// A present bitmap that fails any step below throws, matching the
++		// file open/parse error contract: malformed art must surface, never
++		// become silent blank texture via a null return.
++		uint32_t compressed_len = 0;
++		if (!io_read(fd, &compressed_len, sizeof(compressed_len), m_offset))
++			throw std::runtime_error("Failed to read bitmap length prefix");
++		if (compressed_len == 0 || compressed_len > static_cast<uint32_t>(INT_MAX))
++			throw std::runtime_error("Invalid bitmap compressed length");
++		// End-of-file bound before growing either buffer: the payload must
++		// sit inside the file. fd->size is set on all paths (native fstat,
++		// WASM LazyFS actual file size); a zero size means unknown, in which
++		// case the io_read below remains the bound and refuses short reads.
++		if (fd->size > 0) {
++			uint64_t end = m_offset + 4u + compressed_len;
++			if (end < m_offset || end > fd->size)
++				throw std::runtime_error("Bitmap payload outside file bounds");
++		}
+ 		if (l + 0x20 > bitmap_buf.size())
+ 			bitmap_buf.resize(l + 0x20);
+-
+-		uint64_t data_offset = m_offset + 4;
+-
+-		uint32_t read_len = l;
+-		std::vector<char> src_buf(read_len);
++		if (compressed_len > bitmap_src.size())
++			bitmap_src.resize(compressed_len);
+ 
+-		if (!io_read(fd, src_buf.data(), read_len, data_offset))
+-			return nullptr;
++		if (!io_read(fd, bitmap_src.data(), compressed_len, m_offset + 4))
++			throw std::runtime_error("Failed to read bitmap payload");
+ 
+-		::LZ4_decompress_fast(src_buf.data(), bitmap_buf.data(), static_cast<int>(l));
++		int decoded = ::LZ4_decompress_safe(bitmap_src.data(), bitmap_buf.data(),
++			static_cast<int>(compressed_len), static_cast<int>(l));
++		if (decoded != static_cast<int>(l))
++			throw std::runtime_error("Failed to decode bitmap LZ4 payload");
+ 		return bitmap_buf.data();
+ 	}
+ 	uint16_t bitmap::width() const

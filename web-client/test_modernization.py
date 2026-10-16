@@ -21,7 +21,8 @@ class ModernizationTests(unittest.TestCase):
             with tarfile.open(fileobj=io.BytesIO(archive)) as snapshot:
                 snapshot.extractall(source, filter="data")
             for name in ("remote-movement.patch", "deployed-npc-chat.patch",
-                         "browser-modernization.patch", "inventory-equipment.patch",
+                         "browser-modernization.patch", "focus-guard.patch",
+                         "nx-bitmap-decoder.patch", "inventory-equipment.patch",
                          "shop-storage.patch"):
                 patch = root / "patches" / name
                 subprocess.run(["git", "apply", "--check", str(patch)],
@@ -39,6 +40,11 @@ class ModernizationTests(unittest.TestCase):
                                  source / "src/client/Character/Inventory/InventoryType.cpp"],
                 "inventory_equipment": [client / "Net/InPacket.cpp",
                                         client / "Character/Inventory/InventoryType.cpp"],
+                "nx_decoder": [source / "src/nlnx/bitmap.cpp",
+                               source / "src/nlnx/file.cpp",
+                               source / "src/nlnx/node.cpp",
+                               source / "src/nlnx/nx.cpp",
+                               source / "src/nlnx/audio.cpp"],
             }
             for name, units in suites.items():
                 with self.subTest(suite=name):
@@ -48,11 +54,17 @@ class ModernizationTests(unittest.TestCase):
                         # EnumMap transitively uses deprecated std::iterator;
                         # the engine CMake build does not promote it.
                         flags.append("-Wno-error=deprecated-declarations")
+                    link = ["-llz4"] if name == "nx_decoder" else []
+                    if name == "nx_decoder":
+                        # Pre-existing engine warning (unused static in node.cpp);
+                        # the engine CMake build does not promote it.
+                        flags = flags + ["-Wno-error=unused-function"]
                     subprocess.run([
                         "g++", *flags,
                         "-I", str(client), "-I", str(source / "src"),
                         str(root / ("test_" + name + ".cpp")),
                         *map(str, units), "-o", str(binary),
+                        *link,
                     ], check=True)
                     subprocess.run([str(binary)], check=True)
 

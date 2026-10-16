@@ -17,6 +17,8 @@ RUN git apply --check /tmp/patches/remote-movement.patch \
     && git apply /tmp/patches/browser-modernization.patch \
     && git apply --check /tmp/patches/focus-guard.patch \
     && git apply /tmp/patches/focus-guard.patch \
+    && git apply --check /tmp/patches/nx-bitmap-decoder.patch \
+    && git apply /tmp/patches/nx-bitmap-decoder.patch \
     && git apply --check /tmp/patches/inventory-equipment.patch \
     && git apply /tmp/patches/inventory-equipment.patch \
     && git apply --check /tmp/patches/shop-storage.patch \
