@@ -33,6 +33,7 @@ import server.life.LifeFactory;
 import server.life.Monster;
 import server.life.PlayerNPC;
 import server.partyquest.GuardianSpawnPoint;
+import server.weather.WeatherMapVisibility;
 import tools.DatabaseConnection;
 import tools.StringUtil;
 
@@ -352,6 +353,7 @@ public class MapFactory {
         }
 
         map.setBackgroundTypes(backTypes);
+        WeatherMapVisibility.register(mapid, mapData);
         map.generateMapDropRangeCache();
 
         return map;

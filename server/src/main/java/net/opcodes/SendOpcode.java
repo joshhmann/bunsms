@@ -354,14 +354,26 @@ public enum SendOpcode {
     MAPLELIFE_ERROR(0x15E),
     VICIOUS_HAMMER(0x162),
     // Custom-opcode registry: see server/docs/OPCODE_REGISTRY.md.
-    // Reserved (not yet added): 0x373D (WEATHER_SYNC), 0x373F (LAMP_PREVIEW).
+    // Reserved (not yet added): 0x373C/0x373E (weather/lamp recv twins, unused).
     // Claimed: DAILY_CHECKIN S2C (0x17C), CASHSHOP_WINDOW_SYNC S2C (0x3731),
-    // COLORING_PRISM_SYNC S2C (0x372F; WEAPON_TINT_SYNC is the dump-side alias).
+    // COLORING_PRISM_SYNC S2C (0x372F; WEAPON_TINT_SYNC is the dump-side alias),
+    // WEATHER_SYNC S2C (0x373D), LAMP_PREVIEW S2C (0x373F).
     // Stock ranges that are NOT custom: 0x145-0x14D (CASHSHOP_*), 0x8E (BLOW_WEATHER).
     VEGA_SCROLL(0x166),
     DAILY_CHECKIN(0x17C),
     CASHSHOP_WINDOW_SYNC(0x3731),
-    COLORING_PRISM_SYNC(0x372F);
+    COLORING_PRISM_SYNC(0x372F),
+    // custom: world day/night clock + sky state - LP_WeatherSync. Field order in
+    // server.weather.WeatherPackets is authoritative and must match
+    // Weather_HandleWorldState in the client DLL's weather.cpp exactly. 0x373C is
+    // reserved as the recv twin under the even-request / odd-reply convention and is
+    // unused: the client is only ever told the weather, it never asks.
+    WEATHER_SYNC(0x373D),
+    // custom: place a preview street lamp where the player stands - LP_LampPreview.
+    // Field order in server.lamp.LampPackets is authoritative and must match
+    // Lamp_HandlePreviewPacket in the client DLL's lamps.cpp exactly. 0x373E is
+    // reserved as the recv twin and is likewise unused.
+    LAMP_PREVIEW(0x373F);
     private int code = -2;
 
     SendOpcode(int code) {

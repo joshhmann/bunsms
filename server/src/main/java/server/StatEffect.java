@@ -220,6 +220,26 @@ public class StatEffect {
         return loadFromData(source, itemid, false, false);
     }
 
+    /**
+     * Builds a small item-sourced timed buff.  Some effects inherit no player Skill.wz
+     * entry at all, so there is no ordinary StatEffect to load.  Keeping this as an item
+     * effect makes the client use the cash-item icon in the temporary-stat bar while
+     * Character still applies the supplied BuffStats to its real stat calculations.
+     */
+    public static StatEffect createFamiliarEffect(int familiarItemId, int durationMs,
+                                                   List<Pair<BuffStat, Integer>> stats) {
+        StatEffect ret = new StatEffect();
+        ret.sourceid = familiarItemId;
+        ret.skill = false;
+        ret.overTime = true;
+        ret.duration = Math.max(1, durationMs);
+        ret.moveTo = -1;
+        ret.statups = List.copyOf(stats == null ? Collections.emptyList() : stats);
+        ret.cureDebuffs = Collections.emptyList();
+        ret.monsterStatus = Collections.emptyMap();
+        return ret;
+    }
+
     private static void addBuffStatPairToListIfNotZero(List<Pair<BuffStat, Integer>> list, BuffStat buffstat, Integer val) {
         if (val != 0) {
             list.add(new Pair<>(buffstat, val));

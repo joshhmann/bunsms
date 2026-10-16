@@ -26,16 +26,35 @@ package client.command.commands.gm3;
 import client.Character;
 import client.Client;
 import client.command.Command;
+import server.weather.WeatherPackets;
+import server.weather.WeatherService;
 
+/**
+ * {@code !night} — freeze the world clock at night (weather/time system) and also
+ * fire the legacy stock-Augur black-sky background effect on the current map.
+ *
+ * <p>MERGED (ticket #13): this path previously did ONLY the stock-Augur
+ * {@code broadcastNightEffect()} on the current map. The weather bundle ships its own
+ * world-clock {@code NightCommand} at the same path (freeze at
+ * {@link WeatherService#TIME_NIGHT}, broadcast). Rename was rejected: {@code !night}
+ * is the documented GM name on both sides. The merged command keeps both behaviours:
+ * the caller's map gets the instant legacy black-sky background, and the world clock
+ * freezes at night until {@code !weather auto} or the hold lapses.
+ */
 public class NightCommand extends Command {
     {
-        setDescription("Set sky background to black.");
+        setDescription("Freeze the world at night (+ legacy black-sky background here).");
     }
 
     @Override
     public void execute(Client c, String[] params) {
         Character player = c.getPlayer();
+        // Legacy stock-Augur behaviour: instant black-sky background on this map.
         player.getMap().broadcastNightEffect();
-        player.yellowMessage("Done.");
+        // Weather world-clock behaviour: freeze the shared clock at night.
+        WeatherService.setBareSky(false);
+        WeatherService.setTime(WeatherService.TIME_NIGHT);
+        WeatherPackets.broadcast(c.getWorldServer(), false);
+        player.yellowMessage("World time set to night. Use !weather auto to resume it.");
     }
 }

@@ -3563,6 +3563,47 @@ public class Character extends AbstractCharacterObject {
             effLock.unlock();
         }
     }
+    /**
+     * Extend an existing item-backed buff without registering a second holder for the
+     * same source id. Re-applying an item effect normally increments the per-stat holder
+     * count; doing that from a recurring environmental tick leaves a stale count behind
+     * when the effect finally expires.
+     *
+     * @return {@code true} when an existing effect was refreshed, {@code false} when
+     *         the caller must apply it for the first time
+     */
+    public boolean refreshTimedItemBuff(int sourceid, int durationMs) {
+        List<Pair<BuffStat, Integer>> visibleStatups = new ArrayList<>();
+        boolean active = false;
+
+        effLock.lock();
+        chrLock.lock();
+        try {
+            Map<BuffStat, BuffStatValueHolder> sourceStatups = buffEffects.get(sourceid);
+            if (sourceStatups == null || sourceStatups.isEmpty()) {
+                return false;
+            }
+
+            buffExpires.put(sourceid, net.server.Server.getInstance().getCurrentTime() + durationMs);
+            for (Entry<BuffStat, BuffStatValueHolder> entry : sourceStatups.entrySet()) {
+                BuffStatValueHolder holder = entry.getValue();
+                if (effects.get(entry.getKey()) == holder) {
+                    active = true;
+                    visibleStatups.add(new Pair<>(entry.getKey(), holder.value));
+                }
+            }
+        } finally {
+            chrLock.unlock();
+            effLock.unlock();
+        }
+
+        // Keep the client-side icon timer in step with the server. An overshadowed
+        // stat is intentionally not re-sent: it was not visible before the refresh.
+        if (active && !visibleStatups.isEmpty()) {
+            sendPacket(tools.PacketCreator.giveBuff(-sourceid, durationMs, visibleStatups));
+        }
+        return true;
+    }
 
     public boolean hasActiveBuff(int sourceid) {
         LinkedList<BuffStatValueHolder> allBuffs;

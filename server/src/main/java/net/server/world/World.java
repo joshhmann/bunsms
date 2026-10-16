@@ -59,6 +59,8 @@ import net.server.task.ServerMessageTask;
 import net.server.task.TimedMapObjectTask;
 import net.server.task.TimeoutTask;
 import net.server.task.WeddingReservationTask;
+import net.server.task.WeatherTask;
+import server.weather.WeatherService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scripting.event.EventInstanceManager;
@@ -199,6 +201,8 @@ public class World {
     private ScheduledFuture<?> partySearchSchedule;
     private ScheduledFuture<?> timeoutSchedule;
     private ScheduledFuture<?> hpDecSchedule;
+    /** Day/night + weather broadcast. See net.server.task.WeatherTask. */
+    private ScheduledFuture<?> weatherSchedule;
 
     public World(int world, int flag, String eventmsg, int exprate, int droprate, int bossdroprate, int mesorate, int questrate, int travelrate, int fishingrate) {
         this.id = world;
@@ -242,6 +246,22 @@ public class World {
         partySearchSchedule = tman.register(new PartySearchTask(this), SECONDS.toMillis(10), SECONDS.toMillis(10));
         timeoutSchedule = tman.register(new TimeoutTask(this), SECONDS.toMillis(10), SECONDS.toMillis(10));
         hpDecSchedule = tman.register(new CharacterHpDecreaseTask(this), YamlConfig.config.server.MAP_DAMAGE_OVERTIME_INTERVAL, YamlConfig.config.server.MAP_DAMAGE_OVERTIME_INTERVAL);
+        // Day/night + weather broadcast. The initial delay is deliberately a full period
+        // rather than 0: this constructor runs before Server.initWorld has added any
+        // channel or published the world, so a tick at delay 0 would broadcast into an
+        // empty PlayerStorage. Nothing is lost by waiting - the phase is a pure function
+        // of wall time, so the first player to log in gets the right sky from
+        // MapleMap.addPlayer regardless of when this task first fires.
+
+        // Forces WeatherService's class initialiser to run HERE, on the boot thread, so
+        // its SEASON_WEIGHTS shape check can actually do its job. Left to itself the class
+        // first loads either inside a TimerManager worker, which swallows Throwable, or
+        // inside MapleMap.addPlayer, which has no try: a ragged weights table would then
+        // surface as a mystery at the first roll or the first login rather than as a
+        // refused boot. A method call, not a constant read, or the compiler inlines it
+        // away and nothing is initialised.
+        WeatherService.msPerGameMinute();
+        weatherSchedule = tman.register(new WeatherTask(this), WeatherTask.INTERVAL_MS, WeatherTask.INTERVAL_MS);
 
         if (YamlConfig.config.server.USE_FAMILY_SYSTEM) {
             long timeLeft = Server.getTimeLeftForNextDay();
@@ -2142,7 +2162,34 @@ public class World {
         return services.getAccess(sv).getService();
     }
 
-    private void closeWorldServices() {
+    // Boss-pack Wave 0: unclaimed-expedition bookkeeping backing Tana (3004006.js)
+    // removeUnclaimed calls. Ported from MapleRoot World.java.
+    private final Map<Integer, Map<server.expeditions.ExpeditionBossLog.BossLogEntry, Short>> unclaimedRewards = new HashMap<>();
+
+    public boolean hasUnclaimedExpedition(int cid) {
+        Map<server.expeditions.ExpeditionBossLog.BossLogEntry, Short> unclaimed = unclaimedRewards.get(cid);
+        return unclaimed != null && !unclaimed.isEmpty();
+    }
+
+    public Map<server.expeditions.ExpeditionBossLog.BossLogEntry, Short> removeUnclaimedRewards(int cid) {
+        return unclaimedRewards.remove(cid);
+    }
+
+    public void addUnclaimed(server.expeditions.ExpeditionBossLog.BossLogEntry boss, int cid) {
+        unclaimedRewards.compute(cid, (k, chrUnclaimed) -> chrUnclaimed);
+    }
+
+    public void removeUnclaimed(server.expeditions.ExpeditionBossLog.BossLogEntry boss, int cid) {
+        Map<server.expeditions.ExpeditionBossLog.BossLogEntry, Short> chrUnclaimed = unclaimedRewards.get(cid);
+        if (chrUnclaimed != null) {
+            Short unclaimedAmount = chrUnclaimed.get(boss);
+            if (unclaimedAmount != null) {
+                chrUnclaimed.put(boss, unclaimedAmount);
+            }
+        }
+    }
+
+     private void closeWorldServices() {
         services.shutdown();
     }
 
@@ -2218,10 +2265,15 @@ public class World {
             timeoutSchedule = null;
         }
         
-        if(hpDecSchedule != null) {
-            hpDecSchedule.cancel(false);
-            hpDecSchedule = null;
+        if (weatherSchedule != null) {
+            weatherSchedule.cancel(false);
+            weatherSchedule = null;
         }
+
+         if(hpDecSchedule != null) {
+             hpDecSchedule.cancel(false);
+             hpDecSchedule = null;
+         }
 
         players.disconnectAll();
         players = null;

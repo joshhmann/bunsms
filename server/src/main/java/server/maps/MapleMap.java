@@ -1306,10 +1306,26 @@ public class MapleMap {
     }
 
     public boolean damageMonster(Character chr, Monster monster, int damage) {
-        return damageMonster(chr, monster, damage, (short) 0);
+        return damageMonster(chr, monster, damage, (short) 0, true);
     }
 
     public boolean damageMonster(final Character chr, final Monster monster, final int damage, short delay) {
+        return damageMonster(chr, monster, damage, delay, true);
+    }
+
+
+
+    /**
+     * @param weatherScaled whether the night mob-defence scalar may touch this figure. Pass
+     *                      false when {@code damage} was computed FROM the monster's current
+     *                      HP rather than from what the player dealt. Scaling those changes
+     *                      the skill's meaning rather than its strength: Combo Tempest is
+     *                      "deal exactly its remaining HP" and Heaven's Hammer is "leave it
+     *                      on 1 HP", so a 10% reduction stops one killing and stops the
+     *                      other reaching 1. Every ordinary damage source passes true.
+     */
+    public boolean damageMonster(final Character chr, final Monster monster, final int damage, short delay,
+                                 final boolean weatherScaled) {
         if (monster.getId() == MobId.ZAKUM_1) {
             for (MapObject object : chr.getMap().getMapObjects()) {
                 Monster mons = chr.getMap().getMonsterByOid(object.getObjectId());
@@ -1324,7 +1340,15 @@ public class MapleMap {
             return false;
         }
 
-        boolean killed = monster.damage(chr, damage, false);
+        // Monsters are effectively tougher at night. This is the ONE place every
+        // player-attributed damage source converges (normal and skill damage, summons,
+        // familiars, reflects, ammo and affix riders, field obstacles, hypnotised
+        // mob-vs-mob), and critically it is downstream of every autoban that inspects
+        // a damage value. NOT covered, deliberately: damage over time via Monster.DamageTask.
+        final int scaledDamage = weatherScaled
+                ? server.weather.WeatherCombat.scaleDamageToMonster(damage)
+                : damage;
+        boolean killed = monster.damage(chr, scaledDamage, false);
 
         selfDestruction selfDestr = monster.getStats().selfDestruction();
         if (selfDestr != null && selfDestr.getHp() > -1) {// should work ;p
@@ -1362,7 +1386,9 @@ public class MapleMap {
                 return false;
             }
 
-            spawnedMonstersOnMap.decrementAndGet();
+            if (!monster.isNocturnal()) {
+                spawnedMonstersOnMap.decrementAndGet();
+            }
             removeMapObject(monster);
             monster.disposeMapObject();
             if (monster.hasBossHPBar()) {   // thanks resinate for noticing boss HPbar not clearing after mob defeat in certain scenarios
@@ -1900,7 +1926,12 @@ public class MapleMap {
         monster.aggroUpdateController();
         updateBossSpawn(monster);
 
-        spawnedMonstersOnMap.incrementAndGet();
+        // Night-only encounters are an additive weather layer, not part of the map's
+        // ordinary WZ population. Counting them here would make them displace a normal
+        // spawn on the next respawn pass. Must match the decrement guard.
+        if (!monster.isNocturnal()) {
+            spawnedMonstersOnMap.incrementAndGet();
+        }
         addSelfDestructive(monster);
         applyRemoveAfter(monster);
     }
@@ -1953,6 +1984,21 @@ public class MapleMap {
             java.awt.Point p = sp.getPosition();
             if (p != null) {
                 positions.add(new java.awt.Point(p));
+            }
+        }
+        return positions;
+    }
+
+    /**
+     * Safe placement anchors for the night-only encounter layer. Only ordinary WZ field
+     * spawns participate: timed bosses and scripted/event positions are deliberately
+     * excluded. A new list and Points are returned so callers cannot alter map state.
+     */
+    public List<Point> getNocturnalSpawnPositions() {
+        List<Point> positions = new ArrayList<>();
+        for (SpawnPoint sp : getMonsterSpawn()) {
+            if (sp.getMobTime() == 0) {
+                positions.add(new Point(sp.getPosition()));
             }
         }
         return positions;
@@ -2031,7 +2077,12 @@ public class MapleMap {
             }
         }
 
-        spawnedMonstersOnMap.incrementAndGet();
+        // Night-only encounters are an additive weather layer, not part of the map's
+        // ordinary WZ population. The flag must be set BEFORE the spawn call and never
+        // flipped on a live mob. Must match the decrement guard.
+        if (!monster.isNocturnal()) {
+            spawnedMonstersOnMap.incrementAndGet();
+        }
         addSelfDestructive(monster);
         applyRemoveAfter(monster);  // thanks LightRyuzaki for pointing issues with spawned CWKPQ mobs not applying this
     }
@@ -2660,6 +2711,15 @@ public class MapleMap {
         // Coloring prism (ticket #11): both directions — arrival needs everyone's tints,
         // everyone already here needs the arrival's.
         server.colorprism.ColorPrismPackets.broadcastMapTable(this);
+        // Day/night + weather. Sent to the ARRIVAL only, not broadcast: the sky is a
+        // world-level fact, so everyone already on this map has it. Snapped rather than
+        // faded, because a two second dusk fade after every portal reads as a bug.
+        // Without this the arrival would render a plain day until the next world tick.
+        server.weather.WeatherPackets.sendTo(chr);
+
+        // Populate a newly entered field immediately when it is night, rather than
+        // making the player wait for the weather task's next minute tick.
+        server.weather.NocturnalMobService.refreshMap(this);
     }
 
     private static void announcePlayerDiseases(final Client c) {
@@ -3747,7 +3807,11 @@ public class MapleMap {
 
     private static double getCurrentSpawnRate(int numPlayers) {
         // SoloMapling experiment: halved density, 2x pass rate — see Fable Plan 2026-07-07
-        return 0.35 + (0.025 * Math.min(6, numPlayers));
+        // Night density folds in on top of the base rate, and this is deliberately the
+        // ONLY place it is applied. Both consumers reach it through here: the map-wide
+        // rate, and the full-respawn count in getNumShouldSpawn.
+        return (0.35 + (0.025 * Math.min(6, numPlayers)))
+                * server.weather.WeatherCombat.spawnMultiplier();
     }
 
     private int getNumShouldSpawn(int numPlayers) {

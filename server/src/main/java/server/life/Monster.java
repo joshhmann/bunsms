@@ -103,6 +103,9 @@ public class Monster extends AbstractLoadedLife {
     private int VenomMultiplier = 0;
     private boolean fake = false;
     private boolean dropsDisabled = false;
+    // Spawned by the night-only encounter layer. These are intentionally kept
+    // outside MapleMap's ordinary WZ spawn capacity, then removed cleanly at dawn.
+    private boolean nocturnal = false;
     private final Set<MobSkillId> usedSkills = new HashSet<>();
     private final Set<Integer> usedAttacks = new HashSet<>();
     private Set<Integer> calledMobOids = null;
@@ -163,6 +166,14 @@ public class Monster extends AbstractLoadedLife {
 
     public void enableDrops() {
         this.dropsDisabled = false;
+    }
+
+    public void setNocturnal(boolean nocturnal) {
+        this.nocturnal = nocturnal;
+    }
+
+    public boolean isNocturnal() {
+        return nocturnal;
     }
 
     public boolean dropsDisabled() {
@@ -637,7 +648,10 @@ public class Monster extends AbstractLoadedLife {
         }
 
         long totalDamage = maxHpPlusHeal.get();
-        int mobExp = getExp();
+        // Night EXP bonus, applied to the mob's base value BEFORE it is split, so solo and
+        // party shares both carry it and neither double-counts. Silent: nothing downstream
+        // announces where the number came from.
+        int mobExp = server.weather.WeatherCombat.scaleExp(getExp());
         float expPerDmg = ((float) mobExp) / totalDamage;
 
         Map<Integer, Float> personalRatio = new HashMap<>();
@@ -681,6 +695,9 @@ public class Monster extends AbstractLoadedLife {
             Character chr = mapPlayers.get(killerId);
             if (chr != null) {
                 eim.monsterKilled(chr, this);
+                if (this.isBoss()) {
+                    eim.addDmgDealt(takenDamage, this.getMaxHp());
+                }
             }
         }
 

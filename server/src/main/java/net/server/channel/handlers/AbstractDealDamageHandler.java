@@ -540,14 +540,18 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     }
                     if (attack.skill == Paladin.HEAVENS_HAMMER) {
                         if (!monster.isBoss()) {
-                            damageMonsterWithSkill(player, map, monster, monster.getHp() - 1, attack.skill, 1777);
+                            // HP-derived: "leave it on 1 HP". Not weather-scaled, or the
+                            // night mob-defence scalar leaves it on 10% of its HP instead.
+                            damageMonsterWithSkill(player, map, monster, monster.getHp() - 1, attack.skill, 1777, false);
                         } else {
                             int HHDmg = (player.calculateMaxBaseDamage(player.getTotalWatk()) * (SkillFactory.getSkill(Paladin.HEAVENS_HAMMER).getEffect(player.getSkillLevel(SkillFactory.getSkill(Paladin.HEAVENS_HAMMER))).getDamage() / 100));
                             damageMonsterWithSkill(player, map, monster, (int) (Math.floor(Math.random() * (HHDmg / 5) + HHDmg * .8)), attack.skill, 1777);
                         }
                     } else if (attack.skill == Aran.COMBO_TEMPEST) {
                         if (!monster.isBoss()) {
-                            damageMonsterWithSkill(player, map, monster, monster.getHp(), attack.skill, 0);
+                            // HP-derived: "deal exactly its remaining HP". Not weather-scaled,
+                            // or at night the skill stops killing anything.
+                            damageMonsterWithSkill(player, map, monster, monster.getHp(), attack.skill, 0, false);
                         } else {
                             int TmpDmg = (player.calculateMaxBaseDamage(player.getTotalWatk()) * (SkillFactory.getSkill(Aran.COMBO_TEMPEST).getEffect(player.getSkillLevel(SkillFactory.getSkill(Aran.COMBO_TEMPEST))).getDamage() / 100));
                             damageMonsterWithSkill(player, map, monster, (int) (Math.floor(Math.random() * (TmpDmg / 5) + TmpDmg * .8)), attack.skill, 0);
@@ -589,6 +593,16 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
 
     private static void damageMonsterWithSkill(final Character attacker, final MapleMap map, final Monster monster,
                                                final int damage, int skillid, int fixedTime) {
+        damageMonsterWithSkill(attacker, map, monster, damage, skillid, fixedTime, true);
+    }
+
+    /**
+     * @param weatherScaled false when {@code damage} was derived from the monster's own HP
+     *                      rather than from the attacker's.
+     */
+    private static void damageMonsterWithSkill(final Character attacker, final MapleMap map, final Monster monster,
+                                               final int damage, int skillid, int fixedTime,
+                                               final boolean weatherScaled) {
         int animationTime;
 
         if (fixedTime == 0) {
@@ -598,13 +612,14 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         }
 
         if (animationTime > 0) { // be sure to only use LIMITED ATTACKS with animation time here
+            final int shown = damage;
             TimerManager.getInstance().schedule(() -> {
-                map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), damage), monster.getPosition());
-                map.damageMonster(attacker, monster, damage);
+                map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), shown), monster.getPosition());
+                map.damageMonster(attacker, monster, damage, (short) 0, weatherScaled);
             }, animationTime);
         } else {
             map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), damage), monster.getPosition());
-            map.damageMonster(attacker, monster, damage);
+            map.damageMonster(attacker, monster, damage, (short) 0, weatherScaled);
         }
     }
 

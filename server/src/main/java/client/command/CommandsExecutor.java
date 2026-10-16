@@ -100,6 +100,7 @@ import client.command.commands.gm2.WarpAreaCommand;
 import client.command.commands.gm2.WarpCommand;
 import client.command.commands.gm2.WarpMapCommand;
 import client.command.commands.gm2.WhereaMiCommand;
+import client.command.commands.gm2.WeatherCommand;
 import client.command.commands.gm3.BanCommand;
 import client.command.commands.gm3.ChatCommand;
 import client.command.commands.gm3.CheckDmgCommand;
@@ -125,6 +126,7 @@ import client.command.commands.gm3.InMapCommand;
 import client.command.commands.gm3.KillAllCommand;
 import client.command.commands.gm3.KillCommand;
 import client.command.commands.gm3.KillMapCommand;
+import client.command.commands.gm3.LampCommand;
 import client.command.commands.gm3.MaxEnergyCommand;
 import client.command.commands.gm3.MaxHpMpCommand;
 import client.command.commands.gm3.MonitorCommand;
@@ -449,6 +451,7 @@ public class CommandsExecutor {
         addCommand("id", 2, IdCommand.class);
         addCommand("gachalist", GachaListCommand.class);
         addCommand("loot", LootCommand.class);
+        addCommand("weather", 2, WeatherCommand.class);   // show / force the world day-night + sky
         addCommand("mobskill", MobSkillCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
@@ -503,8 +506,8 @@ public class CommandsExecutor {
         addCommand("healperson", 3, HealPersonCommand.class);
         addCommand("hurt", 3, HurtCommand.class);
         addCommand("killmap", 3, KillMapCommand.class);
+        addCommand("lamp", 3, LampCommand.class);         // preview a street lamp where you stand
         addCommand("night", 3, NightCommand.class);
-        addCommand("npc", 3, NpcCommand.class);
         addCommand("face", 3, FaceCommand.class);
         addCommand("hair", 3, HairCommand.class);
         addCommand("startquest", 3, QuestStartCommand.class);
