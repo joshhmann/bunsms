@@ -64,7 +64,9 @@ try {
         $index++
         $url = [uri]$variant.url
         if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https' -or $variant.sha256 -notmatch '^[a-f0-9]{64}$' -or $variant.size -le 0) { throw 'Invalid image variant byte authority' }
-        if ($variant.sha256 -eq $referenceItem.sha256 -and $variant.size -eq $referenceItem.size) {
+        $supportFiles = @($variant.supportFiles | Where-Object { $_ })
+        if ($supportFiles.Count -and -not $fullSupport) { throw 'Paired MonsterBook files require the explicit full-support experiment' }
+        if (-not $fullSupport -and -not $supportFiles.Count -and $variant.sha256 -eq $referenceItem.sha256 -and $variant.size -eq $referenceItem.size) {
             $result.steps.Add([pscustomobject]@{ id = $variant.id; sha256 = $variant.sha256; images = $variant.images
                 outcome = 'Exact already-proven reference bytes; no duplicate engine probe' })
             continue
@@ -75,14 +77,37 @@ try {
         } else { Invoke-WebRequest $url.AbsoluteUri -OutFile $cached -TimeoutSec 120 }
         if ((Get-Item $cached).Length -ne $variant.size -or (Get-FileHash $cached -Algorithm SHA256).Hash.ToLowerInvariant() -ne $variant.sha256) { throw "Image variant size/SHA256 mismatch: $($variant.id)" }
         Copy-Item $cached (Join-Path $GameDirectory 'Item.wz') -Force
+        if ($fullSupport -and -not $supportFiles.Count) {
+            Copy-Item (Join-Path $OutputDirectory 'private-asset-deltas/full/String.wz') (Join-Path $GameDirectory 'String.wz') -Force
+        }
+        $supportNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach ($support in $supportFiles) {
+            $supportUrl = [uri]$support.url
+            if ($support.name -ne 'String.wz' -or -not $supportNames.Add($support.name) -or $support.sha256 -notmatch '^[a-f0-9]{64}$' -or
+                $support.size -le 0 -or -not $supportUrl.IsAbsoluteUri -or $supportUrl.Scheme -ne 'https') {
+                throw 'Invalid paired String.MonsterBook byte authority'
+            }
+            $supportCache = Join-Path $cache ("support-$($support.sha256).wz")
+            if (-not (Test-Path $supportCache)) {
+                $fullSupportFile = $full.files | Where-Object name -eq $support.name
+                if ($support.sha256 -eq $fullSupportFile.hash -and $support.size -eq $fullSupportFile.size) {
+                    Copy-Item (Join-Path (Join-Path $OutputDirectory 'private-asset-deltas/full') $support.name) $supportCache
+                } else { Invoke-WebRequest $supportUrl.AbsoluteUri -OutFile $supportCache -TimeoutSec 120 }
+            }
+            if ((Get-Item $supportCache).Length -ne $support.size -or (Get-FileHash $supportCache -Algorithm SHA256).Hash.ToLowerInvariant() -ne $support.sha256) {
+                throw "Paired String.MonsterBook size/SHA256 mismatch: $($variant.id)"
+            }
+            Copy-Item $supportCache (Join-Path $GameDirectory $support.name) -Force
+        }
+        $effectiveFullArchives = @($fullArchiveNames | Where-Object { -not $supportNames.Contains($_) })
         $directory = Join-Path $root ('variant-{0:D2}' -f $index)
         & (Join-Path $PSScriptRoot 'native-smoke.ps1') -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 `
             -BaselineFilesBaseUrl $BaselineFilesBaseUrl -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact `
             -RuntimeArtifact $RuntimeArtifact -OutputDirectory $directory -ObserveSeconds $ObserveSeconds -GameHost $GameHost `
             -PreparedGameDirectory $GameDirectory -PublishedRuntimeControl -ReferenceAssetControl `
-            -DiagnosticFullArchives ($fullArchiveNames.ToArray()) -DiagnosticItemVariant $variant | Out-Null
+            -DiagnosticFullArchives $effectiveFullArchives -DiagnosticItemVariant $variant -DiagnosticSupportFiles $supportFiles | Out-Null
         $receipt = Get-Content (Join-Path $directory 'result.json') -Raw | ConvertFrom-Json
-        $step = [pscustomobject]@{ id = $variant.id; kind = $variant.kind; images = $variant.images; nodes = $variant.nodes; sha256 = $variant.sha256; size = $variant.size
+        $step = [pscustomobject]@{ id = $variant.id; kind = $variant.kind; images = $variant.images; nodes = $variant.nodes; supportFiles = $supportFiles; sha256 = $variant.sha256; size = $variant.size
             directory = $directory; status = $receipt.status; initializeSuccessObserved = $receipt.initializeSuccessObserved
             nativeUiObserved = $receipt.nativeUiObserved; gameAliveAfterObservation = $receipt.gameAliveAfterObservation
             capsAckObserved = $receipt.capsAckObserved; error = $receipt.error; outcome = 'inconclusive' }

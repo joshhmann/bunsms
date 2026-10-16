@@ -14,6 +14,7 @@ param(
     [switch]$ReferenceAssetControl,
     [string[]]$DiagnosticFullArchives = @(),
     [object]$DiagnosticItemVariant = $null,
+    [object[]]$DiagnosticSupportFiles = @(),
     [string]$ItemImageVariantsUrl = '',
     [string]$ItemImageVariantsSha256 = ''
 )
@@ -190,6 +191,22 @@ try {
             $report.diagnosticItemVariant = $DiagnosticItemVariant
             $report.inputKind = 'INTERNAL genuine Item-image diagnostic variant with reference51; NEVER a release/fallback'
         }
+        $supportByName = @{}
+        foreach ($support in $DiagnosticSupportFiles) {
+            $supportUrl = [uri]$support.url
+            if ($support.name -ne 'String.wz' -or $supportByName.ContainsKey($support.name) -or $selected.Contains($support.name) -or
+                $support.sha256 -notmatch '^[a-f0-9]{64}$' -or $support.size -le 0 -or -not $supportUrl.IsAbsoluteUri -or $supportUrl.Scheme -ne 'https') {
+                throw 'Invalid/conflicting paired String.MonsterBook diagnostic authority'
+            }
+            $supportByName[$support.name] = $support
+        }
+        $assetFiles = @(foreach ($old in $assetFiles) {
+            if ($supportByName.ContainsKey($old.name)) {
+                $support = $supportByName[$old.name]
+                [pscustomobject]@{ name = $old.name; size = $support.size; sha256 = $support.sha256 }
+            } else { $old }
+        })
+        $report.diagnosticSupportFiles = @($DiagnosticSupportFiles)
     }
     $report.sourceCommit = $env:GITHUB_SHA
     $game = if ($PreparedGameDirectory) { $PreparedGameDirectory } else { Join-Path $OutputDirectory 'baseline' }
@@ -209,7 +226,7 @@ try {
             throw "Native filename escapes baseline directory: $($file.name)"
         }
         $encoded = (($file.name.Replace('\', '/') -split '/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
-        $url = if ($ReferenceAssetControl -and $DiagnosticItemVariant -and $file.name -eq 'Item.wz') { [uri]$DiagnosticItemVariant.url } elseif ($ReferenceAssetControl -and $selected.Contains($file.name)) { [uri]($manifest.files | Where-Object name -eq $file.name).url } elseif ($ReferenceAssetControl) { [uri]::new($referenceBase, $encoded) } elseif ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
+        $url = if ($ReferenceAssetControl -and $DiagnosticItemVariant -and $file.name -eq 'Item.wz') { [uri]$DiagnosticItemVariant.url } elseif ($ReferenceAssetControl -and $supportByName.ContainsKey($file.name)) { [uri]($supportByName[$file.name].url) } elseif ($ReferenceAssetControl -and $selected.Contains($file.name)) { [uri]($manifest.files | Where-Object name -eq $file.name).url } elseif ($ReferenceAssetControl) { [uri]::new($referenceBase, $encoded) } elseif ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
         if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https') { throw "Native file URL must be pinned HTTPS: $($file.name)" }
         New-Item -ItemType Directory -Force ([IO.Path]::GetDirectoryName($destination)) | Out-Null
         $report.currentDownload = [ordered]@{ name = $file.name; url = $url.AbsoluteUri; expectedSize = $file.size; expectedSha256 = $expectedHash; startedUtc = [DateTime]::UtcNow.ToString('O'); status = 'downloading' }
