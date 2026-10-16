@@ -219,11 +219,9 @@ public class MakerService {
 
                     for (Pair<Integer, Integer> pair : recipe.getGainItems()) {
                         c.getPlayer().setCS(true);
-                        // No crystal luck adjustment: the pre-extraction BunsMS
-                        // MakerProcessor granted recipe gain IDs verbatim, and
-                        // preservation of Buns behavior wins over the MapleRoot
-                        // source's luck block (removed here — see maker-port
-                        // audit /tmp/maker-baseline-preservation.md).
+                        // Recipe gain IDs granted verbatim (stock Buns behavior
+                        // preserved; see maker-port audit
+                        // /tmp/maker-baseline-preservation.md).
                         c.getAbstractPlayerInteraction().gainItem(pair.getLeft(), (pair.getRight().shortValue()), false);
                         c.getPlayer().setCS(false);
                     }
