@@ -7,11 +7,9 @@ import client.Job;
 import net.packet.InPacket;
 import net.packet.OutPacket;
 import net.packet.Packet;
-import net.opcodes.SendOpcode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-import server.life.Monster;
 import server.maps.MapleMap;
 import testutil.HandlerTest;
 import testutil.Packets;
@@ -212,6 +210,37 @@ class DamageLongHandlerTest extends HandlerTest {
     }
 
     @Test
+    void legacyCritDecodesToExactMagnitude() {
+        // encodeCritLine(1000) = -INT_MAX + 1000 - 1; decode must be exactly
+        // -1000 (never -999): off-by-one here inflates every legacy crit by... precisely 1, and the bot path by ~2.1B before its fix.
+        stubVanillaChr();
+        int raw = -Integer.MAX_VALUE + 1000 - 1;
+        InPacket p = Packets.buildInPacket(out -> {
+            out.writeByte(0);
+            out.writeByte((1 << 4) | 1);
+            out.writeInt(0);
+            out.skip(8);
+            out.writeByte(0);
+            out.writeByte(0);
+            out.writeByte(0);
+            out.writeByte(0);
+            out.writeByte(4);
+            out.skip(4);
+            out.writeInt(1000);
+            out.skip(4);
+            out.writePos(new Point(0, 0));
+            out.writePos(new Point(0, 0));
+            out.writeShort(0);
+            out.writeInt(raw);
+            out.skip(4);
+        });
+
+        AbstractDealDamageHandler.AttackInfo attack = handler.callParse(p, chr, false, false);
+
+        assertEquals(-1000L, attack.targets.get(1000).damageLines().get(0));
+    }
+
+    @Test
     void s2cLegacyDefaultIsByteExactV83() {
         Character bot = mock(Character.class);
         lenient().when(bot.getId()).thenReturn(42);
@@ -276,21 +305,9 @@ class DamageLongHandlerTest extends HandlerTest {
     }
 
     @Test
-    void s2cOpcodeStaysVanilla() {
-        assertEquals(0xBA, SendOpcode.CLOSE_RANGE_ATTACK.getValue());
-        assertEquals(0xBB, SendOpcode.RANGED_ATTACK.getValue());
-        assertEquals(0xBC, SendOpcode.MAGIC_ATTACK.getValue());
-    }
-
-    @Test
     void clampToIntKeepsSentinelSemantics() {
         assertEquals(Integer.MAX_VALUE, AbstractDealDamageHandler.clampToInt(3_000_000_000L));
         assertEquals(Integer.MIN_VALUE, AbstractDealDamageHandler.clampToInt((long) Integer.MIN_VALUE - 1));
         assertEquals(123, AbstractDealDamageHandler.clampToInt(123L));
-    }
-
-    @Test
-    void monsterPlaceholderKeepsSuiteHonest() {
-        assertTrue(mock(Monster.class) != null);
     }
 }

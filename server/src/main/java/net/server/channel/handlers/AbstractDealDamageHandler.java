@@ -176,40 +176,13 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         return r;
     }
     /**
-     * Contract v1 per-recipient attack broadcast. Builds the legacy (byte-exact
-     * v83) and long-line packets once, then sends each map recipient the form
-     * its connection negotiated. Mirrors broadcastMessage source/range/bot
-     * semantics; legacy sessions never see long bytes.
+     * Contract v1 per-recipient attack broadcast. Delegates to
+     * {@link server.maps.MapleMap#broadcastSelective}, which iterates the live
+     * character view under chrRLock (concurrent join/leave safe) with the real
+     * ranged policy. Legacy sessions never see long bytes.
      */
     protected static void broadcastAttack(Character source, boolean repeatToSource, boolean ranged, java.util.function.Function<Boolean, net.packet.Packet> builder) {
-        // Contract v1 per-recipient attack broadcast. Builds the legacy
-        // (byte-exact v83) packet always and the long-line packet lazily on
-        // first LONG_DAMAGE_LINES recipient. Ranges/bots/source echo mirror
-        // MapleMap.broadcastMessage(source, packet, repeatToSource, ranged).
-        net.packet.Packet legacy = builder.apply(false);
-        net.packet.Packet longForm = null;
-        server.maps.MapleMap map = source.getMap();
-        Character exclude = repeatToSource ? null : source;
-        for (Character chr : map.getCharacters()) {
-            // 722500 mirrors MapleMap.getRangedDistance (private there).
-            boolean inRange = !ranged || chr.getPosition().distanceSq(source.getPosition()) <= 722500;
-            if (chr == null || chr == exclude || soloMapling.ArtificialPlayer.BotHelpers.isBot(chr) || !inRange) {
-                continue;
-            }
-            net.packet.Packet pkt;
-            if (chr.getClient() != null && chr.getClient().hasCaps(client.ClientCaps.LONG_DAMAGE_LINES)) {
-                if (longForm == null) {
-                    longForm = builder.apply(true);
-                }
-                pkt = longForm;
-            } else {
-                pkt = legacy;
-            }
-            chr.sendPacket(pkt);
-        }
-        if (repeatToSource) {
-            source.sendPacket(source.getClient() != null && source.getClient().hasCaps(client.ClientCaps.LONG_DAMAGE_LINES) ? (longForm != null ? longForm : (longForm = builder.apply(true))) : legacy);
-        }
+        source.getMap().broadcastSelective(source, repeatToSource, ranged, builder);
     }
 
     // Ticket #12, C2S half (paired release with the DLL client hook): a
@@ -233,11 +206,12 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
     }
 
     // Legacy v83 crit encoding: crit lines are stored negative
-    // (-INT_MAX + raw - 1); the sign means "crit", never "heal".
+    // (-INT_MAX + raw - 1); the sign means "crit", never "heal". Decode is
+    // raw + INT_MAX + 1 (a 1000-crit decodes to exactly -1000, never -999).
     private static long decodeLegacyLine(int raw) {
         long damage = raw;
         if (damage < 0) {
-            damage += Integer.MAX_VALUE;
+            damage += (long) Integer.MAX_VALUE + 1L;
         }
         return raw < 0 ? -damage : damage;
     }
@@ -984,11 +958,12 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
 
                 // Ticket #12 (contract v1): long-aware magnitude guard. Legacy lines
                 // keep the stock 1.5x-warn / 5x-point bounds against the MaxDMG
-                // guess; long lines from flagged senders are uncapped by design
-                // (mob-HP-long is a separate project) so only absurd values —
-                // beyond 100x the guess or the int wire range — alert/point.
-                // Overflow-safe: the guess is long, bounds use division, never
-                // maxWithCrit * N.
+                // guess. Long lines are uncapped by contract (mob-HP-long
+                // cutover): int-wire overflow is transport, NOT an offense — a
+                // legit ticket-12 hit above INT_MAX must never autoban (15 hits
+                // at threshold autobans with USE_AUTOBAN). Only absurd ratios
+                // against the guess point, saturating at the accepted long
+                // boundary. Overflow-safe: bounds use division, never max*N.
                 long magnitude = Math.abs(damage);
                 if (!longLines) {
                     if (magnitude > maxWithCrit + maxWithCrit / 2) {
@@ -997,7 +972,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     if (maxWithCrit > 0 && magnitude / maxWithCrit >= 5) {
                         AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
                     }
-                } else if ((maxWithCrit > 0 && magnitude / Math.max(maxWithCrit, 1L) >= 100) || magnitude > Integer.MAX_VALUE) {
+                } else if (maxWithCrit > 0 && magnitude / Math.max(maxWithCrit, 1L) >= 100) {
                     AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Long-line DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
                 }
                 // Keep the crit display encoding on the stored line (negative ==

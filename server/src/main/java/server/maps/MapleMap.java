@@ -2887,6 +2887,59 @@ public class MapleMap {
     }
 
     /**
+     * Contract v1 per-recipient selective broadcast. Builds the legacy
+     * (byte-exact v83) packet always and the long-line packet lazily on the
+     * first LONG_DAMAGE_LINES recipient, all under chrRLock (the live
+     * character view must not be iterated outside the lock — concurrent
+     * join/leave would throw). Range/bot/source-echo mirror
+     * {@link #broadcastMessage(Character, Packet, boolean, boolean)}; legacy
+     * sessions never see long bytes. Uses the real ranged distance
+     * (USE_MAXRANGE-aware), never a hardcoded constant.
+     */
+    public void broadcastSelective(Character source, boolean repeatToSource, boolean ranged,
+                                   java.util.function.Function<Boolean, Packet> builder) {
+        Packet legacy = builder.apply(false);
+        Packet longForm = null;
+        Character exclude = repeatToSource ? null : source;
+        double rangeSq = ranged ? getRangedDistance() : Double.POSITIVE_INFINITY;
+        chrRLock.lock();
+        try {
+            for (Character chr : characters) {
+                if (chr == null || chr == exclude || isBot(chr)) {
+                    continue;
+                }
+                if (rangeSq < Double.POSITIVE_INFINITY
+                        && chr.getPosition().distanceSq(source.getPosition()) > rangeSq) {
+                    continue;
+                }
+                Packet pkt;
+                if (chr.getClient() != null && chr.getClient().hasCaps(client.ClientCaps.LONG_DAMAGE_LINES)) {
+                    if (longForm == null) {
+                        longForm = builder.apply(true);
+                    }
+                    pkt = longForm;
+                } else {
+                    pkt = legacy;
+                }
+                chr.sendPacket(pkt);
+            }
+            if (repeatToSource) {
+                Client sc = source.getClient();
+                if (sc != null && sc.hasCaps(client.ClientCaps.LONG_DAMAGE_LINES)) {
+                    if (longForm == null) {
+                        longForm = builder.apply(true);
+                    }
+                    source.sendPacket(longForm);
+                } else {
+                    source.sendPacket(legacy);
+                }
+            }
+        } finally {
+            chrRLock.unlock();
+        }
+    }
+
+    /**
      * Always ranged from Point.
      *
      * @param packet

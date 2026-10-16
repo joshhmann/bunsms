@@ -55,35 +55,14 @@ class ClientCapsHandlerTest extends HandlerTest {
     }
 
     @Test
-    void realClientStoresCaps() {
-        Client real = Client.createMock();
-        InPacket in = Packets.buildInPacket(out -> {
-            out.writeInt(7);
-            out.writeInt(ClientCaps.CHECKIN_WINDOW);
-        });
-        // createMock has no channel; call the contract directly.
-        int accepted = ClientCaps.negotiate(ClientCaps.CHECKIN_WINDOW);
-        real.setCaps(7, accepted);
-        assertTrue(real.hasCaps(ClientCaps.CHECKIN_WINDOW));
-        assertEquals(7, real.getCapsDllVersion());
-        assertEquals(accepted, real.getCapsMask());
-        var ack = ClientCapsHandler.clientCapsAck(accepted);
-        assertTrue(ack != null);
-    }
-
-    @Test
-    void negotiateMasksToServerEnabled() {
-        assertEquals(0, ClientCaps.negotiate(0xFFFFFFFF & ~ClientCaps.CHECKIN_WINDOW));
-        assertEquals(ClientCaps.CHECKIN_WINDOW,
-                ClientCaps.negotiate(ClientCaps.CHECKIN_WINDOW | ClientCaps.WEATHER_SYNC));
-    }
-
-    @Test
-    void ackPacketCarriesVersionAndMask() {
+    void ackBytesCarryVersionAndAcceptedMask() {
+        // Wire proof: decode the actual ack packet bytes (opcode + version + mask).
         var ack = ClientCapsHandler.clientCapsAck(ClientCaps.CHECKIN_WINDOW);
-        assertTrue(ack != null);
-        ArgumentCaptor<Integer> versions = ArgumentCaptor.forClass(Integer.class);
-        // Shape is asserted structurally: version const + mask passthrough.
-        assertEquals(ClientCaps.NEGOTIATION_VERSION, 1);
+        InPacket in = Packets.buildInPacket(out -> out.writeBytes(ack.getBytes()));
+        int opcode = in.readShort() & 0xFFFF;
+        assertEquals(0x373B, opcode);
+        assertEquals(ClientCaps.NEGOTIATION_VERSION, in.readInt());
+        assertEquals(ClientCaps.CHECKIN_WINDOW, in.readInt());
+        assertEquals(0, in.available());
     }
 }

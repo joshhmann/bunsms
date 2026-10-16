@@ -42,7 +42,10 @@ public final class BotAttackEffects {
 
     /**
      * Real magnitude of a bot damage line. Crit lines carry the legacy v83
-     * negative-int encoding widened to long; plain lines pass through.
+     * negative-int encoding widened to long: encodeCritLine(raw) =
+     * -INT_MAX + raw - 1, so decode is v + INT_MAX + 1 (a 1000-crit decodes
+     * to exactly 1000, never 999). Plain lines pass through. Matches
+     * decodeLegacyLine's magnitude half on the player path.
      */
     static long decodeBotLine(Long line) {
         if (line == null) {
@@ -50,7 +53,7 @@ public final class BotAttackEffects {
         }
         long v = line;
         if (v < 0 && v >= (long) Integer.MIN_VALUE) {
-            return v + Integer.MAX_VALUE;
+            return v + (long) Integer.MAX_VALUE + 1L;
         }
         return Math.abs(v);
     }
