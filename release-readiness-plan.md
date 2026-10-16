@@ -49,3 +49,9 @@ Known gaps carried: 31125/31145 absent (graceful degrade), rock 5590001 unobtain
 - First private proxy mistakenly served PROD /opt/buns/web-client (98ff/9a09). Killed.
 - Correct proxy LIVE http://192.168.0.164:18081 with EXACT dev pair 31f9/0907 (JS 00dc057b 238616B / WASM 0cb3e707 5426595B, curl-verified) from owned STATIC_ROOT /opt/buns-iso-priv (real dir, owned copies; no symlink write-through to live roots). No live files mutated.
 - Network final (user): public ports LATER on same domains (buns.asslorde.com canonical), NO Tailscale, no router/NAT now; HOST/LANHOST fix rides safe release; local override stands for tests.
+
+## §9 Inventory incident RESOLVED (2026-10-16, controlled fresh-login capture)
+- Live Character (char4/acct5, map 10000, caps 0) in-memory EXACTLY matches offline DB (USE 2000000x5 s2, ETC 4161001x1 s1, 4 equips).
+- Wire: channel HELLO → 32 S2C packets / 3682 bytes, all headers valid; SET_FIELD 0x7D 638 bytes, inventory at offset 130 parses EXACT under legacy parse (USE[479,501), ETC[502,524), quantities intact).
+- Conclusion: server load/send path EXONERATED (no tint-serialization patch needed, no storage bug). Prior "empty tabs" = client render/selection artifact (ORANGE SET-UP selected, verified USE/ETC frames pending). No source bug established.
+- Standing authorization: press captures verified USE+ETC full pixels only; all others frozen; window stays stable.
