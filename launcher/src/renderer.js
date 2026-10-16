@@ -208,7 +208,7 @@ async function setupServerHost() {
     }
   });
   $("btn-server-default").onclick = async () => {
-    await window.buns.setServerHost("213.188.212.103");
+    await window.buns.setServerHost("192.168.0.164");
     field.value = await window.buns.getServerHost();
   };
 }
