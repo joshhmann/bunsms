@@ -11,7 +11,8 @@ param(
     [switch]$ExerciseLogin,
     [string]$PreparedGameDirectory = '',
     [switch]$PublishedRuntimeControl,
-    [switch]$ReferenceAssetControl
+    [switch]$ReferenceAssetControl,
+    [string[]]$DiagnosticFullArchives = @()
 )
 $ErrorActionPreference = 'Stop'
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
@@ -151,8 +152,27 @@ try {
             throw 'Previously working reference provenance SHA256 mismatch'
         }
         $assetFiles = (Get-Content $referencePath -Raw | ConvertFrom-Json).files
+        $selected = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        foreach ($name in $DiagnosticFullArchives) {
+            $old = @($assetFiles | Where-Object name -eq $name)
+            $full = @($manifest.files | Where-Object name -eq $name)
+            if (-not $selected.Add($name) -or $name -notmatch '^[A-Za-z]+\.wz$' -or
+                $old.Count -ne 1 -or $full.Count -ne 1 -or $old[0].sha256 -eq $full[0].hash) {
+                throw "Invalid diagnostic archive delta: $name"
+            }
+        }
+        $assetFiles = @(foreach ($old in $assetFiles) {
+            if ($selected.Contains($old.name)) {
+                $full = $manifest.files | Where-Object name -eq $old.name
+                [pscustomobject]@{ name = $full.name; size = $full.size; sha256 = $full.hash }
+            } else { $old }
+        })
+        $report.diagnosticFullArchives = @($DiagnosticFullArchives)
         $report.referenceAssetAuthority = [pscustomobject]@{ url = $referenceUrl.AbsoluteUri; sha256 = $referenceSha256 }
         $report.inputKind = 'INTERNAL previously working reference51 assets + exact published e363 runtime; NOT a release/fallback'
+        if ($DiagnosticFullArchives.Count) {
+            $report.inputKind = 'INTERNAL archive bisection: reference51 plus explicitly recorded full archives; NEVER a release/fallback'
+        }
     }
     $report.sourceCommit = $env:GITHUB_SHA
     $game = if ($PreparedGameDirectory) { $PreparedGameDirectory } else { Join-Path $OutputDirectory 'baseline' }
@@ -172,7 +192,7 @@ try {
             throw "Native filename escapes baseline directory: $($file.name)"
         }
         $encoded = (($file.name.Replace('\', '/') -split '/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
-        $url = if ($ReferenceAssetControl) { [uri]::new($referenceBase, $encoded) } elseif ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
+        $url = if ($ReferenceAssetControl -and $selected.Contains($file.name)) { [uri]($manifest.files | Where-Object name -eq $file.name).url } elseif ($ReferenceAssetControl) { [uri]::new($referenceBase, $encoded) } elseif ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
         if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https') { throw "Native file URL must be pinned HTTPS: $($file.name)" }
         New-Item -ItemType Directory -Force ([IO.Path]::GetDirectoryName($destination)) | Out-Null
         $report.currentDownload = [ordered]@{ name = $file.name; url = $url.AbsoluteUri; expectedSize = $file.size; expectedSha256 = $expectedHash; startedUtc = [DateTime]::UtcNow.ToString('O'); status = 'downloading' }
@@ -304,10 +324,29 @@ try {
         $path = Join-Path $game $file
         [pscustomobject]@{ name = $file; size = (Get-Item $path).Length; sha256 = (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() }
     })
+    try {
+        $stream = [IO.File]::Open((Join-Path $game 'MapleStory.exe'), [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+        try {
+            $reader = [IO.BinaryReader]::new($stream)
+            $stream.Position = 0x3c
+            $peOffset = $reader.ReadUInt32()
+            $stream.Position = $peOffset
+            if ($reader.ReadUInt32() -ne 0x4550) { throw 'Actual executable has no PE signature' }
+            $machine = $reader.ReadUInt16()
+            $stream.Position = $peOffset + 22
+            $characteristics = $reader.ReadUInt16()
+            $report.actualExecutableMemoryLayout = [pscustomobject]@{
+                utc = [DateTime]::UtcNow.ToString('O'); path = Join-Path $game 'MapleStory.exe'
+                machine = '{0:X4}' -f $machine; characteristics = '{0:X4}' -f $characteristics
+                largeAddressAware = ($characteristics -band 0x20) -ne 0
+                evidence = 'Actual on-disk PE header read-only; no PE/memory/guard changes. Does not prove an allocation failure or fragmentation limit.'
+            }
+        } finally { $stream.Dispose() }
+    } catch { $report.executableMemoryLayoutObservationError = $_.Exception.Message }
     $debugLog = Join-Path $OutputDirectory 'native-debug.log'
     $backendResult = [IO.Path]::GetFullPath('native-backend-output/result.json')
     if (Test-Path $backendResult) {
-        $networkJob = Start-Job -FilePath (Join-Path $PSScriptRoot 'native-network-observe.ps1') -ArgumentList $OutputDirectory, $backendResult, ($ObserveSeconds + 60)
+        $networkJob = Start-Job -FilePath (Join-Path $PSScriptRoot 'native-network-observe.ps1') -ArgumentList $OutputDirectory, $backendResult, ($ObserveSeconds + 60), (Join-Path $game 'MapleStory.exe')
         $observerDeadline = [DateTime]::UtcNow.AddSeconds(20)
         while (-not (Test-Path (Join-Path $OutputDirectory 'kernel-backend-ready.json'))) {
             if ($networkJob.State -in @('Failed', 'Completed') -or [DateTime]::UtcNow -gt $observerDeadline) {
@@ -379,6 +418,16 @@ try {
                 $report.controlledStops.Add([pscustomobject]$stop)
             } catch { $report.controlledStops.Add([pscustomobject]@{ processId = $processId; observation = $_.Exception.Message }) }
         }
+    }
+    if (-not $ReferenceAssetControl -and $report.publishedControl.status -eq 'native-startup-observed' -and
+        $report.status -eq 'failed' -and $report.nativeCaptureStartedUtc -and -not $report.nativeUiObserved) {
+        try {
+            & (Join-Path $PSScriptRoot 'isolate-native-archives.ps1') -OutputDirectory $OutputDirectory -GameDirectory $game `
+                -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
+                -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
+                -ObserveSeconds $ObserveSeconds -GameHost $GameHost
+            $report.archiveBisection = Get-Content (Join-Path $OutputDirectory 'archive-bisection.json') -Raw | ConvertFrom-Json
+        } catch { $report.archiveBisectionError = $_.Exception.ToString() }
     }
     $report.finishedUtc = [DateTime]::UtcNow.ToString('O')
     $report | ConvertTo-Json -Depth 20 | Set-Content (Join-Path $OutputDirectory 'result.json')
