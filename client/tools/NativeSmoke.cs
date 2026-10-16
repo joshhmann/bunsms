@@ -167,6 +167,23 @@ public static class NativeSmoke
     [DllImport("user32.dll", SetLastError = true)] private static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] private static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
 
+    public sealed class ForegroundInfo
+    {
+        public int ProcessId;
+        public string Handle, Class, ProcessName, ObservationError;
+    }
+
+    public static ForegroundInfo ForegroundContext()
+    {
+        IntPtr hwnd = GetForegroundWindow();
+        uint pid; GetWindowThreadProcessId(hwnd, out pid);
+        var name = new StringBuilder(128); GetClassName(hwnd, name, name.Capacity);
+        var result = new ForegroundInfo { ProcessId = (int)pid, Handle = "0x" + hwnd.ToInt64().ToString("X"), Class = name.ToString() };
+        try { using (var process = Process.GetProcessById((int)pid)) result.ProcessName = process.ProcessName; }
+        catch (Exception error) { result.ObservationError = error.GetType().Name; }
+        return result;
+    }
+
     public sealed class FocusObservation
     {
         public bool NormalRequestActivated, ExposedFooterClickSubmitted, Activated;
@@ -214,7 +231,11 @@ public static class NativeSmoke
         SetForegroundWindow(hwnd);
         System.Threading.Thread.Sleep(100);
         if (GetForegroundWindow() != hwnd)
-            throw new InvalidOperationException("Native game did not receive foreground focus; no input submitted");
+        {
+            var actual = ForegroundContext();
+            throw new InvalidOperationException("Native game did not receive foreground focus; no input submitted. Actual hwnd=" +
+                actual.Handle + " pid=" + actual.ProcessId + " class=" + actual.Class + " process=" + actual.ProcessName);
+        }
         Point point = new Point { X = x, Y = y };
         if (!ClientToScreen(hwnd, ref point) || !SetCursorPos(point.X, point.Y))
             throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());

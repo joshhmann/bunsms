@@ -70,7 +70,19 @@ function Save-NativeSnapshot([int[]]$Ids) {
                 modules = @($process.Modules | ForEach-Object { [pscustomobject]@{ name = $_.ModuleName; path = $_.FileName; base = ('0x{0:X}' -f $_.BaseAddress.ToInt64()) } }) }
         } catch { $row.processes += [pscustomobject]@{ id = $processId; observationError = $_.Exception.Message } }
     }
-    if (-not $report.foregroundAttempt -and (Test-Path $debugLog) -and
+    $row.foregroundBeforeApproval = [NativeSmoke]::ForegroundContext()
+    $approvalPending = @($row.windows | Where-Object { $_.Visible -and $_.Title -eq 'Program Compatibility Assistant' }).Count -gt 0
+    if (-not $report.compatibilityAction) {
+        $action = [NativeSmoke]::ContinueCompatibilityPrompt($Ids)
+        if ($action) {
+            $report.compatibilityAction = [pscustomobject]@{ utc = [DateTime]::UtcNow.ToString('O'); action = $action
+                reason = 'Invoke the visible normal Windows Run button once; no registry, signature guard, or compatibility policy is changed' }
+            $approvalPending = $true
+        }
+    }
+    $row.approvalPending = $approvalPending
+    $row.foregroundAfterApproval = [NativeSmoke]::ForegroundContext()
+    if (-not $approvalPending -and -not $report.foregroundAttempt -and (Test-Path $debugLog) -and
         (Get-Content $debugLog -Raw).Contains('BUNS_RUNTIME initialize-success')) {
         $target = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' }) | Select-Object -First 1
         if ($target) {
@@ -96,16 +108,10 @@ function Save-NativeSnapshot([int[]]$Ids) {
             $row.screenshots += $shot
         } catch { $row.errors += "Window $($window.Handle): $($_.Exception.Message)" }
     }
+    $row.foregroundBeforeInput = [NativeSmoke]::ForegroundContext()
     $report.snapshots.Add([pscustomobject]$row)
     $row | ConvertTo-Json -Depth 15 | Set-Content "$prefix.json"
-    if (-not $report.compatibilityAction) {
-        $action = [NativeSmoke]::ContinueCompatibilityPrompt($Ids)
-        if ($action) {
-            $report.compatibilityAction = [pscustomobject]@{ utc = [DateTime]::UtcNow.ToString('O'); action = $action
-                reason = 'Invoke the visible normal Windows Run button once; no registry, signature guard, or compatibility policy is changed' }
-        }
-    }
-    if ($ExerciseLogin -and -not $report.loginInput -and
+    if (-not $approvalPending -and $ExerciseLogin -and -not $report.loginInput -and
         (Get-Content $debugLog -Raw).Contains('BUNS_RUNTIME initialize-success')) {
         $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
         if ($window -and @($row.screenshots | Where-Object visualContent).Count -gt 0 -and
@@ -116,7 +122,12 @@ function Save-NativeSnapshot([int[]]$Ids) {
             if ($java.ProcessName -ne 'java' -or $mysql.ProcessName -ne 'mysqld') { throw 'QA backend PID identity changed before ordinary login input' }
             $listeners = @(Get-NetTCPConnection -State Listen -LocalPort 8484 -OwningProcess $backend.serverPid -ErrorAction Stop)
             if (-not $listeners.Count) { throw 'Real QA backend has no login listener at ordinary input time' }
-            $report.loginInput = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; username = 'bunsrcqa'; hwnd = $window.Handle; javaPid = $java.Id; mysqlPid = $mysql.Id; actualAuthentication = 'PENDING server/UI evidence'; basis = 'Observed rendered native login window plus live owned backend/listener; ordinary login does not depend on a custom ACK' }
+            $report.loginInput = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; username = 'bunsrcqa'; hwnd = $window.Handle
+                javaPid = $java.Id; javaCreationUtc = $java.StartTime.ToUniversalTime().ToString('O')
+                mysqlPid = $mysql.Id; mysqlCreationUtc = $mysql.StartTime.ToUniversalTime().ToString('O')
+                foregroundBeforeCredentials = [NativeSmoke]::ForegroundContext()
+                actualAuthentication = 'PENDING server/UI evidence'
+                basis = 'Observed native window/nonuniform screenshot, completed normal Windows approval and live owned backend/listener; input submission is not authentication proof.' }
             try {
                 [NativeSmoke]::ClickClient($window, 470, 245)
                 [System.Windows.Forms.SendKeys]::SendWait('bunsrcqa')
