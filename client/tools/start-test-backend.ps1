@@ -68,7 +68,7 @@ try {
     $data = Join-Path $root 'mysql-data'
     & (Join-Path $mysql 'bin/mysqld.exe') --no-defaults --initialize-insecure "--basedir=$mysql" "--datadir=$data" --console
     if ($LASTEXITCODE) { throw 'Native QA MySQL initialization failed' }
-    $database = Start-Process (Join-Path $mysql 'bin/mysqld.exe') -ArgumentList @('--no-defaults', "--basedir=`"$mysql`"", "--datadir=`"$data`"", '--bind-address=127.0.0.1', '--port=3306', '--mysqlx=OFF', '--console') -PassThru -RedirectStandardOutput (Join-Path $root 'mysql.log') -RedirectStandardError (Join-Path $root 'mysql-error.log')
+    $database = Start-Process (Join-Path $mysql 'bin/mysqld.exe') -WindowStyle Hidden -ArgumentList @('--no-defaults', "--basedir=`"$mysql`"", "--datadir=`"$data`"", '--bind-address=127.0.0.1', '--port=3306', '--mysqlx=OFF', '--console') -PassThru -RedirectStandardOutput (Join-Path $root 'mysql.log') -RedirectStandardError (Join-Path $root 'mysql-error.log')
     $report.mysqlPid = $database.Id
     Wait-Listening 3306 $database 90
     $password = [Guid]::NewGuid().ToString('N')
@@ -79,7 +79,7 @@ try {
     $config = (Get-Content (Join-Path $server 'config.template.yaml') -Raw).Replace('REPLACE_WITH_LOCAL_QA_PASSWORD', $password)
     $config | Set-Content (Join-Path $server 'config.yaml') -Encoding utf8NoBOM
     $java = (Get-Command java.exe).Source
-    $gameServer = Start-Process $java -WorkingDirectory $server -ArgumentList @('-Xms512m', '-Xmx2g', "`"-Dwz-path=$xml`"", '-jar', 'Cosmic.jar') -PassThru -RedirectStandardOutput (Join-Path $root 'server.log') -RedirectStandardError (Join-Path $root 'server-error.log')
+    $gameServer = Start-Process $java -WindowStyle Hidden -WorkingDirectory $server -ArgumentList @('-Xms512m', '-Xmx2g', "`"-Dwz-path=$xml`"", '-jar', 'Cosmic.jar') -PassThru -RedirectStandardOutput (Join-Path $root 'server.log') -RedirectStandardError (Join-Path $root 'server-error.log')
     $report.serverPid = $gameServer.Id
     Wait-Listening 8484 $gameServer 300
     foreach ($port in @(7575, 7576, 7577)) { Wait-Listening $port $gameServer 90 }
