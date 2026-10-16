@@ -12,3 +12,5 @@ bool ColorPrism_IsPrismItem(int itemId);
 void ColorPrism_OnUse(int inventoryPosition, int itemId);
 bool ColorPrism_HandleItemDrop(IUIMsgHandler* destination, int inventoryType, int inventoryPosition);
 bool ColorPrism_HandleSkillDrop(void* destination, int skillId);
+
+bool ColorPrism_ResourcesReady();

@@ -497,6 +497,35 @@ int __fastcall SkillDropHook(void* draggable, void*, IUIMsgHandler* from, IUIMsg
     return skillDrop(draggable, from, to, x, y);
 }
 } // namespace
+
+bool ColorPrism_ResourcesReady() {
+    try {
+        const auto background = Art(L"backgrnd");
+        if (!background || background->width != kWidth || background->height != kHeight ||
+            !Art(L"backgrndLook")) return false;
+        for (const auto* suffix : {L"trackTone", L"trackChroma", L"trackBright"})
+            if (!Art(suffix)) return false;
+        for (const auto* layer : {L"item", L"glow"}) {
+            for (const auto* state : {L"normal", L"on", L"off"}) {
+                wchar_t path[96];
+                swprintf_s(path, L"LayerBt/%s/%s", layer, state);
+                if (!Art(path)) return false;
+            }
+        }
+        for (const auto* path : {L"UI/Basic.img/Slider/thumbNormal",
+                L"UI/UIWindow.img/Bag/BtClose/normal/0",
+                L"UI/Basic.img/BtOK2/normal/0", L"UI/Basic.img/BtCancel2/normal/0"})
+            if (!prismabi::Canvas(path)) return false;
+        for (int state = 0; state != 2; ++state) {
+            for (const auto* piece : {L"left", L"fill", L"right"}) {
+                wchar_t path[96];
+                swprintf_s(path, L"UI/Basic.img/Tab2/%s%d", piece, state);
+                if (!prismabi::Canvas(path)) return false;
+            }
+        }
+        return true;
+    } catch (...) { return false; }
+}
 bool ColorPrism_IsPrismItem(int item) { return item == 5782000 && CapsAccepted(caps::kPrismSync); }
 void ColorPrism_OnUse(int position, int item) {
     if (!ColorPrism_IsPrismItem(item) || position <= 0 || position > 32767 || prismabi::ItemId(5, position) != item) return;

@@ -114,3 +114,5 @@ void Lamp_HandlePreviewPacket(CInPacket* pPacket);
 // How many lamps the table knows about, so the server and the DLL can be checked
 // against each other rather than trusting a hardcoded count.
 int Lamp_TableSize();
+
+bool Lamps_ResourcesReady();

@@ -51,6 +51,11 @@ inline bool CapsAccepted(int bit) { return (CapsAcceptedMask() & bit) != 0; }
 int CapsOfferedMask();
 void CapsSetReadyMask(int mask);
 
+// Publish successful hook/codec installation, then probe actual WZ data only on
+// the original main thread. An unavailable resource manager defers negotiation.
+void CapsHooksReady();
+void CapsPrepareReadiness();
+
 // Manual announce send (diagnostic / fallback). The SendPacket-hook path
 // (caps.cpp) is primary: first genuine outgoing packet per connection
 // carries the announce ahead of it. This entry resets + sends immediately;

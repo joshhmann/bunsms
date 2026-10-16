@@ -44,11 +44,8 @@ extern "C" __declspec(dllexport) BOOL __cdecl BunsMS_Initialize(void) {
     return TRUE;
 }
 
-// Paired-release version stamp (spec §5): CLIENT_DLL_VERSION comes from
-// client/CMakeLists.txt (-D). The handshake field that carries it to the
-// server is still open (parent question §5); until the server-side receiver
-// lands, the version is compiled in and queryable here, never silently
-// downgraded.
+// CLIENT_DLL_VERSION is carried by the paired capability announce. The server
+// returns its negotiated mask per connection; no accepted state survives reset.
 int GetClientDllVersion() {
 #ifdef CLIENT_DLL_VERSION
     return CLIENT_DLL_VERSION;

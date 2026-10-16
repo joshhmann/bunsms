@@ -160,6 +160,18 @@ playability acceptance. Java/MySQL are used only by the isolated same-runner CI
 backend helper; players retain the existing Linux-hosted server deployment and
 never install a backend with the launcher.
 
+### Native feature readiness
+
+Successful hook/route/ABI installation permits a main-thread prerequisite probe,
+not an unconditional feature offer. The probe waits for the real mounted WZ
+namespace, validates check-in/cash/prism art and native geometry, and resolves the
+lamp/glow resources directly from the consumer's lamp table. Only ready features
+are announced; ACKs are bounded by that connection's actual offer, and reconnect
+clears all accepted state. Missing authored art must be fixed, not replaced by
+primitives or hidden behind a permanent zero offer. A full matched RC must
+demonstrate all accepted bits and their real gameplay paths, including legacy
+and reconnect behavior; a compiler, login screen, or zero-mask ACK is not that proof.
+
 ## License notes
 
 - `external/Detours` (Microsoft, MIT) + `external/WzLib` (iw2d) are

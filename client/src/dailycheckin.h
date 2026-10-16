@@ -18,3 +18,6 @@ void DailyCheckin_Tick();
 
 // Receive-safe: invalidate old snapshots and defer window teardown to Tick.
 void DailyCheckin_Reset();
+
+// Main-thread native WZ prerequisites; never opens a window or sends a request.
+bool DailyCheckin_ResourcesReady();

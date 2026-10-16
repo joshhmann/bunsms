@@ -2604,3 +2604,25 @@ bool Lamps_Attach() {
     }
     return true;
 }
+
+bool Lamps_ResourcesReady() {
+    try {
+        if (!get_rm()) return false;
+        const auto objectReady = [](const wchar_t* os, const wchar_t* l0,
+                                    const wchar_t* l1, const wchar_t* l2) {
+            wchar_t path[256];
+            swprintf_s(path, L"Map/Obj/%s.img/%s/%s/%s", os, l0, l1, l2);
+            Ztl_variant_t value = get_rm()->GetObjectA(path);
+            IWzPropertyPtr property = get_unknown(value);
+            if (!property) return false;
+            Ztl_variant_t frame = property->item[L"0"];
+            IWzCanvasPtr canvas = get_unknown(frame);
+            return canvas && canvas->width > 1 && canvas->height > 1;
+        };
+        for (const auto& lamp : kLamps)
+            if (!objectReady(lamp.sOS, lamp.sL0, lamp.sL1, lamp.sL2)) return false;
+        for (const auto* glow : {&kGlowLargeWarm, &kGlowMedium, &kGlowSmallWarm, &kGlowCore})
+            if (!objectReady(glow->sOS, glow->sL0, glow->sL1, glow->sL2)) return false;
+        return true;
+    } catch (...) { return false; }
+}

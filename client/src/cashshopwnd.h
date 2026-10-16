@@ -15,3 +15,5 @@ void CashShopWnd_Tick();
 // Called by the sole connection-reset owner after clearing accepted caps.
 // Receive-safe: publishes teardown; UI destruction is deferred to Tick.
 void CashShopWnd_Reset();
+
+bool CashShopWnd_ResourcesReady();

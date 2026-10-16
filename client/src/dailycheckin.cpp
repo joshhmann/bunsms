@@ -627,6 +627,22 @@ bool AttachDailyCheckinMod() {
     return RegisterPacketRoute(DailyCheckin::kOpcode_Recv, &DailyCheckin::DailyCheckin_Route);
 }
 
+bool DailyCheckin_ResourcesReady() {
+    using namespace DailyCheckin;
+    try {
+        if (!get_rm()) return false;
+        const auto load = [](const wchar_t* path) {
+            Ztl_variant_t value = get_rm()->GetObjectA(const_cast<wchar_t*>(path));
+            IWzCanvasPtr canvas = get_unknown(value);
+            return canvas;
+        };
+        const auto background = load(L"UI/UIWindow.img/DailyCheckin/backgrnd");
+        return background && background->width == kWndW && background->height == kWndH &&
+            load(L"UI/UIWindow.img/Bag/BtClose/normal/0") &&
+            load(L"UI/UIWindow.img/Bag/BtClose/mouseOver/0");
+    } catch (...) { return false; }
+}
+
 // Per-frame: invalidate ONLY when the claimable-blink phase flipped and a
 // claimable day exists (28 int compares, zero alloc). No claimable day => the
 // grid is static and hover/mouse paths already invalidate on change —

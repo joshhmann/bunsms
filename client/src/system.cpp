@@ -35,5 +35,6 @@ bool AttachSystemHooks() {
     if (!BindWeatherViewport(GetModuleHandleW(L"Kaentake.dll")) ||
         !AttachWeatherMod() || !AttachWeatherWindMod())
         return false;
+    CapsHooksReady();
     return true;
 }

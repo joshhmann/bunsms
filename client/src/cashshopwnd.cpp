@@ -3295,6 +3295,43 @@ bool AttachCashShopWndMod() {
     return RegisterPacketRoute(kCashShopSyncOpcode, &CashShopWnd_Route);
 }
 
+bool CashShopWnd_ResourcesReady() {
+    using namespace CashShopWnd;
+    try {
+        if (!get_rm()) return false;
+        const auto canvasReady = [](const wchar_t* path, int width = 0, int height = 0) {
+            Ztl_variant_t value = get_rm()->GetObjectA(const_cast<wchar_t*>(path));
+            IWzCanvasPtr canvas = get_unknown(value);
+            return canvas && canvas->width > 0 && canvas->height > 0 &&
+                (!width || canvas->width == width) && (!height || canvas->height == height);
+        };
+        if (!canvasReady(L"UI/CashShop.img/Base/WndBg", kWndW, kWndH)) return false;
+        for (int i = 0; i != 3; ++i) {
+            wchar_t path[96];
+            swprintf_s(path, L"UI/CashShop.img/Base/Preview/%d", i);
+            if (!canvasReady(path, kPrevArtW, kPrevArtH)) return false;
+        }
+        static const wchar_t* states[] = {L"normal", L"pressed", L"disabled", L"mouseOver"};
+        for (const auto* state : states) {
+            wchar_t path[96];
+            swprintf_s(path, L"UI/Basic.img/BtClose/%s/0", state);
+            if (!canvasReady(path)) return false;
+            swprintf_s(path, L"UI/CashShop.img/Base/BtBuy/%s", state);
+            if (!canvasReady(path, kBtnW, kBtnH)) return false;
+            swprintf_s(path, L"UI/CashShop.img/Base/BtCart/%s", state);
+            if (!canvasReady(path, kBtnW, kBtnH)) return false;
+        }
+        static const wchar_t* controls[] = {
+            L"UI/Basic.img/VScr4/enabled/prev0", L"UI/Basic.img/VScr4/enabled/next0",
+            L"UI/Basic.img/VScr4/enabled/base", L"UI/Basic.img/VScr4/enabled/thumb0",
+            L"UI/UIWindow.img/Item/New/Tab0/0", L"UI/UIWindow.img/Item/New/Tab1/0"
+        };
+        for (const auto* path : controls) if (!canvasReady(path)) return false;
+        VerifySwingCode();
+        return g_nSwingCode != kNoActionCode;
+    } catch (...) { return false; }
+}
+
 void CashShopWnd_Reset() {
     using namespace CashShopWnd;
     std::lock_guard<std::mutex> lock(g_mtx);
