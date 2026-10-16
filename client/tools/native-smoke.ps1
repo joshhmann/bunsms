@@ -58,6 +58,24 @@ function Save-Screenshot([int]$X, [int]$Y, [int]$Width, [int]$Height, [string]$P
     } finally { $graphics.Dispose(); $bitmap.Dispose() }
 }
 
+function Read-QAAccountState {
+    if ($GameHost -ne '127.0.0.1') { throw 'QA account observation requires the isolated loopback backend' }
+    $backend = Get-Content $backendResult -Raw | ConvertFrom-Json
+    if ($backend.host -ne '127.0.0.1' -or $backend.productionTouched -ne $false) {
+        throw 'Refusing account observation outside the owned QA backend'
+    }
+    $mysql = Get-Process -Id $backend.mysqlPid -ErrorAction Stop
+    if ($mysql.ProcessName -ne 'mysqld') { throw 'QA MySQL PID identity changed before read-only observation' }
+    $query = @'
+SELECT JSON_OBJECT('id',a.id,'name',a.name,'tos',a.tos,'loggedin',a.loggedin,'gender',a.gender,'characters',(SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT('id',c.id,'name',c.name,'world',c.world,'map',c.map,'level',c.level)),JSON_ARRAY()) FROM characters c WHERE c.accountid=a.id)) FROM accounts a WHERE a.name='bunsrcqa';
+'@
+    $raw = @(& (Join-Path $backend.mysqlDirectory 'bin/mysql.exe') --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 --user=root --database=buns_rc --batch --skip-column-names "--execute=$query")
+    if ($LASTEXITCODE) { throw 'Isolated read-only QA account query failed' }
+    return [pscustomobject]@{ utc = [DateTime]::UtcNow.ToString('O'); mysqlPid = $mysql.Id; readOnly = $true
+        status = if ($raw.Count) { 'observed' } else { 'account-not-found' }
+        account = if ($raw.Count) { ($raw -join "`n") | ConvertFrom-Json } else { $null } }
+}
+
 function Save-NativeSnapshot([int[]]$Ids) {
     $script:snapshotIndex++
     $prefix = Join-Path $OutputDirectory ('snapshot-{0:D2}' -f $script:snapshotIndex)
@@ -136,6 +154,27 @@ function Save-NativeSnapshot([int[]]$Ids) {
                 [NativeSmoke]::ClickClient($window, 640, 245)
                 $report.loginInput.status = 'submitted-normal-OS-login-input'
             } catch { $report.loginInput.status = 'failed'; $report.loginInput.error = $_.Exception.ToString(); throw }
+        }
+    }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.loginInput.status -eq 'submitted-normal-OS-login-input' -and
+        -not $report.termsAction -and ([datetime]$row.utc) -gt ([datetime]$report.loginInput.utc).AddSeconds(2)) {
+        $state = Read-QAAccountState
+        $report.accountBeforeTerms = $state
+        if ($state.status -eq 'observed') {
+            if ($state.account.tos -eq 0) {
+                $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+                if ($window) {
+                    $report.termsAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                        scope = 'Owned disposable QA account; normal visible terms scrollbar and OK, never a direct DB update or synthetic acceptance packet' }
+                    try {
+                        [NativeSmoke]::DragClient($window, 580, 104, 580, 396)
+                        [NativeSmoke]::ClickClient($window, 482, 435)
+                        $report.termsAction.status = 'submitted-normal-scroll-and-confirm'
+                    } catch { $report.termsAction.status = 'failed'; $report.termsAction.error = $_.Exception.ToString(); throw }
+                }
+            } else {
+                $report.termsAction = [pscustomobject]@{ status = 'already-accepted-account-state'; observation = $state }
+            }
         }
     }
 }
@@ -368,6 +407,7 @@ try {
                         $login = Get-Content (Join-Path $loginDirectory 'result.json') -Raw | ConvertFrom-Json
                         $report.ordinaryLogin = [pscustomobject]@{ directory = $loginDirectory; status = $login.status; error = $login.error
                             input = $login.loginInput; foregroundAttempt = $login.foregroundAttempt
+                            termsAction = $login.termsAction; accountAfterObservation = $login.accountAfterObservation
                             acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
                         if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
                             throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
@@ -502,6 +542,11 @@ try {
     $report.errorDialogObserved = @($final.windows | Where-Object { $_.Visible -and $_.Class -eq '#32770' }).Count -gt 0
     $failures = @($report.naturalExits | Where-Object { $_.exitCode -ne 0 })
     if ($failures.Count) { throw "Observed native process natural failure: $($failures | ConvertTo-Json -Compress). Cause remains unattributed; inspect independent crash receipts." }
+    if ($ExerciseLogin) {
+        $report.accountAfterObservation = Read-QAAccountState
+        $report.accountAfterObservation | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $OutputDirectory 'qa-account-state.json')
+        if ($report.termsAction.status -eq 'failed') { throw 'Normal owned QA terms interaction failed; inspect actual UI and read-only account state' }
+    }
     if ($ExerciseLogin -and $report.loginInput.status -ne 'submitted-normal-OS-login-input') {
         throw 'Requested actual QA login input was not submitted; inspect observed native UI and input receipt'
     }

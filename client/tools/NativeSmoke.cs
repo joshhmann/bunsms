@@ -243,6 +243,33 @@ public static class NativeSmoke
         mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero);
         System.Threading.Thread.Sleep(100);
     }
+
+    public static void DragClient(WindowInfo window, int startX, int startY, int endX, int endY)
+    {
+        IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
+        uint owner; GetWindowThreadProcessId(hwnd, out owner);
+        if (owner != window.ProcessId || !window.Visible || window.Class != "MapleStoryClass" || GetForegroundWindow() != hwnd ||
+            startX < 0 || startY < 0 || endX < 0 || endY < 0 || startX >= window.ClientWidth || endX >= window.ClientWidth ||
+            startY >= window.ClientHeight || endY >= window.ClientHeight)
+            throw new InvalidOperationException("Drag target is not the observed foreground native game window");
+        Point start = new Point { X = startX, Y = startY }, end = new Point { X = endX, Y = endY };
+        if (!ClientToScreen(hwnd, ref start) || !ClientToScreen(hwnd, ref end) || !SetCursorPos(start.X, start.Y))
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        if (WindowFromPoint(start) != hwnd || WindowFromPoint(end) != hwnd)
+            throw new InvalidOperationException("Native scrollbar gesture is obscured; no drag submitted");
+        mouse_event(0x0002, 0, 0, 0, UIntPtr.Zero);
+        try {
+            for (int step = 1; step <= 8; step++) {
+                Point point = new Point { X = start.X + (end.X - start.X) * step / 8, Y = start.Y + (end.Y - start.Y) * step / 8 };
+                if (GetForegroundWindow() != hwnd || WindowFromPoint(point) != hwnd)
+                    throw new InvalidOperationException("Native game lost ownership during normal scrollbar gesture");
+                if (!SetCursorPos(point.X, point.Y))
+                    throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                System.Threading.Thread.Sleep(25);
+            }
+        } finally { mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero); }
+        System.Threading.Thread.Sleep(100);
+    }
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern IntPtr SendMessageTimeout(IntPtr hwnd, uint message, UIntPtr wparam, StringBuilder text, uint flags, uint milliseconds, out UIntPtr result);
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);
