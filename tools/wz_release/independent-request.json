@@ -1,85 +1,85 @@
 {
   "reader_repository": "https://github.com/lastbattle/MapleLib",
   "reader_commit": "93099ab42c3225272432c3da8942024153a5ffab",
-  "candidate_base_url": "https://buns.asslorde.com/client/candidates/wz-candidate-4",
+  "candidate_base_url": "https://buns.asslorde.com/client/candidates/wz-candidate-7",
   "files": [
     {
       "name": "Character.wz",
       "size": 186792151,
       "sha256": "9e873074213bdb660c27cee11c4052233c408f6864249d459931321f0c05ddc5",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Character.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Character.wz"
     },
     {
       "name": "Effect.wz",
       "size": 63386781,
       "sha256": "6ce765838dc5f92fd70bbbc4aaed24a0ce7c61fc03033b4f0053588890433bc3",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Effect.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Effect.wz"
     },
     {
       "name": "Item.wz",
       "size": 18461956,
       "sha256": "326b431482e968e786b1c964bdcbb89419dcea324f1f846b18b41ead7c3c41eb",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Item.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Item.wz"
     },
     {
       "name": "Map.wz",
-      "size": 645553556,
-      "sha256": "bf2c6ca16f04a0923590782ddbf27b6794205036b3d90e7018b063b9e9b958ef",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Map.wz"
+      "size": 645566023,
+      "sha256": "841e25e209abc50cbc4c6e2181a2c8bc541b89707db779b749e554cb34c0119e",
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Map.wz"
     },
     {
       "name": "Mob.wz",
-      "size": 507366796,
-      "sha256": "a4924496db9867f8382e710d40d647bb494b961c846dc2173ad0e864a1d1ba48",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Mob.wz"
+      "size": 507366792,
+      "sha256": "35e54792f7aa1aec93ff6d8a7b3e8340426b44cbd706f725e57554f34580c381",
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Mob.wz"
     },
     {
       "name": "Morph.wz",
       "size": 6890399,
       "sha256": "55c0d9462dd3643ae0715699fa7a11387824cf238c0da650101d123f13eab95f",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Morph.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Morph.wz"
     },
     {
       "name": "Npc.wz",
       "size": 51245425,
       "sha256": "6cff24df65448b22eb068d232e71ab9fca1776c0cad955b92ff1f192cacb02c6",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Npc.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Npc.wz"
     },
     {
       "name": "Quest.wz",
       "size": 7079263,
       "sha256": "9487d25d89d6ddacd0e43bf65afdda95ac81c3f869878818b1a40b47c2f5766a",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Quest.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Quest.wz"
     },
     {
       "name": "Reactor.wz",
       "size": 54241847,
       "sha256": "0b10066cb6e542c1aaac1e87aa49f90014747c3a467323a89fd18550034bf6bc",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Reactor.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Reactor.wz"
     },
     {
       "name": "Skill.wz",
       "size": 76874780,
       "sha256": "c68f7f4667c1493a7c7f2437f28d83192f84f2dc4b010cf2d9d69ad45bbad0f1",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Skill.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Skill.wz"
     },
     {
       "name": "Sound.wz",
       "size": 372965748,
       "sha256": "87e9b2fe776da53183132e479609cf065df55c6d32388056ff42cb253ed0c53d",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/Sound.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/Sound.wz"
     },
     {
       "name": "String.wz",
       "size": 3582583,
-      "sha256": "f276b2303058abc19b098049cf731fc63770ce890a9287ad879a02b464533907",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/String.wz"
+      "sha256": "5ae9b6ae738581e8c8f67ab7f15a57d848072ff33003e8dae576f0e3fffa1e5a",
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/String.wz"
     },
     {
       "name": "UI.wz",
       "size": 28507211,
       "sha256": "805e168fa51cfecc3779d4708201575691afc827b76fe6585c90aa843e162ec2",
-      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-4/UI.wz"
+      "url": "https://buns.asslorde.com/client/candidates/wz-candidate-7/UI.wz"
     }
   ],
   "decode_images": [
@@ -110,6 +110,7 @@
     "Map.wz/Map/Map9/910000008.img",
     "Map.wz/Map/Map9/910000009.img",
     "Map.wz/Map/Map9/910000010.img",
+    "Map.wz/MapHelper.img",
     "Map.wz/Obj/MapleMoonLamp.img",
     "Map.wz/Obj/MapleMoonLamp2.img",
     "Map.wz/Obj/ShamanBT.img",
@@ -120,7 +121,7 @@
     "Map.wz/Obj/globalJP.img",
     "Map.wz/Obj/guide.img",
     "Map.wz/Tile/darkEreb.img",
-    "Mob.wz/8610022.img",
+    "Mob.wz/8610005.img",
     "Mob.wz/9400408.img",
     "Mob.wz/9400409.img",
     "Mob.wz/9420521.img",
@@ -1356,6 +1357,22 @@
     {
       "path": "Sound/UI.img/BtMouseOver",
       "type": "sound"
+    },
+    {
+      "path": "Map.wz/MapHelper.img/mark/Road of Vanishing",
+      "dimensions": [
+        38,
+        38
+      ],
+      "type": "canvas"
+    },
+    {
+      "path": "Map.wz/MapHelper.img/mark/darkEreb",
+      "dimensions": [
+        38,
+        38
+      ],
+      "type": "canvas"
     },
     {
       "path": "Map.wz/Map/Map9/910000000.img",
@@ -3451,11 +3468,11 @@
       "path": "Sound.wz/Bgm25.img/knightsStronghold"
     },
     {
-      "path": "Mob.wz/8610022.img",
+      "path": "Mob.wz/8610005.img",
       "type": "image"
     },
     {
-      "path": "String.wz/Mob.img/8610022",
+      "path": "String.wz/Mob.img/8610005",
       "type": "property"
     },
     {
@@ -3931,6 +3948,3261 @@
     {
       "path": "String.wz/Cash.img/5782000/desc",
       "type": "string"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/version",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/cloud",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/town",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/swim",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/returnMap",
+      "type": "int",
+      "value": 271010000
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/forcedReturn",
+      "type": "int",
+      "value": 999999999
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/mobRate",
+      "type": "float",
+      "value": 1.5
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/bgm",
+      "type": "string",
+      "value": "Bgm25/knightsStronghold"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/mapMark",
+      "type": "string",
+      "value": "darkEreb"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/fly",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/noMapCmd",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/hideMinimap",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/fieldLimit",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/onFirstUserEnter",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/onUserEnter",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/VRTop",
+      "type": "int",
+      "value": -387
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/VRLeft",
+      "type": "int",
+      "value": -451
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/VRBottom",
+      "type": "int",
+      "value": 300
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/VRRight",
+      "type": "int",
+      "value": 1144
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/info/lvLimit",
+      "type": "int",
+      "value": 160
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/1",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/1/x1",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/1/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/1/x2",
+      "type": "int",
+      "value": 90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/1/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/1/prev",
+      "type": "int",
+      "value": 3
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/1/next",
+      "type": "int",
+      "value": 4
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/1/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/2",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/2/x1",
+      "type": "int",
+      "value": -180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/2/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/2/x2",
+      "type": "int",
+      "value": -90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/2/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/2/prev",
+      "type": "int",
+      "value": 5
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/2/next",
+      "type": "int",
+      "value": 3
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/2/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/3",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/3/x1",
+      "type": "int",
+      "value": -90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/3/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/3/x2",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/3/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/3/prev",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/3/next",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/3/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/4",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/4/x1",
+      "type": "int",
+      "value": 90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/4/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/4/x2",
+      "type": "int",
+      "value": 180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/4/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/4/prev",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/4/next",
+      "type": "int",
+      "value": 6
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/4/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/5",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/5/x1",
+      "type": "int",
+      "value": -270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/5/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/5/x2",
+      "type": "int",
+      "value": -180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/5/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/5/prev",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/5/next",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/5/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/6",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/6/x1",
+      "type": "int",
+      "value": 180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/6/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/6/x2",
+      "type": "int",
+      "value": 270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/6/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/6/prev",
+      "type": "int",
+      "value": 4
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/6/next",
+      "type": "int",
+      "value": 12
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/6/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/7",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/7/x1",
+      "type": "int",
+      "value": -360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/7/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/7/x2",
+      "type": "int",
+      "value": -270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/7/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/7/prev",
+      "type": "int",
+      "value": 9
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/7/next",
+      "type": "int",
+      "value": 5
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/7/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/8",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/8/x1",
+      "type": "int",
+      "value": 900
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/8/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/8/x2",
+      "type": "int",
+      "value": 990
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/8/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/8/prev",
+      "type": "int",
+      "value": 16
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/8/next",
+      "type": "int",
+      "value": 14
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/8/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/9",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/9/x1",
+      "type": "int",
+      "value": -450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/9/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/9/x2",
+      "type": "int",
+      "value": -360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/9/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/9/prev",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/9/next",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/9/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/10",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/10/x1",
+      "type": "int",
+      "value": 450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/10/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/10/x2",
+      "type": "int",
+      "value": 540
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/10/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/10/prev",
+      "type": "int",
+      "value": 11
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/10/next",
+      "type": "int",
+      "value": 13
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/10/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/11",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/11/x1",
+      "type": "int",
+      "value": 360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/11/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/11/x2",
+      "type": "int",
+      "value": 450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/11/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/11/prev",
+      "type": "int",
+      "value": 12
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/11/next",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/11/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/12",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/12/x1",
+      "type": "int",
+      "value": 270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/12/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/12/x2",
+      "type": "int",
+      "value": 360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/12/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/12/prev",
+      "type": "int",
+      "value": 6
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/12/next",
+      "type": "int",
+      "value": 11
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/12/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/13",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/13/x1",
+      "type": "int",
+      "value": 540
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/13/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/13/x2",
+      "type": "int",
+      "value": 630
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/13/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/13/prev",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/13/next",
+      "type": "int",
+      "value": 15
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/13/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/14",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/14/x1",
+      "type": "int",
+      "value": 990
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/14/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/14/x2",
+      "type": "int",
+      "value": 1080
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/14/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/14/prev",
+      "type": "int",
+      "value": 8
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/14/next",
+      "type": "int",
+      "value": 18
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/14/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/15",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/15/x1",
+      "type": "int",
+      "value": 630
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/15/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/15/x2",
+      "type": "int",
+      "value": 720
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/15/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/15/prev",
+      "type": "int",
+      "value": 13
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/15/next",
+      "type": "int",
+      "value": 17
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/15/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/16",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/16/x1",
+      "type": "int",
+      "value": 810
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/16/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/16/x2",
+      "type": "int",
+      "value": 900
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/16/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/16/prev",
+      "type": "int",
+      "value": 17
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/16/next",
+      "type": "int",
+      "value": 8
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/16/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/17",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/17/x1",
+      "type": "int",
+      "value": 720
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/17/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/17/x2",
+      "type": "int",
+      "value": 810
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/17/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/17/prev",
+      "type": "int",
+      "value": 15
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/17/next",
+      "type": "int",
+      "value": 16
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/17/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/18",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/18/x1",
+      "type": "int",
+      "value": 1080
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/18/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/18/x2",
+      "type": "int",
+      "value": 1170
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/18/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/18/prev",
+      "type": "int",
+      "value": 14
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/18/next",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/foothold/5/0/18/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/ladderRope",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/0",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/0/pn",
+      "type": "string",
+      "value": "sp"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/0/pt",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/0/x",
+      "type": "int",
+      "value": 147
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/0/y",
+      "type": "int",
+      "value": 103
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/0/tm",
+      "type": "int",
+      "value": 999999999
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/0/tn",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/0/horizontalImpact",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1/pn",
+      "type": "string",
+      "value": "west00"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1/pt",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1/x",
+      "type": "int",
+      "value": -222
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1/y",
+      "type": "int",
+      "value": 142
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1/tm",
+      "type": "int",
+      "value": 271000300
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1/tn",
+      "type": "string",
+      "value": "in00"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1/horizontalImpact",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1/hideTooltip",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/1/delay",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2/pn",
+      "type": "string",
+      "value": "in00"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2/pt",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2/x",
+      "type": "int",
+      "value": 867
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2/y",
+      "type": "int",
+      "value": 146
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2/tm",
+      "type": "int",
+      "value": 999999999
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2/tn",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2/horizontalImpact",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2/hideTooltip",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/portal/2/delay",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/life",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030000.img/reactor",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/bgm",
+      "type": "string",
+      "value": "Bgm25/knightsStronghold"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/cloud",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/swim",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/forcedReturn",
+      "type": "int",
+      "value": 999999999
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/hideMinimap",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/mapMark",
+      "type": "string",
+      "value": "darkEreb"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/mobRate",
+      "type": "float",
+      "value": 1.2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/returnMap",
+      "type": "int",
+      "value": 271010000
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/town",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/version",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/fieldLimit",
+      "type": "int",
+      "value": 76
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/lvLimit",
+      "type": "int",
+      "value": 160
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/onFirstUserEnter",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/onUserEnter",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/fly",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/noMapCmd",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/VRLeft",
+      "type": "int",
+      "value": -451
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/VRRight",
+      "type": "int",
+      "value": 1144
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/VRTop",
+      "type": "int",
+      "value": -387
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/info/VRBottom",
+      "type": "int",
+      "value": 300
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/1",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/1/x1",
+      "type": "int",
+      "value": -450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/1/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/1/x2",
+      "type": "int",
+      "value": -360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/1/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/1/prev",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/1/next",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/1/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/2",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/2/x1",
+      "type": "int",
+      "value": -360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/2/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/2/x2",
+      "type": "int",
+      "value": -270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/2/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/2/prev",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/2/next",
+      "type": "int",
+      "value": 3
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/2/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/3",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/3/x1",
+      "type": "int",
+      "value": -270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/3/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/3/x2",
+      "type": "int",
+      "value": -180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/3/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/3/prev",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/3/next",
+      "type": "int",
+      "value": 4
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/3/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/4",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/4/x1",
+      "type": "int",
+      "value": -180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/4/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/4/x2",
+      "type": "int",
+      "value": -90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/4/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/4/prev",
+      "type": "int",
+      "value": 3
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/4/next",
+      "type": "int",
+      "value": 5
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/4/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/5",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/5/x1",
+      "type": "int",
+      "value": -90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/5/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/5/x2",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/5/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/5/prev",
+      "type": "int",
+      "value": 4
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/5/next",
+      "type": "int",
+      "value": 6
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/5/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/6",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/6/x1",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/6/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/6/x2",
+      "type": "int",
+      "value": 90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/6/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/6/prev",
+      "type": "int",
+      "value": 5
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/6/next",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/6/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/7",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/7/x1",
+      "type": "int",
+      "value": 90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/7/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/7/x2",
+      "type": "int",
+      "value": 180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/7/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/7/prev",
+      "type": "int",
+      "value": 6
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/7/next",
+      "type": "int",
+      "value": 8
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/7/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/8",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/8/x1",
+      "type": "int",
+      "value": 180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/8/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/8/x2",
+      "type": "int",
+      "value": 270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/8/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/8/prev",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/8/next",
+      "type": "int",
+      "value": 9
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/8/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/9",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/9/x1",
+      "type": "int",
+      "value": 270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/9/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/9/x2",
+      "type": "int",
+      "value": 360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/9/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/9/prev",
+      "type": "int",
+      "value": 8
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/9/next",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/9/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/10",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/10/x1",
+      "type": "int",
+      "value": 360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/10/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/10/x2",
+      "type": "int",
+      "value": 450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/10/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/10/prev",
+      "type": "int",
+      "value": 9
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/10/next",
+      "type": "int",
+      "value": 11
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/10/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/11",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/11/x1",
+      "type": "int",
+      "value": 450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/11/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/11/x2",
+      "type": "int",
+      "value": 540
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/11/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/11/prev",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/11/next",
+      "type": "int",
+      "value": 12
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/11/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/12",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/12/x1",
+      "type": "int",
+      "value": 540
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/12/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/12/x2",
+      "type": "int",
+      "value": 630
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/12/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/12/prev",
+      "type": "int",
+      "value": 11
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/12/next",
+      "type": "int",
+      "value": 13
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/12/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/13",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/13/x1",
+      "type": "int",
+      "value": 630
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/13/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/13/x2",
+      "type": "int",
+      "value": 720
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/13/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/13/prev",
+      "type": "int",
+      "value": 12
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/13/next",
+      "type": "int",
+      "value": 14
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/13/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/14",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/14/x1",
+      "type": "int",
+      "value": 720
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/14/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/14/x2",
+      "type": "int",
+      "value": 810
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/14/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/14/prev",
+      "type": "int",
+      "value": 13
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/14/next",
+      "type": "int",
+      "value": 15
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/14/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/15",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/15/x1",
+      "type": "int",
+      "value": 810
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/15/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/15/x2",
+      "type": "int",
+      "value": 900
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/15/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/15/prev",
+      "type": "int",
+      "value": 14
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/15/next",
+      "type": "int",
+      "value": 16
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/15/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/16",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/16/x1",
+      "type": "int",
+      "value": 900
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/16/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/16/x2",
+      "type": "int",
+      "value": 990
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/16/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/16/prev",
+      "type": "int",
+      "value": 15
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/16/next",
+      "type": "int",
+      "value": 17
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/16/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/17",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/17/x1",
+      "type": "int",
+      "value": 990
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/17/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/17/x2",
+      "type": "int",
+      "value": 1080
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/17/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/17/prev",
+      "type": "int",
+      "value": 16
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/17/next",
+      "type": "int",
+      "value": 18
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/17/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/18",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/18/x1",
+      "type": "int",
+      "value": 1080
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/18/y1",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/18/x2",
+      "type": "int",
+      "value": 1170
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/18/y2",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/18/prev",
+      "type": "int",
+      "value": 17
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/18/next",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/foothold/5/0/18/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/ladderRope",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/0",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/0/x",
+      "type": "int",
+      "value": 147
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/0/y",
+      "type": "int",
+      "value": 103
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/0/pt",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/0/tm",
+      "type": "int",
+      "value": 999999999
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/0/tn",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/0/pn",
+      "type": "string",
+      "value": "sp"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/0/horizontalImpact",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1/x",
+      "type": "int",
+      "value": -190
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1/y",
+      "type": "int",
+      "value": 143
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1/pt",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1/tm",
+      "type": "int",
+      "value": 271000300
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1/tn",
+      "type": "string",
+      "value": "in00"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1/pn",
+      "type": "string",
+      "value": "out00"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1/delay",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1/hideTooltip",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/1/onlyOnce",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2/x",
+      "type": "int",
+      "value": 867
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2/y",
+      "type": "int",
+      "value": 146
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2/pt",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2/tm",
+      "type": "int",
+      "value": 271030100
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2/tn",
+      "type": "string",
+      "value": "out00"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2/pn",
+      "type": "string",
+      "value": "in00"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2/delay",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2/hideTooltip",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/portal/2/onlyOnce",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/id",
+      "type": "string",
+      "value": "8610005"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/x",
+      "type": "int",
+      "value": 38
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/y",
+      "type": "int",
+      "value": 119
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/cy",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/mobTime",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/rx0",
+      "type": "int",
+      "value": -430
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/rx1",
+      "type": "int",
+      "value": 1150
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/f",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/hide",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/type",
+      "type": "string",
+      "value": "m"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/0/fh",
+      "type": "int",
+      "value": 6
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/id",
+      "type": "string",
+      "value": "8610005"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/x",
+      "type": "int",
+      "value": 213
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/y",
+      "type": "int",
+      "value": 123
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/cy",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/mobTime",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/rx0",
+      "type": "int",
+      "value": -430
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/rx1",
+      "type": "int",
+      "value": 1150
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/f",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/hide",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/type",
+      "type": "string",
+      "value": "m"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/1/fh",
+      "type": "int",
+      "value": 8
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/id",
+      "type": "string",
+      "value": "8610005"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/x",
+      "type": "int",
+      "value": 391
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/y",
+      "type": "int",
+      "value": 115
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/cy",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/mobTime",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/rx0",
+      "type": "int",
+      "value": -430
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/rx1",
+      "type": "int",
+      "value": 1150
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/f",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/hide",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/type",
+      "type": "string",
+      "value": "m"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/2/fh",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/id",
+      "type": "string",
+      "value": "8610005"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/x",
+      "type": "int",
+      "value": 656
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/y",
+      "type": "int",
+      "value": 114
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/cy",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/mobTime",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/rx0",
+      "type": "int",
+      "value": -430
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/rx1",
+      "type": "int",
+      "value": 1150
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/f",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/hide",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/type",
+      "type": "string",
+      "value": "m"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/3/fh",
+      "type": "int",
+      "value": 13
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/id",
+      "type": "string",
+      "value": "8610005"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/x",
+      "type": "int",
+      "value": 890
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/y",
+      "type": "int",
+      "value": 115
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/cy",
+      "type": "int",
+      "value": 148
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/mobTime",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/rx0",
+      "type": "int",
+      "value": -430
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/rx1",
+      "type": "int",
+      "value": 1150
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/f",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/hide",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/type",
+      "type": "string",
+      "value": "m"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/life/4/fh",
+      "type": "int",
+      "value": 15
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030010.img/reactor",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/bgm",
+      "type": "string",
+      "value": "Bgm25/knightsStronghold"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/cloud",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/swim",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/forcedReturn",
+      "type": "int",
+      "value": 271030400
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/hideMinimap",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/mapMark",
+      "type": "string",
+      "value": "darkEreb"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/mobRate",
+      "type": "float",
+      "value": 1.0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/returnMap",
+      "type": "int",
+      "value": 271010000
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/town",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/version",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/fieldLimit",
+      "type": "int",
+      "value": 270584
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/lvLimit",
+      "type": "int",
+      "value": 160
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/onFirstUserEnter",
+      "type": "string",
+      "value": "enter_secretGarden"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/onUserEnter",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/fly",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/noMapCmd",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/VRLeft",
+      "type": "int",
+      "value": -541
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/VRRight",
+      "type": "int",
+      "value": 718
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/VRTop",
+      "type": "int",
+      "value": -318
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/info/VRBottom",
+      "type": "int",
+      "value": 370
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/7",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/7/x1",
+      "type": "int",
+      "value": -59
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/7/y1",
+      "type": "int",
+      "value": -59
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/7/x2",
+      "type": "int",
+      "value": 49
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/7/y2",
+      "type": "int",
+      "value": -59
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/7/prev",
+      "type": "int",
+      "value": 8
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/7/next",
+      "type": "int",
+      "value": 11
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/7/piece",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/8",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/8/x1",
+      "type": "int",
+      "value": -59
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/8/y1",
+      "type": "int",
+      "value": -59
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/8/x2",
+      "type": "int",
+      "value": -59
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/8/y2",
+      "type": "int",
+      "value": 139
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/8/prev",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/8/next",
+      "type": "int",
+      "value": 12
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/8/piece",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/9",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/9/x1",
+      "type": "int",
+      "value": -21
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/9/y1",
+      "type": "int",
+      "value": 134
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/9/x2",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/9/y2",
+      "type": "int",
+      "value": 134
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/9/prev",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/9/next",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/9/piece",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/11",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/11/x1",
+      "type": "int",
+      "value": 49
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/11/y1",
+      "type": "int",
+      "value": 139
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/11/x2",
+      "type": "int",
+      "value": 49
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/11/y2",
+      "type": "int",
+      "value": -59
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/11/prev",
+      "type": "int",
+      "value": 12
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/11/next",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/11/piece",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/12",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/12/x1",
+      "type": "int",
+      "value": -59
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/12/y1",
+      "type": "int",
+      "value": 139
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/12/x2",
+      "type": "int",
+      "value": 49
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/12/y2",
+      "type": "int",
+      "value": 139
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/12/prev",
+      "type": "int",
+      "value": 8
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/12/next",
+      "type": "int",
+      "value": 11
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/1/1/12/piece",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/1",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/1/x1",
+      "type": "int",
+      "value": -540
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/1/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/1/x2",
+      "type": "int",
+      "value": -450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/1/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/1/prev",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/1/next",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/1/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/2",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/2/x1",
+      "type": "int",
+      "value": -450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/2/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/2/x2",
+      "type": "int",
+      "value": -360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/2/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/2/prev",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/2/next",
+      "type": "int",
+      "value": 3
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/2/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/3",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/3/x1",
+      "type": "int",
+      "value": -360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/3/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/3/x2",
+      "type": "int",
+      "value": -270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/3/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/3/prev",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/3/next",
+      "type": "int",
+      "value": 4
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/3/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/4",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/4/x1",
+      "type": "int",
+      "value": -270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/4/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/4/x2",
+      "type": "int",
+      "value": -180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/4/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/4/prev",
+      "type": "int",
+      "value": 3
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/4/next",
+      "type": "int",
+      "value": 5
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/4/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/5",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/5/x1",
+      "type": "int",
+      "value": -180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/5/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/5/x2",
+      "type": "int",
+      "value": -90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/5/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/5/prev",
+      "type": "int",
+      "value": 4
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/5/next",
+      "type": "int",
+      "value": 6
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/5/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/6",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/6/x1",
+      "type": "int",
+      "value": -90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/6/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/6/x2",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/6/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/6/prev",
+      "type": "int",
+      "value": 5
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/6/next",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/6/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/10",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/10/x1",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/10/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/10/x2",
+      "type": "int",
+      "value": 90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/10/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/10/prev",
+      "type": "int",
+      "value": 6
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/10/next",
+      "type": "int",
+      "value": 13
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/10/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/13",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/13/x1",
+      "type": "int",
+      "value": 90
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/13/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/13/x2",
+      "type": "int",
+      "value": 180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/13/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/13/prev",
+      "type": "int",
+      "value": 10
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/13/next",
+      "type": "int",
+      "value": 14
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/13/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/14",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/14/x1",
+      "type": "int",
+      "value": 180
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/14/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/14/x2",
+      "type": "int",
+      "value": 270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/14/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/14/prev",
+      "type": "int",
+      "value": 13
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/14/next",
+      "type": "int",
+      "value": 15
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/14/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/15",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/15/x1",
+      "type": "int",
+      "value": 270
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/15/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/15/x2",
+      "type": "int",
+      "value": 360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/15/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/15/prev",
+      "type": "int",
+      "value": 14
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/15/next",
+      "type": "int",
+      "value": 16
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/15/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/16",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/16/x1",
+      "type": "int",
+      "value": 360
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/16/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/16/x2",
+      "type": "int",
+      "value": 450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/16/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/16/prev",
+      "type": "int",
+      "value": 15
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/16/next",
+      "type": "int",
+      "value": 17
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/16/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/17",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/17/x1",
+      "type": "int",
+      "value": 450
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/17/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/17/x2",
+      "type": "int",
+      "value": 540
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/17/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/17/prev",
+      "type": "int",
+      "value": 16
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/17/next",
+      "type": "int",
+      "value": 18
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/17/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/18",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/18/x1",
+      "type": "int",
+      "value": 540
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/18/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/18/x2",
+      "type": "int",
+      "value": 630
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/18/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/18/prev",
+      "type": "int",
+      "value": 17
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/18/next",
+      "type": "int",
+      "value": 19
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/18/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/19",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/19/x1",
+      "type": "int",
+      "value": 630
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/19/y1",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/19/x2",
+      "type": "int",
+      "value": 720
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/19/y2",
+      "type": "int",
+      "value": 208
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/19/prev",
+      "type": "int",
+      "value": 18
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/19/next",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/foothold/5/0/19/piece",
+      "type": "int",
+      "value": -1
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/ladderRope",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/0",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/0/x",
+      "type": "int",
+      "value": 383
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/0/y",
+      "type": "int",
+      "value": 181
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/0/pt",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/0/tm",
+      "type": "int",
+      "value": 999999999
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/0/tn",
+      "type": "string",
+      "value": ""
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/0/pn",
+      "type": "string",
+      "value": "sp"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/0/horizontalImpact",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/1",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/1/x",
+      "type": "int",
+      "value": 485
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/1/y",
+      "type": "int",
+      "value": 203
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/1/pt",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/1/tm",
+      "type": "int",
+      "value": 271030400
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/1/tn",
+      "type": "string",
+      "value": "in00"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/1/pn",
+      "type": "string",
+      "value": "out00"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/portal/1/horizontalImpact",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0",
+      "type": "property"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/id",
+      "type": "string",
+      "value": "2143001"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/x",
+      "type": "int",
+      "value": -11
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/y",
+      "type": "int",
+      "value": 128
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/cy",
+      "type": "int",
+      "value": 134
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/mobTime",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/rx0",
+      "type": "int",
+      "value": -39
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/rx1",
+      "type": "int",
+      "value": 29
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/f",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/hide",
+      "type": "int",
+      "value": 0
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/type",
+      "type": "string",
+      "value": "n"
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/life/0/fh",
+      "type": "int",
+      "value": 9
+    },
+    {
+      "path": "Map.wz/Map/Map2/271030410.img/reactor",
+      "type": "property"
     },
     {
       "path": "Character/Cap/01000000.img/info/icon",

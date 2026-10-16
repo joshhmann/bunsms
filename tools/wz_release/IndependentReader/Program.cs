@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 using MapleLib.WzLib;
 using MapleLib.WzLib.WzProperties;
 using Newtonsoft.Json;
@@ -19,10 +20,36 @@ internal static class Program
     private static readonly JArray Canvases = new JArray();
     private static readonly JArray Sounds = new JArray();
     private static readonly JArray ParsedImages = new JArray();
+    private static byte[] PixelRow = Array.Empty<byte>();
+    private static readonly SHA256 PixelHasher = SHA256.Create();
 
     private static string Hash(Stream stream)
     {
         using (var sha = SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+    }
+
+    private static string BitmapHash(System.Drawing.Bitmap bitmap, int width, int height, out bool visible)
+    {
+        int rowBytes = checked(width * 4);
+        if (PixelRow.Length < rowBytes) Array.Resize(ref PixelRow, rowBytes);
+        var area = new System.Drawing.Rectangle(0, 0, width, height);
+        var locked = bitmap.LockBits(area, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        visible = false;
+        try
+        {
+            PixelHasher.Initialize();
+            for (int y = 0; y < height; y++)
+            {
+                Marshal.Copy(IntPtr.Add(locked.Scan0, y * locked.Stride), PixelRow, 0, rowBytes);
+                PixelHasher.TransformBlock(PixelRow, 0, rowBytes, null, 0);
+                if (!visible)
+                    for (int x = 3; x < rowBytes; x += 4)
+                        if (PixelRow[x] != 0) { visible = true; break; }
+            }
+            PixelHasher.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            return BitConverter.ToString(PixelHasher.Hash).Replace("-", "").ToLowerInvariant();
+        }
+        finally { bitmap.UnlockBits(locked); }
     }
 
     private static WzObject Node(string path)
@@ -49,13 +76,12 @@ internal static class Program
             // MapleLib owns/caches this bitmap. UOL aliases and later exact-node
             // checks can return the same instance; WzFile.Dispose releases it.
             var bitmap = canvas.GetLinkedWzCanvasBitmap();
-            if (bitmap == null || bitmap.Width <= 0 || bitmap.Height <= 0) throw new InvalidDataException("Empty decoded bitmap: " + path);
-            using (var png = new MemoryStream())
-            {
-                bitmap.Save(png, ImageFormat.Png);
-                png.Position = 0;
-                Canvases.Add(new JObject { ["path"] = path, ["width"] = bitmap.Width, ["height"] = bitmap.Height, ["decoded_png_sha256"] = Hash(png) });
-            }
+            if (bitmap == null) throw new InvalidDataException("Empty decoded bitmap: " + path);
+            int width = bitmap.Width, height = bitmap.Height;
+            if (width <= 0 || height <= 0) throw new InvalidDataException("Invalid decoded bitmap dimensions: " + path);
+            string bgra = BitmapHash(bitmap, width, height, out bool visible);
+            Canvases.Add(new JObject { ["path"] = path, ["width"] = width, ["height"] = height,
+                ["decoded_bgra_sha256"] = bgra, ["decoded_bgra_bytes"] = (long)width * height * 4, ["visible"] = visible });
         }
         else if (value is WzBinaryProperty sound)
         {
@@ -65,13 +91,23 @@ internal static class Program
         }
     }
 
-    private static void Walk(string path, WzObject node)
+    private static void Walk(string path, WzObject node, HashSet<WzObject> ancestors)
     {
-        Decode(path, node);
-        if (node is WzUOLProperty) return;
-        IEnumerable<WzImageProperty> children = node is WzImage image ? image.WzProperties : (node as WzImageProperty)?.WzProperties;
-        if (children == null) return;
-        foreach (var child in children) Walk(path + "/" + child.Name, child);
+        for (int depth = 0; node is WzUOLProperty alias; depth++)
+        {
+            if (depth >= 32) throw new InvalidDataException("Cyclic/unbounded alias: " + path);
+            node = alias.LinkValue;
+            if (node == null) throw new InvalidDataException("Unresolved alias: " + path);
+        }
+        if (!ancestors.Add(node)) throw new InvalidDataException("Cyclic lazy image tree: " + path);
+        try
+        {
+            Decode(path, node);
+            IEnumerable<WzImageProperty> children = node is WzImage image ? image.WzProperties : (node as WzImageProperty)?.WzProperties;
+            if (children != null)
+                foreach (var child in children) Walk(path + "/" + child.Name, child, ancestors);
+        }
+        finally { ancestors.Remove(node); }
     }
 
     private static void Attempt(string path, Action action)
@@ -120,7 +156,7 @@ internal static class Program
             {
                 var image = Node(path) as WzImage;
                 if (image == null || !image.ParseImage()) throw new InvalidDataException("Lazy IMG parse failed: " + path);
-                Walk(path, image);
+                Walk(path, image, new HashSet<WzObject>());
                 ParsedImages.Add(path);
             });
         }
@@ -134,6 +170,7 @@ internal static class Program
                 bool correctType = expected == null || expected == "image" && node is WzImage ||
                     expected == "canvas" && node is WzCanvasProperty || expected == "property" && node is WzSubProperty ||
                     expected == "sound" && node is WzBinaryProperty || expected == "int" && node is WzIntProperty ||
+                    expected == "float" && node is WzFloatProperty ||
                     expected == "string" && node is WzStringProperty || expected == "vector" && node is WzVectorProperty;
                 if (!correctType) throw new InvalidDataException("Required node type differs (" + expected + "): " + path);
                 Decode(path, node);
@@ -142,7 +179,19 @@ internal static class Program
                     var canvas = node as WzCanvasProperty;
                     if (canvas == null || canvas.PngProperty.Width != (int)dimensions[0] || canvas.PngProperty.Height != (int)dimensions[1]) throw new InvalidDataException("Canvas dimensions differ: " + path);
                 }
-                if ((string)requirement["type"] == "string" && string.IsNullOrWhiteSpace(node.GetString())) throw new InvalidDataException("Empty required string: " + path);
+                var wanted = requirement["value"];
+                if (wanted != null)
+                {
+                    bool matches = expected switch
+                    {
+                        "int" => node.GetInt() == (int)wanted,
+                        "float" => node.GetFloat() == (float)wanted,
+                        "string" => node.GetString() == (string)wanted,
+                        _ => throw new InvalidDataException("Unsupported exact value contract: " + expected)
+                    };
+                    if (!matches) throw new InvalidDataException("Deployed metadata value differs: " + path);
+                }
+                else if (expected == "string" && string.IsNullOrWhiteSpace(node.GetString())) throw new InvalidDataException("Empty required string: " + path);
             });
         }
         var report = new JObject
