@@ -126,6 +126,7 @@ try {
     $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $base = [uri]($BaselineFilesBaseUrl.AbsoluteUri.TrimEnd('/') + '/')
     $verifiedFiles = [Collections.Generic.List[object]]::new()
+    $report.verifiedBaselineFiles = $verifiedFiles
     foreach ($file in $manifest.files) {
         $expectedHash = if ($isClientManifest) { $file.hash } else { $file.sha256 }
         if (-not $file.name -or $expectedHash -notmatch '^[0-9a-fA-F]{64}$' -or $file.size -le 0) {
@@ -140,14 +141,16 @@ try {
         $url = if ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
         if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https') { throw "Native file URL must be pinned HTTPS: $($file.name)" }
         New-Item -ItemType Directory -Force ([IO.Path]::GetDirectoryName($destination)) | Out-Null
+        $report.currentDownload = [ordered]@{ name = $file.name; url = $url.AbsoluteUri; expectedSize = $file.size; expectedSha256 = $expectedHash; startedUtc = [DateTime]::UtcNow.ToString('O'); status = 'downloading' }
         Invoke-WebRequest $url.AbsoluteUri -OutFile $destination -TimeoutSec 900
         $sha = (Get-FileHash $destination -Algorithm SHA256).Hash.ToLowerInvariant()
         if ((Get-Item $destination).Length -ne $file.size -or $sha -ne $expectedHash.ToLowerInvariant()) {
             throw "Native baseline size/SHA256 mismatch: $($file.name)"
         }
         $verifiedFiles.Add([pscustomobject]@{ name = $file.name; size = $file.size; sha256 = $sha; url = $url.AbsoluteUri })
+        $report.currentDownload.status = 'verified'
+        $report.currentDownload.finishedUtc = [DateTime]::UtcNow.ToString('O')
     }
-    $report.verifiedBaselineFiles = $verifiedFiles
     $required = @('MapleStory.exe', 'Canvas.dll', 'Gr2D_DX8.dll', 'PCOM.dll', 'NameSpace.dll', 'ResMan.dll', 'Shape2D.dll',
         'Sound_DX8.dll', 'ijl15.dll', 'bz32ex.dll', 'aossdk.dll', 'l3codeca.acm', 'mss32.dll', 'Base.wz', 'Character.wz',
         'Effect.wz', 'Etc.wz', 'Item.wz', 'List.wz', 'Map.wz', 'Mob.wz', 'Morph.wz', 'Npc.wz', 'Quest.wz', 'Reactor.wz',
