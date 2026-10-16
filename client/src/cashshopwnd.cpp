@@ -3303,7 +3303,8 @@ bool CashShopWnd_ResourcesReady() {
             Ztl_variant_t value = get_rm()->GetObjectA(const_cast<wchar_t*>(path));
             IWzCanvasPtr canvas = get_unknown(value);
             return canvas && canvas->width > 0 && canvas->height > 0 &&
-                (!width || canvas->width == width) && (!height || canvas->height == height);
+                (!width || canvas->width == static_cast<unsigned int>(width)) &&
+                (!height || canvas->height == static_cast<unsigned int>(height));
         };
         if (!canvasReady(L"UI/CashShop.img/Base/WndBg", kWndW, kWndH)) return false;
         for (int i = 0; i != 3; ++i) {
