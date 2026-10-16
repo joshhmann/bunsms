@@ -65,7 +65,9 @@ try {
         $url = [uri]$variant.url
         if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https' -or $variant.sha256 -notmatch '^[a-f0-9]{64}$' -or $variant.size -le 0) { throw 'Invalid image variant byte authority' }
         $supportFiles = @($variant.supportFiles | Where-Object { $_ })
-        if ($supportFiles.Count -and -not $fullSupport) { throw 'Paired MonsterBook files require the explicit full-support experiment' }
+        if ($supportFiles.Count -and -not $fullSupport -and $authority.supportCohort -ne 'reference') {
+            throw 'Paired String files require an explicitly pinned reference or full-rc3 context'
+        }
         if (-not $fullSupport -and -not $supportFiles.Count -and $variant.sha256 -eq $referenceItem.sha256 -and $variant.size -eq $referenceItem.size) {
             $result.steps.Add([pscustomobject]@{ id = $variant.id; sha256 = $variant.sha256; images = $variant.images
                 outcome = 'Exact already-proven reference bytes; no duplicate engine probe' })

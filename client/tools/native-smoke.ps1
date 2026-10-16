@@ -334,9 +334,10 @@ try {
                         -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
                         -ObserveSeconds $ObserveSeconds -GameHost $GameHost -VariantsUrl $ItemImageVariantsUrl -VariantsSha256 $ItemImageVariantsSha256
                     $report.itemImageProbes = Get-Content (Join-Path $OutputDirectory 'item-image-probes.json') -Raw | ConvertFrom-Json
-                    $report.inputKind = 'INTERNAL reference other50 plus pinned Item variants; no full-support game attempt, String override, or compiled runtime overlay'
-                    if ($report.itemImageProbes.status -ne 'image-variant-observations-complete') {
-                        throw 'Reference-only Item experiment stopped; inspect actual prerequisite and re-encoding observations'
+                    $report.inputKind = 'INTERNAL reference context plus descriptor-pinned Item/String overrides; no full-support game attempt or compiled runtime overlay'
+                    if ($report.itemImageProbes.status -ne 'image-variant-observations-complete' -or
+                        @($report.itemImageProbes.steps | Where-Object outcome -eq 'startup-failed').Count) {
+                        throw 'Reference-only asset experiment stopped; inspect actual pinned variant observations'
                     }
                     $report.status = 'reference-image-observations-complete'
                     return
