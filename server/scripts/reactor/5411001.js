@@ -5,6 +5,8 @@ function act() {
 	}
     rm.changeMusic("Bgm06/FinalFight");
     rm.spawnMonster(9420521);
-    rm.createMapMonitor(541020800,"ps00");
+    if (rm.getPlayer().getEventInstance() == null) {
+        rm.createMapMonitor(541020800, "ps00");
+    }
     rm.mapMessage(5, "Krexel appears!");
 }

@@ -34,7 +34,12 @@ function action(mode, type, selection) {
         let mapId = cm.getMapId();
         let warpToMapId = getWarpToMapId(mapId);
 
-        if (warpToMapId !== 0) {
+        if (warpToMapId === 0) {
+            cm.sendOk("This map is not an expedition exit.");
+            cm.dispose();
+            return;
+        }
+        if (status == 0) {
             if (eim === null) {
                 cm.sendYesNo("How did you even get in here without starting the expedition? Do you want to leave?");
             } else if (!eim.isEventCleared()) {
@@ -46,13 +51,12 @@ function action(mode, type, selection) {
                     cm.getEventInstance().sendDmgDealt(cm.getPlayer().getWorld()) +
                     "Are you sure you want to leave now?");
             }
-        } else {
-            cm.sendYesNo("If you leave now, you'll have to start over. Are you sure you want to leave?");
+            return;
         }
 
         if (status == 1) {
-            if (eim.isEventCleared()) {
-                let rewarded = eim.getProperty("rewarded") == "true";
+            if (eim !== null && eim.isEventCleared()) {
+                let rewarded = !eim.claimExpeditionRewards();
 
                 const players = eim.getPlayers();
 
@@ -467,9 +471,8 @@ function action(mode, type, selection) {
                         break;
                 }
 
-            } else {
-                cm.dispose();
             }
+            cm.dispose();
             cm.warp(warpToMapId);
         }
     }
