@@ -156,48 +156,63 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - name: Start matching isolated real QA backend
-        if: inputs.test_backend
+      - name: Keep matching real QA backend alive during native Windows capture
         shell: pwsh
         env:
           BACKEND_BUNDLE_URL: ${{ inputs.backend_bundle_url }}
           BACKEND_BUNDLE_SHA256: ${{ inputs.backend_bundle_sha256 }}
           BACKEND_XML_URL: ${{ inputs.backend_xml_url }}
           BACKEND_XML_SHA256: ${{ inputs.backend_xml_sha256 }}
-        run: |
-          ./client/tools/start-test-backend.ps1 `
-            -BundleUrl $env:BACKEND_BUNDLE_URL -BundleSha256 $env:BACKEND_BUNDLE_SHA256 `
-            -XmlUrl $env:BACKEND_XML_URL -XmlSha256 $env:BACKEND_XML_SHA256 `
-            -MySqlSha256 a1bc2ad567eef672be20b591ad25b14f221e60bde3ae3eb235128d91e4166557
-      - name: Capture actual native Windows startup
-        shell: pwsh
-        env:
           NATIVE_BASELINE_URL: ${{ inputs.native_baseline_url }}
           NATIVE_BASELINE_SHA256: ${{ inputs.native_baseline_sha256 }}
           NATIVE_BASELINE_FILES_URL: ${{ inputs.native_baseline_files_url }}
           NATIVE_TEST_BACKEND: ${{ inputs.test_backend }}
         run: |
-          $gameHost = if ($env:NATIVE_TEST_BACKEND -eq 'true') { '127.0.0.1' } else { 'buns.asslorde.com' }
-          ./client/tools/native-smoke.ps1 `
-            -BaselineUrl $env:NATIVE_BASELINE_URL `
-            -BaselineSha256 $env:NATIVE_BASELINE_SHA256 `
-            -BaselineFilesBaseUrl $env:NATIVE_BASELINE_FILES_URL `
-            -KaentakeArtifact native-runtime `
-            -CompanionArtifact native-companion `
-            -RuntimeArtifact native-crt `
-            -GameHost $gameHost `
-            -OutputDirectory native-smoke-output
-      - name: Stop only this job's QA backend
-        if: always() && inputs.test_backend
-        shell: pwsh
-        run: |
-          $path = 'native-backend-output/result.json'
-          if (Test-Path $path) {
-            $backend = Get-Content $path -Raw | ConvertFrom-Json
-            foreach ($id in @($backend.serverPid, $backend.mysqlPid)) {
-              if ($id) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
+          $nativeExitCode = 0
+          try {
+            if ($env:NATIVE_TEST_BACKEND -eq 'true') {
+              # Both child services were absent by the old separate capture step;
+              # keep the owning PowerShell alive through the game attempt.
+              ./client/tools/start-test-backend.ps1 `
+                -BundleUrl $env:BACKEND_BUNDLE_URL -BundleSha256 $env:BACKEND_BUNDLE_SHA256 `
+                -XmlUrl $env:BACKEND_XML_URL -XmlSha256 $env:BACKEND_XML_SHA256 `
+                -MySqlSha256 a1bc2ad567eef672be20b591ad25b14f221e60bde3ae3eb235128d91e4166557
+              if ($LASTEXITCODE) { throw 'Real QA backend did not start successfully' }
+            }
+            $gameHost = if ($env:NATIVE_TEST_BACKEND -eq 'true') { '127.0.0.1' } else { 'buns.asslorde.com' }
+            ./client/tools/native-smoke.ps1 `
+              -BaselineUrl $env:NATIVE_BASELINE_URL `
+              -BaselineSha256 $env:NATIVE_BASELINE_SHA256 `
+              -BaselineFilesBaseUrl $env:NATIVE_BASELINE_FILES_URL `
+              -KaentakeArtifact native-runtime `
+              -CompanionArtifact native-companion `
+              -RuntimeArtifact native-crt `
+              -GameHost $gameHost `
+              -OutputDirectory native-smoke-output
+            $nativeExitCode = $LASTEXITCODE
+          } finally {
+            $path = 'native-backend-output/result.json'
+            if ($env:NATIVE_TEST_BACKEND -eq 'true' -and (Test-Path $path)) {
+              $backend = Get-Content $path -Raw | ConvertFrom-Json
+              $stops = @(foreach ($entry in @(@{ id = $backend.serverPid; name = 'java' }, @{ id = $backend.mysqlPid; name = 'mysqld' })) {
+                if (-not $entry.id) { continue }
+                $row = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); id = $entry.id; expectedName = $entry.name; controlled = $true; reason = 'Same-step QA controller cleanup after native observation; not a natural exit' }
+                try {
+                  $process = Get-Process -Id $entry.id -ErrorAction Stop
+                  $row.actualName = $process.ProcessName
+                  if ($process.ProcessName -eq $entry.name) {
+                    Stop-Process -Id $entry.id -Force -ErrorAction Stop
+                    $process.WaitForExit(5000) | Out-Null
+                    $row.exited = $process.HasExited
+                    if ($process.HasExited) { $row.exitCode = $process.ExitCode }
+                  } else { $row.observation = 'PID identity changed; not stopped' }
+                } catch { $row.observation = $_.Exception.Message }
+                [pscustomobject]$row
+              })
+              $stops | ConvertTo-Json -Depth 6 | Set-Content native-backend-output/controlled-stops.json -Encoding utf8NoBOM
             }
           }
+          if ($nativeExitCode) { exit $nativeExitCode }
       - name: Publish actual native startup evidence
         if: always()
         uses: actions/upload-artifact@v4
