@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Stage the exact Ticket9 Wave0 sources, without modifying WZ or server trees.
+"""Stage pinned boss inputs without modifying release WZ or server trees.
 
-The sibling boss-contract.json is the allowlist. XML fragments are evidence for
-node-level merges, not image replacements. Raw IMG files remain source artifacts:
-this intake makes no claim about their client version or semantic loadability.
+The sibling boss-contract.json is the archive allowlist. XML fragments and raw
+IMG files are donor artifacts, never whole-image replacement permission.
+Published snapshot mode uses the existing codec for offline raw IMG donors;
+neither mode claims native client compatibility or release qualification.
 Only an isolated directory beneath /tmp/wz-release-inputs may be written.
 """
 from __future__ import annotations
@@ -171,18 +172,133 @@ def intake(args: argparse.Namespace) -> dict:
     return provenance
 
 
+def intake_published(args: argparse.Namespace) -> dict:
+    import base64
+    from PIL import Image
+    from native_wz import Node, canvas, parse_img, pixels, semantic_hash, write_img
+    from build_release import ensure
+
+    manifest_path = args.published_manifest.resolve(strict=True)
+    manifest_bytes = manifest_path.read_bytes()
+    if sha256(manifest_bytes) != args.published_manifest_sha256:
+        raise ValueError("Published snapshot manifest checksum differs")
+    manifest = json.loads(manifest_bytes)
+    if manifest.get("failures"):
+        raise ValueError("Published snapshots still have unresolved retrieval failures")
+    source_root = manifest_path.parent
+    output = args.output.absolute()
+    allowed = Path("/tmp/wz-release-inputs")
+    if not output.resolve().is_relative_to(allowed) or output.resolve() == allowed:
+        raise ValueError("--output must be an isolated child of /tmp/wz-release-inputs")
+    if output.resolve().is_relative_to(source_root) or source_root.is_relative_to(output.resolve()):
+        raise ValueError("Output and published source snapshots must not overlap")
+    current = output
+    while current != current.parent:
+        if current.is_symlink():
+            raise ValueError(f"Output path traverses a symlink: {current}")
+        current = current.parent
+    prefix = "https://maplestory.io/api/wz/GMS/195/"
+    sources = {}
+    # Freeze/check every original JSON/PNG before producing donor files.
+    for record in manifest["records"]:
+        url = record["sourceUrl"]
+        if not url.startswith(prefix):
+            raise ValueError(f"Unexpected published source/version: {url}")
+        relative = url[len(prefix):]
+        if relative in sources:
+            raise ValueError(f"Duplicate published snapshot: {relative}")
+        snapshot = source_root / safe_relative(record["snapshot"])
+        if not snapshot.resolve(strict=True).is_relative_to(source_root):
+            raise ValueError(f"Published snapshot escapes source root: {snapshot}")
+        payload = snapshot.read_bytes()
+        if sha256(payload) != record["snapshotSha256"]:
+            raise ValueError(f"Published JSON checksum differs: {relative}")
+        spec = json.loads(payload)
+        if spec["type"] == 12:
+            png_path = source_root / safe_relative(record["png"])
+            if not png_path.resolve(strict=True).is_relative_to(source_root):
+                raise ValueError(f"Published PNG escapes source root: {png_path}")
+            png = png_path.read_bytes()
+            if sha256(png) != record["pngSha256"] or base64.b64decode(spec["value"], validate=True) != png:
+                raise ValueError(f"Published canvas PNG differs from its raw JSON: {relative}")
+        sources[relative] = (record, spec)
+
+    def node_at(path):
+        record, spec = sources[path]
+        names = spec.get("children", [])
+        if len(names) != len(set(names)) or any("/" in name or name in (".", "..") for name in names):
+            raise ValueError(f"Published API cannot disambiguate child names: {path}")
+        children = [node_at(path + "/" + name) for name in names]
+        name, kind, value = path.rsplit("/", 1)[-1], spec["type"], spec.get("value")
+        if kind == 13:
+            return Node(name, "property", children=children)
+        if kind == 12:
+            with Image.open(source_root / safe_relative(record["png"])) as image:
+                if image.format != "PNG" or (image.width, image.height) != (record["width"], record["height"]):
+                    raise ValueError(f"Published PNG format/dimensions differ: {path}")
+                result = canvas(name, image, children)
+            if sha256(pixels(result)) != record["decodedBgraSha256"]:
+                raise ValueError(f"Published BGRA pixel checksum differs: {path}")
+            return result
+        if children:
+            raise ValueError(f"Unexpected scalar children: {path}")
+        if kind == 4 and isinstance(value, int) and not isinstance(value, bool):
+            return Node(name, "int", value)
+        if kind == 8 and isinstance(value, str):
+            return Node(name, "string", value)
+        if kind == 9 and all(isinstance(value[axis], int) and not isinstance(value[axis], bool) for axis in ("x", "y")):
+            return Node(name, "vector", (value["x"], value["y"]))
+        raise ValueError(f"Unsupported published node type/value, not omitted: {path}")
+
+    fragments = {}
+    for path in manifest["roots"]:
+        parts = safe_relative(path).parts
+        if len(parts) < 3 or not parts[1].endswith(".img"):
+            raise ValueError(f"Expected exact archive/image/node source path: {path}")
+        key = (parts[0] + ".wz", parts[1])
+        root = fragments.setdefault(key, Node(parts[1], "property"))
+        node_path = "/".join(parts[2:])
+        ensure(root, "/".join(parts[2:-1]))
+        root.put(node_path, node_at(path))
+    assets = []
+    for (archive, image), root in fragments.items():
+        blob = write_img(root, "gms")
+        reparsed = parse_img(blob, root.name, "gms")[0]
+        if semantic_hash(root) != semantic_hash(reparsed):
+            raise ValueError(f"Published raw IMG roundtrip differs: {archive}/{image}")
+        assets.append(stage(output, f"raw/{archive}/{image}", blob))
+    provenance = {"schema_version": 1, "manifest_sha256": sha256(manifest_bytes),
+                  "published_source_root": str(source_root), "assets": assets,
+                  "source_records": manifest["records"],
+                  "semantic_status": "pinned-source-materialized-not-native-qualified",
+                  "policy": "Published child order/metadata and authored pixel extents retained; original binary property order not asserted. Raw fragments are donors only, no release/family approval."}
+    stage(output, "provenance.json", (json.dumps(provenance, indent=2) + "\n").encode())
+    return provenance
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source-root", type=Path, required=True,
-                        help="Read-only stock server WZ XML directory")
-    parser.add_argument("--community-archive", type=Path, required=True)
-    parser.add_argument("--mapleroot-archive", type=Path, required=True)
+    parser.add_argument("--source-root", type=Path,
+                        help="Read-only stock server WZ XML directory, required for archive mode")
+    parser.add_argument("--community-archive", type=Path)
+    parser.add_argument("--mapleroot-archive", type=Path)
+    parser.add_argument("--published-manifest", type=Path,
+                        help="Offline pinned GMS195 JSON/PNG snapshot manifest")
+    parser.add_argument("--published-manifest-sha256",
+                        help="Independently frozen checksum of the published snapshot manifest")
     parser.add_argument("--contract", type=Path,
                         default=Path(__file__).with_name("boss-contract.json"))
     parser.add_argument("--output", type=Path, default=Path("/tmp/wz-release-inputs/boss"))
     args = parser.parse_args()
     try:
-        result = intake(args)
+        if args.published_manifest:
+            if not args.published_manifest_sha256 or any((args.source_root, args.community_archive, args.mapleroot_archive)):
+                parser.error("Published mode requires its manifest SHA and no archive-mode sources")
+            result = intake_published(args)
+        else:
+            if not all((args.source_root, args.community_archive, args.mapleroot_archive)):
+                parser.error("Archive mode requires --source-root, --community-archive and --mapleroot-archive")
+            result = intake(args)
     except (OSError, ValueError, KeyError, zipfile.BadZipFile, ET.ParseError) as error:
         parser.exit(1, f"Intake failed: {error}\n")
     print(json.dumps({"output": str(args.output), "assets": len(result["assets"]),

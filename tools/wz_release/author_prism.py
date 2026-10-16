@@ -10,16 +10,8 @@ import colorsys
 import hashlib
 import json
 from pathlib import Path
-import zlib
 from PIL import Image, ImageDraw, ImageFont
-from native_wz import Node, write_img, pixels, semantic_hash
-
-
-def canvas(name, image):
-    image = image.convert('RGBA')
-    return Node(name, 'canvas', dict(width=image.width, height=image.height, format=2,
-        format2=0, reserved=bytes(4), marker=0,
-        zlib=zlib.compress(image.tobytes('raw', 'BGRA'), 9)), [Node('origin', 'vector', (0, 0))])
+from native_wz import Node, canvas, write_img, pixels, semantic_hash
 
 
 def font(size):

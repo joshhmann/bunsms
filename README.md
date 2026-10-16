@@ -552,9 +552,11 @@ presence; no table entry implies unexercised functionality works.
   canvases/4998 sounds. It retains95 failures:46 consumed gaps plus49 Sound
   aliases identical to official/working baselines; exact vector checks now run.
   This is diagnostic coverage, never native-engine or release qualification.
-- 144 genuine source JSON snapshots/33 lossless PNGs now cover the three Summons
-  and nine Lotus targets. Materialization/new pins/native combat-cue proof remain
-  required; original1×1 art and frozen rc3 receipts are preserved.
+- 144 genuine source JSON snapshots/33 lossless PNGs now feed the existing
+  pinned offline boss intake, producing two repeatable raw IMG donors with
+  original1×1 art preserved; wrong manifest hashes fail before any output.
+  Shared-encoder prism regeneration retains all three old raw image hashes.
+  Final WZ/XML materialization/new pins/native combat-cue proof remain required.
 - Upstream review remains pinned16ab7b7/selective GROUPA0874223/GROUPB60b869c,
   not unrelated-history parity or new AI/voting/Flux/Tripo3D scope. Evan review
   remains complete REVIEW ONLY, not playable-class scope.

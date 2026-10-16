@@ -168,6 +168,15 @@ class Node:
             parent.children[parent.children.index(old)] = node
 
 
+def canvas(name, image, children=None):
+    image = image if image.mode == 'RGBA' else image.convert('RGBA')
+    if children is None:
+        children = [Node('origin', 'vector', (0, 0))]
+    return Node(name, 'canvas', dict(width=image.width, height=image.height, format=2,
+        format2=0, reserved=bytes(4), marker=0,
+        zlib=zlib.compress(image.tobytes('raw', 'BGRA'), 9)), children)
+
+
 def png_zlib(data, key):
     if len(data) < 2:
         raise FormatError('Canvas has no compressed pixels')
