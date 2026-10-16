@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)][string]$CompanionArtifact,
     [Parameter(Mandatory)][string]$RuntimeArtifact,
     [string]$OutputDirectory = 'native-smoke-output',
-    [ValidateRange(30, 180)][int]$ObserveSeconds = 90,
+    [ValidateRange(30, 300)][int]$ObserveSeconds = 90,
     [string]$GameHost = 'buns.asslorde.com',
     [switch]$ExerciseLogin,
     [string]$PreparedGameDirectory = '',
@@ -592,9 +592,11 @@ try {
         } finally { $stream.Dispose() }
     } catch { $report.executableMemoryLayoutObservationError = $_.Exception.Message }
     $debugLog = Join-Path $OutputDirectory 'native-debug.log'
+    $captureSeconds = if ($ExerciseLogin) { [Math]::Max($ObserveSeconds, 300) } else { $ObserveSeconds }
+    $report.observeSeconds = $captureSeconds
     $backendResult = [IO.Path]::GetFullPath('native-backend-output/result.json')
     if (Test-Path $backendResult) {
-        $networkJob = Start-Job -FilePath (Join-Path $PSScriptRoot 'native-network-observe.ps1') -ArgumentList $OutputDirectory, $backendResult, ($ObserveSeconds + 60), (Join-Path $game 'MapleStory.exe')
+        $networkJob = Start-Job -FilePath (Join-Path $PSScriptRoot 'native-network-observe.ps1') -ArgumentList $OutputDirectory, $backendResult, ($captureSeconds + 60), (Join-Path $game 'MapleStory.exe')
         $observerDeadline = [DateTime]::UtcNow.AddSeconds(20)
         while (-not (Test-Path (Join-Path $OutputDirectory 'kernel-backend-ready.json'))) {
             if ($networkJob.State -in @('Failed', 'Completed') -or [DateTime]::UtcNow -gt $observerDeadline) {
@@ -606,8 +608,6 @@ try {
         $report.networkObserver = 'Concurrent backend query handles and kernel TCP owner/address/port samples; no debugger, detour, socket replacement, or backend restart'
     }
     $callback = [Action[int[]]]{ param([int[]]$Ids) Save-NativeSnapshot $Ids }
-    $captureSeconds = if ($ExerciseLogin) { [Math]::Max($ObserveSeconds, 300) } else { $ObserveSeconds }
-    $report.observeSeconds = $captureSeconds
     $report.nativeCaptureStartedUtc = [DateTime]::UtcNow.ToString('O')
     $report.processIds = [NativeSmoke]::Capture((Join-Path $game 'Kaentake.exe'), $game, $captureSeconds, $debugLog, $callback)
     Save-NativeSnapshot ([NativeSmoke]::LastProcessIds)

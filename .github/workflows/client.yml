@@ -54,11 +54,11 @@ on:
       backend_bundle_url:
         description: "Frozen QA server archive HTTPS URL"
         type: string
-        default: "https://buns.asslorde.com/rc-assets/client/r/a520206b52ad52a37177571321deee069bef6424d3dfffda70813f51930be463/qa/backend-complete-dd8de85.tar.gz"
+        default: "https://buns.asslorde.com/rc-assets/client/r/520a723748a6f725dc84e3eb34bb7ed11e75e935f2d4ea3d5a3bd42cd2d00600/qa/backend-complete-dd8de85-contract-fixed.tar.gz"
       backend_bundle_sha256:
         description: "Exact frozen QA server archive SHA256"
         type: string
-        default: "a520206b52ad52a37177571321deee069bef6424d3dfffda70813f51930be463"
+        default: "520a723748a6f725dc84e3eb34bb7ed11e75e935f2d4ea3d5a3bd42cd2d00600"
       backend_xml_url:
         description: "Matching complete server XML archive HTTPS URL"
         type: string

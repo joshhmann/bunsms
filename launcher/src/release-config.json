@@ -2,6 +2,6 @@
   "channel": "testing-rc",
   "version": "1.1.0-rc.1",
   "apiBase": "https://buns.asslorde.com",
-  "manifestUrl": "https://buns.asslorde.com/rc-assets/client/r/6c3565cf54c95fcae3049aaee5eb6d8492dc9c8a3f8d1b44d72a58dabd8a37f6/qa/matched-full-rc5-runtime-source-launcher-manifest.json",
+  "manifestUrl": "https://buns.asslorde.com/rc-assets/client/r/178c719176129b3d17836597e9ea2de801c96317449ec1d16e30fd48ddb2e9c0/qa/matched-full-rc5-backend-contract-launcher-manifest.json",
   "stockManifestUrl": "https://buns.asslorde.com/api/launcher/manifest"
 }
