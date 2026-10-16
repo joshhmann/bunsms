@@ -7,6 +7,11 @@ add_library(injector SHARED
     screen.cpp
     caps.cpp
     dailycheckin.cpp
+    cashshopwnd.cpp
+    coloringprism.cpp
+    prismdispatch.cpp
+    weapontint.cpp
+    damagelong.cpp
     debug.cpp
     hook.cpp
 )

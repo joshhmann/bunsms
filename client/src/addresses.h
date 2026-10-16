@@ -62,28 +62,117 @@ inline constexpr uintptr_t kGetBasicFont          = 0x0098A707; // get_basic_fon
 inline constexpr uintptr_t kWzFontSetFont         = 0x0046341A; // IWzFont::SetFont (XREF)
 } // namespace dailycheckin
 
-// --- Placeholders for later slices (spec §§3.2–3.5) ------------------------
-// Addresses below are RESERVED slots, not yet live: the owning modules do
-// not exist in this slice. Do not hook these sites until the module lands.
-// (Values transcribed from the spec §2.2 table so XREF.md stays complete.)
+// --- Cash-shop window: native calls only, no feature detours ----------------
+namespace cashshop {
+inline constexpr uintptr_t kClientSocketInstance = 0x00BE7914;
+inline constexpr uintptr_t kClientSocketSendPacket = 0x0049637B;
+inline constexpr uintptr_t kPlayUiSound = 0x00989588;
+inline constexpr uintptr_t kSetFont = 0x0046341A;
+inline constexpr uintptr_t kProcessBasicUIKey = 0x00A07431;
+inline constexpr uintptr_t kWvsContextInstance = 0x00BE7918;
+inline constexpr uintptr_t kCurrentStage = 0x00BEDED4;
+inline constexpr uintptr_t kInputSystem = 0x00BEC33C;
+inline constexpr uintptr_t kGetCursorPos = 0x0059A388;
+inline constexpr uintptr_t kZRefAvatarAlloc = 0x00428967;
+inline constexpr uintptr_t kZRefAvatarRelease = 0x00428C15;
+inline constexpr uintptr_t kAvatarLookConstructor = 0x004283FE;
+inline constexpr uintptr_t kAvatarInit = 0x0045149F;
+inline constexpr uintptr_t kMakeMoveAction = 0x00426626;
+inline constexpr uintptr_t kAvatarSetMoveAction = 0x004520F1;
+inline constexpr uintptr_t kAvatarSetActionCode = 0x004571AB;
+inline constexpr uintptr_t kGetActionNameFromCode = 0x004A8CE6;
+inline constexpr uintptr_t kAvatarUpdate = 0x004522A6;
+inline constexpr uintptr_t kAvatarSetEmotion = 0x00451CF6;
+inline constexpr uintptr_t kCurrentField = 0x00BEBF6C;
+inline constexpr uintptr_t kCreateAnimLayer = 0x0043EA3E;
+inline constexpr uintptr_t kFuncKeyMappedMan = 0x00BED5A0;
+inline constexpr uintptr_t kWndManInstance = 0x00BEC20C;
+inline constexpr uintptr_t kWndManSetFocus = 0x009E3264;
+}
 
-// coloringprism: cash-item-use dispatch — call in, NEVER second-Detour.
-//   0x00A0A63F, 0x00A1DC5B, 0x004863D5
-// coloringprism: CDraggableItem::OnDropped dispatch — call in, NEVER second-Detour.
-//   0x004EF140
-// weapontint: owns CAvatar::PrepareActionLayer outright (a second Detour
-//   there silently wins/loses the swap).
-//   0x00453AD1 ; cash-effect Detours 0x0093BEB9 / 0x0093C218
-// damagelong: jb->jmp(0xEB) rewrites 0x0079058F / 0x00791F94 ;
-//   call __ftol -> FtolDamageLine 0x00790599 / 0x00791F9E ;
-//   line-store PatchJmp 0x0079059E / 0x00791FA3 (return 0x007905A3 / 0x00791FA8) ;
-//   C2S Encode4 sites 0x00952B28 / 0x00955428 / 0x0095705E ;
-//   S2C Decode4 sites 0x00980574 / 0x00980619 ;
-//   SP-% caves 0x0079023C / 0x00790274 (owned by damagelong; QoL MUST NOT recave) ;
-//   Effect_HP ZXString::Format 0x00437DFB ;
-//   PDamage / MDamage-loop refs 0x0078DF87 / 0x00791864 / 0x00791FA8.
-// weatherwind: wind cave 0x006406F3.
-// weather/lamps: ~two-dozen table per weather IMPLEMENTATION.md appendix;
-//   transcribed when the weather slice lands; re-verify on a Windows host.
+// --- Prism: verified static Angel image ABI; live byte guards remain required.
+namespace prism {
+inline constexpr uintptr_t kWvsContext = 0x00BE7918;
+inline constexpr uintptr_t kClientSocket = 0x00BE7914;
+inline constexpr uintptr_t kSendPacket = 0x0049637B;
+inline constexpr uintptr_t kUserLocal = 0x00BEBF98;
+inline constexpr uintptr_t kUserPool = 0x00BEBFA8;
+inline constexpr uintptr_t kGetUser = 0x009716ED;
+inline constexpr uintptr_t kActionMan = 0x00BE78D4;
+inline constexpr uintptr_t kSkillInfo = 0x00BE78DC;
+inline constexpr uintptr_t kFuncKeyMapped = 0x00BED5A0;
+inline constexpr uintptr_t kCurrentField = 0x00BEBF6C;
+inline constexpr uintptr_t kUserAvatarVtable = 0x00B3CE7C;
+inline constexpr uintptr_t kLocalAvatarVtable = 0x00B3D1CC;
+inline constexpr uintptr_t kRemoteAvatarVtable = 0x00B3D858;
+inline constexpr uintptr_t kCharacterGetItem = 0x004282F7;
+inline constexpr uintptr_t kSecureIntGet = 0x0042873D;
+inline constexpr uintptr_t kItemRefDestroy = 0x00428A50;
+inline constexpr uintptr_t kEquipDataPath = 0x005C94A1;
+inline constexpr uintptr_t kAvatarRefAlloc = 0x00428967;
+inline constexpr uintptr_t kAvatarRefRelease = 0x00428C15;
+inline constexpr uintptr_t kAvatarLookCtor = 0x004283FE;
+inline constexpr uintptr_t kAvatarInit = 0x0045149F;
+inline constexpr uintptr_t kAvatarUpdate = 0x004522A6;
+inline constexpr uintptr_t kAvatarSetMoveAction = 0x004520F1;
+inline constexpr uintptr_t kAvatarSetActionCode = 0x004571AB;
+inline constexpr uintptr_t kClearActionLayer = 0x00453A29;
+inline constexpr uintptr_t kGetCurrentAction = 0x00451E4C;
+inline constexpr uintptr_t kActionNameFromCode = 0x004A8CE6;
+inline constexpr uintptr_t kCreateAnimLayer = 0x0043EA3E;
+inline constexpr uintptr_t kGetSkillLevel = 0x007616F6;
+inline constexpr uintptr_t kSetActiveEffectItem = 0x0093B6A7;
+inline constexpr uintptr_t kPrepareActionLayer = 0x00453AD1;
+inline constexpr uintptr_t kPrepareFaceLayer = 0x00453696;
+inline constexpr uintptr_t kShowEffectItem = 0x0093BEB9;
+inline constexpr uintptr_t kShowFollowEffectItem = 0x0093C218;
+inline constexpr uintptr_t kShowSkillEffect = 0x00933990;
+inline constexpr uintptr_t kShowSkillPrepare = 0x0093640B;
+inline constexpr uintptr_t kShowSkillSpecialEffect = 0x00936528;
+inline constexpr uintptr_t kMobOnHit = 0x00668B83;
+inline constexpr uintptr_t kTryMeleeAttack = 0x00950921;
+inline constexpr uintptr_t kTryShootAttack = 0x009537D5;
+inline constexpr uintptr_t kTryMagicAttack = 0x0095571F;
+inline constexpr uintptr_t kCreateBullet = 0x00435DF3;
+inline constexpr uintptr_t kSkillOnDropped = 0x004FAA22;
+// Sole central cash-use/item-drop owner: prismdispatch.cpp.
+inline constexpr uintptr_t kConsumeCashItemType = 0x004863D5;
+inline constexpr uintptr_t kConsumeCashItemUse = 0x00A0A63F;
+inline constexpr uintptr_t kEtcCashItemUse = 0x00A1DC5B;
+inline constexpr uintptr_t kItemOnDropped = 0x004EF140;
+// Angel constructors: CUIItem 81C4A6, CUIEquip 7FDF0D write handler vptrs.
+inline constexpr uintptr_t kInventoryHandlerVtable = 0x00B390BC;
+inline constexpr uintptr_t kEquipHandlerVtable = 0x00B3899C;
+}
+
+// --- Long damage: sole width/store/remote/SP/format owner -------------------
+namespace damagelong {
+inline constexpr uintptr_t kPDamageGate = 0x0079058F;
+inline constexpr uintptr_t kMDamageGate = 0x00791F94;
+inline constexpr uintptr_t kPDamageFtol = 0x00790599;
+inline constexpr uintptr_t kMDamageFtol = 0x00791F9E;
+inline constexpr uintptr_t kPDamageStore = 0x0079059E;
+inline constexpr uintptr_t kMDamageStore = 0x00791FA3;
+inline constexpr uintptr_t kPDamageStoreReturn = 0x007905A3;
+inline constexpr uintptr_t kMDamageStoreReturn = 0x00791FA8;
+inline constexpr uintptr_t kMeleeEncode = 0x00952B28;
+inline constexpr uintptr_t kShootEncode = 0x00955428;
+inline constexpr uintptr_t kMagicEncode = 0x0095705E;
+inline constexpr uintptr_t kMesoDecode = 0x00980574;
+inline constexpr uintptr_t kNormalDecode = 0x00980619;
+inline constexpr uintptr_t kPartnerPercent = 0x0079023C;
+inline constexpr uintptr_t kPartnerPercentAlt = 0x00790274;
+inline constexpr uintptr_t kPartnerReturn = 0x0079024B;
+inline constexpr uintptr_t kPartnerAltReturn = 0x00790283;
+inline constexpr uintptr_t kPDamage = 0x0078DF87;
+inline constexpr uintptr_t kMDamageInit = 0x00791864;
+inline constexpr uintptr_t kMDamageInitReturn = 0x0079186A;
+inline constexpr uintptr_t kRemoteAttack = 0x009803AB;
+inline constexpr uintptr_t kDamageFormatCall = 0x00437DFB;
+inline constexpr uintptr_t kDamageFormat = 0x00445B4B;
+inline constexpr uintptr_t kStringAssign = 0x00414617;
+inline constexpr uintptr_t kNativeFtol = 0x00A62018;
+inline constexpr uintptr_t kVanillaLineCap = 0x00AFE8A0;
+}
 
 } // namespace addr

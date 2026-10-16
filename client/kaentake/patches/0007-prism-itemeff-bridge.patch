@@ -1,0 +1,98 @@
+--- a/src/itemeff.cpp
++++ b/src/itemeff.cpp
+@@ -5,6 +5,8 @@
+ #include "wvs/util.h"
+ #include "ztl/ztl.h"
+ #include <map>
++#include <atomic>
++#include "prism_itemeff_abi.h"
+ 
+ #define AVATAR_OFFSET 0x88
+ 
+@@ -17,6 +19,15 @@
+         return reinterpret_cast<int(__thiscall*)(CUser*, Ztl_bstr_t, int, USERLAYER&, int*)>(0x00941417)(this, bsUOL, bLeft, l, pnRepeatStartIndex);
+     }
+ };
++
++static std::atomic<const PrismItemEffBridge*> g_prismBridge{nullptr};
++extern "C" __declspec(dllexport) bool __cdecl Kaentake_SetPrismItemEffBridge(const PrismItemEffBridge* bridge) {
++    if (!bridge || bridge->version != kPrismItemEffBridgeVersion ||
++        !bridge->begin || !bridge->end || !bridge->revision) return false;
++    const PrismItemEffBridge* expected = nullptr;
++    return g_prismBridge.compare_exchange_strong(expected, bridge,
++        std::memory_order_release, std::memory_order_relaxed) || expected == bridge;
++}
+ 
+ static std::map<int, IWzPropertyPtr> g_mPropItemEffect;
+ 
+@@ -46,7 +57,16 @@
+ 
+ void UpdateItemEff(CUser* pUser) {
+     CAvatar* pAvatar = &pUser->m_CAvatar;
+-    for (auto i = 0; i < 60; ++i) {
++    const auto* prism = g_prismBridge.load(std::memory_order_acquire);
++    const uint64_t tintRevision = prism ? prism->revision(pAvatar) : 0;
++    if (pAvatar->m_pCustomData->nPrismTintRevision != tintRevision) {
++        pAvatar->m_pCustomData->nPrismTintRevision = tintRevision;
++        for (int slot = 0; slot < 52; ++slot) {
++            pAvatar->m_pCustomData->aItemEffectLayer[slot].nItemID = -1;
++            pAvatar->m_pCustomData->aItemEffectLayer[slot].nAction = -1;
++        }
++    }
++    for (auto i = 0; i < 52; ++i) {
+         int nItemID = pAvatar->m_avatarLook.anHairEquip[i];
+         auto pItemEffectLayer = &pAvatar->m_pCustomData->aItemEffectLayer[i];
+         if (auto search = g_mPropItemEffect.find(nItemID); search != g_mPropItemEffect.end()) {
+@@ -70,7 +90,15 @@
+             swprintf(sUOL, 1024, L"Effect/ItemEff.img/%d/effect/%ls", nItemID, vAction.vt == VT_EMPTY ? L"default" : sActionName.GetBSTR());
+ 
+             // load layer and animate
+-            if (pUser->LoadLayer(sUOL, bFlip, pItemEffectLayer->l, nullptr)) {
++            const bool loaded = [&]() {
++                struct EndSwap {
++                    const PrismItemEffBridge* bridge;
++                    ~EndSwap() { if (bridge) bridge->end(); }
++                } end{prism};
++                if (prism) prism->begin(pAvatar, nItemID);
++                return pUser->LoadLayer(sUOL, bFlip, pItemEffectLayer->l, nullptr) != 0;
++            }();
++            if (loaded) {
+                 pItemEffectLayer->l.pLayer->Animate(GA_REPEAT);
+             }
+         } else {
+--- a/src/wvs/avatar.h
++++ b/src/wvs/avatar.h
+@@ -2,6 +2,7 @@
+ #include "hook.h"
+ #include "ztl/ztl.h"
+ #include <windows.h>
++#include <cstdint>
+ 
+ 
+ #pragma pack(push, 1)
+@@ -10,12 +11,12 @@
+     int nSkin;
+     int nFace;
+     int nWeaponStickerID;
+-    int anHairEquip[60];
+-    int anUnseenEquip[60];
++    int anHairEquip[52];
++    int anUnseenEquip[52];
+     int anPetID[3];
+ };
+ #pragma pack(pop)
+-static_assert(sizeof(AvatarLook) == 0x205);
++static_assert(sizeof(AvatarLook) == 0x1C5);
+ 
+ 
+ struct USERLAYER {
+@@ -52,7 +53,8 @@
+         int bBlinking;
+         POINT ptBodyRelMove;
+         int nRidingChairID;
+-        ITEMEFFECTLAYER aItemEffectLayer[60];
++        ITEMEFFECTLAYER aItemEffectLayer[52];
++        uint64_t nPrismTintRevision = 0;
+     };
+ 
+     virtual ~CAvatar() = 0;

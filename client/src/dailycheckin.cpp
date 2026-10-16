@@ -45,6 +45,9 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <mutex>
+#include <optional>
+#include <stdexcept>
 
 namespace DailyCheckin {
 
@@ -133,6 +136,12 @@ struct State {
     bool        ready;
 };
 static State g_state;
+// Receive/reset never touches CWnd, COM, audio or the render-owned state.
+struct PendingSnapshot { State state; unsigned char justClaimed; };
+static std::mutex g_mailboxMutex;
+static std::optional<PendingSnapshot> g_pending;
+static unsigned int g_generation = 0;
+static bool g_resetPending = false;
 
 // Remembered window placement (reopen lands where it was last closed).
 static bool s_bSavedPos = false;
@@ -422,15 +431,22 @@ static CUIDailyCheckin* EnsureWindow() {
     if (s_bSavedPos) { x = s_savedX; y = s_savedY; }
     else { x = (get_screen_width() - kWndW) / 2; y = 70; }
     ClampToScreen(x, y);
-    return new CUIDailyCheckin(x, y);
+    try { return new CUIDailyCheckin(x, y); }
+    catch (const std::exception& error) {
+        DebugMessage("daily check-in: %s", error.what());
+        return nullptr;
+    }
 }
 
 CUIDailyCheckin::CUIDailyCheckin(int nLeft, int nTop)
     : m_screenX(nLeft), m_screenY(nTop), m_nCloseHover(0),
       m_bDragging(0), m_nDragAnchorX(0), m_nDragAnchorY(0), m_hoverDay(-1), m_tipDay(-1) {
     m_rcClose = { kBtCloseX, kBtCloseY, kBtCloseX + kBtCloseW, kBtCloseY + kBtCloseH };
-    ms_pInstance = this;
     LoadSprites();
+    if (!m_pBg || m_pBg->width != kWndW || m_pBg->height != kWndH ||
+        !m_pBtClose[0] || !m_pBtClose[1])
+        throw std::runtime_error("required daily check-in art is missing or incompatible");
+    ms_pInstance = this;
     CWnd::CreateWnd(this, nLeft, nTop, kWndW, kWndH, 10, 1, nullptr, 0);
     play_ui_sound(L"MenuUp");
     m_pFont = nullptr;
@@ -448,6 +464,7 @@ void CUIDailyCheckin::OnDestroy() {
 }
 
 void CUIDailyCheckin::Draw(const RECT* pRect) {
+    if (!CapsAccepted(caps::kCheckinWindow)) return;
     CWnd::Draw(pRect);
     IWzCanvasPtr pCanvas = GetCanvas();
     if (!pCanvas) return;
@@ -491,6 +508,7 @@ void CUIDailyCheckin::Draw(const RECT* pRect) {
 }
 
 void CUIDailyCheckin::OnMouseButton(unsigned int msg, unsigned int wParam, int rx, int ry) {
+    if (!CapsAccepted(caps::kCheckinWindow)) return;
     POINT pt{ rx, ry };
     if (msg == WM_LBUTTONDOWN) {
         if (PtInRect(&m_rcClose, pt)) { Destroy(); return; }
@@ -533,36 +551,34 @@ void CUIDailyCheckin::OnMouseEnter(int bEnter) {
     if (!bEnter) { m_nCloseHover = 0; m_hoverDay = -1; m_tipDay = -1; m_tipLines.clear(); InvalidateRect(nullptr); }
 }
 
-// Parse RESP_SNAPSHOT into g_state, open the window if needed, pop a confirmation on claim.
-// Decodes through the shared bounds-checked CInPacket surface: short reads
-// stop the snapshot (never _com_error, never raw pointer arithmetic).
+// Publish only complete snapshots from the current connection. Truncation must
+// neither partially overwrite the visible grid nor open a window.
 static void HandleSnapshot(CInPacket* pPacket) {
-    unsigned char currentDay = 0;
-    int claimedMask = 0;
-    unsigned char justClaimed = 0;
-    unsigned char count = 0;
-    if (!pPacket->Decode1(currentDay)) return;
-    if (!pPacket->Decode4(claimedMask)) return;
-    if (!pPacket->Decode1(justClaimed)) return;
-    if (!pPacket->Decode1(count)) return;
-    if (count > kDays) count = kDays;
-
-    g_state.currentDay  = currentDay;
-    g_state.claimedMask = claimedMask;
-    for (int i = 0; i < kDays; ++i) g_state.iconId[i] = 0;
-    for (int i = 0; i < count; ++i) {
-        int id = 0;
-        if (!pPacket->Decode4(id)) break;
-        if (i < kDays) g_state.iconId[i] = id;
+    unsigned int generation;
+    {
+        std::lock_guard<std::mutex> lock(g_mailboxMutex);
+        generation = g_generation;
     }
-    for (int i = 0; i < kDays; ++i) g_state.tip[i].clear();
-    for (int i = 0; i < count; ++i) {
-        std::string s;
-        if (!pPacket->DecodeStr(s)) break;
-        if (i < kDays) g_state.tip[i] = std::move(s);
-    }
-    g_state.ready = true;
+    PendingSnapshot pending{};
+    unsigned char currentDay = 0, count = 0;
+    if (!pPacket->Decode1(currentDay) ||
+        !pPacket->Decode4(pending.state.claimedMask) ||
+        !pPacket->Decode1(pending.justClaimed) || !pPacket->Decode1(count) ||
+        currentDay > kDays || count > kDays || pending.justClaimed > kDays) return;
+    pending.state.currentDay = currentDay;
+    for (int i = 0; i < count; ++i)
+        if (!pPacket->Decode4(pending.state.iconId[i])) return;
+    for (int i = 0; i < count; ++i)
+        if (!pPacket->DecodeStr(pending.state.tip[i])) return;
+    pending.state.ready = true;
+    std::lock_guard<std::mutex> lock(g_mailboxMutex);
+    if (generation == g_generation && CapsAccepted(caps::kCheckinWindow))
+        g_pending = std::move(pending);
+}
 
+static void ApplySnapshot(PendingSnapshot snapshot) {
+    g_state = std::move(snapshot.state);
+    const unsigned char justClaimed = snapshot.justClaimed;
     CUIDailyCheckin* w = EnsureWindow();
     if (w) { w->m_tipDay = -1; w->PrepareTipLines(w->m_hoverDay); w->InvalidateRect(nullptr); }
 
@@ -619,6 +635,20 @@ bool AttachDailyCheckinMod() {
 // Main thread only; reads receive-published state, never touches packets.
 void DailyCheckin_Tick() {
     using namespace DailyCheckin;
+    std::optional<PendingSnapshot> pending;
+    bool reset;
+    {
+        std::lock_guard<std::mutex> lock(g_mailboxMutex);
+        reset = g_resetPending;
+        g_resetPending = false;
+        pending.swap(g_pending);
+    }
+    if (reset || !CapsAccepted(caps::kCheckinWindow)) {
+        if (CUIDailyCheckin::ms_pInstance) CUIDailyCheckin::ms_pInstance->Destroy();
+        g_state = {};
+    }
+    if (!CapsAccepted(caps::kCheckinWindow)) return;
+    if (pending) ApplySnapshot(std::move(*pending));
     CUIDailyCheckin* w = CUIDailyCheckin::ms_pInstance;
     if (!w)
         return;
@@ -634,4 +664,11 @@ void DailyCheckin_Tick() {
         s_lastPhase = phase;
         w->InvalidateRect(nullptr);
     }
+}
+
+void DailyCheckin_Reset() {
+    std::lock_guard<std::mutex> lock(DailyCheckin::g_mailboxMutex);
+    ++DailyCheckin::g_generation;
+    DailyCheckin::g_pending.reset();
+    DailyCheckin::g_resetPending = true;
 }

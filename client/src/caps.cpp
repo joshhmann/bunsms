@@ -4,6 +4,11 @@
 #include "addresses.h"
 #include "dispatcher.h"
 #include "wvs/packet.h"
+#include "dailycheckin.h"
+#include "cashshopwnd.h"
+#include "weapontint.h"
+#include "damagelong.h"
+#include <atomic>
 
 #ifndef CLIENT_DLL_VERSION
 #define CLIENT_DLL_VERSION 0
@@ -14,15 +19,16 @@ namespace {
 // Single-word accepted mask for THIS connection. Written by the ack route
 // (receive thread), read by send gates. Reset on ClearSendReceiveCtx —
 // a new socket means a new negotiation (contract §3, no carryover).
-volatile int g_acceptedMask = 0;
+std::atomic<int> g_acceptedMask{0};
+std::atomic<int> g_readyMask{0};
 
 // Once-per-connection announce flag. Set when the announce goes out,
 // cleared by the ClearCtx hook on every (re)connect. Send-thread only.
-volatile bool g_announced = false;
+std::atomic<bool> g_announced{false};
 
 // Reentrancy guard: the announce itself goes through the ORIGINAL
 // SendPacket trampoline, which must not re-enter the hook.
-volatile bool g_sendingAnnounce = false;
+std::atomic<bool> g_sendingAnnounce{false};
 
 using ClearCtx_t = void(__thiscall*)(void*);
 ClearCtx_t g_ClearCtxOrig = reinterpret_cast<ClearCtx_t>(addr::kClientSocket_ClearSendReceiveCtx);
@@ -34,11 +40,19 @@ void* ClientSocketInstance() {
     return *reinterpret_cast<void**>(addr::dailycheckin::kClientSocketInstance);
 }
 
+void ResetFeatures() {
+    DailyCheckin_Reset();
+    CashShopWnd_Reset();
+    WeaponTint_Reset();
+    DamageLong_Reset();
+}
+
 void __fastcall ClearCtx_hook(void* pThis, void* /*edx*/) {
     // New connection starting: drop the old negotiation. The next outgoing
     // packet re-announces (once-flag cleared here).
     g_acceptedMask = 0;
     g_announced = false;
+    ResetFeatures();
     g_ClearCtxOrig(pThis);
 }
 
@@ -77,18 +91,16 @@ bool CapsAck_Route(unsigned short opcode, CInPacket* pPacket) {
         return true;
     if (!pPacket->Decode4(acceptedMask))
         return true;
-    if (serverVersion != caps::kNegotiationVersion) {
-        g_acceptedMask = 0;
-        return true;
-    }
-    // Accept only bits we actually offered (server must AND, but belt-and-
-    // braces: never enable a feature whose module is absent).
-    g_acceptedMask = acceptedMask & CapsOfferedMask();
+    const int nextMask = serverVersion == caps::kNegotiationVersion
+        ? acceptedMask & CapsOfferedMask() : 0;
+    const int previousMask = g_acceptedMask.exchange(nextMask);
+    if ((previousMask & ~nextMask) != 0)
+        ResetFeatures();
     {
         char buf[96];
         _snprintf_s(buf, sizeof(buf), _TRUNCATE,
                     "BUNS_RUNTIME caps-ack version=%d accepted=0x%X\n",
-                    serverVersion, (unsigned int)g_acceptedMask);
+                    serverVersion, static_cast<unsigned int>(nextMask));
         buf[sizeof(buf) - 1] = 0;
         OutputDebugStringA(buf);
     }
@@ -98,13 +110,15 @@ bool CapsAck_Route(unsigned short opcode, CInPacket* pPacket) {
 } // namespace
 
 int CapsAcceptedMask() {
-    return g_acceptedMask;
+    return g_acceptedMask.load();
 }
 
 int CapsOfferedMask() {
-    // Windows baseline: no custom feature is advertised before its paired
-    // UI/assets/server behavior has passed actual runtime acceptance.
-    return 0;
+    return g_readyMask.load();
+}
+
+void CapsSetReadyMask(int mask) {
+    g_readyMask.store(mask);
 }
 
 void CapsSendAnnounce() {
@@ -112,6 +126,7 @@ void CapsSendAnnounce() {
     // this also resets first so a failed send can't leave a stale mask.
     g_acceptedMask = 0;
     g_announced = false;
+    ResetFeatures();
     void* sock = ClientSocketInstance();
     if (sock)
         SendAnnounceThroughOrig(sock);

@@ -14,10 +14,8 @@
 // connection confirms the bit. No 12-byte lines, no custom packets before
 // ack. The mask is the offer; the ack is the permission.
 //
-// This slice advertises ONLY CHECKIN_WINDOW (0x04): the one feature module
-// actually present. All other bits stay 0 until their modules land AND the
-// server enables them. Advertising an unimplemented bit would invite the
-// server to send packets nobody handles — hence conservative-by-construction.
+// The offer is published only after all paired hook/bridge prerequisites attach.
+// Each custom send/render path still requires the ACK for this connection.
 
 #pragma once
 
@@ -49,9 +47,9 @@ int CapsAcceptedMask();
 // send AND every unsolicited-custom-packet expectation on this.
 inline bool CapsAccepted(int bit) { return (CapsAcceptedMask() & bit) != 0; }
 
-// Feature mask this DLL offers (contract §2). ONLY bits whose modules are
-// present AND enabled. Today: CHECKIN_WINDOW alone.
+// Features whose hooks, paired content and codec prerequisites are ready.
 int CapsOfferedMask();
+void CapsSetReadyMask(int mask);
 
 // Manual announce send (diagnostic / fallback). The SendPacket-hook path
 // (caps.cpp) is primary: first genuine outgoing packet per connection
@@ -59,6 +57,5 @@ int CapsOfferedMask();
 // prefer the hook path (ordering + reentrancy guards built in).
 void CapsSendAnnounce();
 
-// Install entry: registers the 0x373B ack route with the dispatcher.
-// No Detours beyond the dispatcher route.
+// Install the ACK route and the sole native send/connection-reset hooks.
 bool AttachCapsMod();

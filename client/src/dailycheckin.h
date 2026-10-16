@@ -15,3 +15,6 @@ bool AttachDailyCheckinMod();
 // Per-frame: invalidate the open window so the claimable-blink animates.
 // Main thread only.
 void DailyCheckin_Tick();
+
+// Receive-safe: invalidate old snapshots and defer window teardown to Tick.
+void DailyCheckin_Reset();

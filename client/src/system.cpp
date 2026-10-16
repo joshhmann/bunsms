@@ -1,8 +1,5 @@
-// Attach ordering (spec §2.3). Dispatcher FIRST (0x004965F1, once), tick
-// second (CallUpdate, once), then features in dependency order:
-// damage-long before QoL/SP at shared sites; weather attach before first
-// stage construction. This slice: dispatcher + tick + daily check-in only;
-// later slices append their Attach*Mod() calls in the order below.
+// One dispatcher, one main-thread frame driver, one connection reset owner.
+// Attach failures propagate to BunsMS_Initialize; no partially active runtime.
 
 #include "pch.h"
 #include "hook.h"
@@ -10,6 +7,11 @@
 #include "tick.h"
 #include "caps.h"
 #include "dailycheckin.h"
+#include "cashshopwnd.h"
+#include "coloringprism.h"
+#include "prismdispatch.h"
+#include "weapontint.h"
+#include "damagelong.h"
 
 // Fail-closed: false if ANY attach fails (later attaches skipped — no
 // half-hooked client pretends active).
@@ -22,10 +24,11 @@ bool AttachSystemHooks() {
         return false;
     if (!AttachDailyCheckinMod())
         return false;
+    if (!AttachCashShopWndMod())
+        return false;
+    if (!AttachWeaponTintMod() || !AttachColoringPrismMod() || !AttachPrismDispatch())
+        return false;
+    if (!AttachDamageLongMod())
+        return false;
     return true;
-    // Future slices (spec §2.3), in order:
-    // AttachCashShopWndMod();
-    // AttachColoringPrismMod() + AttachWeaponTintMod();
-    // AttachDamageLongMod();   // BEFORE any QoL/SP hook at shared sites
-    // AttachWeatherMod();      // AFTER dispatcher; before first stage construction
 }
