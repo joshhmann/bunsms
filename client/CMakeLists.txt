@@ -19,3 +19,7 @@ add_subdirectory(external)
 
 # Build injector DLL
 add_subdirectory(src)
+
+# dinput8 proxy loader (load-path fix; see proxy/CMakeLists.txt). Builds a
+# SEPARATE dinput8.dll — never confuse with the WzLib shims or the HD shim.
+add_subdirectory(proxy)

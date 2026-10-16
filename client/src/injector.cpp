@@ -1,8 +1,11 @@
-// DllMain → AttachSystemHooks (spec §2.3 ordering).
+// DllMain → InstallDeferredAttach (post-unpack bootstrap; see bootstrap.h).
+// Direct AttachSystemHooks at import time is WRONG: the staged PE is packed
+// and hook sites are ciphertext until unpack. Real attach fires post-unpack.
 // Ships as BunsMS.dll (locked name; OUTPUT_NAME in src/CMakeLists.txt).
 
 #include "pch.h"
 #include "hook.h"
+#include "bootstrap.h"
 #include "addresses.h"
 #include "dispatcher.h"
 #include "tick.h"
@@ -34,7 +37,7 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD fdwReason, LPVOID /*lpvReserved*/) 
     switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hModule);
-        AttachSystemHooks();
+        InstallDeferredAttach(); // tripwire only — no game bytes touched here
         break;
     case DLL_PROCESS_DETACH:
     case DLL_THREAD_ATTACH:

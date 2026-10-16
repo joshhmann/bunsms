@@ -2,6 +2,7 @@
 add_library(injector SHARED
     injector.cpp
     system.cpp
+    bootstrap.cpp
     dispatcher.cpp
     tick.cpp
     screen.cpp
