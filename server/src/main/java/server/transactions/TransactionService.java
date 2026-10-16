@@ -20,9 +20,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Buyback ledger over recorded sell events (MapleRoot wave 3 port).
@@ -35,20 +32,153 @@ public class TransactionService {
     private TransactionService() {
     }
 
-    /** Total mesos needed to buy a transaction back (sum of NPC sell prices). */
+    /** Immutable actual sale credit, never a quote from today's item data. */
     public static int getTotalPurchasePrice(Transaction transaction) {
-        int total = 0;
+        if (transaction.creditedMesos() == null) {
+            throw new IllegalStateException("This historical sale has no recorded credit and cannot be bought back.");
+        }
+        return transaction.creditedMesos();
+    }
+
+    /** Existing NPC/casino pricing policy, evaluated only at the sale. */
+    public static long getSalePrice(Item item) {
+        if (CasinoChipConfig.isCasinoChip(item.getItemId())) {
+            return (long) CasinoChipConfig.getChipPrice(item.getItemId()) * item.getQuantity();
+        }
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
-        for (TransactionItem item : transaction.items()) {
-            // Casino chips sell at their lossless exchange price, not the generic
-            // NPC price — mirrors Shop.sell so buyback price == sell price.
-            if (CasinoChipConfig.isCasinoChip(item.getItemId())) {
-                total += CasinoChipConfig.getChipPrice(item.getItemId()) * item.getQuantity();
+        int price = ii.getWholePrice(item.getItemId());
+        if (price < 0) {
+            return -1;
+        }
+        if (!constants.inventory.ItemConstants.isRechargeable(item.getItemId())) {
+            return (long) price * item.getQuantity();
+        }
+        return price + (long) Math.ceil(item.getQuantity() * ii.getUnitPrice(item.getItemId()));
+    }
+
+    public static boolean sameItem(Item live, Item expected, boolean compareQuantity) {
+        if (live == null || expected == null || live.getClass() != expected.getClass()
+                || live.getItemId() != expected.getItemId() || live.getPosition() != expected.getPosition()
+                || (compareQuantity && live.getQuantity() != expected.getQuantity())
+                || live.getPetId() != expected.getPetId() || live.getFlag() != expected.getFlag()
+                || live.getSN() != expected.getSN()
+                || live.getExpiration() != expected.getExpiration()
+                || !live.getOwner().equals(expected.getOwner()) || !live.getGiftFrom().equals(expected.getGiftFrom())
+                || live.getEffTintHue() != expected.getEffTintHue()
+                || live.getEffTintChroma() != expected.getEffTintChroma()
+                || live.getEffTintBright() != expected.getEffTintBright()) {
+            return false;
+        }
+        if (live instanceof Equip a && expected instanceof Equip b) {
+            return a.getUpgradeSlots() == b.getUpgradeSlots() && a.getLevel() == b.getLevel()
+                    && a.getStr() == b.getStr() && a.getDex() == b.getDex() && a.getInt() == b.getInt()
+                    && a.getLuk() == b.getLuk() && a.getHp() == b.getHp() && a.getMp() == b.getMp()
+                    && a.getWatk() == b.getWatk() && a.getMatk() == b.getMatk()
+                    && a.getWdef() == b.getWdef() && a.getMdef() == b.getMdef()
+                    && a.getAcc() == b.getAcc() && a.getAvoid() == b.getAvoid() && a.getHands() == b.getHands()
+                    && a.getSpeed() == b.getSpeed() && a.getJump() == b.getJump() && a.getVicious() == b.getVicious()
+                    && a.getItemLevel() == b.getItemLevel() && a.getItemExp() == b.getItemExp()
+                    && a.getRingId() == b.getRingId()
+                    && a.getTintHue() == b.getTintHue() && a.getTintChroma() == b.getTintChroma()
+                    && a.getTintBright() == b.getTintBright() && a.getTintFxHue() == b.getTintFxHue()
+                    && a.getTintFxChroma() == b.getTintFxChroma() && a.getTintFxBright() == b.getTintFxBright();
+        }
+        return true;
+    }
+
+    /**
+     * One sale, including its complete ledger and persisted inventory/balance.
+     * The same character monitor serializes ordinary character saves.
+     */
+    public static int sellItems(Character player, InventoryType type, List<Item> soldItems, List<Item> originals) {
+        if (type == null || type == InventoryType.UNDEFINED || type == InventoryType.EQUIPPED
+                || type == InventoryType.CANHOLD || soldItems == null || soldItems.isEmpty()
+                || originals == null || soldItems.size() != originals.size()) {
+            return -1;
+        }
+        synchronized (player) {
+            boolean ledgerEnabled = YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK > 0;
+            List<client.inventory.Inventory> locked;
+            if (ledgerEnabled) {
+                locked = lockInventories(player);
             } else {
-                total += ii.getPrice(item.getItemId(), item.getQuantity());
+                client.inventory.Inventory inventory = player.getInventory(type);
+                inventory.lockInventory();
+                locked = java.util.Collections.singletonList(inventory);
+            }
+            player.lockMeso();
+            try {
+                java.util.Set<Short> slots = new java.util.HashSet<>();
+                long nominalCredit = 0;
+                for (int i = 0; i < soldItems.size(); i++) {
+                    Item sold = soldItems.get(i);
+                    if (sold == null || sold.getInventoryType() != type || sold.getPosition() < 1
+                            || sold.getPosition() > player.getInventory(type).getSlotLimit()
+                            || !slots.add(sold.getPosition())) {
+                        return -1;
+                    }
+                    Item live = player.getInventory(type).getItem(sold.getPosition());
+                    boolean rechargeable = constants.inventory.ItemConstants.isRechargeable(sold.getItemId());
+                    if (live != originals.get(i) || !sameItem(live, sold, false) || sold.getQuantity() < 0
+                            || (!rechargeable && sold.getQuantity() == 0)
+                            || sold.getQuantity() > live.getQuantity()
+                            || (rechargeable && sold.getQuantity() != live.getQuantity())) {
+                        return -1;
+                    }
+                    long price = getSalePrice(sold);
+                    if (price < 0) {
+                        return -1;
+                    }
+                    nominalCredit = Math.addExact(nominalCredit, price);
+                }
+                int credit = (int) Math.min(nominalCredit, (long) Integer.MAX_VALUE - player.getMeso());
+                InventorySnapshot before = snapshotInventoriesAndMesos(player, 1 << type.ordinal());
+                if (!ledgerEnabled) {
+                    try {
+                        applySale(player, type, soldItems, credit);
+                        return credit;
+                    } catch (RuntimeException e) {
+                        restoreInventoriesAndMesos(player, before);
+                        return -1;
+                    }
+                }
+                try (Connection connection = DatabaseConnection.getConnection()) {
+                    connection.setAutoCommit(false);
+                    try {
+                        int transactionId = createTransaction(connection, player.getId(), credit);
+                        createTransactionItems(connection, transactionId, convertItemsToTransactionItems(soldItems));
+                        applySale(player, type, soldItems, credit);
+                        persistInventoryAndMesos(connection, player);
+                        connection.commit();
+                        return credit;
+                    } catch (SQLException | RuntimeException e) {
+                        try {
+                            connection.rollback();
+                        } catch (SQLException rollbackFailure) {
+                            e.addSuppressed(rollbackFailure);
+                        }
+                        restoreInventoriesAndMesos(player, before);
+                        org.slf4j.LoggerFactory.getLogger(TransactionService.class).warn("Sale rolled back for character {}", player.getId(), e);
+                        return -1;
+                    }
+                } catch (SQLException e) {
+                    org.slf4j.LoggerFactory.getLogger(TransactionService.class).warn("Could not record sale for character {}", player.getId(), e);
+                    return -1;
+                }
+            } finally {
+                player.unlockMeso();
+                unlockInventories(locked);
             }
         }
-        return total;
+    }
+
+    private static void applySale(Character player, InventoryType type, List<Item> items, int credit) {
+        for (Item item : items) {
+            InventoryManipulator.removeFromSlot(player.getClient(), type, item.getPosition(), item.getQuantity(), false);
+        }
+        if (credit > 0) {
+            player.gainMeso(credit, false);
+        }
     }
 
     public static SelectionListStringResult getTransactionSelectionListString(int userId) {
@@ -64,165 +194,432 @@ public class TransactionService {
         }
 
         StringBuilder stringBuilder = new StringBuilder("Last transactions:\r\n\r\n");
-        IntStream.range(0, transactions.size()).forEach(i -> {
+        for (int i = 0; i < transactions.size(); i++) {
             Transaction transaction = transactions.get(i);
-            int totalItems = transaction.items().size();
-            int totalMesos = getTotalPurchasePrice(transaction);
-            String transactionIndicator = transaction.buybackUsed() ? " [Used]" : "";
-
-            String transactionText = String.format("#L%d#%d. %d items (%s mesos)%s\r\n",
-                    i,
-                    i + 1,
-                    totalItems,
-                    GameConstants.numberWithCommas(totalMesos),
-                    transactionIndicator);
-
-            stringBuilder.append(transactionText);
-        });
+            String quote = transaction.creditedMesos() == null ? "unavailable: sale credit not recorded"
+                    : GameConstants.numberWithCommas(transaction.creditedMesos()) + " mesos";
+            stringBuilder.append("#L").append(transaction.transactionId()).append("#")
+                    .append(i + 1).append(". ").append(transaction.items().size()).append(" items (")
+                    .append(quote).append(")").append(transaction.buybackUsed() ? " [Used]" : "").append("#l\r\n");
+        }
 
         return new SelectionListStringResult(true, stringBuilder.toString());
     }
 
-    public static SelectionListStringResult getTransactionItemListString(int userId, int transactionIndex) {
-        final List<Transaction> transactions;
-        try {
-            transactions = getLastTransactions(userId, YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
-        } catch (IllegalStateException e) {
-            return new SelectionListStringResult(false, "#rCould not load transaction history. Please try again later.#k");
+    public static SelectionListStringResult getTransactionItemListString(int userId, int transactionId) {
+        try (Connection connection = DatabaseConnection.getConnection()) {
+            Transaction transaction = getTransactionById(connection, userId, transactionId, false);
+            if (transaction == null) {
+                return new SelectionListStringResult(false, "Invalid transaction.");
+            }
+            if (transaction.buybackUsed()) {
+                return new SelectionListStringResult(false, "This transaction has already been bought back.");
+            }
+            if (transaction.creditedMesos() == null) {
+                return new SelectionListStringResult(false, "This historical sale has no recorded credit and cannot be bought back.");
+            }
+            return getItemListString(transaction);
+        } catch (SQLException e) {
+            return new SelectionListStringResult(false, "Could not load transaction history. Please try again later.");
         }
-
-        if (transactions.isEmpty()) {
-            return new SelectionListStringResult(false, "#rThere are no previous transactions at this time. (haxor?)#k");
-        }
-
-        if (transactionIndex < 0 || transactionIndex >= transactions.size()) {
-            return new SelectionListStringResult(false, "#rInvalid selection. (haxor?)#k ");
-        }
-
-        Transaction transaction = transactions.get(transactionIndex);
-
-        if (transaction.buybackUsed()) {
-            return new SelectionListStringResult(false, "This transaction has already been bought back.");
-        }
-
-        return getItemListString(transaction);
     }
 
     private static SelectionListStringResult getItemListString(Transaction transaction) {
-        StringBuilder itemListString = new StringBuilder("Are you sure you want to buy back this transaction?\r\n\r\nItems contained in this transaction:\r\n");
-        AtomicInteger formatCounter = new AtomicInteger();
-
-        List<String> itemStrings = transaction.items().stream()
-                .map(item -> {
-                    String suffix = formatCounter.incrementAndGet() % 4 == 0 ? "\r\n" : "";
-                    return String.format("#i%s#   %s", item.getItemId(), suffix);
-                })
-                .collect(Collectors.toList());
-
-        itemListString.append(String.join("", itemStrings));
-
-        return new SelectionListStringResult(true, itemListString.toString());
+        StringBuilder text = new StringBuilder("Buy back this sale for ")
+                .append(GameConstants.numberWithCommas(getTotalPurchasePrice(transaction)))
+                .append(" mesos?\r\n\r\n");
+        for (TransactionItem item : transaction.items()) {
+            text.append("#i").append(item.getItemId()).append("# x").append(item.getQuantity()).append("\r\n");
+        }
+        return new SelectionListStringResult(true, text.toString());
     }
 
-    public static SelectionListStringResult processTransaction(Character player, int transactionIndex) {
-        final List<Transaction> transactions;
-        try {
-            transactions = getLastTransactions(player.getId(), YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
-        } catch (IllegalStateException e) {
-            return new SelectionListStringResult(false, "Could not load transaction history. Please try again later.");
+    public static SelectionListStringResult processTransaction(Character player, int transactionId) {
+        if (YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK <= 0) {
+            return new SelectionListStringResult(false, "Buyback is currently disabled.");
         }
+        synchronized (player) {
+            List<client.inventory.Inventory> locked = lockInventories(player);
+            try {
+                player.lockMeso();
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    conn.setAutoCommit(false);
+                    InventorySnapshot snapshot = null;
+                    boolean committed = false;
+                    try {
+                        Transaction transaction = getTransactionById(conn, player.getId(), transactionId, true);
+                        if (transaction == null) {
+                            return new SelectionListStringResult(false, "This transaction was not found.");
+                        }
+                        if (transaction.buybackUsed()) {
+                            return new SelectionListStringResult(false, "This transaction has already been bought back.");
+                        }
+                        if (transaction.creditedMesos() == null || transaction.creditedMesos() < 0) {
+                            return new SelectionListStringResult(false, "This historical transaction has no recorded sale quote and cannot be bought back.");
+                        }
+                        int buybackPrice = getTotalPurchasePrice(transaction);
+                        if (player.getMeso() < buybackPrice) {
+                            return new SelectionListStringResult(false, "You don't have enough mesos to complete this buyback.");
+                        }
+                        List<Item> items = convertTransactionItemsToItems(transaction.items());
+                        if (!validRedemptionItems(transaction.items(), items) || !canGrantItems(player, items)) {
+                            return new SelectionListStringResult(false, "These items cannot be received. Check inventory space and pickup restrictions.");
+                        }
 
-        if (transactionIndex < 0 || transactionIndex >= transactions.size()) {
-            return new SelectionListStringResult(false, "Invalid transaction number.");
+                        String claimSQL = "UPDATE transactions SET buyback_used = 1 WHERE transaction_id = ? AND user_id = ? AND buyback_used = 0";
+                        try (PreparedStatement statement = conn.prepareStatement(claimSQL)) {
+                            statement.setInt(1, transactionId);
+                            statement.setInt(2, player.getId());
+                            if (statement.executeUpdate() != 1) {
+                                return new SelectionListStringResult(false, "This transaction has already been bought back.");
+                            }
+                        }
+                        int affectedInventories = 0;
+                        for (Item item : items) {
+                            affectedInventories |= 1 << item.getInventoryType().ordinal();
+                        }
+                        snapshot = snapshotInventoriesAndMesos(player, affectedInventories);
+                        java.util.BitSet occupied = new java.util.BitSet();
+                        for (Item item : items) {
+                            if (!grantRedemptionItem(player, item, occupied)) {
+                                return new SelectionListStringResult(false, "The buyback was interrupted; no items or mesos were exchanged.");
+                            }
+                        }
+                        player.gainMeso(-buybackPrice, true);
+                        persistInventoryAndMesos(conn, player);
+                        SelectionListStringResult result = new SelectionListStringResult(true,
+                                "Bought back items for " + GameConstants.numberWithCommas(buybackPrice) + " mesos.");
+                        conn.commit();
+                        committed = true;
+                        return result;
+                    } finally {
+                        if (!committed) {
+                            try {
+                                conn.rollback();
+                            } finally {
+                                if (snapshot != null) {
+                                    restoreInventoriesAndMesos(player, snapshot);
+                                }
+                            }
+                        }
+                    }
+                } catch (SQLException | RuntimeException e) {
+                    org.slf4j.LoggerFactory.getLogger(TransactionService.class).error(
+                            "Buyback {} failed for character {}", transactionId, player.getId(), e);
+                    return new SelectionListStringResult(false,
+                            "Could not complete or confirm the buyback. Reload transaction history before trying again.");
+                } finally {
+                    player.unlockMeso();
+                }
+            } finally {
+                unlockInventories(locked);
+            }
         }
+    }
 
-        Transaction transaction = transactions.get(transactionIndex);
-        if (transaction.buybackUsed()) {
-            return new SelectionListStringResult(false, "This transaction has already been bought back.");
-        }
-
-        // Hold every player inventory lock in fixed InventoryType order across
-        // the whole redeem (same lockInventory/unlockInventory pair the sell and
-        // handler paths use; fixed order avoids lock-order inversion with them).
-        // This keeps concurrent sellers/redeemers on this character from moving
-        // mesos or slots between the claim, the re-validation, the grants, and
-        // the charge below.
+    static List<client.inventory.Inventory> lockInventories(Character player) {
         List<client.inventory.Inventory> locked = new ArrayList<>();
-        for (client.inventory.InventoryType type : client.inventory.InventoryType.values()) {
-            if (type == client.inventory.InventoryType.UNDEFINED || type == client.inventory.InventoryType.EQUIPPED) {
-                continue;
-            }
-            client.inventory.Inventory inv = player.getInventory(type);
-            if (inv != null) {
-                inv.lockInventory();
-                locked.add(inv);
-            }
-        }
         try {
-            // Note: `transaction` above is a pre-lock snapshot; the claim below
-            // is the authority on whether this redeem proceeds, not this flag.
-
-            // First-claimer gate: only one concurrent redeemer flips
-            // buyback_used 0 -&gt; 1; losers see 0 rows affected and abort here.
-            if (!claimTransactionBuyback(transaction.transactionId())) {
-                return new SelectionListStringResult(false, "This transaction has already been bought back.");
-            }
-
-            // Re-validate AFTER the claim while holding the locks: exact stored
-            // sale quote (casino override included via getTotalPurchasePrice),
-            // mesos, and full capacity as they stand now, not as read earlier.
-            int buybackPrice = getTotalPurchasePrice(transaction);
-            if (player.getMeso() < buybackPrice) {
-                updateTransactionBuybackStatus(transaction.transactionId(), false);
-                return new SelectionListStringResult(false, "You don't have enough mesos to complete this buyback");
-            }
-
-            List<Pair<Item, InventoryType>> validationList = convertTransactionItemsToItemPairs(transaction.items());
-            if (!client.inventory.Inventory.checkSpots(player, validationList)) {
-                updateTransactionBuybackStatus(transaction.transactionId(), false);
-                return new SelectionListStringResult(false, "You don't have enough space to complete this buyback");
-            }
-
-            // Grant loop: abort WITHOUT charging on any failure; the row stays
-            // claimed so a partial grant cannot be re-redeemed into dupes —
-            // support resolves the stuck row from the ledger (row id is in the
-            // message). No unmark here: unmarking after a partial grant would
-            // re-open the already-granted items for a second redeem.
-            // Limit: a crash between the grant loop and the meso charge below
-            // leaves granted items uncharged with no cross-system 2PC to roll
-            // them back; support resolves that case from the ledger row.
-            List<Item> items = convertTransactionItemsToItems(transaction.items());
-            for (Item item : items) {
-                if (!InventoryManipulator.addFromDrop(player.getClient(), item, false)) {
-                    return new SelectionListStringResult(false, "Interrupted, failed to process some or all items. Transaction " + transaction.transactionId() + " is held claimed; please contact support for assistance.");
+            for (InventoryType type : InventoryType.values()) {
+                if (type == InventoryType.UNDEFINED || type == InventoryType.CANHOLD) {
+                    continue;
+                }
+                client.inventory.Inventory inventory = player.getInventory(type);
+                if (inventory != null) {
+                    inventory.lockInventory();
+                    locked.add(inventory);
                 }
             }
+            return locked;
+        } catch (RuntimeException e) {
+            unlockInventories(locked);
+            throw e;
+        }
+    }
 
-            player.gainMeso(-buybackPrice, true);
-            return new SelectionListStringResult(true, "Bought back items for " + GameConstants.numberWithCommas(buybackPrice) + " mesos.");
-        } finally {
-            for (int i = locked.size() - 1; i >= 0; i--) {
-                locked.get(i).unlockInventory();
+    static void unlockInventories(List<client.inventory.Inventory> locked) {
+        for (int i = locked.size() - 1; i >= 0; i--) {
+            locked.get(i).unlockInventory();
+        }
+    }
+
+    static final class InventorySnapshot {
+        private final java.util.Map<InventoryType, java.util.Map<Short, SlotSnapshot>> inventories =
+                new java.util.EnumMap<>(InventoryType.class);
+        private final int mesos;
+
+        private InventorySnapshot(int mesos) {
+            this.mesos = mesos;
+        }
+    }
+
+    private static final class SlotSnapshot {
+        private final Item original;
+        private final short position;
+        private final short quantity;
+
+        private SlotSnapshot(Item item) {
+            original = item;
+            position = item.getPosition();
+            quantity = item.getQuantity();
+        }
+    }
+
+    // Callers hold the character monitor, affected inventory locks, then meso
+    // lock. Retain original objects: sale/grant mutates only slot membership,
+    // position and quantity, while Item.copy omits pet/cash identity.
+    static InventorySnapshot snapshotInventoriesAndMesos(Character player, int affectedInventories) {
+        InventorySnapshot snapshot = new InventorySnapshot(player.getMeso());
+        for (InventoryType type : InventoryType.values()) {
+            if ((affectedInventories & (1 << type.ordinal())) == 0) {
+                continue;
+            }
+            client.inventory.Inventory inventory = player.getInventory(type);
+            if (inventory == null) {
+                continue;
+            }
+            java.util.Map<Short, SlotSnapshot> slots = new java.util.LinkedHashMap<>();
+            for (Item item : inventory.list()) {
+                slots.put(item.getPosition(), new SlotSnapshot(item));
+            }
+            snapshot.inventories.put(type, slots);
+        }
+        return snapshot;
+    }
+
+    static void restoreInventoriesAndMesos(Character player, InventorySnapshot snapshot) {
+        List<Pair<Integer, Item>> corrections = new ArrayList<>();
+        for (var entry : snapshot.inventories.entrySet()) {
+            client.inventory.Inventory inventory = player.getInventory(entry.getKey());
+            java.util.Map<Short, SlotSnapshot> slots = entry.getValue();
+            for (Item item : new ArrayList<>(inventory.list())) {
+                SlotSnapshot saved = slots.get(item.getPosition());
+                if (saved == null || saved.original != item) {
+                    Item removed = new Item(item.getItemId(), item.getPosition(), item.getQuantity());
+                    inventory.removeSlot(item.getPosition());
+                    corrections.add(new Pair<>(3, removed));
+                }
+            }
+            for (SlotSnapshot saved : slots.values()) {
+                boolean present = inventory.getItem(saved.position) == saved.original;
+                boolean changed = saved.original.getQuantity() != saved.quantity
+                        || saved.original.getPosition() != saved.position;
+                saved.original.setPosition(saved.position);
+                saved.original.setQuantity(saved.quantity);
+                if (!present) {
+                    inventory.addItemFromDB(saved.original);
+                    corrections.add(new Pair<>(0, saved.original));
+                } else if (changed) {
+                    corrections.add(new Pair<>(1, saved.original));
+                }
+            }
+        }
+        // Restore all server slots before any correction packet can fail.
+        RuntimeException packetFailure = null;
+        try {
+            player.gainMeso(snapshot.mesos - player.getMeso(), false);
+        } catch (RuntimeException e) {
+            packetFailure = e;
+        }
+        for (Pair<Integer, Item> correction : corrections) {
+            try {
+                player.sendPacket(tools.PacketCreator.modifyInventory(true,
+                        java.util.Collections.singletonList(inventoryCorrection(correction.getLeft(), correction.getRight()))));
+            } catch (RuntimeException e) {
+                if (packetFailure == null) {
+                    packetFailure = e;
+                } else {
+                    packetFailure.addSuppressed(e);
+                }
+            }
+        }
+        if (packetFailure != null) {
+            throw packetFailure;
+        }
+    }
+
+    static void persistInventoryAndMesos(Connection conn, Character player) throws SQLException {
+        List<Pair<Item, InventoryType>> items = new ArrayList<>();
+        for (InventoryType type : InventoryType.values()) {
+            if (type == InventoryType.UNDEFINED || type == InventoryType.CANHOLD) {
+                continue;
+            }
+            client.inventory.Inventory inventory = player.getInventory(type);
+            if (inventory != null) {
+                for (Item item : inventory.list()) {
+                    items.add(new Pair<>(item, type));
+                }
+            }
+        }
+        client.inventory.ItemFactory.INVENTORY.saveItems(items, player.getId(), conn);
+        try (PreparedStatement statement = conn.prepareStatement("UPDATE characters SET meso = ? WHERE id = ?")) {
+            statement.setInt(1, player.getMeso());
+            statement.setInt(2, player.getId());
+            if (statement.executeUpdate() != 1) {
+                throw new SQLException("Character meso persistence did not update exactly one row");
             }
         }
     }
 
-    /**
-     * First-claimer gate for a buyback redeem (0 -&gt; 1). Returns true only when
-     * this caller won the claim; false means already claimed (or DB error).
-     * Reliable only together with the redeem-wide inventory locks in
-     * {@link #processTransaction} — the UPDATE decides the winner, the locks
-     * keep validation, grants, and charge from interleaving on this character.
-     */
-    static boolean claimTransactionBuyback(int transactionId) {
-        String claimSQL = "UPDATE transactions SET buyback_used = 1 WHERE transaction_id = ? AND buyback_used = 0";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(claimSQL)) {
-            preparedStatement.setInt(1, transactionId);
-            return preparedStatement.executeUpdate() > 0;
-        } catch (SQLException e) {
+    private static boolean validRedemptionItems(List<TransactionItem> recorded, List<Item> items) {
+        if (items.isEmpty() || recorded.size() != items.size()) {
             return false;
         }
+        for (int i = 0; i < items.size(); i++) {
+            Item item = items.get(i);
+            TransactionItem source = recorded.get(i);
+            InventoryType type = item.getInventoryType();
+            boolean rechargeable = constants.inventory.ItemConstants.isRechargeable(item.getItemId());
+            if (type == InventoryType.UNDEFINED || type == InventoryType.CANHOLD || type == InventoryType.EQUIPPED
+                    || type.getType() != source.getInventoryType() || source.getQuantity() > Short.MAX_VALUE
+                    || source.getQuantity() < 0 || (!rechargeable && source.getQuantity() == 0)
+                    || item.getPetId() != source.getPetId() || item.getOwner() == null
+                    || (type == InventoryType.EQUIP && (!(item instanceof Equip) || source.getQuantity() != 1))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static final class GrantStack {
+        private final int itemId;
+        private final String owner;
+        private final short flag;
+        private int quantity;
+
+        private GrantStack(Item item, int quantity) {
+            itemId = item.getItemId();
+            owner = item.getOwner();
+            flag = item.getFlag();
+            this.quantity = quantity;
+        }
+    }
+
+    // Simulate the whole grant sequence without touching live items. Unlike
+    // generic checkSpots, addFromDrop stacks only equal owner AND equal flag,
+    // never merges rechargeables/pets, and checks equipped pickup restrictions.
+    private static boolean canGrantItems(Character player, List<Item> items) {
+        java.util.Map<InventoryType, List<GrantStack>> stacks = new java.util.EnumMap<>(InventoryType.class);
+        java.util.Map<InventoryType, Integer> freeSlots = new java.util.EnumMap<>(InventoryType.class);
+        int affectedInventories = 0;
+        ItemInformationProvider ii = ItemInformationProvider.getInstance();
+        for (Item item : items) {
+            affectedInventories |= 1 << item.getInventoryType().ordinal();
+            if (ii.isPickupRestricted(item.getItemId())) {
+                affectedInventories |= 1 << InventoryType.EQUIPPED.ordinal();
+            }
+        }
+        for (InventoryType type : InventoryType.values()) {
+            if ((affectedInventories & (1 << type.ordinal())) == 0) {
+                continue;
+            }
+            client.inventory.Inventory inventory = player.getInventory(type);
+            if (inventory == null) {
+                continue;
+            }
+            List<GrantStack> contents = new ArrayList<>();
+            for (Item item : inventory.list()) {
+                contents.add(new GrantStack(item, item.getQuantity()));
+            }
+            stacks.put(type, contents);
+            freeSlots.put(type, Math.min(inventory.getNumFreeSlot(),
+                    Math.max(0, inventory.getSlotLimit() - contents.size())));
+        }
+        for (Item item : items) {
+            InventoryType type = item.getInventoryType();
+            List<GrantStack> contents = stacks.get(type);
+            if (contents == null) {
+                return false;
+            }
+            if (ii.isPickupRestricted(item.getItemId())) {
+                for (GrantStack existing : contents) {
+                    if (existing.itemId == item.getItemId()) {
+                        return false;
+                    }
+                }
+                for (GrantStack equipped : stacks.getOrDefault(InventoryType.EQUIPPED, java.util.Collections.emptyList())) {
+                    if (equipped.itemId == item.getItemId()) {
+                        return false;
+                    }
+                }
+            }
+            int remaining = item.getQuantity();
+            if (type == InventoryType.EQUIP || constants.inventory.ItemConstants.isRechargeable(item.getItemId())
+                    || item.getPetId() != -1) {
+                if (freeSlots.get(type) == 0) {
+                    return false;
+                }
+                freeSlots.put(type, freeSlots.get(type) - 1);
+                contents.add(new GrantStack(item, remaining));
+                continue;
+            }
+            int slotMax = ii.getSlotMax(player.getClient(), item.getItemId());
+            if (slotMax <= 0) {
+                return false;
+            }
+            for (GrantStack existing : contents) {
+                if (existing.itemId == item.getItemId() && existing.flag == item.getFlag()
+                        && item.getOwner().equals(existing.owner) && existing.quantity < slotMax) {
+                    int added = Math.min(remaining, slotMax - existing.quantity);
+                    existing.quantity += added;
+                    remaining -= added;
+                    if (remaining == 0) {
+                        break;
+                    }
+                }
+            }
+            while (remaining > 0) {
+                if (freeSlots.get(type) == 0) {
+                    return false;
+                }
+                int added = Math.min(remaining, slotMax);
+                contents.add(new GrantStack(item, added));
+                freeSlots.put(type, freeSlots.get(type) - 1);
+                remaining -= added;
+            }
+        }
+        return true;
+    }
+
+    private static boolean grantRedemptionItem(Character player, Item item, java.util.BitSet occupied) {
+        client.inventory.Inventory inventory = player.getInventory(item.getInventoryType());
+        occupied.clear();
+        for (Item existing : inventory.list()) {
+            occupied.set(existing.getPosition());
+        }
+        if (!InventoryManipulator.addFromDrop(player.getClient(), item, false)) {
+            return false;
+        }
+        for (Item granted : inventory.list()) {
+            if (!occupied.get(granted.getPosition()) && granted != item) {
+                boolean changed = !item.getOwner().equals(granted.getOwner())
+                        || !java.util.Objects.equals(item.getGiftFrom(), granted.getGiftFrom())
+                        || item.getSN() != granted.getSN()
+                        || item.getEffTintHue() != granted.getEffTintHue()
+                        || item.getEffTintChroma() != granted.getEffTintChroma()
+                        || item.getEffTintBright() != granted.getEffTintBright();
+                granted.setOwner(item.getOwner());
+                granted.setGiftFrom(item.getGiftFrom());
+                granted.setSN(item.getSN());
+                granted.setEffTint(item.getEffTintHue(), item.getEffTintChroma(), item.getEffTintBright());
+                if (changed) {
+                    player.sendPacket(tools.PacketCreator.modifyInventory(true, java.util.List.of(
+                            inventoryCorrection(3, granted), inventoryCorrection(0, granted))));
+                }
+            }
+        }
+        return true;
+    }
+
+    private static client.inventory.ModifyInventory inventoryCorrection(int mode, Item item) {
+        client.inventory.ModifyInventory correction = new client.inventory.ModifyInventory(mode, item);
+        Item copied = correction.getItem();
+        copied.setGiftFrom(item.getGiftFrom());
+        copied.setSN(item.getSN());
+        if (copied instanceof Equip equip && item instanceof Equip original) {
+            equip.setRingId(original.getRingId());
+        }
+        return correction;
     }
 
     // ======== MAPPERS ========
@@ -273,6 +670,10 @@ public class TransactionService {
             transactionItem.setFlag(item.getFlag());
             transactionItem.setExpiration(item.getExpiration());
             transactionItem.setGiftFrom(item.getGiftFrom());
+            transactionItem.setSN(item.getSN());
+            transactionItem.setEffTintHue(item.getEffTintHue());
+            transactionItem.setEffTintChroma(item.getEffTintChroma());
+            transactionItem.setEffTintBright(item.getEffTintBright());
             transactionItems.add(transactionItem);
         }
         return transactionItems;
@@ -314,54 +715,36 @@ public class TransactionService {
             item.setExpiration(transactionItem.getExpiration());
             item.setGiftFrom(transactionItem.getGiftFrom());
             item.setFlag((short) transactionItem.getFlag());
+            item.setSN(transactionItem.getSN());
+            item.setEffTint(transactionItem.getEffTintHue(), transactionItem.getEffTintChroma(), transactionItem.getEffTintBright());
             items.add(item);
         }
         return items;
     }
 
-    public static List<Pair<Item, InventoryType>> convertTransactionItemsToItemPairs(List<TransactionItem> transactionItems) {
-        List<Pair<Item, InventoryType>> itemPairs = new ArrayList<>();
-        for (TransactionItem transactionItem : transactionItems) {
-            Item item = getItemFromTransactionItem(transactionItem);
-            InventoryType inventoryType = InventoryType.getByType((byte) transactionItem.getInventoryType());
-            itemPairs.add(new Pair<>(item, inventoryType));
-        }
-        return itemPairs;
-    }
-
-    private static Item getItemFromTransactionItem(TransactionItem transactionItem) {
-        Item item = new Item(transactionItem.getItemId(), (short) transactionItem.getPosition(), (short) transactionItem.getQuantity(), transactionItem.getPetId());
-        item.setOwner(transactionItem.getOwner());
-        item.setFlag((short) transactionItem.getFlag());
-        item.setExpiration(transactionItem.getExpiration());
-        item.setGiftFrom(transactionItem.getGiftFrom());
-        return item;
-    }
 
     // ======== DATABASE =========
-    public static int createTransaction(int userId) throws SQLException {
-        String insertTransactionSQL = "INSERT INTO transactions (user_id) VALUES (?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(insertTransactionSQL, PreparedStatement.RETURN_GENERATED_KEYS)) {
+    private static int createTransaction(Connection conn, int userId, int creditedMesos) throws SQLException {
+        String insertTransactionSQL = "INSERT INTO transactions (user_id, credited_mesos) VALUES (?, ?)";
+        try (PreparedStatement preparedStatement = conn.prepareStatement(insertTransactionSQL, Statement.RETURN_GENERATED_KEYS)) {
             preparedStatement.setInt(1, userId);
+            preparedStatement.setInt(2, creditedMesos);
             preparedStatement.executeUpdate();
-
             try (ResultSet rs = preparedStatement.getGeneratedKeys()) {
                 if (rs.next()) {
                     return rs.getInt(1);
                 }
             }
         }
-        return -1;
+        throw new SQLException("Sale ledger insert returned no transaction id");
     }
 
-    public static void createTransactionItems(int transactionId, List<TransactionItem> items) throws SQLException {
+    private static void createTransactionItems(Connection conn, int transactionId, List<TransactionItem> items) throws SQLException {
         String insertTransactionItemSQL = "INSERT INTO transaction_items (transaction_id, type, itemid, inventorytype, " +
-                "position, quantity, owner, petid, flag, expiration, giftFrom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "position, quantity, owner, petid, flag, expiration, giftFrom, sn, efftinthue, efftintchroma, efftintbright) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String insertTransactionEquipSQL = "INSERT INTO transaction_equips (transaction_item_id, upgradeslots, level, str, dex, `int`, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, vicious, tinthue, tintchroma, tintbright, tintfxhue, tintfxchroma, tintfxbright, itemlevel, itemexp, ringid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement itemPreparedStatement = conn.prepareStatement(insertTransactionItemSQL, Statement.RETURN_GENERATED_KEYS);
+        try (PreparedStatement itemPreparedStatement = conn.prepareStatement(insertTransactionItemSQL, Statement.RETURN_GENERATED_KEYS);
              PreparedStatement equipPreparedStatement = conn.prepareStatement(insertTransactionEquipSQL)) {
 
             for (TransactionItem item : items) {
@@ -376,10 +759,17 @@ public class TransactionService {
                 itemPreparedStatement.setInt(9, item.getFlag());
                 itemPreparedStatement.setLong(10, item.getExpiration());
                 itemPreparedStatement.setString(11, item.getGiftFrom());
+                itemPreparedStatement.setInt(12, item.getSN());
+                itemPreparedStatement.setShort(13, item.getEffTintHue());
+                itemPreparedStatement.setByte(14, item.getEffTintChroma());
+                itemPreparedStatement.setByte(15, item.getEffTintBright());
                 itemPreparedStatement.executeUpdate();
 
                 try (ResultSet generatedKeys = itemPreparedStatement.getGeneratedKeys()) {
-                    if (generatedKeys.next()) {
+                    if (!generatedKeys.next()) {
+                        throw new SQLException("Sale item insert returned no item id");
+                    }
+                    {
                         int transactionItemId = generatedKeys.getInt(1);
 
                         if (item instanceof TransactionEquip equip) {
@@ -426,7 +816,7 @@ public class TransactionService {
         if (transactionCount <= 0) {
             return transactions;
         }
-        String selectTransactionsSQL = "SELECT * FROM transactions WHERE user_id = ? ORDER BY transaction_date DESC LIMIT ?";
+        String selectTransactionsSQL = "SELECT * FROM transactions WHERE user_id = ? ORDER BY transaction_date DESC, transaction_id DESC LIMIT ?";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement transactionPreparedStatement = conn.prepareStatement(selectTransactionsSQL)) {
@@ -440,7 +830,8 @@ public class TransactionService {
                             rs.getInt("user_id"),
                             rs.getTimestamp("transaction_date").toInstant(),
                             rs.getBoolean("buyback_used"),
-                            getTransactionItemsByTransactionId(rs.getInt("transaction_id")));
+                            (Integer) rs.getObject("credited_mesos"),
+                            getTransactionItemsByTransactionId(conn, rs.getInt("transaction_id")));
                     transactions.add(transaction);
                 }
             }
@@ -453,52 +844,30 @@ public class TransactionService {
         return transactions;
     }
 
-    public static Transaction getTransactionById(int transactionId) throws SQLException {
-        Transaction transaction = null;
-        String selectTransactionSQL = "SELECT * FROM transactions WHERE transaction_id = ?";
-        String selectTransactionItemsSQL = "SELECT ti.*, te.upgradeslots, te.level, te.str, te.dex, te.`int`, te.luk, te.hp, te.mp, te.watk, te.matk, te.wdef, te.mdef, te.acc, te.avoid, te.hands, te.speed, te.jump, te.vicious, te.tinthue, te.tintchroma, te.tintbright, te.tintfxhue, te.tintfxchroma, te.tintfxbright, te.itemlevel, te.itemexp, te.ringid " +
-                "FROM transaction_items ti " +
-                "LEFT JOIN transaction_equips te ON ti.transaction_item_id = te.transaction_item_id " +
-                "WHERE ti.transaction_id = ?";
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement transactionPreparedStatement = conn.prepareStatement(selectTransactionSQL);
-             PreparedStatement itemPreparedStatement = conn.prepareStatement(selectTransactionItemsSQL)) {
-
-            transactionPreparedStatement.setInt(1, transactionId);
-            try (ResultSet rs = transactionPreparedStatement.executeQuery()) {
-                if (rs.next()) {
-                    transaction = new Transaction(
-                            rs.getInt("transaction_id"),
-                            rs.getInt("user_id"),
-                            rs.getTimestamp("transaction_date").toInstant(),
-                            rs.getBoolean("buyback_used"),
-                            new ArrayList<>());
+    static Transaction getTransactionById(Connection conn, int userId, int transactionId, boolean forUpdate) throws SQLException {
+        String sql = "SELECT * FROM transactions WHERE transaction_id = ? AND user_id = ?" + (forUpdate ? " FOR UPDATE" : "");
+        try (PreparedStatement statement = conn.prepareStatement(sql)) {
+            statement.setInt(1, transactionId);
+            statement.setInt(2, userId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
                 }
-            }
-
-            if (transaction != null) {
-                itemPreparedStatement.setInt(1, transactionId);
-                try (ResultSet rs = itemPreparedStatement.executeQuery()) {
-                    List<TransactionItem> items = new ArrayList<>();
-                    readTransactionItems(rs, items);
-                    transaction = new Transaction(transaction.transactionId(), transaction.userId(),
-                            transaction.transactionDate(), transaction.buybackUsed(), items);
-                }
+                return new Transaction(rs.getInt("transaction_id"), rs.getInt("user_id"),
+                        rs.getTimestamp("transaction_date").toInstant(), rs.getBoolean("buyback_used"),
+                        (Integer) rs.getObject("credited_mesos"), getTransactionItemsByTransactionId(conn, transactionId));
             }
         }
-        return transaction;
     }
 
-    private static List<TransactionItem> getTransactionItemsByTransactionId(int transactionId) throws SQLException {
+    private static List<TransactionItem> getTransactionItemsByTransactionId(Connection conn, int transactionId) throws SQLException {
         List<TransactionItem> items = new ArrayList<>();
-        String selectTransactionItemsSQL = "SELECT ti.*, te.upgradeslots, te.level, te.str, te.dex, te.`int`, te.luk, te.hp, te.mp, te.watk, te.matk, te.wdef, te.mdef, te.acc, te.avoid, te.hands, te.speed, te.jump, te.vicious, te.tinthue, te.tintchroma, te.tintbright, te.tintfxhue, te.tintfxchroma, te.tintfxbright, te.itemlevel, te.itemexp, te.ringid " +
+        String selectTransactionItemsSQL = "SELECT ti.*, te.transaction_item_id AS equip_snapshot_id, te.upgradeslots, te.level, te.str, te.dex, te.`int`, te.luk, te.hp, te.mp, te.watk, te.matk, te.wdef, te.mdef, te.acc, te.avoid, te.hands, te.speed, te.jump, te.vicious, te.tinthue, te.tintchroma, te.tintbright, te.tintfxhue, te.tintfxchroma, te.tintfxbright, te.itemlevel, te.itemexp, te.ringid " +
                 "FROM transaction_items ti " +
                 "LEFT JOIN transaction_equips te ON ti.transaction_item_id = te.transaction_item_id " +
                 "WHERE ti.transaction_id = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(selectTransactionItemsSQL)) {
+        try (PreparedStatement preparedStatement = conn.prepareStatement(selectTransactionItemsSQL)) {
 
             preparedStatement.setInt(1, transactionId);
             try (ResultSet rs = preparedStatement.executeQuery()) {
@@ -514,6 +883,9 @@ public class TransactionService {
             TransactionItem item;
 
             if (type.equals(InventoryType.EQUIP)) {
+                if (rs.getObject("equip_snapshot_id") == null) {
+                    throw new SQLException("Sale ledger contains an incomplete equipment snapshot");
+                }
                 TransactionEquip equip = new TransactionEquip();
                 equip.setUpgradeSlots(rs.getInt("te.upgradeslots"));
                 equip.setLevel(rs.getByte("te.level"));
@@ -558,26 +930,11 @@ public class TransactionService {
             item.setFlag(rs.getInt("ti.flag"));
             item.setExpiration(rs.getLong("ti.expiration"));
             item.setGiftFrom(rs.getString("ti.giftFrom"));
+            item.setSN(rs.getInt("ti.sn"));
+            item.setEffTintHue(rs.getShort("ti.efftinthue"));
+            item.setEffTintChroma(rs.getByte("ti.efftintchroma"));
+            item.setEffTintBright(rs.getByte("ti.efftintbright"));
             items.add(item);
-        }
-    }
-
-    /**
-     * Status reset (unmark after an aborted pre-grant validation so the user can
-     * retry). Intentionally unconditional — it is NOT a claim; the
-     * first-claimer gate is {@link #claimTransactionBuyback(int)}. Only called
-     * before any item is granted; never after a partial grant.
-     */
-    public static boolean updateTransactionBuybackStatus(int transactionId, boolean buybackUsed) {
-        String updateTransactionSQL = "UPDATE transactions SET buyback_used = ? WHERE transaction_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = conn.prepareStatement(updateTransactionSQL)) {
-            preparedStatement.setBoolean(1, buybackUsed);
-            preparedStatement.setInt(2, transactionId);
-            int affectedRows = preparedStatement.executeUpdate();
-            return affectedRows > 0;
-        } catch (SQLException e) {
-            return false;
         }
     }
 

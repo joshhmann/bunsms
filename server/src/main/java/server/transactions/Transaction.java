@@ -8,5 +8,5 @@ import java.util.List;
  * buyback for this batch was already consumed.
  */
 public record Transaction(int transactionId, int userId, Instant transactionDate,
-                          boolean buybackUsed, List<TransactionItem> items) {
+                          boolean buybackUsed, Integer creditedMesos, List<TransactionItem> items) {
 }

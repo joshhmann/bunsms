@@ -11,7 +11,7 @@
 var TransactionService = Java.type('server.transactions.TransactionService');
 
 var status;
-var selectedTransactionIndex;
+var selectedTransactionId;
 
 function start() {
     status = -1;
@@ -50,9 +50,9 @@ function handleInitialStatus() {
 }
 
 function handleConfirmTransaction(selection) {
-    selectedTransactionIndex = selection;
+    selectedTransactionId = selection;
 
-    var result = TransactionService.getTransactionItemListString(cm.getPlayer().getId(), selectedTransactionIndex);
+    var result = TransactionService.getTransactionItemListString(cm.getPlayer().getId(), selectedTransactionId);
 
     if (!result.getResult()) {
         cm.sendPrev(result.getMessage());
@@ -63,7 +63,7 @@ function handleConfirmTransaction(selection) {
 }
 
 function handleProcessTransaction(selection) {
-    var result = TransactionService.processTransaction(cm.getPlayer(), selectedTransactionIndex);
+    var result = TransactionService.processTransaction(cm.getPlayer(), selectedTransactionId);
 
     if (!result.getResult()) {
         cm.sendOk(result.getMessage());
