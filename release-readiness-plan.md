@@ -41,6 +41,6 @@ Known gaps carried: 31125/31145 absent (graceful degrade), rock 5590001 unobtain
 
 ## §6 Network baseline decision (parent, 2026-10-16 — recorded, not implemented here)
 - Launcher default host: replace stale Fly .103 with LAN 192.168.0.164 (measured OPEN); preserve user override. Launcher owner implements.
-- Native current release = LAN/VPN baseline. LAN login 8484 + channels 7575-77 OPEN; public buns/maplestory:8484 CLOSED (Caddy HTTP-only, no TCP stream proxy).
+- Native current release = LAN/VPN baseline. LAN login 8484 + channels 7575-77 OPEN; public buns/maplestory:8484 UNVERIFIED from external vantage (hosting probes were from LAN; closed hairpin != closed external if NAT reflection disabled; HTTP-only Caddy can't rule out independent OPNsense forward — hosting owner gathering read-only NAT facts).
 - Website/downloads = public HTTP only. /api/server 'running' = in-compose server:8484 TCP check, NOT public-reachability proof. Do NOT derive client host from Docker DNS 'server'.
-- No automatic NAT/L4 changes, no prod Java/DB restart. LAN/VPN requirement documented explicitly for external friends. External native-TCP cutover = separate validated network change, never sneaky port opening. Public native friend reachability NOT proven/marked.
+- No automatic NAT/L4 changes, no prod Java/DB restart. LAN/VPN requirement documented explicitly for external friends. External native-TCP cutover = separate validated network change, never sneaky port opening. Public native friend reachability UNVERIFIED (not proven open, not proven closed). LAN default still beats stale Fly; user override preserved. No network-exposure decision until facts settle; no automatic port changes.
