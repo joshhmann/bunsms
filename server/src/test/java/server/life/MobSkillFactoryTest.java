@@ -66,6 +66,17 @@ class MobSkillFactoryTest {
     }
 
     @Test
+    void builderCarriesSpawnEffect() {
+        // The factory dropped .spawnEffect(effect) once: staged summon visuals
+        // (e.g. 200/222 effect 36) silently never rendered. Pin the wiring.
+        MobSkill skill = new MobSkill.Builder(MobSkillType.SUMMON, 222)
+                .mpCon(0).toSummon(java.util.List.of(8880164)).spawnEffect(36)
+                .cooltime(0).duration(0).hp(100).x(1).y(1).count(1).prop(1.0f)
+                .limit(4).lt(null).rb(null).build();
+        assertEquals(36, skill.getSpawnEffect());
+    }
+
+    @Test
     void shouldThrowExceptionOnNonExisting() {
         assertThrows(IllegalArgumentException.class, () -> MobSkillFactory.getMobSkillOrThrow(MobSkillType.DEFENSE_UP, 1));
     }
