@@ -1305,15 +1305,13 @@ public class MapleMap {
         return count;
     }
 
-    public boolean damageMonster(Character chr, Monster monster, int damage) {
+    public boolean damageMonster(Character chr, Monster monster, long damage) {
         return damageMonster(chr, monster, damage, (short) 0, true);
     }
 
-    public boolean damageMonster(final Character chr, final Monster monster, final int damage, short delay) {
+    public boolean damageMonster(final Character chr, final Monster monster, final long damage, short delay) {
         return damageMonster(chr, monster, damage, delay, true);
     }
-
-
 
     /**
      * @param weatherScaled whether the night mob-defence scalar may touch this figure. Pass
@@ -1324,7 +1322,7 @@ public class MapleMap {
      *                      on 1 HP", so a 10% reduction stops one killing and stops the
      *                      other reaching 1. Every ordinary damage source passes true.
      */
-    public boolean damageMonster(final Character chr, final Monster monster, final int damage, short delay,
+    public boolean damageMonster(final Character chr, final Monster monster, final long damage, short delay,
                                  final boolean weatherScaled) {
         if (monster.getId() == MobId.ZAKUM_1) {
             for (MapObject object : chr.getMap().getMapObjects()) {
@@ -1340,12 +1338,9 @@ public class MapleMap {
             return false;
         }
 
-        // Monsters are effectively tougher at night. This is the ONE place every
-        // player-attributed damage source converges (normal and skill damage, summons,
-        // familiars, reflects, ammo and affix riders, field obstacles, hypnotised
-        // mob-vs-mob), and critically it is downstream of every autoban that inspects
-        // a damage value. NOT covered, deliberately: damage over time via Monster.DamageTask.
-        final int scaledDamage = weatherScaled
+        // Long-HP cutover: the night scalar is long end-to-end (player-damage
+        // scaling stays int in WeatherCombat.scaleDamageToPlayer/scaleExp).
+        final long scaledDamage = weatherScaled
                 ? server.weather.WeatherCombat.scaleDamageToMonster(damage)
                 : damage;
         boolean killed = monster.damage(chr, scaledDamage, false);
@@ -4300,12 +4295,12 @@ public class MapleMap {
             }
 
             @Override
-            public void monsterDamaged(Character from, int trueDmg) {
+            public void monsterDamaged(Character from, long trueDmg) {
                 ht.addHp(trueDmg);
             }
 
             @Override
-            public void monsterHealed(int trueHeal) {
+            public void monsterHealed(long trueHeal) {
                 ht.addHp(-trueHeal);
             }
         });
@@ -4321,13 +4316,13 @@ public class MapleMap {
                 }
 
                 @Override
-                public void monsterDamaged(Character from, int trueDmg) {
+                public void monsterDamaged(Character from, long trueDmg) {
                     // thanks Halcyon for noticing HT not dropping loots due to propagated damage not registering attacker
                     ht.applyFakeDamage(from, trueDmg, true);
                 }
 
                 @Override
-                public void monsterHealed(int trueHeal) {
+                public void monsterHealed(long trueHeal) {
                     ht.addHp(trueHeal);
                 }
             });

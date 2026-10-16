@@ -141,7 +141,7 @@ public final class BotAttackEffects {
             for (Long line : hit.getValue()) {
                 total = net.server.channel.handlers.AbstractDealDamageHandler.saturatedAdd(total, decodeBotLine(line));
             }
-            if (applyDamageAndLoot(bot, hit.getKey(), (int) Math.min(total, Integer.MAX_VALUE), hitDelay)) {
+            if (applyDamageAndLoot(bot, hit.getKey(), total, hitDelay)) {
                 anyKilled = true;
             }
         }
@@ -149,7 +149,7 @@ public final class BotAttackEffects {
     }
 
     /* Apply HP damage; on death, credit EXP + the death broadcast (no vanilla drops) and spawn our own loot. */
-    private static boolean applyDamageAndLoot(Character bot, Monster target, int damage, short hitDelay) {
+    private static boolean applyDamageAndLoot(Character bot, Monster target, long damage, short hitDelay) {
         MapleMap map = bot.getMap();
 
         boolean killed = target.damage(bot, damage, false); // register damage; false = allow death

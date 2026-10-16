@@ -3746,6 +3746,17 @@ public class PacketCreator {
         return p;
     }
 
+    /**
+     * Long-HP boss bar (damagecap-server cutover): legacy int-exact layout is
+     * preserved; values above the int range are ratio-normalized (max scales to
+     * INT_MAX, cur keeps the ratio, floored at 1 when cur &gt; 0) so the bar
+     * renders the true fraction on any legacy decoder.
+     */
+    public static Packet showBossHPLong(int oid, long currHP, long maxHP, byte tagColor, byte tagBgColor) {
+        Pair<Integer, Integer> norm = normalizedCustomMaxHP(currHP, maxHP);
+        return showBossHP(oid, norm.getLeft(), norm.getRight(), tagColor, tagBgColor);
+    }
+
     private static Pair<Integer, Integer> normalizedCustomMaxHP(long currHP, long maxHP) {
         int sendHP, sendMaxHP;
 
@@ -3756,6 +3767,10 @@ public class PacketCreator {
             float f = ((float) currHP) / maxHP;
 
             sendHP = (int) (Integer.MAX_VALUE * f);
+            // A living boss must never render an empty bar from truncation.
+            if (currHP > 0 && sendHP < 1) {
+                sendHP = 1;
+            }
             sendMaxHP = Integer.MAX_VALUE;
         }
 
@@ -4161,6 +4176,26 @@ public class PacketCreator {
         p.writeInt(curhp);
         p.writeInt(maxhp);
         return p;
+    }
+
+    /**
+     * Long-HP damage/heal numbers (damagecap-server cutover): same legacy
+     * layout; damage/cur/max above int range are ratio-normalized (see
+     * {@link #showBossHPLong}). Damage keeps the INT_MAX overflow sentinel
+     * semantics of the attack-line path.
+     */
+    public static Packet damageMonsterLong(int oid, long damage, long curhp, long maxhp) {
+        long cn = curhp, mn = maxhp;
+        if (mn > Integer.MAX_VALUE) {
+            double f = (double) cn / (double) mn;
+            mn = Integer.MAX_VALUE;
+            cn = Math.max(cn > 0 ? 1L : 0L, Math.round(Integer.MAX_VALUE * f));
+        }
+        return damageMonster(oid, (int) Math.min(damage, Integer.MAX_VALUE), (int) cn, (int) mn);
+    }
+
+    public static Packet healMonsterLong(int oid, long heal, long curhp, long maxhp) {
+        return damageMonsterLong(oid, -heal, curhp, maxhp);
     }
 
     public static Packet updateBuddylist(Collection<BuddylistEntry> buddylist) {
@@ -6820,7 +6855,28 @@ public class PacketCreator {
         p.writeByte(1); // direction ?
         p.writeInt(damage);
         p.writeInt(remainingHp);
-        p.writeInt(mob.getMaxHp());
+        p.writeInt((int) Math.min(mob.getMaxHp(), Integer.MAX_VALUE));
+        return p;
+    }
+
+    /**
+     * Long-HP friendly damage (damagecap-server cutover): same legacy layout;
+     * damage/remaining/max above int range are ratio-normalized (see
+     * {@link #showBossHPLong}).
+     */
+    public static Packet MobDamageMobFriendlyLong(Monster mob, long damage, long remainingHp, long maxHp) {
+        long cn = remainingHp, mn = maxHp;
+        if (mn > Integer.MAX_VALUE) {
+            double f = (double) cn / (double) mn;
+            mn = Integer.MAX_VALUE;
+            cn = Math.max(cn > 0 ? 1L : 0L, Math.round(Integer.MAX_VALUE * f));
+        }
+        final OutPacket p = OutPacket.create(SendOpcode.DAMAGE_MONSTER);
+        p.writeInt(mob.getObjectId());
+        p.writeByte(1); // direction ?
+        p.writeInt((int) Math.min(damage, Integer.MAX_VALUE));
+        p.writeInt((int) cn);
+        p.writeInt((int) mn);
         return p;
     }
 

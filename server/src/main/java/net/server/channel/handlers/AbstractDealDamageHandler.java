@@ -376,7 +376,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         totDamageToOneMonster = saturatedAdd(totDamageToOneMonster, trackedDamage);
                     }
                     totDamage = saturatedAdd(totDamage, totDamageToOneMonster);
-                    monster.aggroMonsterDamage(player, clampToInt(totDamageToOneMonster));
+                    monster.aggroMonsterDamage(player, totDamageToOneMonster);
                     if (player.getBuffedValue(BuffStat.PICKPOCKET) != null && (attack.skill == 0 || attack.skill == Rogue.DOUBLE_STAB || attack.skill == Bandit.SAVAGE_BLOW || attack.skill == ChiefBandit.ASSAULTER || attack.skill == ChiefBandit.BAND_OF_THIEVES || attack.skill == Shadower.ASSASSINATE || attack.skill == Shadower.TAUNT || attack.skill == Shadower.BOOMERANG_STEP)) {
                         Skill pickpocket = SkillFactory.getSkill(ChiefBandit.PICKPOCKET);
                         int picklv = (player.isGM()) ? pickpocket.getMaxLevel() : player.getSkillLevel(pickpocket);
@@ -396,7 +396,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             }
                         }
                     } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE || attack.skill == Assassin.DRAIN) {
-                        player.addHP(Math.min(monster.getMaxHp(), Math.min(clampToInt(totDamage * SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100L), player.getCurrentMaxHp() / 2)));
+                        player.addHP((int) Math.min((long) player.getCurrentMaxHp() / 2, Math.min(monster.getMaxHp(), totDamage * SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100L)));
                     } else if (attack.skill == Bandit.STEAL) {
                         Skill steal = SkillFactory.getSkill(Bandit.STEAL);
                         if (monster.getStolen().size() < 1) { // One steal per mob <3
@@ -506,7 +506,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         Skill skill;
                         if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
                             skill = SkillFactory.getSkill(21100005);
-                            player.addHP(clampToInt((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 100));
+                            player.addHP((int) Math.min((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 100, player.getCurrentMaxHp()));
                         }
                     } else if (job == 412 || job == 422 || job == 1411) {
                         Skill type = SkillFactory.getSkill(player.getJob().getId() == 412 ? 4120005 : (player.getJob().getId() == 1411 ? 14110004 : 4220005));
@@ -534,9 +534,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             int skillLevel = player.getSkillLevel(mortalBlow);
                             if (skillLevel > 0) {
                                 StatEffect mortal = mortalBlow.getEffect(skillLevel);
-                                if (monster.getHp() <= (monster.getStats().getHp() * mortal.getX()) / 100) {
+                                if (monster.getHp() <= (monster.getMaxHp() * mortal.getX()) / 100) {
                                     if (Randomizer.rand(1, 100) <= mortal.getY()) {
-                                        map.damageMonster(player, monster, Integer.MAX_VALUE, target.getValue().delay());  // thanks Conrad for noticing reduced EXP gain from skill kill
+                                        map.damageMonster(player, monster, monster.getHp(), target.getValue().delay());  // thanks Conrad for noticing reduced EXP gain from skill kill
                                     }
                                 }
                             }
@@ -603,13 +603,10 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
                     } else {
                         if (attack.skill == Aran.BODY_PRESSURE) {
-                            map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), clampToInt(totDamageToOneMonster)));
+                            map.broadcastMessage(PacketCreator.damageMonsterLong(monster.getObjectId(), totDamageToOneMonster, monster.getHp() - Math.min(totDamageToOneMonster, monster.getHp()), monster.getMaxHp()));
                         }
 
-                        // Mob HP is int (AtomicInteger) in this codebase, so the
-                        // applied damage clamps here; the long half lives in the
-                        // parsed/broadcast totals until the mob-HP-long project.
-                        map.damageMonster(player, monster, clampToInt(totDamageToOneMonster), target.getValue().delay());
+                        map.damageMonster(player, monster, totDamageToOneMonster, target.getValue().delay());
                     }
                     if (monster.isBuffed(MonsterStatus.WEAPON_REFLECT) && !attack.magic) {
                         for (MobSkillId msId : monster.getSkills()) {
@@ -637,7 +634,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
     }
 
     private static void damageMonsterWithSkill(final Character attacker, final MapleMap map, final Monster monster,
-                                               final int damage, int skillid, int fixedTime) {
+                                               final long damage, int skillid, int fixedTime) {
         damageMonsterWithSkill(attacker, map, monster, damage, skillid, fixedTime, true);
     }
 
@@ -646,7 +643,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
      *                      rather than from the attacker's.
      */
     private static void damageMonsterWithSkill(final Character attacker, final MapleMap map, final Monster monster,
-                                               final int damage, int skillid, int fixedTime,
+                                               final long damage, int skillid, int fixedTime,
                                                final boolean weatherScaled) {
         int animationTime;
 
@@ -657,13 +654,13 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         }
 
         if (animationTime > 0) { // be sure to only use LIMITED ATTACKS with animation time here
-            final int shown = damage;
+            final long shown = damage;
             TimerManager.getInstance().schedule(() -> {
-                map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), shown), monster.getPosition());
+                map.broadcastMessage(PacketCreator.damageMonsterLong(monster.getObjectId(), shown, monster.getHp() - Math.min(shown, monster.getHp()), monster.getMaxHp()), monster.getPosition());
                 map.damageMonster(attacker, monster, damage, (short) 0, weatherScaled);
             }, animationTime);
         } else {
-            map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), damage), monster.getPosition());
+            map.broadcastMessage(PacketCreator.damageMonsterLong(monster.getObjectId(), damage, monster.getHp() - Math.min(damage, monster.getHp()), monster.getMaxHp()), monster.getPosition());
             map.damageMonster(attacker, monster, damage, (short) 0, weatherScaled);
         }
     }
