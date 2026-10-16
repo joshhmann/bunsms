@@ -22,6 +22,7 @@ $report = [ordered]@{
     controlledStops = [Collections.Generic.List[object]]::new()
 }
 $script:snapshotIndex = 0
+$networkJob = $null
 
 
 function Save-Screenshot([int]$X, [int]$Y, [int]$Width, [int]$Height, [string]$Path) {
@@ -163,6 +164,19 @@ try {
         [pscustomobject]@{ name = $file; size = (Get-Item $path).Length; sha256 = (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant() }
     })
     $debugLog = Join-Path $OutputDirectory 'native-debug.log'
+    $backendResult = [IO.Path]::GetFullPath('native-backend-output/result.json')
+    if (Test-Path $backendResult) {
+        $networkJob = Start-Job -FilePath (Join-Path $PSScriptRoot 'native-network-observe.ps1') -ArgumentList $OutputDirectory, $backendResult, ($ObserveSeconds + 60)
+        $observerDeadline = [DateTime]::UtcNow.AddSeconds(20)
+        while (-not (Test-Path (Join-Path $OutputDirectory 'kernel-backend-ready.json'))) {
+            if ($networkJob.State -in @('Failed', 'Completed') -or [DateTime]::UtcNow -gt $observerDeadline) {
+                Receive-Job $networkJob
+                throw 'Kernel/backend observer did not become ready before native process start'
+            }
+            Start-Sleep -Milliseconds 50
+        }
+        $report.networkObserver = 'Concurrent backend query handles and kernel TCP owner/address/port samples; no debugger, detour, socket replacement, or backend restart'
+    }
     $callback = [Action[int[]]]{ param([int[]]$Ids) Save-NativeSnapshot $Ids }
     $report.processIds = [NativeSmoke]::Capture((Join-Path $game 'Kaentake.exe'), $game, $ObserveSeconds, $debugLog, $callback)
     Save-NativeSnapshot ([NativeSmoke]::LastProcessIds)
@@ -185,6 +199,14 @@ try {
     $report.status = 'failed'
     $report.error = $_.Exception.ToString()
 } finally {
+    if ($networkJob) {
+        [IO.File]::WriteAllText((Join-Path $OutputDirectory 'kernel-backend.stop'), [DateTime]::UtcNow.ToString('O'))
+        Wait-Job $networkJob -Timeout 20 | Out-Null
+        if ($networkJob.State -eq 'Running') { Stop-Job $networkJob; $report.networkObserverForcedStop = $true }
+        $report.networkObserverState = $networkJob.State.ToString()
+        Receive-Job $networkJob -ErrorAction Continue | Out-Null
+        Remove-Job $networkJob
+    }
     if ('NativeSmoke' -as [type]) {
         foreach ($processId in [NativeSmoke]::LastProcessIds) {
             try {

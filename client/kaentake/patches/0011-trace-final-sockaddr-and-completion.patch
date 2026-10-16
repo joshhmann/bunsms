@@ -1,0 +1,24 @@
+--- a/src/system.cpp
++++ b/src/system.cpp
+@@ -279,3 +279,4 @@
+         const int savedError = WSAGetLastError();
+-        DebugMessage("BUNS_RUNTIME routing-target socket=%u host=%s resolved=%08lX port=%u\n", static_cast<unsigned>(socket), g_sServerHost ? g_sServerHost : CONSTANTS_DEFAULT_HOST, server.address.S_un.S_addr, ntohs(redirected.sin_port));
++        const auto* raw = reinterpret_cast<const unsigned char*>(&redirected);
++        DebugMessage("BUNS_RUNTIME routing-os-call socket=%u pointer=%p length=%u family=%d destination=%u.%u.%u.%u port=%u sockaddr=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X\n", static_cast<unsigned>(socket), &redirected, static_cast<unsigned>(sizeof(redirected)), redirected.sin_family, raw[4], raw[5], raw[6], raw[7], ntohs(redirected.sin_port), raw[0], raw[1], raw[2], raw[3], raw[4], raw[5], raw[6], raw[7], raw[8], raw[9], raw[10], raw[11], raw[12], raw[13], raw[14], raw[15]);
+         WSASetLastError(savedError);
+--- a/src/bypass.cpp
++++ b/src/bypass.cpp
+@@ -273,5 +273,13 @@
+                 if (!PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
+                     break;
+                 }
+                 TranslateMessage(&msg);
++                if (msg.message == 0x401) {
++                    static volatile LONG socketMessages = 0;
++                    if (InterlockedIncrement(&socketMessages) <= 32) {
++                        const int savedError = WSAGetLastError();
++                        DebugMessage("BUNS_RUNTIME socket-message hwnd=%p socket=%u event=%d error=%d\n", msg.hwnd, static_cast<unsigned>(msg.wParam), WSAGETSELECTEVENT(msg.lParam), WSAGETSELECTERROR(msg.lParam));
++                        WSASetLastError(savedError);
++                    }
++                }
+                 DispatchMessageA(&msg);
