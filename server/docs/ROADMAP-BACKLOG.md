@@ -38,55 +38,55 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   Parallel filler while injector question settles.
   Dependencies: None. Blocks: Evan completeness answer; informs ticket 15 manifest.
 
-- [ ] **Ticket 5 — MapleRoot wave 1: shopupdate SQL** — Owner: unassigned
+- [ ] **Ticket 5 — MapleRoot wave 1: shopupdate SQL** — Owner: unassigned — server-half [x] (landed)
   Scope: Port `3-db_shopupdate.sql` (INSERT IGNORE, 3 shops + 318 rows) as
   Liquibase change; near-zero risk, no rates/packets/infra. First ranked
   MapleRoot slice; never bulk-port (rates, `USE_MTS`, multiclient/PIC,
   packet/exploit hunks, jedis/jackson, hardcoded Discord/admin SQL).
   Dependencies: None (needs prod-commit pin recorded before porting).
 
-- [ ] **Ticket 6 — MapleRoot wave 2: Maker extraction** — Owner: unassigned
+- [ ] **Ticket 6 — MapleRoot wave 2: Maker extraction** — Owner: unassigned — server-half [x] (landed)
   Scope: Port `MakerService` + delegation delta; pure Java, no WZ/DB/client.
   Follows wave 1 in rank order; same never-bulk-port exclusions as ticket 5.
   Dependencies: None (ranked after ticket 5; unblocked server-only).
 
-- [ ] **Ticket 7 — MapleRoot wave 3: buyback ledger** — Owner: unassigned
+- [ ] **Ticket 7 — MapleRoot wave 3: buyback ledger** — Owner: unassigned — server-half [x] (landed)
   Scope: +1 Liquibase table + `MAXIMUM_TRANSACTIONS_FOR_BUYBACK` port;
   server-only, no client/WZ. Ranked after Maker; same exclusions as ticket 5.
   Dependencies: None (ranked after ticket 6).
 
-- [ ] **Ticket 8 — MapleRoot wave 4: QoL scripts (quicksell + search first)** — Owner: unassigned
+- [ ] **Ticket 8 — MapleRoot wave 4: QoL scripts (quicksell + search first)** — Owner: unassigned — server-half [partial] (quicksell landed per `2b1d966`; search pending — search.js skipped, NPC 1032009 taken, needs own ticket or explicit WONTFIX)
   Scope: Port quicksell + search-first NPC scripts (buns already has
   WhatDrops/WhoDrops; skip duplicates); script-only, no Java/WZ/DB.
   Ranked after buyback; same exclusions as ticket 5.
   Dependencies: None (ranked after ticket 7).
 
-- [ ] **Ticket 9 — MapleRoot wave 5: boss-pack expeditions** — Owner: unassigned
+- [ ] **Ticket 9 — MapleRoot wave 5: boss-pack expeditions** — Owner: unassigned — server-half [x] (wa0 landed; WZ checks + later waves pending)
   Scope: +13 `ExpeditionType` + event scripts + registrar NPCs; map/mob WZ
   checks first, then BossLog/leaderboard, HyperTP handler, Rulax/Alcaster
   bundle, config flags per verdict. Largest MapleRoot slice; same
   exclusions as ticket 5.
   Dependencies: Blocked on map/mob WZ checks (NX coverage); ranked after ticket 8.
 
-- [ ] **Ticket 10 — Cash-shop window** — Owner: unassigned
+- [ ] **Ticket 10 — Cash-shop window** — Owner: unassigned — server-half [x] (landed; WZ merge + client window pending)
   Scope: New `server/cashshop/` classes + handler + `CASHSHOP_*`
   (0x145–0x14D exist), catalog tooling, `UI/CashShop.img` merge, client
   window (injector or browser UI per decision). Server half standalone.
   Dependencies: Blocked by ticket 1 + ticket 2 baseline and injector-or-browser-UI decision.
 
-- [ ] **Ticket 11 — Coloring prism** — Owner: unassigned
+- [ ] **Ticket 11 — Coloring prism** — Owner: unassigned — server-half [x] (landed; injector hooks pending)
   Scope: DB xml (12 cols) → server → opcodes `0x372E`/`0x372F` + item
   5782000 → `weapontint.cpp` hooks (`CAvatar::PrepareActionLayer 0x00453AD1`);
   merge (don't stack) with ImGui color-picker work. Registry reserved `f868346`.
   Dependencies: Blocked on injector-YES decision + ticket 14 smoke. Blocks: ticket 12.
 
-- [ ] **Ticket 12 — Damage cap to long** — Owner: unassigned
+- [ ] **Ticket 12 — Damage cap to long** — Owner: unassigned — server-half [x] (landed; paired client release pending)
   Scope: Client + server ship together (mob HP already `long`); SP hooks +
   Patch helpers, 2^53 saturation; desync risk if halves mismatch, so paired
   release only. Needs injector toolchain proven by ticket 11.
   Dependencies: Blocked by ticket 11 (hooks + injector proven).
 
-- [ ] **Ticket 13 — Weather/time (LAST, highest cost)** — Owner: unassigned
+- [ ] **Ticket 13 — Weather/time (LAST, highest cost)** — Owner: unassigned — server-half [x] (landed; NightCommand decision + injector client pending)
   Scope: 15 new Java destinations (clean add) + 10 `.java.patch` hunks over
   bot-touched files + Effect/Sound.wz manifest gap + injector client;
   NightCommand merge-or-rename first; elemental-bonus stays optional.
