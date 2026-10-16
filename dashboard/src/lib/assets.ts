@@ -178,17 +178,17 @@ function hashFileSyncNow(filePath: string): { hash: string; size: number } {
 
 /** Stream-hash a file without buffering it. */
 export function hashFileStream(filePath: string): Promise<{ hash: string; size: number }> {
-  const { promise, resolve, reject } = Promise.withResolvers<{ hash: string; size: number }>();
-  const hash = createHash("sha256");
-  let size = 0;
-  const stream = createReadStream(filePath);
-  stream.on("data", (d: string | Buffer) => {
-    hash.update(d);
-    size += d.length;
+  return new Promise((resolve, reject) => {
+    const hash = createHash("sha256");
+    let size = 0;
+    const stream = createReadStream(filePath);
+    stream.on("data", (d: string | Buffer) => {
+      hash.update(d);
+      size += d.length;
+    });
+    stream.on("end", () => resolve({ hash: hash.digest("hex"), size }));
+    stream.on("error", reject);
   });
-  stream.on("end", () => resolve({ hash: hash.digest("hex"), size }));
-  stream.on("error", reject);
-  return promise;
 }
 
 /** Verify bytes against expected hash/size; fail-closed, live untouched. */
