@@ -98,7 +98,7 @@ async function run() {
       finally { await command("Debugger.resume").catch(() => {}); }
     });
     await command("Debugger.enable");
-    breakpoint = await command("Debugger.setInstrumentationBreakpoint", { instrumentation: "beforeScriptExecution" });
+    breakpoint = await command("Debugger.setBreakpointByUrl", { lineNumber: 422, urlRegex: "/renderer\\.js$" });
     await command("Page.reload", { ignoreCache: true });
     while (!startupWrapped && Date.now() < deadline) await delay(50);
     if (!startupWrapped) throw new Error("Actual renderer startup observation could not be established");
