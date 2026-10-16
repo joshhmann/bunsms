@@ -8,10 +8,12 @@
 #include "hook.h"
 #include "dispatcher.h"
 #include "tick.h"
+#include "inlink.h"
 
 void AttachSystemHooks() {
     InstallDispatcher(); // 0x004965F1, once — before everything routing through it
     InstallTick();       // CWvsApp::CallUpdate, once
+    AttachInlinkMod();   // get_unknown link resolution (serves sprite loads)
     AttachDailyCheckinMod();
     // Future slices (spec §2.3), in order:
     // AttachCashShopWndMod();
