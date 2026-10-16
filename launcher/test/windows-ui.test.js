@@ -82,6 +82,32 @@ async function run() {
       try { const result = await call(); return { name, startedUtc, finishedUtc: new Date().toISOString(), durationMs: Date.now() - start, result }; }
       catch (error) { return { name, startedUtc, finishedUtc: new Date().toISOString(), durationMs: Date.now() - start, error: String(error) }; }
     }))`);
+    if (process.env.BUNS_NEWS_SECURITY_SMOKE === "true") {
+      const fixture = report.networkIpc.find(entry => entry.name === "news")?.result?.news;
+      assert.ok(Array.isArray(fixture) && fixture.length, "Actual HTTPS news fixture was not received");
+      const readNews = () => evaluate(`({ markerExecuted: globalThis.__bunsNewsMarkupExecuted === true,
+        executableElements: document.querySelectorAll("#news-list script, #news-list img, #news-list svg, #news-list iframe, #news-list object, #news-list embed, #news-list [onerror], #news-list [onload]").length,
+        types: [...document.querySelectorAll("#news-list .news-item-type")].map(node => node.textContent),
+        texts: [...document.querySelectorAll("#news-list .news-item-text")].map(node => node.textContent) })`);
+      const newsDeadline = Date.now() + 15000;
+      let rendered;
+      while (Date.now() < newsDeadline) {
+        rendered = await readNews();
+        if (rendered.texts.length === fixture.length) break;
+        await delay(100);
+      }
+      await delay(500); // Allow real browser load/error events to fire before checking inertness.
+      rendered = await readNews();
+      report.newsSecurity = { apiBase: process.env.BUNS_NEWS_FIXTURE_API_BASE, fixture, rendered,
+        scope: "Real HTTPS/plaintext JSON → installed preload → production renderer DOM; benign marker only, no bridge stub or privileged payload" };
+      const newsImage = await command("Page.captureScreenshot", { format: "png" });
+      fs.writeFileSync(path.join(output, "news-security.png"), Buffer.from(newsImage.data, "base64"));
+      assert.equal(rendered.markerExecuted, false, "Untrusted news executed the benign renderer marker");
+      assert.equal(rendered.executableElements, 0, "Untrusted news created executable HTML elements");
+      assert.deepEqual(rendered.types, fixture.map(item => String(item.type || "update")), "News type must be rendered as literal remote text");
+      assert.deepEqual(rendered.texts, fixture.map(item => String(item.text)), "News content must be rendered as literal remote text");
+      report.newsSecurity.status = "literal-text-inert-marker-observed";
+    }
     report.filePreflight = await evaluate("window.buns.checkUpdates()");
     if (gameDirectory) {
       const directory = path.resolve(gameDirectory);
