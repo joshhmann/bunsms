@@ -89,7 +89,10 @@ public:
         EncodeBuffer(&n, 4);
     }
     void EncodeStr(ZXString<char> s) {
-        int n = s.GetLength();
+        int nLen = s.GetLength();
+        if (nLen < 0) nLen = 0;
+        if (nLen > 0xFFFF) nLen = 0xFFFF;
+        unsigned short n = static_cast<unsigned short>(nLen);
         Encode2(n);
         EncodeBuffer(s, n);
     }
@@ -103,9 +106,13 @@ public:
         m_uOffset = 0;
         if (nType != 0x7FFFFFFF) {
             if (bTypeHeader1Byte) {
-                Encode1(nType);
+                // 1-byte header: opcodes using it are < 0x100 by protocol.
+                unsigned char n1 = static_cast<unsigned char>(nType & 0xFF);
+                Encode1(n1);
             } else {
-                Encode2(nType);
+                // 2-byte header: opcodes are < 0x10000 by protocol.
+                unsigned short n2 = static_cast<unsigned short>(nType & 0xFFFF);
+                Encode2(n2);
             }
         }
         m_bIsEncryptedByShanda = 0;

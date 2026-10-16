@@ -51,6 +51,11 @@ namespace DailyCheckin {
 // Engine addresses: owned by src/addresses.h (spec §2.2) — never hard-code
 // raw VAs here. Local aliases below resolve through addr::dailycheckin.
 // ---------------------------------------------------------------------------
+// Styled-tooltip palette (bundle geometry; not addresses — lives with its user).
+static constexpr unsigned long TT_COL_BORDER  = 0xFF20283A;  // steel frame
+static constexpr unsigned long TT_COL_BG      = 0xF0141A24;  // near-opaque dark navy body
+static constexpr unsigned long TT_COL_TITLE   = 0xCC4A3414;  // amber title bar
+static constexpr unsigned long TT_COL_SEP     = 0xFFE0C070;  // gold separator
 
 // Engine bindings (addresses via addr::dailycheckin).
 static auto play_ui_sound = reinterpret_cast<void(__cdecl*)(const wchar_t*)>(addr::dailycheckin::kPlayUiSound);
@@ -176,7 +181,10 @@ public:
 
     static IWzCanvasPtr LoadSprite(const wchar_t* p) {
         IWzCanvasPtr c;
-        try { c = get_unknown(get_rm()->GetObjectA(const_cast<wchar_t*>(p))); } catch (...) {}
+        try {
+            Ztl_variant_t v = get_rm()->GetObjectA(const_cast<wchar_t*>(p));
+            c = get_unknown(v);
+        } catch (...) {}
         return c;
     }
     static void BlitAt(IWzCanvasPtr dst, IWzCanvasPtr src, int x, int y) {
@@ -525,9 +533,9 @@ static void HandleSnapshot(CInPacket* pPacket) {
     if (justClaimed >= 1 && justClaimed <= kDays) {
         play_ui_sound(L"BtMouseClick");
         char buf[160];
-        _snprintf(buf, sizeof(buf),
-                  "Daily Check-In\r\n\r\nDay %d reward claimed!\r\nCheck your inventory.",
-                  justClaimed);
+        _snprintf_s(buf, sizeof(buf), _TRUNCATE,
+                    "Daily Check-In\r\n\r\nDay %d reward claimed!\r\nCheck your inventory.",
+                    justClaimed);
         buf[sizeof(buf) - 1] = 0;
         try {
             ZXString<char> zmsg(buf);

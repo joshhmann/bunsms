@@ -1,5 +1,13 @@
 #pragma once
+// NOTE: C4100 (unreferenced parameter) is disabled in this vendored
+// engine-interface header. The virtual-stub signatures mirror the stock v83
+// engine ABI (cf. Kaentake, which builds without /WX); parameter names are
+// kept for ABI documentation. Our own sources (dispatcher/tick/injector/
+// dailycheckin/hook/debug) still build under /WX — see src/CMakeLists.txt.
+#pragma warning(push)
+#pragma warning(disable : 4100)
 #include "../hook.h"
+#include "../constants.h"
 #include "wnd.h"
 #include "util.h"
 #include "../ztl/ztl.h"
