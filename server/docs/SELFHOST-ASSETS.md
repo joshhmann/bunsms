@@ -38,6 +38,23 @@ domain; sealed candidates there do not activate production Java/DB/browser/NX.
 Exact current pins, exercised receipts and holds are in `CURRENT-STATE.md` and
 the single-writer release coordination contract.
 
+The current inactive full65-file Kaentake candidate is
+`03c5dcc5-c980-457e-a218-d650d0af07f2`: gameplay dd8de85/JARfc59,
+current exercised6a01 runtime13, backend520 with all932 authored data before Java,
+and exact3.801GB XML/scripts tar a2. The established bootstrap contract remains
+`jar.path/size/sha256`; an earlier producer's flat-field regression was rejected
+before MySQL/Java/native and replaced with a new immutable bundle, not a consumer
+guard waiver. Current actual Linux entrypoint/HTTPS/full payload/53 migrations/
+four GMS83 greetings passed; native account/world/features and final installer
+qualification remain pending. A sealed file-complete profile is not gameplay PASS.
+
+Authorized capacity work changed the **existing** .164 LXC125 rootfs quota
+online90→98GiB through trusted Proxmox `pct resize`, after exact IP/machine-ID/
+dataset and ONLINE pool-headroom checks. Init PID6640 did not change. No dumps,
+artifacts or rollback bytes were deleted, no production Java/DB/browser/NX service
+was restarted, and no deployment platform/layout changed. The proof is
+`/tmp/buns-full-content-qa-dd8de85/capacity-expansion-proof.json`.
+
 ## One immutable release boundary
 
 `dashboard/src/lib/assets.ts` is the shared storage/manifest authority for every
@@ -118,6 +135,15 @@ and byte ranges, and no filename-derived `Content-Encoding:gzip` or transparent
 decompression. The generic immutable route satisfies this; a `.bin` rename is
 not the final transport contract. Actual HTTPS/full-file/Range/rollback evidence
 is recorded separately from filesystem pins.
+
+The exact a2 tar's actual whole HTTPS SHA/size, HEAD length and206 tail bytes
+passed; the generated descriptor binds the same03c5 release. The actual Linux
+entrypoint independently downloaded/verified/extracted those bytes and installed
+all56651 XML/scripts files with the frozen payload hash, rather than trusting a
+local tar pin. Retained active682/old revisions were not activated/rolled back
+during this RC proof. The current65-file profile is Kaentake only; preserve the
+legacy Stock update-only/prerequisite semantics without calling16 partial hints
+a complete client or weakening Kaentake's complete-profile/provenance checks.
 
 ## Private APIs and callers
 

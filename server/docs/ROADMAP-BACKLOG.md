@@ -54,12 +54,12 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   Follows wave 1 in rank order; same never-bulk-port exclusions as ticket 5.
   Dependencies: None (ranked after ticket 5; unblocked server-only).
 
-- [ ] **Ticket 7 — MapleRoot wave 3: buyback ledger** — actual transactional economy seams green; combined ordinary-player persistence/relog acceptance pending
+- [x] **Ticket 7 — MapleRoot wave 3: buyback ledger** — actual public utility-NPC/@buyback plus SQL child-failure rollback, exact equipment/tints/flags/mesos, single claim, normal disconnect/save/reload and casino credited-cap paths accepted. Receipt `/tmp/buns-full-content-private/economy-public-20261016-180105/acceptance.json`; server public-handler/SQL scope, not native UI.
   Scope: +1 Liquibase table + `MAXIMUM_TRANSACTIONS_FOR_BUYBACK` port;
   server-only, no client/WZ. Ranked after Maker; same exclusions as ticket 5.
   Dependencies: None (ranked after ticket 6).
 
-- [ ] **Ticket 8 — MapleRoot wave 4: QoL scripts (quicksell + search first)** — both scripts integrated; quicksell seam green; ordinary search/persistence acceptance pending, not WONTFIX/new-ticket
+- [x] **Ticket 8 — MapleRoot wave 4: QoL scripts (quicksell + search first)** — actual quicksell/buyback persistence/failure above and public menu/text search against real SQL/native names, cancellation, normal reload and preserved Purin1032009 boat path accepted. Existing WhatDrops/WhoDrops reused; custom9 untouched. No native UI claim.
   Scope: Port quicksell + search-first NPC scripts (buns already has
   WhatDrops/WhoDrops; skip duplicates); script-only, no Java/WZ/DB.
   Ranked after buyback; same exclusions as ticket 5.
@@ -79,12 +79,15 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   daily-limit flag remains unchanged. Source origin: `MapleRoot Full Repack.zip`,
   `Server/scripts/` and `Server/src/main/java/server/expeditions/`; persistence
   schema comes only from `Database/CLEANDB.sql`, never its accounts/admin data.
-  The complete candidate is not runtime acceptance:46 MISSING and five bounded
-  UNCONSUMED references remain machine-recorded. A native null guard does not
-  classify missing effects as cosmetic. Require genuine ordinary GM0 phases,
-  rewards/relog/failure cleanup and bounded real bots-ON party/expedition
-  combat/drop/clear/leave behavior wherever existing bot capabilities apply.
-  Six human GM0 fixtures are not bot proof; preserve GM4 exclusion and bot cap0.
+  The current rc5 full15-contract/native51/all17/13-authored-Book/XML cohort
+  includes the former46 consumed targets plus genuine Ifrit8610015 and102 genuine
+  MobSkill prefix prerequisites. Fresh full oracle38980534112 remains FAIL54:
+ 49 inherited Sound aliases plus five bounded UNCONSUMED Voice4 records.
+  This is not full asset/engine/visual acceptance. Actual published server Book
+  map/reward/episode values match all13 native definitions, not native Book UI proof.
+  Genuine human-led follower HardLotus consent→six NPC/EIM participants→unforced
+  AI combat/reward/boards/reload and stale-owner/abort/reentry proof is bounded,
+  not all-family/PQ/native movement acceptance. Preserve GM4 exclusion and bot cap0.
   Dependencies: matching full native/XML, fresh reader/catalog and actual
   lifecycle/visual/bot evidence, not parked browser GUI development.
 
@@ -114,14 +117,14 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   Dependencies: paired native feature/runtime proof and exact Effect/Sound source
   disposition; consumed missing effects require actual visual classification.
 
-- [ ] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz)** — full-content-windows; actual ACK/login/world/feature acceptance pending
+- [ ] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz)** — full-content-windows; actual full51/current-B startup and0x3f ACK on held diagnostic backend proven38980205188; current03/520/fc59/a2 ordinary account/channel/world and feature acceptance pending
   Scope: Smoke staged Windows EXE/DLL/Custom.wz trial (Kaentake opt-in profile
   `0af7a62`+`35099e0` normally hosted); record pass/fail incl. Windows/Wine
   status; no behavior changes. Compat GO already recorded; this is the
   runtime proof the injector-based clients (tickets 11–13) build on.
   Dependencies: None (parallel). Blocks: ticket 11, ticket 12-client, ticket 13-client.
 
-- [ ] **Ticket 15 — Verified selfhost content intake (NX/community pack)** — full51/17WZ and matching54659-file XML candidate assembled; fresh native/catalog/profile acceptance pending
+- [ ] **Ticket 15 — Verified selfhost content intake (NX/community pack)** — full51/17WZ/13 Books and matching54659-file XML/current65-file native/runtime profile frozen; fresh full reader FAIL54 explicitly retained; actual native world/visual/catalog acceptance pending
   Scope: Inventory-then-fit TengaMS 4.9G / Community IMG 6.3G against WZ
   symlink + manifest + launcher hosting; settled NX set stages to the
   self-hosted asset dir (ticket 17 replaced R2); record hashes. Do not
@@ -150,9 +153,14 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   exact retained overlay rollback with persistent pending recovery.
   Source-compose/systemd/CI/runbook parity is part of the repair, not a manual
   substitute for a missing API. Final hash-set handler/SQL/byte-service,
-  producer/cohort and entrypoint acceptance remain required. New read-only
-  TESTING CAS `/rc-assets/` leaves production Java/DB/browser/NX unchanged.
-  Generic binary tar headers are fixed; a `.bin` bootstrap alias alone is not final.
+  producer/cohort and entrypoint acceptance remain required. Current03/520/fc59/a2
+  actual unmodified Linux entrypoint/whole HTTPS/hash/extraction/all932 data/
+  53-migration/four-GMS83-greeting proof passed; final manifest/installer consumer
+  qualification and rollout remain separate. Read-only `/rc-assets/` leaves
+  production Java/DB/browser/NX services unchanged; authorized existing hosting
+  rootfs quota did grow90→98GiB online without deleting bytes or restarting services.
+  Generic binary tar headers/whole HTTPS/HEAD/Range are proved for actual3.801GBa2,
+  not a `.bin` bootstrap alias. Exact receipts/pins are in CURRENT-STATE.
   Network contract is final: existing domains/ports, canonical advertised
   production client host `buns.asslorde.com`, explicit LAN/loopback overrides,
   no Tailscale/NAT changes. Public native activation deferred by owner.
