@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply committed verified server WZ (game container only)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/buns
+EnvironmentFile=/etc/buns/assets.env
+# Recreate server only; never restart Java/DB during installation or source tests.
+ExecStart=/usr/bin/docker compose --env-file /etc/buns/assets.env -f /opt/buns/docker-compose.test.yml up -d --no-deps --force-recreate --wait --wait-timeout 180 server
+TimeoutStartSec=210

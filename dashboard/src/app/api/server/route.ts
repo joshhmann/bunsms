@@ -4,9 +4,17 @@ import { readFileSync } from "fs";
 import { parse as parseYaml } from "yaml";
 import { query } from "@/lib/db";
 import { PATHS } from "@/lib/cosmic";
+import { isPrivateRequestAuthorized } from "@/lib/auth";
+import { restartGameServer } from "@/lib/game-control";
 
 const GAME_HOST = process.env.GAME_SERVER_HOST || "192.168.0.157";
 const LOGIN_PORT = 8484;
+// Operator-configured CLIENT-advertised host: what launchers should connect
+// to. Deliberately separate from GAME_HOST (the internal TCP health target,
+// often a Docker DNS name like `server` that is useless to clients). Unset =
+// field omitted (never advertise Docker DNS); LAN/VPN truth until external
+// reachability is measured.
+const CLIENT_HOST = process.env.GAME_CLIENT_HOST || "";
 
 /** Check if the game server is reachable by TCP connecting to the login port */
 function tcpCheck(host: string, port: number, timeout = 5000): Promise<boolean> {
@@ -67,7 +75,7 @@ export async function GET() {
       maxLevel = (m as any)?.max || 0;
     } catch {}
 
-    return NextResponse.json({
+    const body: Record<string, unknown> = {
       status: online ? "running" : "stopped",
       gmModel,
       rates,
@@ -75,7 +83,16 @@ export async function GET() {
       accounts,
       characters,
       maxLevel,
-    });
+    };
+    // `status` proves in-compose reachability ONLY — not public reachability.
+    // gameHost/gamePort are present only when the operator configured an
+    // explicit client-advertised endpoint (GAME_CLIENT_HOST). Launchers prefer
+    // stored-config, then these fields, then measured LAN fallback.
+    if (CLIENT_HOST) {
+      body.gameHost = CLIENT_HOST;
+      body.gamePort = LOGIN_PORT;
+    }
+    return NextResponse.json(body);
   } catch {
     return NextResponse.json({
       status: "stopped",
@@ -84,9 +101,16 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  // Server control via Fly Machines API could be added here in the future
-  return NextResponse.json(
-    { error: "Server control is managed via Fly.io" },
-    { status: 501 },
-  );
+  try {
+    if (!await isPrivateRequestAuthorized(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const body: unknown = await request.json();
+    if (!body || typeof body !== "object" || !("action" in body) || body.action !== "restart") {
+      return NextResponse.json({ error: "Only restart is supported by private game control" }, { status: 400 });
+    }
+    return NextResponse.json(await restartGameServer());
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Game apply failed" }, { status: 502 });
+  }
 }

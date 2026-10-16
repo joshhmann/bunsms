@@ -6,21 +6,21 @@ A MapleStory v83 private server powered by an AI Game Master. Built on [Cosmic](
 
 ```
 bunsms/
-  server/       # Java game server (Cosmic v83, Docker, Fly.io)
-  dashboard/    # Next.js 15 admin panel + APIs (App Router, Fly.io)
+  server/       # Java game server (Cosmic v83, Docker on the measured LXC host)
+  dashboard/    # Next.js 15 private admin panel + APIs (App Router)
   launcher/     # Electron desktop launcher (auto-update, Windows)
   client/       # Patched MapleStory v83 client + custom WZ files
   mcp-server/   # Standalone MCP tools server (external integrations)
 ```
 
 ### Game Server
-- Cosmic v83 MapleStory emulator running on Fly.io (IAD region)
+- Cosmic v83 MapleStory emulator on LXC 164 (`192.168.0.164`)
 - MySQL 8.4 database with Liquibase migrations
 - Login server (port 8484) + 3 channel servers (7575-7577)
 - Config patched at runtime via environment variables
 
 ### Dashboard
-- Next.js 15 with App Router, deployed on Fly.io
+- Next.js 15 with App Router, on the private LAN Docker stack
 - 24+ API endpoints: maps, mobs, items, characters, drops, config, server control, scripts, accounts
 - Admin authentication with Cloudflare Turnstile
 - Real-time server status and player management
@@ -44,19 +44,28 @@ bunsms/
   fixed login port **8484** — point at a host with 8484 reachable; test
   needs 8484, not the 9494 docker alias)
 * Server status display, news feed from GM activity
-* Client files hosted on R2 (`pub-34b8b332208f464a9e74fa14104be3e2.r2.dev`)
+* Client/native art/server/NX files use verified immutable selfhost releases;
+  see [publication and rollback](server/docs/SELFHOST-ASSETS.md).
 
 ## Deployment
 
-All deployments are automated via GitHub Actions on push to `main`:
-- **Dashboard**: Builds and deploys to Fly.io (`buns-ms`)
-- **Game Server**: Builds and deploys to Fly.io (`buns-ms-game`)
-- **Launcher**: Builds Windows installer and publishes to GitHub Releases
+Source deployments use the measured LXC `.164` application host and `.70`
+Caddy edge. The public edge exposes browser/WSS, asset reads and the three
+launcher/server read APIs, not private mutation/control endpoints.
 
-### Infrastructure
-- **Fly.io**: Game server (2GB RAM, 2 CPU), dashboard (512MB), MySQL database
-- **Cloudflare**: DNS + CDN for bunsms.com (dashboard)
-- **GitHub Releases**: Client file hosting for launcher downloads
+- **Dashboard/assets:** writable shared manifest directory and immutable object
+  storage; authenticated private-LAN publisher and Unix-only control worker.
+- **Game server:** verified selfhost baseline/overlay, server-only private apply;
+  DB/schema and content activation retain their owner gates.
+- **CI:** provisioned private SSH/known-host credentials and an actually reachable
+  runner are required; absent credentials fail closed. No public write tunnel.
+- **Launcher:** standalone Windows installer workflow/artifact.
+
+Use the [selfhost operating contract](server/docs/SELFHOST-ASSETS.md) and
+`deployment/` configuration, not the superseded Fly/R2 deployment instructions.
+Canonical advertised production native host is `buns.asslorde.com`; explicit
+LAN/loopback overrides remain supported. **Public native activation deferred by
+owner**; this source does not claim public TCP connectivity or change ports/NAT.
 
 ## Local Development
 
@@ -79,7 +88,8 @@ Manifest-driven (no manual WZ hunting):
    every file from `:3001/api/launcher/manifest` (or prod manifest by default).
 3. Set Server Address to your login host — the compiled client dials fixed
    port **8484**, so that host must have 8484 reachable (test: `192.168.0.164`
-   with the `8484:8484` mapping; prod host default `213.188.212.103`).
+   with the existing `8484:8484` mapping; future public host `buns.asslorde.com`,
+   whose native activation is deferred by owner, not proven by this change).
 4. For test-stack use, launch with
    `$env:BUNSMS_API_BASE='http://192.168.0.164:3001'` (runtime env, see notes).
 5. Press Play. HD Mode (Ezorsia `dinput8.dll` + `config.ini`) is optional.

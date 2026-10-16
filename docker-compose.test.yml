@@ -28,9 +28,22 @@ services:
       DB_PASS: bunspass
       DB_HOST: db
       GAME_HOST: 192.168.0.164
+      ASSET_BASE_URL: ${ASSET_BASE_URL:-https://buns.asslorde.com}
+      WZ_BASELINE_URL: ${WZ_BASELINE_URL:-}
+      WZ_BASELINE_HASH: ${WZ_BASELINE_HASH:-}
+      WZ_BASELINE_SIZE: ${WZ_BASELINE_SIZE:-}
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8484"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
     volumes:
       - ./server/wz:/opt/server/wz
-      - ./server/scripts:/opt/server/scripts:ro
+      # Keep the installed complete script baseline; verified tar scripts are partial overlays.
+      - ./server/scripts:/opt/server/scripts
+      # Retains pre-overlay originals/pending recovery across server-only recreation.
+      - ${BUNS_GAME_ASSET_STATE_DIR:-/opt/buns/game-asset-state}:/opt/server/.selfhost-assets
     depends_on:
       db:
         condition: service_healthy
@@ -40,7 +53,8 @@ services:
       context: ./dashboard
       dockerfile: Dockerfile
     ports:
-      - "3001:3000"
+      # Private LAN dashboard; public Caddy keeps mutations blocked.
+      - "192.168.0.164:3001:3000"
     environment:
       DB_HOST: db
       DB_PORT: "3306"
@@ -52,6 +66,19 @@ services:
       JWT_SECRET: "bunsms-test-jwt-secret-2026"
       COSMIC_ROOT: /cosmic
       GAME_SERVER_HOST: server
+      # Public native activation is deferred by owner; LAN/loopback test override remains explicit.
+      GAME_CLIENT_HOST: ${GAME_CLIENT_HOST:-buns.asslorde.com}
+      ASSET_BASE_URL: ${ASSET_BASE_URL:-https://buns.asslorde.com}
+      ASSET_DIR: /assets
+      LAUNCHER_MANIFEST_PATH: /manifests/launcher-manifest.json
+      GAME_CONTROL_SOCKET: /run/buns-control/control.sock
+      GM_API_SECRET: ${GM_API_SECRET:?Set the private GM API secret in the deployment environment}
+      GM_SECRET_FILE: /run/secrets/gm_api_secret
+    volumes:
+      - ${BUNS_ASSET_DIR:-/opt/buns/client-assets}:/assets
+      - ${BUNS_MANIFEST_DIR:-/opt/buns/manifest-writable}:/manifests
+      - ${BUNS_CONTROL_DIR:-/run/buns-control}:/run/buns-control
+      - ${GM_SECRET_FILE:?Set the host secret-file path}:/run/secrets/gm_api_secret:ro
     depends_on:
       server:
         condition: service_started

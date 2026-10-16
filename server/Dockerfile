@@ -29,31 +29,29 @@ RUN mvn -f ./pom.xml clean package -Dmaven.test.skip -T 1C
 #
 FROM amazoncorretto:21-al2023
 
-# Install tar (not included in minimal corretto image)
-RUN yum install -y tar gzip && yum clean all
+# Python verifies immutable selfhost descriptors and archive contents at startup.
+RUN yum install -y tar gzip python3 && yum clean all
 
 # Host the server in a location that won't have permissions issues.
 WORKDIR /opt/server
-# Bake the COMPLETE baseline WZ set into the image. server-wz-baseline.tar.gz
-# is treated as immutable — the live server-wz.tar.gz is overlaid on top at
-# runtime by entrypoint.sh, so a partial overlay can never strip baseline files.
-# Cache bust: change WZ_VERSION when you deliberately ship a new baseline.
-ARG WZ_VERSION=4
-ARG WZ_URL=https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/server-wz-baseline.tar.gz
-RUN curl -fsSL "$WZ_URL" -o /tmp/wz.tar.gz && tar xzf /tmp/wz.tar.gz && rm /tmp/wz.tar.gz
+# A baseline is mandatory and independently pinned; no object-store fallback.
+ARG ASSET_BASE_URL=https://buns.asslorde.com
+ARG WZ_BASELINE_URL
+ARG WZ_BASELINE_HASH
+ARG WZ_BASELINE_SIZE
+COPY entrypoint.sh config.yaml ./
+RUN test -n "$WZ_BASELINE_URL" && test -n "$WZ_BASELINE_HASH" && test -n "$WZ_BASELINE_SIZE" \
+    && WZ_SEED_BASELINE_ONLY=1 ASSET_BASE_URL="$ASSET_BASE_URL" \
+       WZ_BASELINE_URL="$WZ_BASELINE_URL" WZ_BASELINE_HASH="$WZ_BASELINE_HASH" \
+       WZ_BASELINE_SIZE="$WZ_BASELINE_SIZE" bash ./entrypoint.sh
 # Copy the JAR we build earlier.
 COPY --from=jar /opt/cosmic/target/Cosmic.jar ./Server.jar
 # Scripts are sourced on server startup, so you can mount over them for quicker redeploy.
 # CACHE_BUST ensures Docker doesn't serve stale script layers from build cache
 ARG CACHE_BUST=0
 COPY scripts ./scripts/
-# Cash-shop catalog: 1843-row TSV the window server half loads at startup
-# (cashshop/catalog.tsv, -Dcashshop-path override). Ship it like scripts.
+# Cash-shop catalog is a runtime input alongside the scripts.
 COPY cashshop ./cashshop/
-# Config is read on server startup, so you can mount over it for quicker redeploy.
-COPY config.yaml ./
-# Production entrypoint that patches config from env vars
-COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 # Default exposure, although not required if using docker compose.
 # This exposes the login server, and channels.

@@ -26,7 +26,11 @@ services:
     environment:
       DB_PASS: testpass
       DB_HOST: db
-      GAME_HOST: 192.168.21.161
+      GAME_HOST: ${GAME_HOST:-192.168.0.164}
+      ASSET_BASE_URL: ${ASSET_BASE_URL:-https://buns.asslorde.com}
+      WZ_BASELINE_URL: ${WZ_BASELINE_URL:-}
+      WZ_BASELINE_HASH: ${WZ_BASELINE_HASH:-}
+      WZ_BASELINE_SIZE: ${WZ_BASELINE_SIZE:-}
     volumes:
       # Mount local WZ files (includes our custom items)
       - ./server/wz:/opt/server/wz

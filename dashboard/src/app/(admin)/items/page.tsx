@@ -99,11 +99,16 @@ export default function ItemsPage() {
 
   useEffect(() => { fetchItems("", "all", "none"); }, [fetchItems]);
 
-  const pollPublishStatus = useCallback(async () => {
+  const pollPublishStatus = useCallback(async (jobId: string) => {
     const poll = async () => {
       try {
         const res = await fetch("/api/admin/items/publish");
         const data = await res.json();
+        if (!res.ok || data.id !== jobId) {
+          setPublishing(false); setPublishStep("");
+          setPublishResult({ success: false, message: data.error || "Publication status does not acknowledge this job" });
+          return false;
+        }
         if (data.status === "running") {
           setPublishStep(data.step || "Working...");
           return true; // keep polling
@@ -112,7 +117,7 @@ export default function ItemsPage() {
           setPublishStep("");
           setPublishResult({
             success: true,
-            message: `Published ${data.items_published} item(s). Server restarting with new WZ files.\n\n${(data.actions || []).join("\n")}`,
+            message: data.items_published ? `Published ${data.items_published} item(s). Release committed and private server apply acknowledged.\n\n${(data.actions || []).join("\n")}` : (data.step || "No items required publication"),
           });
           return false;
         } else if (data.status === "error") {
@@ -141,7 +146,7 @@ export default function ItemsPage() {
     }, 2000);
 
     // Initial poll
-    poll();
+    if (!(await poll())) clearInterval(interval);
 
     return () => clearInterval(interval);
   }, []);
@@ -154,14 +159,14 @@ export default function ItemsPage() {
     try {
       const res = await fetch("/api/admin/items/publish", { method: "POST" });
       const data = await res.json();
-      if (data.error) {
+      if (!res.ok || data.error || !data.id) {
         setPublishing(false);
         setPublishStep("");
-        setPublishResult({ success: false, message: data.error });
+        setPublishResult({ success: false, message: data.error || "Publication did not start" });
         return;
       }
       // Job started — poll for status
-      pollPublishStatus();
+      pollPublishStatus(data.id);
     } catch {
       setPublishing(false);
       setPublishStep("");
@@ -169,27 +174,6 @@ export default function ItemsPage() {
     }
   }, [pollPublishStatus]);
 
-  const handleLocalPublish = useCallback(async () => {
-    if (!confirm("Local publish: patch client WZ files + server XML from DB items.\nOutput goes to dashboard/test-output/.")) return;
-    setPublishing(true);
-    setPublishResult(null);
-    try {
-      const res = await fetch("/api/admin/items/publish-local", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        setPublishResult({
-          success: true,
-          message: data.actions.join("\n") + "\n\n" + (data.instructions || []).join("\n"),
-        });
-      } else {
-        setPublishResult({ success: false, message: data.error || "Local publish failed" });
-      }
-    } catch {
-      setPublishResult({ success: false, message: "Network error" });
-    } finally {
-      setPublishing(false);
-    }
-  }, []);
 
   const handleSearch = useCallback(
     (value: string) => {
@@ -228,13 +212,6 @@ export default function ItemsPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={handleLocalPublish}
-            disabled={publishing}
-            className="rounded-lg border border-accent-green/30 bg-accent-green/10 px-4 py-2 text-sm font-semibold text-accent-green hover:bg-accent-green/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {publishing ? "Publishing..." : "Local Publish"}
-          </button>
           <button
             onClick={handlePublish}
             disabled={publishing}

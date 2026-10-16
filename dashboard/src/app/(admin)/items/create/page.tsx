@@ -190,24 +190,29 @@ export default function CreateItemPage() {
   };
 
   const uploadIcon = async (): Promise<string | null> => {
-    if (!iconFile || !itemId) return iconUrl;
+    if (!iconFile) return iconUrl;
+    if (!/^[0-9]+$/.test(itemId) || !Number.isSafeInteger(Number(itemId)) || Number(itemId) <= 0) {
+      setError("Item ID must be a positive integer.");
+      return null;
+    }
     if (iconUrl) return iconUrl;
 
     setUploading(true);
     try {
+      if (iconFile.size > 10 * 1024 * 1024) throw new Error("Icon exceeds the 10 MiB image limit");
+      const digest = await crypto.subtle.digest("SHA-256", await iconFile.arrayBuffer());
+      const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      const key = `custom-items/${Number(itemId)}/icon.png`;
       const formData = new FormData();
-      const key = `custom-items/${itemId}-icon.png`;
-      const renamedFile = new File([iconFile], key, { type: "image/png" });
-      formData.append("icon", renamedFile);
-
+      formData.append("mode", "art");
+      formData.append("expected", JSON.stringify([{ key, hash, size: iconFile.size }]));
+      formData.append("file", iconFile);
       const res = await fetch("/api/launcher/upload", { method: "POST", body: formData });
       const data = await res.json();
-      const result = data.results?.[0];
-      if (result?.success) {
-        setIconUrl(result.url);
-        return result.url;
-      }
-      throw new Error(result?.error || "Upload failed");
+      const result = data.assets?.find((asset: { key: string }) => asset.key === key);
+      if (!res.ok || !result?.url) throw new Error(data.error || "Art publication failed");
+      setIconUrl(result.url);
+      return result.url;
     } catch (err: any) {
       setError(`Icon upload failed: ${err.message}`);
       return null;
@@ -217,7 +222,7 @@ export default function CreateItemPage() {
   };
 
   const handleRenderWeapon = async () => {
-    if (!conceptFile || !itemId) {
+    if (!conceptFile || !/^[0-9]+$/.test(itemId) || !Number.isSafeInteger(Number(itemId)) || Number(itemId) <= 0) {
       setError("Upload a concept image and set an Item ID first.");
       return;
     }
@@ -277,8 +282,8 @@ export default function CreateItemPage() {
     setError(null);
     setSuccess(null);
 
-    if (!itemId || !name) {
-      setError("Item ID and name are required.");
+    if (!/^[0-9]+$/.test(itemId) || !Number.isSafeInteger(Number(itemId)) || Number(itemId) <= 0 || !name) {
+      setError("A positive numeric Item ID and name are required.");
       return;
     }
 
@@ -293,6 +298,7 @@ export default function CreateItemPage() {
       let uploadedIconUrl = iconUrl;
       if (iconFile && !iconUrl) {
         uploadedIconUrl = await uploadIcon();
+        if (!uploadedIconUrl) return;
       }
 
       const body: Record<string, any> = {
@@ -714,7 +720,7 @@ export default function CreateItemPage() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="group relative"
-                  title="Click to change icon"
+                  title="Click to change icon (hosted in asset dir)"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -724,7 +730,7 @@ export default function CreateItemPage() {
                     style={{ imageRendering: "pixelated" }}
                   />
                   {iconUrl && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent-green text-bg-primary text-[8px] flex items-center justify-center font-bold">R2</span>
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent-green text-bg-primary text-[8px] flex items-center justify-center font-bold">CDN</span>
                   )}
                 </button>
               ) : baseItemId ? (
@@ -755,7 +761,7 @@ export default function CreateItemPage() {
               )}
               {iconUrl && (
                 <p className="text-[10px] text-accent-green">
-                  Uploaded to R2
+                  Staged to asset dir
                 </p>
               )}
               <div>

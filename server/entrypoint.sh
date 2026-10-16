@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-CONFIG="/opt/server/config.yaml"
+export GAME_ROOT="${GAME_ROOT:-/opt/server}"
+CONFIG="$GAME_ROOT/config.yaml"
 
 # Use exact key matching (anchored to line start with spaces) to avoid partial matches
 # Config format: "  KEY: value" (2 spaces indent under server:)
@@ -24,53 +25,153 @@ grep -E '^\s+(HOST|LANHOST|DB_HOST|AUTOMATIC_REGISTER):' "$CONFIG" | head -5
 echo "DB_HOST env override: ${DB_HOST:-none}"
 echo "=================================="
 
-# WZ files: the image bakes in server-wz-baseline.tar.gz (a complete 16-WZ
-# set). server-wz.tar.gz on R2 is overlaid additively at runtime — it can
-# be a full set or a partial patch, both are safe.
-WZ_URL="https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/server-wz.tar.gz"
-WZ_VERSION_URL="https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/server-wz.version"
-WZ_BASELINE_URL="https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev/server-wz-baseline.tar.gz"
-LOCAL_VERSION_FILE="/opt/server/wz/.version"
+# Selfhost authority is fetched once. Its descriptor pins the exact overlay
+# bytes, so a concurrent publish cannot pair a new marker with an old tar.
+python3 - <<'PY'
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import shutil
+import tarfile
+import tempfile
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
-# Defensive: if any of the 16 expected baseline WZs is missing on disk
-# (e.g. earlier image was built from a partial server-wz.tar.gz), restore
-# from baseline before applying any overlay.
-REQUIRED_WZ=(Base.wz Character.wz Effect.wz Etc.wz Item.wz Map.wz Mob.wz Morph.wz Npc.wz Quest.wz Reactor.wz Skill.wz Sound.wz String.wz TamingMob.wz UI.wz)
-NEED_BASELINE=0
-for w in "${REQUIRED_WZ[@]}"; do
-  if [ ! -e "/opt/server/wz/$w" ]; then
-    echo "Baseline WZ missing: $w"
-    NEED_BASELINE=1
-  fi
-done
+root = Path(os.environ["GAME_ROOT"])
+state_root = root / ".selfhost-assets"
+state_root.mkdir(mode=0o700, exist_ok=True)
+lock = (state_root / "apply.lock").open("a")
+fcntl.flock(lock, fcntl.LOCK_EX)
+state_path = state_root / "overlay.json"
 
-if [ "$NEED_BASELINE" -eq 1 ]; then
-  echo "Restoring complete WZ baseline from R2..."
-  if curl -fsSL "$WZ_BASELINE_URL" -o /tmp/wz-baseline.tar.gz; then
-    tar xzf /tmp/wz-baseline.tar.gz -C /opt/server
-    rm -f /tmp/wz-baseline.tar.gz
-    echo "Baseline restored"
-  else
-    echo "FATAL: baseline download failed and required WZ files are missing"
-    exit 1
-  fi
-fi
+def save_state(state):
+    with tempfile.NamedTemporaryFile("w", prefix="overlay-", dir=state_root, delete=False) as temporary:
+        json.dump(state, temporary, sort_keys=True)
+        temporary.flush()
+        os.fsync(temporary.fileno())
+        name = Path(temporary.name)
+    try:
+        name.replace(state_path)
+    finally:
+        name.unlink(missing_ok=True)
 
-REMOTE_VER=$(curl -sf "$WZ_VERSION_URL" 2>/dev/null || echo "")
-LOCAL_VER=$(cat "$LOCAL_VERSION_FILE" 2>/dev/null || echo "")
+def load_state():
+    state = json.loads(state_path.read_text()) if state_path.exists() else {"originals": {}, "pending": False}
+    if not isinstance(state.get("originals"), dict) or not isinstance(state.get("pending"), bool):
+        raise RuntimeError("Invalid persistent server overlay ledger")
+    for key, existed in state["originals"].items():
+        path = PurePosixPath(key)
+        if not isinstance(existed, bool) or path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] not in ("wz", "scripts"):
+            raise RuntimeError("Invalid persistent server overlay path")
+    return state
+required = {name + ".wz" for name in ("Base", "Character", "Effect", "Etc", "Item", "Map", "Mob", "Morph", "Npc", "Quest", "Reactor", "Skill", "Sound", "String", "TamingMob", "UI")}
+base = os.environ.get("ASSET_BASE_URL", "https://buns.asslorde.com").rstrip("/")
 
-if [ -n "$REMOTE_VER" ] && [ "$REMOTE_VER" != "$LOCAL_VER" ]; then
-  echo "WZ overlay detected (remote=$REMOTE_VER), downloading..."
-  if curl -fsSL "$WZ_URL" -o /tmp/wz.tar.gz; then
-    tar xzf /tmp/wz.tar.gz -C /opt/server
-    rm -f /tmp/wz.tar.gz
-    echo "$REMOTE_VER" > "$LOCAL_VERSION_FILE"
-    echo "WZ overlay applied"
-  else
-    echo "WZ overlay download failed, continuing with baseline"
-  fi
-else
-  echo "WZ overlay up to date${LOCAL_VER:+ ($LOCAL_VER)}"
+def apply(descriptor, baseline=False):
+    url, digest, size = descriptor["url"], descriptor["hash"], descriptor["size"]
+    parsed, authority = urlparse(url), urlparse(base)
+    if (parsed.scheme, parsed.netloc) != (authority.scheme, authority.netloc):
+        raise RuntimeError("WZ tar must use the configured selfhost authority")
+    if not re.fullmatch(r"[a-f0-9]{64}", digest) or not isinstance(size, int) or isinstance(size, bool) or size <= 0:
+        raise RuntimeError("Invalid independently pinned WZ metadata")
+    key = "server-wz-baseline.tar.gz" if baseline else "server-wz.tar.gz"
+    if parsed.path != f"/client/r/{digest}/{key}" or parsed.query or parsed.fragment:
+        raise RuntimeError("WZ tar URL is not the exact immutable revision")
+    with tempfile.TemporaryDirectory(prefix="wz-verified-", dir=root) as temp:
+        archive = Path(temp) / "archive.tar.gz"
+        h, received = hashlib.sha256(), 0
+        with urlopen(url, timeout=120) as source, archive.open("xb") as output:
+            while block := source.read(1024 * 1024):
+                received += len(block)
+                if received > size:
+                    raise RuntimeError("WZ tar exceeded pinned size")
+                h.update(block)
+                output.write(block)
+        if received != size or h.hexdigest() != digest:
+            raise RuntimeError("WZ tar hash/size mismatch")
+        extracted = Path(temp) / "extract"
+        extracted.mkdir()
+        with tarfile.open(archive, "r:gz") as source:
+            names = set()
+            for member in source:
+                path = PurePosixPath(member.name)
+                if path.is_absolute() or ".." in path.parts or not path.parts or path.parts[0] not in ("wz", "scripts"):
+                    raise RuntimeError("WZ tar contains an unsafe path")
+                if not (member.isdir() or member.isfile()):
+                    raise RuntimeError("WZ tar contains a link or special file")
+                if member.isfile():
+                    if len(path.parts) < 2 or (path.parts[0] == "wz" and not path.parts[1].endswith(".wz")):
+                        raise RuntimeError("WZ tar contains an entry outside server WZ/scripts")
+                    if str(path) in names:
+                        raise RuntimeError("WZ tar contains duplicate entries")
+                    names.add(str(path))
+                source.extract(member, extracted)
+        if baseline and any(not (extracted / "wz" / name).exists() for name in required):
+            raise RuntimeError("Baseline tar does not contain all 16 server WZs")
+        if baseline:
+            for directory in ("wz", "scripts"):
+                if (extracted / directory).exists():
+                    shutil.copytree(extracted / directory, root / directory, dirs_exist_ok=True)
+            return None
+        # Retain originals outside the writable game trees. The persistent ledger
+        # survives container replacement, including failures before marker update.
+        state = load_state()
+        for key in sorted(names):
+            if key in state["originals"]:
+                continue
+            target, backup = root / key, state_root / "originals" / key
+            if target.is_symlink() or (target.exists() and not target.is_file()):
+                raise RuntimeError("Server overlay target is not a regular file")
+            existed = backup.exists() or target.exists()
+            if existed and not backup.exists():
+                backup.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(target, backup)
+                backup.chmod(0o444)
+            state["originals"][key] = existed
+        state["pending"] = True
+        save_state(state)
+        # Remove or restore files absent from this retained overlay. A merge-only
+        # copy would leave later-added scripts/XML active after manifest rollback.
+        for key, existed in state["originals"].items():
+            if key in names:
+                continue
+            target = root / key
+            if existed:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(state_root / "originals" / key, target)
+            elif target.exists() or target.is_symlink():
+                target.unlink()
+        for key in sorted(names):
+            target = root / key
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(extracted / key, target)
+        return state
+
+if any(not (root / "wz" / name).exists() for name in required):
+    apply({"url": os.environ["WZ_BASELINE_URL"], "hash": os.environ["WZ_BASELINE_HASH"],
+           "size": int(os.environ["WZ_BASELINE_SIZE"])}, baseline=True)
+if os.environ.get("WZ_SEED_BASELINE_ONLY") != "1":
+    with urlopen(base + "/client/server-wz.version", timeout=30) as source:
+        descriptor = json.load(source)
+    if not isinstance(descriptor.get("releaseId"), str) or not descriptor["releaseId"]:
+        raise RuntimeError("Server WZ descriptor has no release identity")
+    marker = root / "wz" / ".version"
+    current = json.loads(marker.read_text()) if marker.exists() and marker.read_text().lstrip().startswith("{") else None
+    if current != descriptor or load_state()["pending"]:
+        state = apply(descriptor)
+        temporary = marker.with_name(".version.next")
+        temporary.write_text(json.dumps(descriptor, sort_keys=True) + "\n")
+        temporary.replace(marker)
+        state["pending"] = False
+        save_state(state)
+        print("Applied verified selfhost server WZ release", descriptor["releaseId"])
+PY
+
+if [ "${WZ_SEED_BASELINE_ONLY:-}" = "1" ]; then
+  exit 0
 fi
 
 exec java -Xmx1280m -Xms512m -jar ./Server.jar

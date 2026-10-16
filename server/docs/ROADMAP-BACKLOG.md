@@ -109,10 +109,13 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   runtime proof the injector-based clients (tickets 11–13) build on.
   Dependencies: None (parallel). Blocks: ticket 11, ticket 12-client, ticket 13-client.
 
-- [ ] **Ticket 15 — R2 uploads (NX/community pack)** — Owner: unassigned
+- [ ] **Ticket 15 — Verified selfhost content intake (NX/community pack)** — Owner: unassigned
   Scope: Inventory-then-fit TengaMS 4.9G / Community IMG 6.3G against WZ
-  symlink + manifest + launcher hosting; upload settled NX set to R2;
-  record hashes. Do not schedule content fit until WZ story settled.
+  symlink + manifest + launcher hosting; settled NX set stages to the
+  self-hosted asset dir (ticket 17 replaced R2); record hashes. Do not
+  schedule content fit until WZ story settled. STAYS OPEN until full native
+  requirements + final triple/DLL decisions land (hosting ready, content
+  pending — no 'all tickets complete' claim from cutover).
   Dependencies: Blocked by ticket 2 (NX coverage baseline) + ticket 4 (Evan manifest
   answer); needs WZ symlink gap closed (no `/opt/cosmicms/wz` locally).
 
@@ -123,6 +126,29 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   Parallel investigation, no build/deploy.
   Dependencies: None (parallel). Informs: ticket 14, tickets 11–13 estimates.
 
+- [ ] **Ticket 17 — Self-hosted asset serving and atomic publication** — Owner: selfhost-publication-review (source); selfhost-assets-spec (operations)
+  Source repair branch: `selfhost-assets-repair`, based on frozen `faa818c`.
+  The accepted `de4d851` fixed review remains changes-requested; old throwaway
+  cycle counts and manual byte-copy rollback do not close its findings.
+  Repair implements one verified immutable object/retained-manifest boundary,
+  stock-default/private-complete profiles, authenticated streaming upload/CLI,
+  all art/GM/raw-WZ/four publisher callers, actual pinned WZ→NX I/O and a
+  committed complete NX authority, server tar/marker/baseline application, and
+  exact retained overlay rollback with persistent pending recovery.
+  Source-compose/systemd/CI/runbook parity is part of the repair, not a manual
+  substitute for a missing API. Isolated actual-handler/SQL/byte-service,
+  CLI/GM, real converter/cohort, and actual-entrypoint checks are permanent.
+  Final fixed-commit independent review and gated service/content activation
+  are distinct from the previous live read-serving receipt.
+  Network contract is final: existing domains/ports, canonical advertised
+  production client host `buns.asslorde.com`, explicit LAN/loopback overrides,
+  no Tailscale/NAT changes. Public native activation deferred by owner.
+  Internal Docker `server` is health only, never a client endpoint.
+  Original R2 objects are retained but never used as runtime/rollback fallback.
+  See [SELFHOST-ASSETS.md](SELFHOST-ASSETS.md) for the protocol and evidence
+  boundaries. Ticket 15/content and native/browser activation retain their
+  separate owner gates; this ticket does not claim all roadmap work complete.
+
 ## Dependency graph (summary)
 
 - 1 → 2 → (3 ship, 10 testing, 15).
@@ -131,3 +157,4 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
 - Step-0 injector decision → 3 window, 10 window, 11 → 12 → 13 (last).
 - 14 smoke → 11/12-client/13-client. 16 informs 14.
 - 15 after 2 + 4 + WZ story settled.
+- 17 source/activation gates precede downstream publication for 3/4/9/11–13; all use the verified selfhost authority, never direct-live/R2 paths.

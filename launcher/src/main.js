@@ -518,14 +518,13 @@ ipcMain.handle("launcher:checkUpdates", async () => {
   }
 
   try {
-    // The dashboard serves per-profile filtering (?profile=); until that ships,
-    // filter client-side too so stock behavior is unchanged either way.
+    // The dashboard serves per-profile filtering (?profile=, absent = stock);
+    // filter client-side too so behavior is unchanged either way.
     const manifest = await fetchJSON(`${MANIFEST_URL}?profile=${id}`);
     if (!manifest || !manifest.files) return { status: "error", error: "Invalid manifest" };
 
     const files = filterManifest(manifest.files, id, hdMode);
     const updates = [];
-    log(`Checking ${files.length} files (manifest v${manifest.version}), profile=${id}, hdMode=${hdMode}`);
     for (const file of files) {
       // Fallback only: entries with no URL have nothing to fetch — verify a
       // local copy if present, else report manual_copy_needed (never download).

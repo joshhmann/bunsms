@@ -13,21 +13,10 @@ import {
 } from "./canvas-decoder";
 import {
   closeSync,
-  createWriteStream,
-  existsSync,
-  mkdirSync,
   openSync,
   readSync,
 } from "fs";
-import { Readable } from "stream";
-import { pipeline } from "stream/promises";
-import { dirname, join } from "path";
-
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
-
-const CACHE_ROOT = join(process.env.COSMIC_ROOT || "/cosmic", "wz-cache");
+import { readManifest, resolveRevisionPath } from "@/lib/assets";
 
 // WZ files we know are too big to fit on the dashboard's pod budget. Listed
 // for completeness in /api/admin/wz/list (so the user sees them) but the
@@ -37,89 +26,27 @@ export const HEAVY_FILES = new Set(["Map.wz", "Mob.wz"]);
 
 interface CacheEntry {
   wzInfo: WzFileInfo;
-  etag: string | null;
-  fetchedAt: number;
+  hash: string;
   /** Per-.img parsed trees, lazy-populated. Reset when CacheEntry replaces. */
   imgTreeCache: Map<string, PropNode>;
 }
 const CACHE = new Map<string, CacheEntry>();
-const IN_FLIGHT = new Map<string, Promise<WzFileInfo>>();
-// Skip the HEAD request if we last checked the remote within this window.
-const ETAG_CHECK_TTL_MS = 60 * 1000;
 
-// ---------- Cache + download ----------
-
-async function fetchEtag(url: string): Promise<string | null> {
-  try {
-    const res = await fetch(url, { method: "HEAD" });
-    if (!res.ok) return null;
-    return res.headers.get("etag");
-  } catch {
-    return null;
-  }
-}
-
-async function downloadWz(name: string, destPath: string): Promise<void> {
-  const url = `${R2_PUBLIC_URL}/${name}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch ${name}: HTTP ${res.status}`);
-  if (!res.body) throw new Error(`No body for ${name}`);
-  mkdirSync(dirname(destPath), { recursive: true });
-  const readable = Readable.fromWeb(res.body as any);
-  await pipeline(readable, createWriteStream(destPath));
-}
-
-/** Get a parsed WzFileInfo for `name`, downloading + caching as needed. */
+/** Parse the currently committed immutable WZ object, caching by its verified hash. */
 export async function getWzCached(
   name: string,
   opts: { force?: boolean } = {}
 ): Promise<WzFileInfo> {
   if (HEAVY_FILES.has(name) && !opts.force) {
-    throw new Error(
-      `${name} is over the auto-load size cap. Pass force=1 to download anyway (slow).`
-    );
+    throw new Error(`${name} is over the auto-load size cap. Pass force=1 to load anyway.`);
   }
-
-  const existing = IN_FLIGHT.get(name);
-  if (existing) return existing;
-
-  const url = `${R2_PUBLIC_URL}/${name}`;
-  const cachePath = join(CACHE_ROOT, name);
+  const asset = readManifest().manifest.assets?.[name];
+  if (!asset) throw new Error(`No committed WZ asset: ${name}`);
   const cached = CACHE.get(name);
-
-  // Fast path: cache hit and we checked the etag recently.
-  if (cached && Date.now() - cached.fetchedAt < ETAG_CHECK_TTL_MS) {
-    return cached.wzInfo;
-  }
-
-  // Slow path: HEAD the remote to compare etag, then return cache or refetch.
-  const promise = (async () => {
-    try {
-      const remoteEtag = await fetchEtag(url);
-      const stale = !cached || (remoteEtag && cached.etag !== remoteEtag);
-      if (cached && !stale) {
-        // Same etag: bump fetchedAt to avoid HEADing again for a while.
-        CACHE.set(name, { ...cached, fetchedAt: Date.now() });
-        return cached.wzInfo;
-      }
-      if (!existsSync(cachePath) || stale) {
-        await downloadWz(name, cachePath);
-      }
-      const wzInfo = parseWzFile(cachePath);
-      CACHE.set(name, {
-        wzInfo,
-        etag: remoteEtag,
-        fetchedAt: Date.now(),
-        imgTreeCache: new Map(),
-      });
-      return wzInfo;
-    } finally {
-      IN_FLIGHT.delete(name);
-    }
-  })();
-
-  IN_FLIGHT.set(name, promise);
-  return promise;
+  if (cached?.hash === asset.hash) return cached.wzInfo;
+  const wzInfo = parseWzFile(resolveRevisionPath(name, asset.hash));
+  CACHE.set(name, { wzInfo, hash: asset.hash, imgTreeCache: new Map() });
+  return wzInfo;
 }
 
 // ---------- Path navigation ----------
@@ -500,9 +427,7 @@ function walkStringValues(
 export function invalidateExplorerCache(name?: string) {
   if (name) {
     CACHE.delete(name);
-    IN_FLIGHT.delete(name);
   } else {
     CACHE.clear();
-    IN_FLIGHT.clear();
   }
 }
