@@ -12,10 +12,9 @@ WORKDIR /opt/server
 COPY --from=jar /opt/cosmic/target/Cosmic.jar ./Server.jar
 COPY scripts ./scripts/
 COPY cashshop ./cashshop/
-# SoloMapling bots load data files (yaml/txt/csv) via relative
-# src/main/java/soloMapling/... paths at runtime (cwd /opt/server).
-# Ship the tree (sources included, harmless) so cold-boot waves work.
-COPY src/main/java/soloMapling ./src/main/java/soloMapling/
+# Existing bot loaders consume authored YAML/TXT/CSV/binary data at these paths,
+# not Java sources. Maven creates the same data-only input for images and QA packs.
+COPY --from=jar /opt/cosmic/target/bot-runtime-data/ ./
 COPY config.yaml ./
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh

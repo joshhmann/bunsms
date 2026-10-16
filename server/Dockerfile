@@ -46,6 +46,8 @@ RUN test -n "$WZ_BASELINE_URL" && test -n "$WZ_BASELINE_HASH" && test -n "$WZ_BA
        WZ_BASELINE_SIZE="$WZ_BASELINE_SIZE" bash ./entrypoint.sh
 # Copy the JAR we build earlier.
 COPY --from=jar /opt/cosmic/target/Cosmic.jar ./Server.jar
+# Preserve existing bot data paths without copying the Java source tree.
+COPY --from=jar /opt/cosmic/target/bot-runtime-data/ ./
 # Scripts are sourced on server startup, so you can mount over them for quicker redeploy.
 # CACHE_BUST ensures Docker doesn't serve stale script layers from build cache
 ARG CACHE_BUST=0
