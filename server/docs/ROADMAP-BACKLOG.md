@@ -8,12 +8,8 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
 (prism, damage-cap, weather clients, daily check-in DLL window).
 (GitHub Issues are OFF for this repo; this file is the tracker.)
 
-- [ ] **Ticket 1 — Land press-mapping fix (CSS→logical Y-leg) + test_viewport probe** — Owner: unassigned
-  Scope: Land ordered CSS→logical Y-leg fix + uncommitted `test_viewport.cpp`
-  login-button roundtrip probe as committed coverage; re-run
-  `test_modernization`/`test_movement`/`test_routing` native gates green.
-  Web-client-only, zero server/Java/DB/WZ/opcode touch.
-  Dependencies: None. Blocks: ticket 2, and browser-baseline testing for tickets 3/10.
+- [x] **Ticket 1 — Browser pointer input proven; false press-mapping bug closed (no fix was necessary)** — Owner: press-debug-lead (done)
+  Evidence: durable `/tmp/shared/pointer-proof/browser-pointer-proof.json` (parent-viewed world-select + char-select images; trusted Login→Go transitions). Scope: viewport, DPR 1.25; native viewport tests only, no inventory/parity claim. Served bytes pre-b8bfc93 (31f9ca8a/090715ad); b8bfc93 hardening reverted separately (cleanup-press-mapping-noop 46dfd6c). The alleged CSS→logical Y-leg defect was a false diagnosis — backlog records proof, not a mapping fix.
 
 - [ ] **Ticket 2 — Inventory/equipment acceptance + dev WASM promotion** — Owner: unassigned
   Scope: Dev-smoke WASM pair `31f9ca8a`/`090715ad` (inventory-equipment +
@@ -61,11 +57,16 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   Ranked after buyback; same exclusions as ticket 5.
   Dependencies: None (ranked after ticket 7).
 
-- [ ] **Ticket 9 — MapleRoot wave 5: boss-pack expeditions** — Owner: unassigned — server-half [x] (wa0 landed; WZ checks + later waves pending)
-  Scope: +13 `ExpeditionType` + event scripts + registrar NPCs; map/mob WZ
+- [ ] **Ticket 9 — MapleRoot wave 5: boss-pack expeditions (FULL scope: all accepted families, not Wave 0 alone)** — Owner: unassigned — server-half [partial] (wa0 landed: DKBONUS1/YOSHIJQ events + portals + Castellan path 93fa6fd; REMAINS: full accepted-family event/entry/exit/reward/drop/log/leaderboard paths once WZ-owner dependency closure arrives; later waves pending; MAGNUS/LOTUS ladders dead-until-scripted)
+  Scope per ticket: +13 `ExpeditionType` + event scripts + registrar NPCs; map/mob WZ
   checks first, then BossLog/leaderboard, HyperTP handler, Rulax/Alcaster
-  bundle, config flags per verdict. Largest MapleRoot slice; same
-  exclusions as ticket 5.
+  bundle, config flags per verdict. Wave-0-only + enum additions do NOT complete
+  this ticket. Largest MapleRoot slice; same exclusions as ticket 5.
+  ARIANT family + bots/FM/casino/rates preserved throughout. If a family is
+  actually unavailable, implement the reachable parts and name the exact missing
+  real prerequisite — no placeholder/fake completion. Server R12 acceptance
+  exercises the genuine event lifecycle + ordinary player entry route, not
+  syntax/enum counts.
   Dependencies: Blocked on map/mob WZ checks (NX coverage); ranked after ticket 8.
 
 - [ ] **Ticket 10 — Cash-shop window** — Owner: unassigned — server-half [x] (landed; WZ merge + client window pending)
