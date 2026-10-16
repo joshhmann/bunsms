@@ -31,12 +31,12 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   Dependencies: Opcode registry done; server half unblocked; window half
   blocked on injector-or-browser-UI decision; ship blocked by ticket 1 + ticket 2 baseline.
 
-- [ ] **Ticket 4 — Evan WZ merge review (data-only)** — Owner: unassigned
-  Scope: Merge-review 45 XML (`String/Skill.img.xml`, `UI/Basic`+`UIWindow`
-  16.9MB shared replaces); flatten `Skill/` vs `Skill/Dragon/` without
-  collision. `Job.java` EVAN 2001/2200–2218 already declared; zero code.
-  Parallel filler while injector question settles.
-  Dependencies: None. Blocks: Evan completeness answer; informs ticket 15 manifest.
+- [x] **Ticket 4 — Evan WZ merge review + playable prerequisites (REVIEW ONLY)** — Owner: WZ integration
+  Evidence: [durable per-file review](EVAN-WZ-REVIEW.md) and its linked full SHA256 manifest.
+  All 45 XML reviewed: 29 safe additions, 13 collisions, 3 shared files forbidden
+  from wholesale replacement. Keep `Skill/Dragon/` separate; flattening would overwrite
+  same-numbered skill books. Creation/packet/skill/action/dragon prerequisites recorded.
+  No Evan assets merged, no playable class claimed. Informs ticket 15 asset manifest only.
 
 - [ ] **Ticket 5 — MapleRoot wave 1: shopupdate SQL** — Owner: unassigned — server-half [x] (landed)
   Scope: Port `3-db_shopupdate.sql` (INSERT IGNORE, 3 shops + 318 rows) as
