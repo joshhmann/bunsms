@@ -1,0 +1,142 @@
+--- a/src/injector.cpp
++++ b/src/injector.cpp
+@@ -1,5 +1,6 @@
+ #include "pch.h"
+ #include "hook.h"
++#include "debug.h"
+ #include "constants.h"
+ #include "ztl/ztl.h"
+ #include <windows.h>
+@@ -13,6 +14,20 @@
+ 
+ char* g_sServerHost = nullptr;
+ long g_nServerPort = 0;
++static const char* g_configSource = "default";
++static char g_configReadDirectory[MAX_PATH] = {};
++static char g_configReadPath[MAX_PATH] = {};
++
++void TraceConsumedConfig() {
++    const DWORD savedError = GetLastError();
++    char currentDirectory[MAX_PATH] = {}, executable[MAX_PATH] = {};
++    GetCurrentDirectoryA(MAX_PATH, currentDirectory);
++    GetModuleFileNameA(nullptr, executable, MAX_PATH);
++    DebugMessage("BUNS_RUNTIME consumed-config profile=kaentake source=%s exe=%s cwd=%s read-cwd=%s ini=%s section=config key=host value=%s key=port value=%ld\n",
++        g_configSource, executable, currentDirectory, g_configReadDirectory,
++        g_configReadPath, g_sServerHost ? g_sServerHost : CONSTANTS_DEFAULT_HOST, g_nServerPort);
++    SetLastError(savedError);
++}
+ 
+ void ProcessCommandLine() {
+     if (!CONSTANTS_USE_COMMAND_LINE) {
+@@ -23,6 +38,7 @@
+     if (sscanf_s(GetCommandLineA(), "%s %d", sBuffer, sizeof(sBuffer), &nPort) == 2) {
+         g_sServerHost = _strdup(sBuffer);
+         g_nServerPort = nPort;
++        g_configSource = "command-line";
+     }
+ }
+ 
+@@ -31,10 +47,15 @@
+         return;
+     }
+     char sBuffer[1024];
++    const DWORD savedError = GetLastError();
++    GetCurrentDirectoryA(MAX_PATH, g_configReadDirectory);
++    GetFullPathNameA(".\\" CONSTANTS_CONFIG_NAME, MAX_PATH, g_configReadPath, nullptr);
++    SetLastError(savedError);
+     if (GetPrivateProfileStringA("config", "host", "", sBuffer, sizeof(sBuffer), ".\\" CONSTANTS_CONFIG_NAME) == 0) {
+         return;
+     }
+     g_sServerHost = _strdup(sBuffer);
++    g_configSource = "ini";
+     if (GetPrivateProfileStringA("config", "port", "", sBuffer, sizeof(sBuffer), ".\\" CONSTANTS_CONFIG_NAME) == 0) {
+         return;
+     }
+--- a/src/bypass.cpp
++++ b/src/bypass.cpp
+@@ -32,6 +32,10 @@
+     }
+     void Socket(int type, int af, int protocol) {
+         _m_hSocket = socket(af, type, protocol);
++        const int error = WSAGetLastError();
++        static volatile LONG count = 0;
++        if (InterlockedIncrement(&count) <= 16) DebugMessage("BUNS_RUNTIME client-socket-created socket=%u error=%d\n", static_cast<unsigned>(_m_hSocket), error);
++        WSASetLastError(error);
+         if (_m_hSocket == INVALID_SOCKET) {
+             throw ZException(WSAGetLastError());
+         }
+@@ -66,8 +70,41 @@
+     MEMBER_HOOK(void, 0x00494CA3, Connect, const CONNECTCONTEXT& ctx)
+ };
+ 
++static int TraceConnect(SOCKET socket, const sockaddr* address, int length) {
++    static volatile LONG count = 0;
++    const bool trace = InterlockedIncrement(&count) <= 16;
++    if (trace && address && length >= sizeof(sockaddr_in) && address->sa_family == AF_INET) {
++        const int savedError = WSAGetLastError();
++        const auto* ipv4 = reinterpret_cast<const sockaddr_in*>(address);
++        WSAPROTOCOL_INFOA provider{};
++        int providerLength = sizeof(provider);
++        const int providerResult = getsockopt(socket, SOL_SOCKET, SO_PROTOCOL_INFOA,
++            reinterpret_cast<char*>(&provider), &providerLength);
++        const auto& bytes = ipv4->sin_addr.S_un.S_un_b;
++        DebugMessage("BUNS_RUNTIME client-socket-connect destination=%u.%u.%u.%u port=%u provider-result=%d provider=%s\n",
++            bytes.s_b1, bytes.s_b2, bytes.s_b3, bytes.s_b4, ntohs(ipv4->sin_port),
++            providerResult, providerResult == 0 ? provider.szProtocol : "unavailable");
++        WSASetLastError(savedError);
++    }
++    const int result = connect(socket, address, length);
++    const int error = WSAGetLastError();
++    if (trace) DebugMessage("BUNS_RUNTIME client-socket-connect-return result=%d error=%d\n", result, error);
++    WSASetLastError(error);
++    return result;
++}
++
++static int TraceAsyncSelect(SOCKET socket, HWND window, u_int message, long events) {
++    const int result = WSAAsyncSelect(socket, window, message, events);
++    const int error = WSAGetLastError();
++    static volatile LONG count = 0;
++    if (InterlockedIncrement(&count) <= 16) DebugMessage("BUNS_RUNTIME client-socket-async-select result=%d error=%d\n", result, error);
++    WSASetLastError(error);
++    return result;
++}
++
+ void CClientSocket::Connect_hook(const CONNECTCONTEXT& ctx) {
+-    DEBUG_MESSAGE("CClientSocket::Connect");
++    static volatile LONG count = 0;
++    if (InterlockedIncrement(&count) <= 16) DebugMessage("BUNS_RUNTIME client-socket-connect-enter login=%d hwnd=%p\n", ctx.bLogin, m_hWnd);
+     m_ctxConnect.lAddr.RemoveAll();
+     m_ctxConnect.lAddr.AddTail(ctx.lAddr);
+     m_ctxConnect.posList = ctx.posList;
+@@ -80,8 +117,8 @@
+     m_sock.CloseSocket();
+     m_sock.Socket(SOCK_STREAM, AF_INET, 0);
+     m_tTimeout = timeGetTime() + 5000;
+-    if (WSAAsyncSelect(m_sock, m_hWnd, 0x401, 0x33) == SOCKET_ERROR ||
+-            connect(m_sock, next, 16) != INVALID_SOCKET ||
++    if (TraceAsyncSelect(m_sock, m_hWnd, 0x401, 0x33) == SOCKET_ERROR ||
++            TraceConnect(m_sock, next, 16) != INVALID_SOCKET ||
+             WSAGetLastError() != WSAEWOULDBLOCK) {
+         // CClientSocket::OnConnect(this, 0);
+         reinterpret_cast<void(__thiscall*)(CClientSocket*, int)>(0x00494ED1)(this, 0);
+@@ -377,6 +414,7 @@
+ void AttachClientBypass() {
+-    ATTACH_HOOK(CClientSocket::Connect, CClientSocket::Connect_hook);
++    const bool socketHook = ATTACH_HOOK(CClientSocket::Connect, CClientSocket::Connect_hook);
++    DebugMessage("BUNS_RUNTIME client-socket-hook-attached result=%d\n", socketHook);
+     ATTACH_HOOK(CWvsApp::Constructor, CWvsApp::Constructor_hook);
+     ATTACH_HOOK(CWvsApp::SetUp, CWvsApp::SetUp_hook);
+     ATTACH_HOOK(CWvsApp::Run, CWvsApp::Run_hook);
+     ATTACH_HOOK(CLogin::SendCheckPasswordPacket, CLogin::SendCheckPasswordPacket_hook);
+--- a/src/system.cpp
++++ b/src/system.cpp
+@@ -40,3 +40,4 @@
+ static void InstallRoutingHooks();
++void TraceConsumedConfig();
+ 
+ typedef decltype(&SetUnhandledExceptionFilter) SetUnhandledExceptionFilter_t;
+@@ -312,3 +313,4 @@
+ static void InstallRoutingHooks() {
++    TraceConsumedConfig();
+     const bool connected = ATTACH_HOOK(Connect_orig, Connect_hook);
+     const bool peer = connected && ATTACH_HOOK(GetPeerName_orig, GetPeerName_hook);

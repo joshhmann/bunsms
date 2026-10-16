@@ -148,6 +148,13 @@ try {
     }
     Copy-Item $crtManifest (Join-Path $game 'msvc-runtime-provenance.json')
     "[config]`nhost=$GameHost`nport=8484`n" | Set-Content (Join-Path $game 'config.ini') -Encoding ascii
+    $configPath = Join-Path $game 'config.ini'
+    $report.stagedConfiguration = [pscustomobject]@{
+        path = $configPath
+        sha256 = (Get-FileHash $configPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        text = Get-Content $configPath -Raw
+        evidenceKind = 'Actual staged file bytes; consumed native values require the independent BUNS_RUNTIME consumed-config event'
+    }
     $report.gameDirectory = $game
     $report.runtimeProvenance = Get-Content (Join-Path $KaentakeArtifact 'kaentake-build.json') -Raw | ConvertFrom-Json
     $report.diagnosticOnly = [bool]$report.runtimeProvenance.diagnosticOnly
