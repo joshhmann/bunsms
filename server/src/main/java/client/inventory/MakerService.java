@@ -32,7 +32,6 @@ import server.ItemInformationProvider;
 import server.MakerItemFactory;
 import tools.PacketCreator;
 import tools.Pair;
-import tools.Randomizer;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -220,30 +219,12 @@ public class MakerService {
 
                     for (Pair<Integer, Integer> pair : recipe.getGainItems()) {
                         c.getPlayer().setCS(true);
-                        // Crystal luck delta (IDs 4250000-4252000, +1/+2): verbatim
-                        // from MapleRoot MakerService lines 203-221, where it is
-                        // pre-existing source behavior — but NEW to Buns players:
-                        // the pre-extraction BunsMS MakerProcessor (5c35efd^)
-                        // granted crystals directly with no luck logic; the delta
-                        // was introduced by extraction commit 5c35efd
-                        // ("luck-bonus addition"). Port-faithful, not Buns-original.
-                        int luck = 0;
-                        if (pair.getLeft() - 4250000 < 2000 && pair.getLeft() > 4250000) {
-                            int rand = Randomizer.rand(1, 100);
-                            if (pair.getLeft() % 10 == 0) {
-                                if (rand == 1) {
-                                    luck = 2;
-                                }
-                                else if (rand < 12) {
-                                    luck = 1;
-                                }
-                            } else if (pair.getLeft() % 10 == 1) {
-                                if (rand < 6)
-                                    luck = 1;
-                            }
-                        }
-
-                        c.getAbstractPlayerInteraction().gainItem(pair.getLeft() + luck, (pair.getRight().shortValue()), false);
+                        // No crystal luck adjustment: the pre-extraction BunsMS
+                        // MakerProcessor granted recipe gain IDs verbatim, and
+                        // preservation of Buns behavior wins over the MapleRoot
+                        // source's luck block (removed here — see maker-port
+                        // audit /tmp/maker-baseline-preservation.md).
+                        c.getAbstractPlayerInteraction().gainItem(pair.getLeft(), (pair.getRight().shortValue()), false);
                         c.getPlayer().setCS(false);
                     }
                 } else {
