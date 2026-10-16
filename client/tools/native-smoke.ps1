@@ -194,6 +194,23 @@ function Save-NativeSnapshot([int[]]$Ids) {
             }
         }
     }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.genderAction.status -eq 'submitted-normal-gender-confirm' -and
+        -not $report.worldButtonAction -and ([datetime]$row.utc) -gt ([datetime]$report.genderAction.utc).AddSeconds(2)) {
+        $state = Read-QAAccountState
+        $report.accountBeforeWorldButton = $state
+        if ($state.status -eq 'observed' -and $state.account.tos -eq 1 -and
+            $state.account.gender -eq 0 -and $state.account.loggedin -eq 2) {
+            $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+            if ($window) {
+                $report.worldButtonAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                    scope = 'Normal click on observed Scania world button; input alone does not prove channel selection, character creation or world entry' }
+                try {
+                    [NativeSmoke]::ClickClient($window, 245, 160)
+                    $report.worldButtonAction.status = 'submitted-normal-world-button-click'
+                } catch { $report.worldButtonAction.status = 'failed'; $report.worldButtonAction.error = $_.Exception.ToString(); throw }
+            }
+        }
+    }
 }
 
 try {
@@ -436,7 +453,7 @@ try {
                         $login = Get-Content (Join-Path $loginDirectory 'result.json') -Raw | ConvertFrom-Json
                         $report.ordinaryLogin = [pscustomobject]@{ directory = $loginDirectory; status = $login.status; error = $login.error
                             input = $login.loginInput; foregroundAttempt = $login.foregroundAttempt
-                            termsAction = $login.termsAction; genderAction = $login.genderAction; accountAfterObservation = $login.accountAfterObservation
+                            termsAction = $login.termsAction; genderAction = $login.genderAction; worldButtonAction = $login.worldButtonAction; accountAfterObservation = $login.accountAfterObservation
                             acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
                         if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
                             throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
@@ -577,6 +594,7 @@ try {
         $report.accountAfterObservation | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $OutputDirectory 'qa-account-state.json')
         if ($report.termsAction.status -eq 'failed') { throw 'Normal owned QA terms interaction failed; inspect actual UI and read-only account state' }
         if ($report.genderAction.status -eq 'failed') { throw 'Normal owned QA gender interaction failed; inspect actual UI and read-only account state' }
+        if ($report.worldButtonAction.status -eq 'failed') { throw 'Normal owned QA world-button input failed; inspect actual native UI before any world acceptance claim' }
         if ($report.genderAction.status -eq 'submitted-normal-gender-confirm' -and
             $report.accountAfterObservation.status -eq 'observed' -and $report.accountAfterObservation.account.gender -eq 10) {
             throw 'Normal QA gender confirmation did not persist; inspect actual UI before advancing account acceptance'
