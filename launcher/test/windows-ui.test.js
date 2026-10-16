@@ -68,11 +68,14 @@ async function run() {
       const message = JSON.parse(data);
       if (message.method === "Debugger.scriptParsed") scriptUrls.set(message.params.scriptId, message.params.url);
       if (message.method !== "Debugger.paused") return;
+      if (!breakpoint || !(message.params.hitBreakpoints || []).includes(breakpoint.breakpointId)) return;
+      const ownedBreakpoint = breakpoint;
+      breakpoint = null; // Only this pause owns evaluation/resume, even across async replies.
+      report.startupPause = { utc: new Date().toISOString(), reason: message.params.reason, hitBreakpoints: message.params.hitBreakpoints };
       try {
         const frame = message.params.callFrames[0];
         if (!startupWrapped && (scriptUrls.get(frame.location.scriptId) || "").endsWith("/renderer.js")) {
-          await command("Debugger.removeBreakpoint", { breakpointId: breakpoint.breakpointId });
-          breakpoint = null;
+          await command("Debugger.removeBreakpoint", { breakpointId: ownedBreakpoint.breakpointId });
           const wrapped = await command("Debugger.evaluateOnCallFrame", {
             callFrameId: frame.callFrameId,
             expression: `(() => {

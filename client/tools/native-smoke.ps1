@@ -82,10 +82,17 @@ function Save-NativeSnapshot([int[]]$Ids) {
         }
     }
     if ($ExerciseLogin -and -not $report.loginInput -and
-        (Get-Content $debugLog -Raw).Contains('BUNS_RUNTIME caps-ack ')) {
+        (Get-Content $debugLog -Raw).Contains('BUNS_RUNTIME initialize-success')) {
         $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
-        if ($window) {
-            $report.loginInput = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; username = 'bunsrcqa'; hwnd = $window.Handle; actualAuthentication = 'PENDING server/UI evidence' }
+        if ($window -and @($row.screenshots | Where-Object visualContent).Count -gt 0 -and
+            -not @($row.windows | Where-Object { $_.ProcessId -eq $window.ProcessId -and $_.Visible -and $_.Class -eq '#32770' }).Count) {
+            $backend = Get-Content $backendResult -Raw | ConvertFrom-Json
+            $java = Get-Process -Id $backend.serverPid -ErrorAction Stop
+            $mysql = Get-Process -Id $backend.mysqlPid -ErrorAction Stop
+            if ($java.ProcessName -ne 'java' -or $mysql.ProcessName -ne 'mysqld') { throw 'QA backend PID identity changed before ordinary login input' }
+            $listeners = @(Get-NetTCPConnection -State Listen -LocalPort 8484 -OwningProcess $backend.serverPid -ErrorAction Stop)
+            if (-not $listeners.Count) { throw 'Real QA backend has no login listener at ordinary input time' }
+            $report.loginInput = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; username = 'bunsrcqa'; hwnd = $window.Handle; javaPid = $java.Id; mysqlPid = $mysql.Id; actualAuthentication = 'PENDING server/UI evidence'; basis = 'Observed rendered native login window plus live owned backend/listener; ordinary login does not depend on a custom ACK' }
             try {
                 [NativeSmoke]::ClickClient($window, 470, 245)
                 [System.Windows.Forms.SendKeys]::SendWait('bunsrcqa')
