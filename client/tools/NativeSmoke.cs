@@ -69,6 +69,7 @@ public static class NativeSmoke
                     log.WriteLine("EXIT_PROCESS pid=" + pair.Key + " code=" + process.ExitCode + " reason=natural-before-controller-cleanup");
                     exited.Add(pair.Key); continue;
                 }
+                process.Refresh(); // Process.Modules is cached; late-loaded companion DLLs must be observed.
                 foreach (ProcessModule module in process.Modules)
                 {
                     string key = pair.Key + ":" + module.BaseAddress.ToInt64();

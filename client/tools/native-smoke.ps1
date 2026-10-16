@@ -158,7 +158,7 @@ try {
     $report.errorDialogObserved = @($final.windows | Where-Object { $_.Visible -and $_.Class -eq '#32770' }).Count -gt 0
     if (-not $report.initializeSuccessObserved -or -not $report.companionModuleObserved -or -not $report.nativeUiObserved -or
         -not $report.gameAliveAfterObservation -or $report.errorDialogObserved) {
-        throw 'Native startup acceptance not met; inspect actual windows, screenshots, passive process/DBWIN observations, and public TCP measurements'
+        throw 'Native startup acceptance not met; inspect actual windows, screenshots, passive process/DBWIN observations, and the deferred public-activation state'
     }
     $report.status = 'native-startup-observed'
 } catch {
