@@ -46,7 +46,10 @@ export function resolveAssetPath(key: string): string {
     throw new Error(`Invalid asset key: ${key}`);
   }
   const parts = key.split("/");
-  if (parts.some((p) => !p)) {
+  // Never serve staging areas, dotfiles, or version-control internals as
+  // live assets: `releases/` (staged/previous bytes) and dot segments stay
+  // unservable even though they live under ASSET_DIR on disk.
+  if (parts.some((p) => !p || p === "." || p === "releases" || p.startsWith("."))) {
     throw new Error(`Invalid asset key: ${key}`);
   }
   const full = normalize(join(ASSET_DIR, ...parts));

@@ -274,7 +274,7 @@ function UploadModal({
         method: "POST",
         body: fd,
       });
-      // Read as text first so we can surface non-JSON server errors (Fly proxy
+      // Read as text first so we can surface non-JSON server errors (proxy
       // 413, runtime body-limit HTML pages, etc.) instead of crashing on
       // `Unexpected token '<'`.
       const raw = await res.text();

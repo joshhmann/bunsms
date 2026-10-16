@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 9. Trigger full publish (client WZ + R2 + manifest bump + server restart)
+    // 9. Trigger full publish (client WZ + asset dir + manifest bump; restart is manual)
     // Forward whichever auth the incoming request carried (browser cookie OR
     // GM x-gm-secret) to the nested publish call — otherwise middleware 401s
     // our own self-fetch and the publish silently never runs.
@@ -168,9 +168,9 @@ export async function POST(request: NextRequest) {
       );
       const publishData = await publishRes.json();
       if (publishData.status === "started") {
-        publishNote = "Full publish started (client WZ → R2 → manifest bump → server restart). Takes ~1-2 minutes.";
+        publishNote = "Full publish started (client WZ → asset dir → manifest bump; restart is manual). Takes ~1-2 minutes.";
       } else {
-        publishNote = `Auto-publish failed: ${publishData.error || JSON.stringify(publishData)}. Use 'Publish to R2' from the dashboard Reactors page.`;
+        publishNote = `Auto-publish failed: ${publishData.error || JSON.stringify(publishData)}. Use 'Publish to asset dir' from the dashboard Reactors page.`;
       }
     } catch (err: any) {
       publishNote = `Auto-publish failed: ${err.message || err}. Use 'Publish to R2' from the dashboard Reactors page.`;

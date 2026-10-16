@@ -714,7 +714,7 @@ export default function CreateItemPage() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="group relative"
-                  title="Click to change icon"
+                  title="Click to change icon (hosted in asset dir)"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -724,7 +724,7 @@ export default function CreateItemPage() {
                     style={{ imageRendering: "pixelated" }}
                   />
                   {iconUrl && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent-green text-bg-primary text-[8px] flex items-center justify-center font-bold">R2</span>
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent-green text-bg-primary text-[8px] flex items-center justify-center font-bold">CDN</span>
                   )}
                 </button>
               ) : baseItemId ? (
@@ -755,7 +755,7 @@ export default function CreateItemPage() {
               )}
               {iconUrl && (
                 <p className="text-[10px] text-accent-green">
-                  Uploaded to R2
+                  Staged to asset dir
                 </p>
               )}
               <div>

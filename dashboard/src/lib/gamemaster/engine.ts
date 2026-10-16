@@ -2329,7 +2329,7 @@ Players physically hit the reactor object on the map and it drops items. This is
 
 **Finding reactors**: Use \`search_reactors\` and ONLY pick reactors where \`visible=true\`. Many vanilla reactors have a 1x1 pixel sprite and are invisible to players. Custom reactors (marked [Custom]) are always visible. If using \`create_treasure_hunt\`, you can omit the reactorId and a visible reactor will be auto-selected.
 
-**Creating unique reactors**: If none of the vanilla reactors fit your vision, use \`create_custom_reactor\` to generate one. Give it a descriptive name and a detailed visual description (e.g. "a glowing enchanted mushroom with purple spots" or "a frozen treasure chest covered in ice crystals"). The system generates a pixel-art sprite via AI, builds all animation frames, writes server files, uploads to R2, bumps the client manifest, and restarts the server — all automatically. The reactor is fully usable within ~2 minutes.
+**Creating unique reactors**: If none of the vanilla reactors fit your vision, use \`create_custom_reactor\` to generate one. Give it a descriptive name and a detailed visual description (e.g. "a glowing enchanted mushroom with purple spots" or "a frozen treasure chest covered in ice crystals"). The system generates a pixel-art sprite via AI, builds all animation frames, writes server files, stages to the asset dir, bumps the client manifest — all automatically (server restart is manual). The reactor is fully usable within ~2 minutes.
 
 **Prefer custom reactors over vanilla ones for events.** Custom reactors make the server feel unique and hand-crafted — players notice when a reactor looks like something they've never seen before. For seasonal events, themed treasure hunts, or special drop mechanics, always consider creating a custom reactor that matches the event's theme (e.g. a pumpkin for Halloween, a snowflake crystal for winter, a dragon egg for a boss event). It takes ~2 minutes and makes the event feel 10x more polished than reusing a generic vanilla box.
 
@@ -2916,7 +2916,7 @@ export async function runGameMaster(
   await persistSessionEnd(session);
 
   // Sweep any custom reactors stuck in published=0 — a prior create_custom_reactor
-  // may have failed its inline publish (e.g. R2 creds missing at the time) and
+  // may have failed its inline publish (e.g. asset staging failed at the time) and
   // left an unusable reactor in the DB. Publishing handles its own server restart,
   // so if we trigger it we skip the regular post-session restart below.
   let publishTriggered = false;

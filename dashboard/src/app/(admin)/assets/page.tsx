@@ -171,7 +171,7 @@ export default function AssetsPage() {
   };
 
   const onDelete = async (id: number) => {
-    if (!confirm("Delete this asset row? (R2 file remains; only the DB row is removed.)")) return;
+    if (!confirm("Delete this asset row? (Staged file remains; only the DB row is removed.)")) return;
     const res = await fetch(`/api/admin/assets/${id}`, { method: "DELETE" });
     if (!res.ok) {
       alert((await res.json()).error || `HTTP ${res.status}`);

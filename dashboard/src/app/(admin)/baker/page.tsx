@@ -111,7 +111,7 @@ export default function BakerPage() {
             disabled={publishing}
             className="rounded-lg bg-accent-blue px-4 py-2 text-sm font-bold text-white transition hover:bg-accent-blue/90 disabled:opacity-50"
           >
-            {publishing ? "Publishing..." : "Publish to R2"}
+            {publishing ? "Publishing..." : "Publish to asset dir"}
           </button>
         </div>
       </div>

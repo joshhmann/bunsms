@@ -40,7 +40,7 @@ export default function ReactorsPage() {
 
   async function handlePublish(mode: "local" | "r2") {
     setPublishing(true);
-    setPublishStatus(mode === "local" ? "Building local WZ..." : "Starting R2 publish...");
+    setPublishStatus(mode === "local" ? "Building local WZ..." : "Starting asset publish...");
     try {
       if (mode === "local") {
         const res = await fetch("/api/admin/reactors/publish-local", { method: "POST" });
@@ -101,7 +101,7 @@ export default function ReactorsPage() {
             disabled={publishing || reactors.length === 0}
             className="rounded-lg bg-accent-purple/20 px-4 py-2 text-sm font-medium text-accent-purple transition-colors hover:bg-accent-purple/30 disabled:opacity-50"
           >
-            {publishing ? "Publishing..." : "Publish to R2"}
+            {publishing ? "Publishing..." : "Publish to asset dir"}
           </button>
           <Link
             href="/reactors/create"

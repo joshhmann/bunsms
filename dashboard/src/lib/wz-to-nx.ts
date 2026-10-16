@@ -1,5 +1,5 @@
 // Fire-and-forget dispatch of the `wz-to-nx` GitHub Actions workflow.
-// Called after a publish endpoint uploads patched WZ file(s) to R2 so the
+// Called after a publish endpoint stages patched WZ file(s) to the asset dir so the
 // browser client at play.buns.asslorde.com picks up fresh .nx files.
 //
 // Intentionally non-blocking: publish endpoints should not fail or stall if
