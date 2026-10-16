@@ -146,6 +146,9 @@ try {
         if ($variant.id -eq $authority.reencodingControlVariantId -and $step.outcome -ne 'startup-observed') {
             throw 'STOP: semantically unchanged re-encoding failed; investigate writer/representation compatibility before any node/schema/root attribution'
         }
+        if ($variant.id -in @($authority.prerequisiteVariantIds) -and $step.outcome -ne 'startup-observed') {
+            throw "STOP: explicit healthy prerequisite failed: $($variant.id); do not interpret dependent controls"
+        }
     }
     if ($isolateRemaining) {
         & (Join-Path $PSScriptRoot 'isolate-native-archives.ps1') -OutputDirectory $OutputDirectory -GameDirectory $GameDirectory `
