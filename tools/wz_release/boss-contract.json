@@ -262,17 +262,6 @@
       "target_wz": "Map.wz"
     },
     {
-      "same_sha256_as_selected": false,
-      "source": {
-        "archive": "community",
-        "member": "Community Repack  .IMG/Data/Mob/8610022.img",
-        "sha256": "48be59bea5fac876d1a387496e4a5a65b806c665060d87c020c3de7a1db34396",
-        "size": 84988
-      },
-      "target_image": "8610022.img",
-      "target_wz": "Mob.wz"
-    },
-    {
       "same_sha256_as_selected": true,
       "source": {
         "archive": "community",
@@ -410,6 +399,21 @@
       "action": "import-nodes",
       "raw_source": {
         "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/MapHelper.img",
+        "sha256": "11964f1a15bec03e7d900815111b30948740a2411cb061ff441558e44ee9ac13",
+        "size": 3016012
+      },
+      "reasons": ["Actual deployed accepted maps info/mapMark=darkEreb"],
+      "required_selectors": ["mark/darkEreb"],
+      "selectors": [],
+      "semantic_status": "source-canvas-verified-38x38",
+      "target_image": "MapHelper.img",
+      "target_wz": "Map.wz"
+    },
+    {
+      "action": "import-nodes",
+      "raw_source": {
+        "archive": "mapleroot",
         "member": "MapleRoot Full Repack/Game Files/Data/Item/Consume/0221.img",
         "sha256": "1d797b895b815ed385c040aa089bf3e123124448b01d83aed34e5e57e306daeb",
         "size": 57979
@@ -507,7 +511,7 @@
         "preserved_selectors": [
           "04001126"
         ],
-        "sha256": "89638e46e0b47e788141e2f5f1169decbac28baa813f0fe498be7d384301d316"
+        "sha256": "1a2f84f3307c8c1b11747004effb8b21cb2d7ecdedc9d8be7e408685cdfb1567"
       },
       "target_image": "Etc/0400.img",
       "target_wz": "Item.wz"
@@ -2217,9 +2221,9 @@
       "action": "import-image",
       "raw_source": {
         "archive": "mapleroot",
-        "member": "MapleRoot Full Repack/Game Files/Data/Mob/8610022.img",
-        "sha256": "d6d18f2a5925a67056972f91dc27c66ee4df145162eb65cdca20c70cb8987886",
-        "size": 84988
+        "member": "MapleRoot Full Repack/Game Files/Data/Mob/8610005.img",
+        "sha256": "28b3f5236bf88b3453514afa67bcad74453829798bcb53b99e5d125b48b50364",
+        "size": 84984
       },
       "reasons": [
         "Map.wz/Map/Map2/271030010.img.xml:life/0"
@@ -2229,13 +2233,13 @@
       ],
       "selectors": [],
       "semantic_status": "not-verified",
-      "target_image": "8610022.img",
+      "target_image": "8610005.img",
       "target_wz": "Mob.wz",
       "xml_source": {
         "archive": "mapleroot",
-        "member": "MapleRoot Full Repack/Server/wz/Mob.wz/8610022.img.xml",
-        "sha256": "a8ac71680ef21d77102c76204a3b391bf41a80dc3f0de8598a78595641c245f1",
-        "size": 11243
+        "member": "MapleRoot Full Repack/Server/wz/Mob.wz/8610005.img.xml",
+        "sha256": "58bcdd95940da101bf29df1fa0b90eb8d08eb7d0131f648bc07063e9986fa344",
+        "size": 11241
       }
     },
     {
@@ -3453,7 +3457,7 @@
       "action": "import-nodes",
       "reasons": [
         "Mob 8150302 string",
-        "Mob 8610022 string",
+        "Mob 8610005 string",
         "Mob 9300125 string",
         "Mob 9400408 string",
         "Mob 9400409 string",
@@ -3462,7 +3466,7 @@
       ],
       "required_selectors": [
         "8150302",
-        "8610022",
+        "8610005",
         "9300125",
         "9400408",
         "9400409",
@@ -3470,7 +3474,7 @@
         "9420522"
       ],
       "selectors": [
-        "8610022",
+        "8610005",
         "9400408",
         "9400409",
         "9420521",
@@ -13729,60 +13733,60 @@
     {
       "reason": "Map.wz/Map/Map2/271030010.img.xml:life/0",
       "selector": "",
-      "target_image": "8610022.img",
+      "target_image": "8610005.img",
       "target_wz": "Mob.wz"
     },
     {
-      "reason": "Mob 8610022 string",
-      "selector": "8610022",
+      "reason": "Mob 8610005 string",
+      "selector": "8610005",
       "target_image": "Mob.img",
       "target_wz": "String.wz"
     },
     {
       "reason": "Map.wz/Map/Map2/271030010.img.xml:life/1",
       "selector": "",
-      "target_image": "8610022.img",
+      "target_image": "8610005.img",
       "target_wz": "Mob.wz"
     },
     {
-      "reason": "Mob 8610022 string",
-      "selector": "8610022",
+      "reason": "Mob 8610005 string",
+      "selector": "8610005",
       "target_image": "Mob.img",
       "target_wz": "String.wz"
     },
     {
       "reason": "Map.wz/Map/Map2/271030010.img.xml:life/2",
       "selector": "",
-      "target_image": "8610022.img",
+      "target_image": "8610005.img",
       "target_wz": "Mob.wz"
     },
     {
-      "reason": "Mob 8610022 string",
-      "selector": "8610022",
+      "reason": "Mob 8610005 string",
+      "selector": "8610005",
       "target_image": "Mob.img",
       "target_wz": "String.wz"
     },
     {
       "reason": "Map.wz/Map/Map2/271030010.img.xml:life/3",
       "selector": "",
-      "target_image": "8610022.img",
+      "target_image": "8610005.img",
       "target_wz": "Mob.wz"
     },
     {
-      "reason": "Mob 8610022 string",
-      "selector": "8610022",
+      "reason": "Mob 8610005 string",
+      "selector": "8610005",
       "target_image": "Mob.img",
       "target_wz": "String.wz"
     },
     {
       "reason": "Map.wz/Map/Map2/271030010.img.xml:life/4",
       "selector": "",
-      "target_image": "8610022.img",
+      "target_image": "8610005.img",
       "target_wz": "Mob.wz"
     },
     {
-      "reason": "Mob 8610022 string",
-      "selector": "8610022",
+      "reason": "Mob 8610005 string",
+      "selector": "8610005",
       "target_image": "Mob.img",
       "target_wz": "String.wz"
     },
@@ -16511,6 +16515,22 @@
   "operations": [
     {
       "op": "copy_subtree",
+      "source": "boss/raw/Map.wz/MapHelper.img",
+      "source_node": "mark/Road of Vanishing",
+      "target_wz": "Map.wz",
+      "target_image": "MapHelper.img",
+      "target_node": "mark/Road of Vanishing"
+    },
+    {
+      "op": "copy_subtree",
+      "source": "boss/raw/Map.wz/MapHelper.img",
+      "source_node": "mark/darkEreb",
+      "target_wz": "Map.wz",
+      "target_image": "MapHelper.img",
+      "target_node": "mark/darkEreb"
+    },
+    {
+      "op": "copy_subtree",
       "source": "boss/raw/Item.wz/Consume/0221.img",
       "source_node": "02210042",
       "target_image": "Consume/0221.img",
@@ -17897,8 +17917,8 @@
     },
     {
       "op": "import_image",
-      "source": "boss/raw/Mob.wz/8610022.img",
-      "target_image": "8610022.img",
+      "source": "boss/raw/Mob.wz/8610005.img",
+      "target_image": "8610005.img",
       "target_wz": "Mob.wz"
     },
     {
@@ -19675,7 +19695,7 @@
             "value": "Official Knight A"
           }
         ],
-        "name": "8610022",
+        "name": "8610005",
         "type": "property"
       },
       "op": "set_subtree",
@@ -19686,11 +19706,11 @@
           "sha256": "89484558781505b16d3ed17c0a2c982137d706802fd02b5d51d79063eb9a6660",
           "size": 1031522
         },
-        "selector": "8610022",
+        "selector": "8610005",
         "xml": "boss/xml/String.wz/Mob.img.xml"
       },
       "target_image": "Mob.img",
-      "target_node": "8610022",
+      "target_node": "8610005",
       "target_wz": "String.wz"
     },
     {
@@ -20337,6 +20357,14 @@
       "target_wz": "Map.wz"
     }
   ],
+  "reference_lineage_divergences": [
+    {
+      "path": "Item.wz/Etc/0400.img.xml",
+      "previous_xml_reference_sha256": "89638e46e0b47e788141e2f5f1169decbac28baa813f0fe498be7d384301d316",
+      "current_xml_reference_sha256": "1a2f84f3307c8c1b11747004effb8b21cb2d7ecdedc9d8be7e408685cdfb1567",
+      "reason": "Fresh read-only observation: local server XML reference changed independently. Preserve it; actual native baseline remains the separately pinned official GMS v83 installer."
+    }
+  ],
   "policy": {
     "exclusions": [
       "obsolete mob8000404",
@@ -20938,6 +20966,20 @@
     }
   ],
   "requirements": [
+    {
+      "wz": "Map.wz",
+      "image": "MapHelper.img",
+      "node": "mark/Road of Vanishing",
+      "type": "canvas",
+      "dimensions": [38, 38]
+    },
+    {
+      "wz": "Map.wz",
+      "image": "MapHelper.img",
+      "node": "mark/darkEreb",
+      "type": "canvas",
+      "dimensions": [38, 38]
+    },
     {
       "image": "Map/Map9/910000000.img",
       "node": "",
@@ -23802,14 +23844,14 @@
       "wz": "Sound.wz"
     },
     {
-      "image": "8610022.img",
+      "image": "8610005.img",
       "node": "",
       "type": "property",
       "wz": "Mob.wz"
     },
     {
       "image": "Mob.img",
-      "node": "8610022",
+      "node": "8610005",
       "type": "property",
       "wz": "String.wz"
     },
@@ -24718,7 +24760,7 @@
       "value": "3"
     },
     {
-      "image": "Mob.wz/8610022.img.xml",
+      "image": "Mob.wz/8610005.img.xml",
       "kind": "uol",
       "node": "attack1/10",
       "resolved_selector": "stand/0",
@@ -24726,7 +24768,7 @@
       "value": "../stand/0"
     },
     {
-      "image": "Mob.wz/8610022.img.xml",
+      "image": "Mob.wz/8610005.img.xml",
       "kind": "uol",
       "node": "attack1/11",
       "resolved_selector": "stand/1",
@@ -24734,7 +24776,7 @@
       "value": "../stand/1"
     },
     {
-      "image": "Mob.wz/8610022.img.xml",
+      "image": "Mob.wz/8610005.img.xml",
       "kind": "uol",
       "node": "attack1/12",
       "resolved_selector": "stand/2",
@@ -24742,7 +24784,7 @@
       "value": "../stand/2"
     },
     {
-      "image": "Mob.wz/8610022.img.xml",
+      "image": "Mob.wz/8610005.img.xml",
       "kind": "uol",
       "node": "attack1/13",
       "resolved_selector": "stand/3",

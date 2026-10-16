@@ -89,7 +89,10 @@ def export_xml(root, target):
 
 
 def node_from_spec(spec):
-    return Node(spec['name'], spec['type'], spec.get('value'),
+    kind, value = spec['type'], spec.get('value')
+    if kind in ('float', 'double'):
+        value = struct.pack('<f' if kind == 'float' else '<d', value)
+    return Node(spec['name'], kind, value,
                 [node_from_spec(c) for c in spec.get('children', [])])
 
 
@@ -246,6 +249,10 @@ def build(baseline, inputs, output, contracts):
                 raise FormatError(f'Requirement type mismatch: {req}')
             if req.get('dimensions') and [node.value['width'],node.value['height']] != req['dimensions']:
                 raise FormatError(f'Requirement dimensions mismatch: {req}')
+            if 'value' in req:
+                expected = node_from_spec({'name': node.name, 'type': node.kind, 'value': req['value']})
+                if semantic_hash(node) != semantic_hash(expected):
+                    raise FormatError(f'Requirement exact value mismatch: {req}')
             report['requirements'].append(dict(requirement=req,semantic_sha256=semantic_hash(node)))
     files = [dict(name=p.relative_to(native).as_posix(),sha256=digest(p),size=p.stat().st_size,
         source=('exact-node merged; see build-evidence.json' if p.name in grouped else 'pinned GMS v83 installer'),

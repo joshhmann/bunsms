@@ -5,8 +5,8 @@ import csv
 import hashlib
 import json
 from pathlib import Path
-from native_wz import Archive, FormatError, Node, pixels
-from build_release import walk
+from native_wz import Archive, FormatError, Node, pixels, semantic_hash
+from build_release import walk, node_from_spec
 
 
 class Corpus:
@@ -111,6 +111,9 @@ def dependencies(root, image_path):
         if bgm and '/' in bgm:
             bank,track=bgm.split('/',1)
             refs.append(('info/bgm',f'Sound/{bank}.img/{track}'))
+        mark=value(info,'mapMark')
+        if mark:
+            refs.append(('info/mapMark',f'Map/MapHelper.img/mark/{mark}'))
     for n in (root.child('back') or Node('','property')).children:
         bank=value(n,'bS')
         no=value(n,'no')
@@ -143,12 +146,16 @@ def dependencies(root, image_path):
 def verify(native,contracts,catalog,output):
     corpus=Corpus(native)
     report={'catalog':[],'requirements':[],'dependencies':[],'gaps':[]}
-    def require(path,why,kind=None):
+    def require(path,why,kind=None,expected=None):
         try:
             node=corpus.resolve(path)
             if kind and node.kind!=kind:
                 raise FormatError(f'{node.kind} != {kind}')
-            if node.kind == 'string' and not node.value.strip():
+            if expected is not None and 'value' in expected:
+                wanted=node_from_spec({'name':node.name,'type':node.kind,'value':expected['value']})
+                if semantic_hash(node)!=semantic_hash(wanted):
+                    raise FormatError('Exact deployed metadata value differs')
+            elif node.kind == 'string' and not node.value.strip():
                 raise FormatError('Empty string')
             if node.kind=='canvas':
                 pixel=pixels(node)
@@ -176,7 +183,7 @@ def verify(native,contracts,catalog,output):
         c=json.loads(Path(contractpath).read_text())
         for req in c.get('requirements',[]):
             path=f'{req["wz"]}/{req["image"]}'+('/'+req['node'] if req.get('node') else '')
-            report['requirements'].append(require(path,'contract required node',req.get('type')))
+            report['requirements'].append(require(path,'contract required node',req.get('type'),req))
         for req in c.get('stock_requirements', []):
             report['requirements'].append(require(req['path'], 'stock rider', None if req.get('type') == 'image' else req.get('type')))
         for op in c.get('operations',[]):

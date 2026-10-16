@@ -1,0 +1,291 @@
+diff --git a/NoLifeWzToNx.cpp b/NoLifeWzToNx.cpp
+index 9ff3361..f3cbde8 100644
+--- a/NoLifeWzToNx.cpp
++++ b/NoLifeWzToNx.cpp
+@@ -45,7 +45,7 @@
+ #include <cstring>
+ #ifndef NL_NO_STD_FILESYSTEM
+ #include <filesystem>
+-namespace sys = std::experimental::filesystem;
++namespace sys = std::filesystem;
+ #else
+ #include <boost/filesystem.hpp>
+ namespace sys = boost::filesystem;
+@@ -329,16 +329,17 @@ struct wztonx {
+     omapfile out;
+     std::vector<node> nodes = std::vector<node>{{node{}}};
+     std::vector<std::pair<id_t, id_t>> nodes_to_sort;
+-    std::unordered_map<uint32_t, id_t, identity<uint32_t>> string_map;
++    std::unordered_map<std::string, id_t> string_map;
+     std::vector<std::string> strings;
+     std::string str_buf;
+     std::u16string wstr_buf;
+ #ifndef NL_NO_CODECVT
+-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
++    std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
+ #endif
+     char8_t const * u8key = nullptr;
+     char16_t const * u16key = nullptr;
+-    std::vector<std::pair<id_t, int32_t>> imgs;
++    struct image_entry { id_t node; int32_t size; uint32_t offset; };
++    std::vector<image_entry> imgs;
+     size_t file_start = 0;
+     bool new_wz_format = false;
+     std::vector<id_t> uol_path;
+@@ -354,8 +355,7 @@ struct wztonx {
+     // Methods
+     std::string convert_str(std::u16string const & p_str) {
+ #ifndef NL_NO_CODECVT
+-        auto ptr = reinterpret_cast<wchar_t const *>(p_str.c_str());
+-        return convert.to_bytes(ptr, ptr + p_str.size());
++        return convert.to_bytes(p_str.data(), p_str.data() + p_str.size());
+ #else
+         std::array<char, 0x10000> buf;
+         std::wstring wbuf{p_str.cbegin(), p_str.cend()};
+@@ -364,14 +364,10 @@ struct wztonx {
+ #endif
+     }
+     id_t add_string(std::string str) {
+-        uint32_t hash = 2166136261u;
+-        for (auto c : str) {
+-            hash ^= c;
+-            hash *= 16777619u;
+-        }
+-        auto & id = string_map[hash];
+-        if (id != 0) return id;
+-        id = static_cast<id_t>(strings.size());
++        auto found = string_map.find(str);
++        if (found != string_map.end()) return found->second;
++        auto id = static_cast<id_t>(strings.size());
++        string_map.emplace(str, id);
+         strings.push_back(std::move(str));
+         return id;
+     }
+@@ -457,7 +453,7 @@ struct wztonx {
+                 u16key = reinterpret_cast<char16_t const *>(key);
+             }
+         }
+-        if (!u8key) throw std::runtime_error("Failed to identify the locale");
++        if (!u8key) throw std::runtime_error("Failed to identify the locale at " + std::to_string(in.tell()));
+         in.skip(slen);
+     }
+     void sort_nodes(id_t first, id_t count) {
+@@ -570,8 +566,9 @@ struct wztonx {
+         std::string segment;
+         while (std::getline(stream, segment, '/'))
+             parts.push_back(segment);
+-        if (parts[0] == "Map")
+-            return true;
++        if (!parts.empty() && (parts[0] == u8string(sys::path(wzfilename).stem()) ||
++            parts[0] == u8string(sys::path(wzfilename).filename())))
++            parts.erase(parts.begin());
+         id_t r = 0;
+         for (auto const & part : parts)
+             r = get_child_full(r, part);
+@@ -618,16 +615,15 @@ struct wztonx {
+         auto & n = nodes[uol.back()];
+         if (n.data_type == node::type::uol) {
+             //std::cerr << " = \"" << strings[n.data.string] << "\"" << std::endl;
+-            // If we failed to resolve any uols, just turn them into useless empty nodes
+-            n.data_type = node::type::none;
++            throw std::runtime_error("Unresolved UOL: " + strings[n.data.string]);
+         } else { std::cerr << " claims to be an invalid UOL but isn't a UOL???" << std::endl; }
+     }
+     void source_fail(std::vector<id_t> & link, std::string const& str) {
+         auto & n = nodes[link.back()];
+-        std::cerr << "Failed to find " << str << " for [" << strings[n.data.string] << "]." << std::endl;
++        throw std::runtime_error("Unresolved " + str + ": " + strings[n.data.string]);
+     }
+     void directory(id_t dir_node) {
+-        std::vector<id_t> directories;
++        std::vector<std::pair<id_t, uint32_t>> directories;
+         auto & n = nodes[dir_node];
+         auto count = static_cast<id_t>(in.read_cint());
+         auto ni = static_cast<id_t>(nodes.size());
+@@ -655,19 +651,28 @@ struct wztonx {
+             }
+             auto size = in.read_cint();
+             if (size < 0) throw std::runtime_error("Directory/img has invalid size!");
+-            in.read_cint(); // Offset that nobody cares about
+-            in.skip(4);     // Checksum that nobody cares about
++            in.read_cint(); // Checksum.
++            auto position = static_cast<uint32_t>(in.tell());
++            auto encoded = in.read<uint32_t>();
++            // Offline donors are explicitly v83. The upstream sequential
++            // layout assumption fails on valid IMG extents in these archives.
++            uint32_t mask = ((position - static_cast<uint32_t>(file_start)) ^ 0xffffffffu) * 1876u - 0x581c3f6du;
++            auto shift = mask & 31u;
++            mask = (mask << shift) | (mask >> ((32u - shift) & 31u));
++            auto target = (encoded ^ mask) + 2u * static_cast<uint32_t>(file_start);
++            if (target < file_start || target > in.file_size || static_cast<size_t>(size) > in.file_size - target)
++                throw std::runtime_error("Invalid v83 directory/image extent");
+             if (type == 3)
+-                directories.push_back(ni + i);
++                directories.emplace_back(ni + i, target);
+             else if (type == 4)
+-                imgs.emplace_back(ni + i, size);
++                imgs.push_back({ni + i, size, target});
+             else
+                 throw std::runtime_error("Unknown type 2 directory");
+         }
+-        for (auto it : directories) directory(it);
++        for (auto it : directories) { in.seek(it.second); directory(it.first); }
+         nodes_to_sort.emplace_back(ni, count);
+     }
+-    void extended_property(id_t prop_node, size_t p_offset) {
++    void extended_property(id_t prop_node, size_t p_offset, size_t p_end = 0) {
+         auto & n = nodes[prop_node];
+         auto & st = strings[read_prop_string(p_offset)];
+         if (st == "Property") {
+@@ -709,10 +714,14 @@ struct wztonx {
+             n.data.audio.id = static_cast<uint32_t>(audios.size());
+             audio a;
+             in.skip(1); // Always 0
+-            a.length = static_cast<uint32_t>(in.read_cint()) + 82u;
+-            n.data.audio.length = a.length;
+-            in.read_cint();
++            auto payload_length = in.read_cint();
++            in.read_cint(); // Duration; NX stores the original header and audio bytes.
+             a.data = in.tell();
++            if (payload_length < 0 || p_end < a.data ||
++                p_end - a.data < static_cast<size_t>(payload_length))
++                throw std::runtime_error("Invalid Sound_DX8 extent");
++            a.length = static_cast<uint32_t>(p_end - a.data);
++            n.data.audio.length = a.length;
+             audios.push_back(a);
+         } else if (st == "UOL") {
+             in.skip(1);
+@@ -764,7 +773,7 @@ struct wztonx {
+                 break;
+             case 0x09:
+                 p = in.read<int32_t>() + in.tell();
+-                extended_property(ni + i, p_offset);
++                extended_property(ni + i, p_offset, p);
+                 in.seek(p);
+                 break;
+             case 0x13:
+@@ -898,6 +907,9 @@ struct wztonx {
+                 new_wz_format = true;
+             }
+         }
++        in.seek(file_start);
++        if (in.read<uint16_t>() != 0xacu)
++            throw std::runtime_error("Offline donor converter requires v83 WZ archives");
+         in.seek(dir_start);
+         in.read_cint();
+         in.skip(1);
+@@ -905,7 +917,7 @@ struct wztonx {
+         in.seek(dir_start);
+         add_string({});
+         directory(0);
+-        for (auto & it : imgs) img(it.first, it.second);
++        for (auto & it : imgs) { in.seek(it.offset); img(it.node, it.size); }
+         std::cout << "Done!" << std::endl;
+         finish_parse();
+     }
+@@ -1085,6 +1097,8 @@ struct wztonx {
+                 throw std::runtime_error("non-zero n1 in bitmap " + std::to_string(index));
+             }
+             auto length = in.read<uint32_t>();
++            if (length == 0) throw std::runtime_error("Empty bitmap payload");
++            --length; // WZ length includes the following encryption marker.
+             auto n2 = static_cast<unsigned>(in.read<uint8_t>());
+             if (n2) {
+                 std::cerr << "non-zero n2: "
+@@ -1104,13 +1118,26 @@ struct wztonx {
+                 strm.next_in = input.data();
+                 strm.avail_in = length;
+                 inflateInit(&strm);
+-                strm.next_out = output.data();
+-                strm.avail_out = static_cast<unsigned>(output.size());
+-                auto err = inflate(&strm, Z_FINISH);
+-                if (err != Z_BUF_ERROR && err != Z_STREAM_END) {
+-                    if (err != Z_DATA_ERROR) { std::cerr << "zlib error of " << std::dec << err << std::endl; }
+-                    inflateEnd(&strm);
+-                    return false;
++                int err;
++                for (;;) {
++                    strm.next_out = output.data() + strm.total_out;
++                    strm.avail_out = static_cast<unsigned>(output.size() - strm.total_out);
++                    err = inflate(&strm, Z_FINISH);
++                    if (err == Z_STREAM_END) break;
++                    // v83 exporters can omit the final DEFLATE/Adler trailer.
++                    // Never accept zlib data errors; the pixel extent and every
++                    // surplus byte are checked below before any pixels are used.
++                    if (err == Z_BUF_ERROR && strm.avail_in == 0 && strm.avail_out != 0) {
++                        std::cerr << "Unterminated v83 bitmap " << index << ": "
++                            << strm.total_out << " decoded bytes" << std::endl;
++                        break;
++                    }
++                    if ((err != Z_BUF_ERROR && err != Z_OK) || strm.avail_out != 0 ||
++                        output.size() > (1u << 29)) {
++                        inflateEnd(&strm);
++                        return false;
++                    }
++                    output.resize(output.size() * 2);
+                 }
+                 decompressed = static_cast<int>(strm.total_out);
+                 inflateEnd(&strm);
+@@ -1118,7 +1145,7 @@ struct wztonx {
+             };
+             auto decrypt = [&] {
+                 auto p = 0u;
+-                for (auto i = 0u; i <= length - 4;) {
++                for (auto i = 0u; i + 4 <= length;) {
+                     auto blen = *reinterpret_cast<uint32_t const *>(original + i);
+                     i += 4;
+                     if (i + blen > length) return false;
+@@ -1136,11 +1163,7 @@ struct wztonx {
+                     << std::hex << (unsigned)original[0] << " 0x" << std::setfill('0')
+                     << std::setw(2) << std::hex << static_cast<unsigned>(original[1])
+                     << std::endl;
+-                // Just fill the image with blank data so nothing breaks
+-                f1 = 2;
+-                f2 = 0;
+-                decompressed = size;
+-                std::fill(output.begin(), output.begin() + size, '\0');
++                throw std::runtime_error("Unable to inflate bitmap " + std::to_string(index));
+             }
+             input.swap(output);
+             struct color4444 {
+@@ -1187,10 +1210,20 @@ struct wztonx {
+                 std::cerr << "Unknown image format2 of" << std::dec << static_cast<unsigned>(f2) << std::endl;
+                 throw std::runtime_error("Unknown image type!");
+             }
+-            if (check != pixels * 4) {
+-                std::cerr << "Size mismatch: " << std::dec << width << "," << height << "," << decompressed << "," << f1 << "," << f2 << std::endl;
+-                throw std::runtime_error("halp!");
++            auto multiplier = (f1 == 1 || f1 == 257 || f1 == 513) ? 2 :
++                ((f1 == 1026 || f1 == 2050) ? 4 : 1);
++            auto expected = pixels * 4 / multiplier;
++            if (decompressed < expected ||
++                !std::all_of(input.begin() + expected, input.begin() + decompressed,
++                    [](uint8_t byte) { return byte == 0; })) {
++                throw std::runtime_error("Invalid bitmap extent at " + std::to_string(index) +
++                    ": " + std::to_string(width) + "x" + std::to_string(height) +
++                    " format=" + std::to_string(f1) + " bytes=" + std::to_string(decompressed) +
++                    " expected=" + std::to_string(expected));
+             }
++            if (decompressed != expected)
++                std::cerr << "Zero-padded bitmap " << index << ": " << decompressed
++                    << " -> " << expected << " bytes" << std::endl;
+             switch (f1) {
+             case 1:
+                 for (auto i = 0; i < pixels; ++i) {
+@@ -1217,6 +1250,8 @@ struct wztonx {
+                 squish::DecompressImage(output.data(), width, height, input.data(), squish::kDxt5);
+                 input.swap(output);
+                 break;
++            default:
++                throw std::runtime_error("Unsupported bitmap pixel conversion " + std::to_string(f1));
+             }
+             switch (f2) {
+             case 0:
+@@ -1326,6 +1361,7 @@ Converts WZ files into NX files
+         } catch (std::exception const & e) {
+             std::cerr << "Error converting " << u8string(p) << ": " << e.what() << std::endl;
+             std::cout << "\nError converting " << u8string(p) << ": " << e.what() << std::endl;
++            throw;
+         }
+     };
+     for (auto & p : paths) {
