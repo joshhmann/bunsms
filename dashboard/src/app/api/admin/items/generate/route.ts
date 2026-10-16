@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateImage } from "@/lib/openrouter/image";
 import { renderWeaponFromConcept } from "@/lib/wz/sprite-2d";
-import { uploadToR2, isR2Configured } from "@/lib/r2";
 import { WEAPON_TYPES } from "@/lib/wz";
 import {
   recordGeneration,
@@ -9,15 +8,9 @@ import {
   countGeneratedToday,
 } from "@/lib/gm/generated-items";
 import { query } from "@/lib/db";
-import { writeFileSync, mkdirSync } from "fs";
-import { join } from "path";
-
-export const dynamic = "force-dynamic";
-export const maxDuration = 600;
-
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
+import { dirname, join } from "path";
+import { mkdirSync, renameSync, writeFileSync } from "fs";
+import { ASSET_BASE_URL, ASSET_DIR } from "@/lib/assets";
 
 const DAILY_GENERATION_CAP = parseInt(process.env.GM_ITEM_GEN_DAILY_CAP || "8");
 const DEFAULT_ATTACK_SPEED = 6;
@@ -190,15 +183,15 @@ export async function POST(request: NextRequest) {
       prompt: buildConceptPrompt(description, weapon_type),
     });
 
-    let conceptUrl: string | null = null;
-    if (isR2Configured()) {
-      const up = await uploadToR2(`custom-items/generated/${generationId}/concept.png`, conceptPng);
-      if (!up.success) throw new Error(`concept upload failed: ${up.error}`);
-      conceptUrl = up.url;
-    } else {
-      const dir = join("/tmp", "generated-items", String(generationId));
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(join(dir, "concept.png"), conceptPng);
+    let conceptUrl: string;
+    {
+      const key = `custom-items/generated/${generationId}/concept.png`;
+      const dest = join(ASSET_DIR, key);
+      mkdirSync(dirname(dest), { recursive: true });
+      const tmp = `${dest}.tmp.${process.pid}`;
+      writeFileSync(tmp, conceptPng);
+      renameSync(tmp, dest);
+      conceptUrl = `${ASSET_BASE_URL}/client/${key}`;
     }
     await updateGeneration(generationId, {
       ...(conceptUrl ? { concept_image_url: conceptUrl } : {}),

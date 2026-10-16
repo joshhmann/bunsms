@@ -1,13 +1,23 @@
 import { NextResponse } from "next/server";
 import { query, execute } from "@/lib/db";
-import { uploadToR2, uploadFileToR2, isR2Configured } from "@/lib/r2";
+import {
+  ASSET_BASE_URL,
+  ASSET_DIR,
+  assetUrl,
+  bumpPatch,
+  hashFileStream,
+  readManifest,
+  stageAssetFile,
+  writeManifestAtomic,
+} from "@/lib/assets";
+import type { ManifestRead } from "@/lib/assets";
 import { dispatchWzToNx } from "@/lib/wz-to-nx";
 import { parseWzFile, saveWzFile, addReactorToWz } from "@/lib/wz";
 import { generateReactorFrames } from "@/lib/wz/reactor-animator";
 import { generateReactorXml, generateReactorScript } from "@/lib/wz/reactor-builder";
 import type { AnimationStyle } from "@/lib/wz/reactor-animator";
 import type { ScriptTemplate } from "@/lib/wz/reactor-builder";
-import { restartGameServer } from "@/lib/fly-restart";
+
 import { execSync } from "child_process";
 import { Readable } from "stream";
 import { createWriteStream } from "fs";
@@ -22,18 +32,13 @@ import {
 import { join } from "path";
 import { tmpdir } from "os";
 
-async function streamDownload(url: string, outputPath: string): Promise<void> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Download failed: ${url} (${res.status})`);
-  const body = res.body;
-  if (!body) throw new Error(`No response body: ${url}`);
-  const readable = Readable.fromWeb(body as any);
-  await pipeline(readable, createWriteStream(outputPath));
+async function copyFromAssets(fileKey: string, outputPath: string): Promise<void> {
+  const src = join(ASSET_DIR, fileKey);
+  if (!existsSync(src)) throw new Error(`Asset not staged: ${fileKey} (missing in ${ASSET_DIR})`);
+  writeFileSync(outputPath, readFileSync(src));
 }
 
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
+const ASSET_BASE = process.env.ASSET_BASE_URL || "https://buns.asslorde.com";
 
 const STATUS_DIR = process.env.COSMIC_ROOT || "/cosmic";
 const STATUS_FILE = join(STATUS_DIR, "reactor-publish-status.json");
@@ -98,9 +103,9 @@ async function runPublishJob() {
     update("Downloading server WZ files...");
     mkdirSync(workDir, { recursive: true });
     const tarPath = join(workDir, "server-wz.tar.gz");
-    const downloadRes = await fetch(`${R2_PUBLIC_URL}/server-wz.tar.gz`);
-    if (!downloadRes.ok) throw new Error(`Failed to download server-wz.tar.gz: ${downloadRes.status}`);
-    const tarBuffer = Buffer.from(await downloadRes.arrayBuffer());
+    const stagedTar = join(ASSET_DIR, "server-wz.tar.gz");
+    if (!existsSync(stagedTar)) throw new Error(`server-wz.tar.gz not found in asset dir (${ASSET_DIR})`);
+    const tarBuffer = readFileSync(stagedTar);
     writeFileSync(tarPath, tarBuffer);
     update("Downloaded", `Downloaded server-wz.tar.gz (${(tarBuffer.length / 1024 / 1024).toFixed(1)}MB)`);
 
@@ -186,11 +191,10 @@ async function runPublishJob() {
     const newTarBuffer = readFileSync(newTarPath);
     update("Repacked", `Repacked (${(newTarBuffer.length / 1024 / 1024).toFixed(1)}MB)`);
 
-    // 6. Upload to R2
-    update("Uploading to R2...");
-    const uploadResult = await uploadToR2("server-wz.tar.gz", newTarBuffer);
-    if (!uploadResult.success) throw new Error(`R2 upload failed: ${uploadResult.error}`);
-    update("Uploaded", "Uploaded server-wz.tar.gz to R2");
+    // 6. Stage into asset dir
+    update("Staging into asset dir...");
+    stageAssetFile("server-wz.tar.gz", newTarPath);
+    update("Staged", "Staged server-wz.tar.gz into asset dir");
 
     // 7. Mark only reactors that actually went through the pipeline (had an
     // idle PNG). Rows skipped above have no server XML and no client sprite —
@@ -204,15 +208,16 @@ async function runPublishJob() {
 
     // 8. Version marker
     const version = new Date().toISOString();
-    await uploadToR2("server-wz.version", Buffer.from(version));
+    mkdirSync(ASSET_DIR, { recursive: true });
+    writeFileSync(join(ASSET_DIR, "server-wz.version"), version);
 
     // 9. Patch client Reactor.wz + upload to R2 + bump manifest
     const manifestUpdates: Record<string, { hash?: string; size?: number }> = {};
-    if (isR2Configured()) {
+    {
       try {
         update("Downloading Reactor.wz from R2 (~54MB)...");
         const reactorWzPath = join(workDir, "Reactor.wz");
-        await streamDownload(`${R2_PUBLIC_URL}/Reactor.wz`, reactorWzPath);
+        await copyFromAssets("Reactor.wz", reactorWzPath);
         update("Downloaded Reactor.wz", `Downloaded (${(statSync(reactorWzPath).size / 1024 / 1024).toFixed(0)}MB)`);
 
         update("Patching Reactor.wz with custom reactors...");
@@ -253,14 +258,10 @@ async function runPublishJob() {
         saveWzFile(reactorWz, patchedPath);
         update("Patched Reactor.wz", `Patched with ${rows.length} custom reactor(s)`);
 
-        update("Uploading Reactor.wz to R2 (streaming)...");
-        const reactorUpload = await uploadFileToR2("Reactor.wz", patchedPath);
-        if (reactorUpload.success) {
-          manifestUpdates["Reactor.wz"] = { hash: reactorUpload.hash, size: reactorUpload.size };
-          update("Uploaded Reactor.wz", "Uploaded patched Reactor.wz to R2");
-        } else {
-          update("Upload warning", `Reactor.wz upload failed: ${reactorUpload.error}`);
-        }
+        update("Staging Reactor.wz into asset dir...");
+        stageAssetFile("Reactor.wz", patchedPath);
+        manifestUpdates["Reactor.wz"] = await hashFileStream(join(ASSET_DIR, "Reactor.wz"));
+        update("Staged Reactor.wz", "Staged patched Reactor.wz into asset dir");
 
         // Trigger WZ→NX conversion for the browser client
         const changedWz = Object.keys(manifestUpdates).filter((n) => n.endsWith(".wz"));
@@ -269,44 +270,40 @@ async function runPublishJob() {
           update("Triggering WZ→NX conversion", `Dispatched wz-to-nx for: ${changedWz.join(", ")}`);
         }
 
-        // Bump launcher manifest
+        // Bump launcher manifest via single authority (atomic write).
         if (Object.keys(manifestUpdates).length > 0) {
           update("Updating launcher manifest...");
           try {
-            const VOLUME_MANIFEST = join(process.env.COSMIC_ROOT || "/cosmic", "launcher-manifest.json");
-            const BUNDLED_MANIFEST = join(process.cwd(), "launcher-manifest.json");
-            const manifestPath = existsSync(VOLUME_MANIFEST) ? VOLUME_MANIFEST : BUNDLED_MANIFEST;
-            const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
-
+            const { manifest }: ManifestRead = readManifest();
             for (const file of manifest.files || []) {
               const upd = manifestUpdates[file.name];
-              if (upd) { file.hash = upd.hash; file.size = upd.size; }
+              if (upd && upd.hash !== undefined && upd.size !== undefined) {
+                file.hash = upd.hash;
+                file.size = upd.size;
+                file.url = assetUrl(file.name);
+              }
             }
 
-            const parts = (manifest.version || "1.0.0").split(".");
-            parts[2] = String(parseInt(parts[2] || "0") + 1);
-            manifest.version = parts.join(".");
+            manifest.version = bumpPatch(manifest.version);
             manifest.updatedAt = new Date().toISOString();
+            manifest.downloadBase = `${ASSET_BASE}/client/`;
 
-            writeFileSync(VOLUME_MANIFEST, JSON.stringify(manifest, null, 2));
+            writeManifestAtomic(manifest);
             update("Manifest updated", `Launcher manifest → v${manifest.version}`);
-          } catch (err: any) {
-            update("Manifest warning", `Manifest update failed: ${err.message}`);
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            update("Manifest warning", `Manifest update failed: ${message}`);
           }
         }
-      } catch (err: any) {
-        update("Client WZ warning", `Client WZ patching failed: ${err.message}. Server-side publish still succeeded.`);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        update("Client WZ warning", `Client WZ patching failed: ${message}. Server-side publish still succeeded.`);
       }
     }
 
-    // 10. Restart game server
-    update("Restarting game server...");
-    try {
-      const machineId = await restartGameServer();
-      update("Server restarted", `Restarted game server (machine: ${machineId})`);
-    } catch (err: any) {
-      update("Restart warning", `Server restart failed: ${err.message}. Restart manually.`);
-    }
+    // Game-server restart is owner-operated (LXC topology has no Fly
+    // Machines API). Publish stops here.
+    update("Restart skipped", "Game-server restart is manual on this topology — restart manually to pick up new WZ.");
 
     status.status = "done";
     status.step = "Complete";

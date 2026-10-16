@@ -23,6 +23,7 @@ log = logging.getLogger('buns-ms-web')
 STATIC_ROOT = os.environ.get('STATIC_ROOT', '/app')
 PORT = int(os.environ.get('PORT', '8080'))
 NX_LOCAL_DIR = os.environ.get('NX_DIR', '/opt/buns/nx')
+CLIENT_ASSETS_DIR = os.environ.get('CLIENT_ASSETS_DIR', '/opt/buns/client-assets')
 
 # Comma-separated host:port allow list, e.g. "127.0.0.1:8484,127.0.0.1:7575,..."
 # Override per-deploy via the ALLOWED_TARGETS env var.
@@ -149,6 +150,29 @@ async def handle_nx(request: web.Request) -> web.StreamResponse:
     return web.Response(status=404, text='Not found')
 
 
+async def handle_client(request: web.Request) -> web.StreamResponse:
+    """Serve self-hosted launcher assets (same box as /nx).
+
+    Deploys set CLIENT_ASSETS_DIR=/opt/buns/client-assets. Flat namespace:
+    basename only, no traversal. aiohttp FileResponse handles Range/206,
+    ETag, Content-Length natively (proven on /web/logo.png).
+    """
+    name = request.match_info['path']
+    if not name or '/' in name or '\\' in name or '..' in name:
+        return web.Response(status=400, text='Invalid asset name')
+    filepath = os.path.join(CLIENT_ASSETS_DIR, os.path.basename(name))
+    if os.path.exists(filepath):
+        return web.FileResponse(
+            filepath,
+            headers={
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'public, max-age=31536000, immutable',
+            },
+        )
+    log.warning("Client asset not found: %s", filepath)
+    return web.Response(status=404, text='Not found')
+
+
 @web.middleware
 async def revalidate_client_files(request: web.Request, handler):
     """Revalidate routing config/page as well as the matched JS/WASM build pair."""
@@ -164,6 +188,7 @@ def build_app() -> web.Application:
     app.router.add_get('/', handle_root)
     app.router.add_get('/healthz', healthz)
     app.router.add_get('/nx/{path:.*}', handle_nx)
+    app.router.add_get('/client/{path:.*}', handle_client)
     # Static mounts. Route order matters — these only match if the path starts with /web or /build.
     app.router.add_static('/web/', path=os.path.join(STATIC_ROOT, 'web'), show_index=False)
     app.router.add_static('/build/', path=os.path.join(STATIC_ROOT, 'build'), show_index=False)

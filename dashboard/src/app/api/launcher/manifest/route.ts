@@ -1,73 +1,44 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-import crypto from "crypto";
+import type { NextRequest } from "next/server";
+import { createHash } from "crypto";
+import { existsSync, readFileSync, statSync } from "fs";
+import { join } from "path";
+import {
+  assetUrl,
+  bumpPatch,
+  hashFileStream,
+  readManifest,
+  resolveAssetPath,
+  writeManifestAtomic,
+} from "@/lib/assets";
+import type { Manifest, ManifestFile } from "@/lib/assets";
 
-// Read: check volume first (dynamic updates), then bundled copy
-// Write: always write to volume so updates persist across deploys
-const VOLUME_MANIFEST = "/cosmic/launcher-manifest.json";
-const BUNDLED_MANIFEST = path.join(process.cwd(), "launcher-manifest.json");
-const WRITE_PATH = VOLUME_MANIFEST; // always write to volume
+// Single manifest authority. GET supports ?profile=stock|kaentake server-side
+// filtering (old launchers send no param and get the full set; stock remains
+// the default and Kaentake files are never mixed into stock results).
+// POST modes: full replace, generateFrom (local dir), urls-only, register
+// (hash/size record for out-of-band synced bytes).
+export const dynamic = "force-dynamic";
 
-// Check dynamically on every read — the volume file may be created after startup
-function getReadPath() {
-  return fs.existsSync(VOLUME_MANIFEST) ? VOLUME_MANIFEST : BUNDLED_MANIFEST;
-}
+const VALID_PROFILES: Record<string, true> = { stock: true, kaentake: true };
 
-// Files the launcher tracks for updates
-const TRACKED_FILES = [
-  "BunsMS.exe",
-  "Character.wz",
-  "Etc.wz",
-  "Item.wz",
-  "List.wz",
-  "Map.wz",
-  "Mob.wz",
-  "Npc.wz",
-  "Quest.wz",
-  "Reactor.wz",
-  "Skill.wz",
-  "String.wz",
-  "UI.wz",
-];
-
-interface ManifestFile {
-  name: string;
-  hash: string;
-  size: number;
-  url: string;
-}
-
-interface Manifest {
-  version: string;
-  updatedAt: string;
-  files: ManifestFile[];
-  downloadBase: string;
-}
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Try to read existing manifest
-    if (fs.existsSync(getReadPath())) {
-      const manifest = JSON.parse(fs.readFileSync(getReadPath(), "utf-8"));
-      return NextResponse.json(manifest, {
-        headers: { "Access-Control-Allow-Origin": "*" },
-      });
+    const profile = request.nextUrl.searchParams.get("profile");
+    const { manifest } = readManifest();
+    if (profile && !VALID_PROFILES[profile]) {
+      return NextResponse.json({ error: `Unknown profile: ${profile}` }, { status: 400 });
     }
-
-    // No manifest exists yet — return a default
-    return NextResponse.json(
-      {
-        version: "1.0.0",
-        updatedAt: new Date().toISOString(),
-        files: [],
-        downloadBase: "",
-        message: "No manifest configured. Use POST to create one.",
-      },
-      { headers: { "Access-Control-Allow-Origin": "*" } }
-    );
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const files = !profile
+      ? manifest.files
+      : manifest.files.filter((f) => (f.profiles ?? ["stock"]).includes(profile));
+    const out: Manifest = { ...manifest, files };
+    return NextResponse.json(out, {
+      headers: { "Access-Control-Allow-Origin": "*" },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -76,54 +47,53 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Option 1: Full manifest replacement
+    // Full manifest replacement (escape hatch + rollback restores).
     if (body.manifest) {
-      fs.writeFileSync(WRITE_PATH, JSON.stringify(body.manifest, null, 2));
-      return NextResponse.json({ success: true, manifest: body.manifest });
-    }
-
-    // Option 2: Generate manifest from a local directory of client files
-    if (body.generateFrom) {
-      const clientDir = body.generateFrom;
-      if (!fs.existsSync(clientDir)) {
-        return NextResponse.json({ error: "Directory not found" }, { status: 400 });
-      }
-
-      const files: ManifestFile[] = [];
-      for (const name of TRACKED_FILES) {
-        const filePath = path.join(clientDir, name);
-        if (fs.existsSync(filePath)) {
-          const stat = fs.statSync(filePath);
-          const hash = crypto
-            .createHash("sha256")
-            .update(fs.readFileSync(filePath))
-            .digest("hex");
-          files.push({
-            name,
-            hash,
-            size: stat.size,
-            url: body.downloadBase ? `${body.downloadBase}/${name}` : "",
-          });
-        }
-      }
-
-      const manifest: Manifest = {
-        version: body.version || "1.0.0",
-        updatedAt: new Date().toISOString(),
-        files,
-        downloadBase: body.downloadBase || "",
-      };
-
-      fs.writeFileSync(WRITE_PATH, JSON.stringify(manifest, null, 2));
+      const manifest = body.manifest as Manifest;
+      manifest.updatedAt = new Date().toISOString();
+      writeManifestAtomic(manifest);
       return NextResponse.json({ success: true, manifest });
     }
 
-    // Option 3: Update download URLs only (e.g., new Mega links)
-    if (body.urls) {
-      if (!fs.existsSync(getReadPath())) {
-        return NextResponse.json({ error: "No manifest exists" }, { status: 400 });
+    // Generate manifest from a local directory of client files.
+    if (body.generateFrom) {
+      const clientDir = body.generateFrom as string;
+      if (!existsSync(clientDir)) {
+        return NextResponse.json({ error: "Directory not found" }, { status: 400 });
       }
-      const manifest = JSON.parse(fs.readFileSync(getReadPath(), "utf-8"));
+
+      const { manifest: current } = readManifest();
+      const seen: Record<string, true> = {};
+      const files: ManifestFile[] = [];
+      for (const tracked of current.files) {
+        const filePath = join(clientDir, tracked.name);
+        if (existsSync(filePath)) {
+          const size = statSync(filePath).size;
+          const hash = createHash("sha256").update(readFileSync(filePath)).digest("hex");
+          files.push({ ...tracked, hash, size, url: assetUrl(tracked.name) });
+          seen[tracked.name] = true;
+        }
+      }
+      // Preserve entries not present on disk (e.g. not-yet-synced) unchanged.
+      for (const rest of current.files) {
+        if (!seen[rest.name]) files.push(rest);
+      }
+
+      const manifest: Manifest = {
+        version: body.version || bumpPatch(current.version),
+        updatedAt: new Date().toISOString(),
+        files,
+        downloadBase: `${process.env.ASSET_BASE_URL || "https://buns.asslorde.com"}/client/`,
+      };
+
+      writeManifestAtomic(manifest);
+      return NextResponse.json({ success: true, manifest });
+    }
+
+    // Update download URLs only (e.g. cutover flip). Never bumps version:
+    // URL-only edits trigger zero re-downloads (launcher keys on size+hash).
+    if (body.urls) {
+      const { manifest } = readManifest();
       for (const file of manifest.files) {
         if (body.urls[file.name]) {
           file.url = body.urls[file.name];
@@ -131,13 +101,44 @@ export async function POST(request: Request) {
       }
       manifest.updatedAt = new Date().toISOString();
       if (body.version) manifest.version = body.version;
-      fs.writeFileSync(WRITE_PATH, JSON.stringify(manifest, null, 2));
+      writeManifestAtomic(manifest);
       return NextResponse.json({ success: true, manifest });
     }
 
-    return NextResponse.json({ error: "Provide manifest, generateFrom, or urls" }, { status: 400 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    // Register: record hash/size for bytes already synced to the asset dir
+    // (out-of-band rsync/scp flow). Re-hashes landed bytes fail-closed.
+    if (body.register) {
+      const { manifest } = readManifest();
+      const results: Array<{ name: string; hash: string; size: number }> = [];
+      for (const item of body.register as Array<{ name: string }>) {
+        const entry = manifest.files.find((f) => f.name === item.name);
+        if (!entry) {
+          return NextResponse.json({ error: `${item.name} is not in the launcher manifest` }, { status: 400 });
+        }
+        const filePath = resolveAssetPath(item.name);
+        if (!existsSync(filePath)) {
+          return NextResponse.json(
+            { error: `${item.name} not found in asset dir — sync bytes first` },
+            { status: 400 }
+          );
+        }
+        const size = statSync(filePath).size;
+        const { hash } = await hashFileStream(filePath);
+        entry.hash = hash;
+        entry.size = size;
+        entry.url = assetUrl(entry.name);
+        results.push({ name: entry.name, hash, size });
+      }
+      manifest.version = bumpPatch(manifest.version);
+      manifest.updatedAt = new Date().toISOString();
+      writeManifestAtomic(manifest);
+      return NextResponse.json({ success: true, manifest, results, version: manifest.version });
+    }
+
+    return NextResponse.json({ error: "Provide manifest, generateFrom, urls, or register" }, { status: 400 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

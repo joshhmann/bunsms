@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { existsSync } from "fs";
 import { query, execute } from "@/lib/db";
 import { PATHS } from "@/lib/cosmic";
-import { restartGameServer } from "@/lib/fly-restart";
 
 interface GmNpc {
   id: number;
@@ -182,8 +181,7 @@ export async function POST(request: NextRequest) {
          VALUES (0, ?, ?, 'n', ?, 0, ?, ?, ?, ?, ?, 0, -1)`,
         [mapId, chosenId, cy, foothold, rx0, rx1, x, y],
       );
-      spawnMessage = ` Spawned on map ${mapId} at (${x}, ${y}). Restarting server to apply.`;
-      restartGameServer().catch(() => {});
+      spawnMessage = ` Spawned on map ${mapId} at (${x}, ${y}). Restart the server manually to apply (no auto-restart on this topology).`;
     }
 
     return NextResponse.json(
@@ -339,9 +337,7 @@ export async function DELETE(request: NextRequest) {
       [npcIdToDelete],
     );
 
-    if (plifeResult.affectedRows > 0) {
-      restartGameServer().catch(() => {});
-    }
+    // No auto-restart on this topology (LXC, no Fly Machines API).
 
     return NextResponse.json({
       success: true,

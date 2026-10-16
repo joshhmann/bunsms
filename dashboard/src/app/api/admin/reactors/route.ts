@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { execute, query } from "@/lib/db";
-import { uploadToR2, isR2Configured } from "@/lib/r2";
+import { renameSync, writeFileSync, mkdirSync, existsSync } from "fs";
+import { dirname, join } from "path";
+import { ASSET_BASE_URL, ASSET_DIR } from "@/lib/assets";
 import { generateReactorFrames } from "@/lib/wz/reactor-animator";
 import { generateReactorXml, generateReactorScript } from "@/lib/wz/reactor-builder";
 import type { AnimationStyle } from "@/lib/wz/reactor-animator";
 import type { ScriptTemplate } from "@/lib/wz/reactor-builder";
-import { writeFileSync, mkdirSync, existsSync } from "fs";
-import { join } from "path";
 
 // Auto-detect: local dev uses ../server, prod uses /cosmic (writable volume)
 function getServerRoot(): string {
@@ -115,12 +115,15 @@ export async function POST(request: NextRequest) {
     mkdirSync(outputDir, { recursive: true });
     writeFileSync(join(outputDir, `reactor-${reactorId}-idle.png`), idlePngBuf);
 
-    // Upload idle PNG to R2 (skip if not configured — local dev)
-    let idlePngUrl: string | null = null;
-    if (isR2Configured()) {
-      const idleR2 = await uploadToR2(`reactors/${reactorId}/idle.png`, idlePngBuf);
-      idlePngUrl = idleR2.url || null;
-    }
+    // Stage idle PNG into the self-hosted asset dir; the publish flow reads
+    // it back via idle_png_url (self-hosted /client URL).
+    const idleKey = `reactors/${reactorId}/idle.png`;
+    const idleDest = join(ASSET_DIR, idleKey);
+    mkdirSync(dirname(idleDest), { recursive: true });
+    const idleTmp = `${idleDest}.tmp.${process.pid}`;
+    writeFileSync(idleTmp, idlePngBuf);
+    renameSync(idleTmp, idleDest);
+    const idlePngUrl: string = `${ASSET_BASE_URL}/client/${idleKey}`;
 
     // Generate and write server-side XML
     const actions: string[] = [];

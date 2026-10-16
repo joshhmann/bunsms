@@ -1,6 +1,5 @@
 import OpenAI from "openai";
 import { query as dbQuery, execute } from "@/lib/db";
-import { restartGameServer } from "@/lib/fly-restart";
 import type { GMSession, GMLogEntry } from "./types";
 
 const BASE = process.env.COSMIC_DASHBOARD_URL || "http://localhost:3000";
@@ -985,7 +984,7 @@ const toolSchemas: OpenAI.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "add_map_spawn",
-      description: "Add a mob or NPC spawn to a map. Written to plife DB table. The server is automatically restarted at the end of your session to make new spawns visible. IMPORTANT: You MUST provide the correct foothold (fh) value — use get_map to find existing spawns and copy the fh from a nearby spawn at similar x,y coordinates. An fh of 0 makes NPCs non-interactive.",
+      description: "Add a mob or NPC spawn to a map. Written to plife DB table. Restart the game server manually to make new spawns visible (no auto-restart on this topology). IMPORTANT: You MUST provide the correct foothold (fh) value — use get_map to find existing spawns and copy the fh from a nearby spawn at similar x,y coordinates. An fh of 0 makes NPCs non-interactive.",
       parameters: {
         type: "object",
         properties: {
@@ -1038,7 +1037,7 @@ const toolSchemas: OpenAI.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "add_map_reactor",
-      description: "Place a reactor (breakable object) on a map. Stored in preactor DB table. Use search_reactors to find reactor IDs, and get_map to find valid x,y coordinates. The server is automatically restarted at the end of your session to make new reactors visible to players.",
+      description: "Place a reactor (breakable object) on a map. Stored in preactor DB table. Use search_reactors to find reactor IDs, and get_map to find valid x,y coordinates. Restart the game server manually to make new reactors visible (no auto-restart on this topology).",
       parameters: {
         type: "object",
         properties: {
@@ -1456,7 +1455,7 @@ teleporter: {"greeting":"Where to?","destinations":[{"mapId":100000000,"name":"H
     type: "function",
     function: {
       name: "create_treasure_hunt",
-      description: "Create a treasure hunt event: place breakable reactor boxes across multiple maps with item rewards. Bundles reactor placement, drop configuration, announcement, and event tracking with auto-expiry. The server is automatically restarted at the end of your session to make reactors visible to players. If you omit reactorId, a visible reactor is auto-selected. If you omit x/y coordinates for a location, valid coordinates are auto-picked from existing map spawns. You can just provide mapId and count per location.",
+      description: "Create a treasure hunt event: place breakable reactor boxes across multiple maps with item rewards. Bundles reactor placement, drop configuration, announcement, and event tracking with auto-expiry. Restart the game server manually to make reactors visible (no auto-restart on this topology). If you omit reactorId, a visible reactor is auto-selected. If you omit x/y coordinates for a location, valid coordinates are auto-picked from existing map spawns. You can just provide mapId and count per location.",
       parameters: {
         type: "object",
         properties: {
@@ -2302,7 +2301,7 @@ All events created with \`create_event\` or \`create_treasure_hunt\` are tracked
 - Prefer setting expiry on all events to prevent stale content buildup.
 
 ## Auto-Restart — Spawns & Reactors Apply Automatically
-When you place reactors (\`add_map_reactor\`, \`create_treasure_hunt\`) or spawn mobs/NPCs (\`add_map_spawn\`, \`create_event\` with mobs), the game server is **automatically restarted at the end of your session** to make them visible to players. You don't need to worry about restarts — just place your content and it will go live when your session ends. The restart takes ~15-20 seconds and briefly disconnects online players.
+When you place reactors (\`add_map_reactor\`, \`create_treasure_hunt\`) or spawn mobs/NPCs (\`add_map_spawn\`, \`create_event\` with mobs), reactor/spawn changes need a **manual game-server restart** to become visible (no auto-restart on this LXC topology). Place content, then restart the server on the host.
 - Drop changes (\`add_mob_drop\`, global drops) are live immediately — no restart needed.
 - NPC config changes (\`update_custom_npc\`) are live immediately — no restart needed.
 - Rate changes are live immediately — no restart needed.
@@ -2310,7 +2309,7 @@ When you place reactors (\`add_map_reactor\`, \`create_treasure_hunt\`) or spawn
 ## Reactor Events — Your Secret Weapon
 For fine-grained control (or if you want reactors without a full treasure hunt), you can manage reactors individually:
 - Search existing reactor templates with \`search_reactors\` (421 vanilla + any custom-created ones, marked [Custom])
-- **Create brand new reactors** with \`create_custom_reactor\` — describe what you want and an AI generates a unique pixel-art sprite. Animations, server files, drops are all auto-generated. The full publish pipeline runs automatically (client WZ → R2 → manifest bump → server restart).
+- **Create brand new reactors** with \`create_custom_reactor\` — describe what you want and an AI generates a unique pixel-art sprite. Animations, server files, drops are all auto-generated. The full publish pipeline runs automatically (client WZ → asset dir → manifest bump; server restart is manual).
 - Place them on maps with \`add_map_reactor\`
 - Configure their drops with \`add_reactor_drop\`
 - Players discover them, break them, get loot — pure dopamine
@@ -2949,14 +2948,10 @@ export async function runGameMaster(
     }
   }
 
-  // Auto-restart game server if session placed reactors or spawns
+  // No auto-restart on this topology (LXC, no Fly Machines API).
+  // Owner restarts the game server manually to apply reactor/spawn changes.
   if (needsRestart && !publishTriggered && session.status === "complete") {
-    try {
-      await restartGameServer();
-      addLog({ type: "text", text: "[System] Server restarted automatically to apply reactor/spawn changes." });
-    } catch (err: any) {
-      addLog({ type: "text", text: `[System] Auto-restart failed: ${err.message}` });
-    }
+    addLog({ type: "text", text: "[System] Reactor/spawn changes staged — restart the game server manually to apply." });
   }
 
   return session;

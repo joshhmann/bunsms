@@ -84,9 +84,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  // Server control via Fly Machines API could be added here in the future
+  // No programmatic server control on this topology (LXC, no Fly Machines
+  // API). Restarts are owner-operated on the host.
   return NextResponse.json(
-    { error: "Server control is managed via Fly.io" },
+    { error: "Server control is manual on this topology (LXC). Restart the game server on the host." },
     { status: 501 },
   );
 }

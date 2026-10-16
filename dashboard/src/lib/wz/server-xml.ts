@@ -28,9 +28,9 @@ import type {
   SearchResult,
 } from "./explorer";
 
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
+const ASSET_BASE =
+  process.env.ASSET_BASE_URL || "https://buns.asslorde.com";
+const ASSET_PUBLIC_URL = `${ASSET_BASE}/client`;
 
 const CACHE_ROOT = join(process.env.COSMIC_ROOT || "/cosmic", "wz-cache");
 const TAR_PATH = join(CACHE_ROOT, "server-wz.tar.gz");
@@ -60,7 +60,7 @@ async function fetchEtag(url: string): Promise<string | null> {
 }
 
 async function downloadTar(): Promise<void> {
-  const res = await fetch(`${R2_PUBLIC_URL}/server-wz.tar.gz`);
+  const res = await fetch(`${ASSET_PUBLIC_URL}/server-wz.tar.gz`);
   if (!res.ok) {
     throw new Error(`server-wz.tar.gz fetch failed: HTTP ${res.status}`);
   }
@@ -91,7 +91,7 @@ export async function ensureServerXml(): Promise<void> {
 
   IN_FLIGHT = (async () => {
     try {
-      const remoteEtag = await fetchEtag(`${R2_PUBLIC_URL}/server-wz.tar.gz`);
+      const remoteEtag = await fetchEtag(`${ASSET_PUBLIC_URL}/server-wz.tar.gz`);
       const fresh =
         existsSync(WZ_ROOT) && remoteEtag && STATE.etag === remoteEtag;
       if (fresh) {

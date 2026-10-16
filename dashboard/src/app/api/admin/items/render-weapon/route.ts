@@ -1,19 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadToR2, isR2Configured } from "@/lib/r2";
+import { mkdirSync, renameSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
+import { ASSET_BASE_URL, ASSET_DIR } from "@/lib/assets";
 
 export const dynamic = "force-dynamic";
-
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
 
 /**
  * POST /api/admin/items/render-weapon
  *
- * Receives pre-rendered weapon frames (from client-side Three.js) and uploads to R2.
+ * Receives pre-rendered weapon frames (from client-side Three.js) and stages
+ * them into the self-hosted asset dir.
  * Body: { itemId, icon (base64), origins, frames: { animName: [base64, ...] } }
  * Returns: { origins, frames: { animName: [url, ...] }, iconUrl }
  */
+function stageRenderFile(key: string, buf: Buffer): string {
+  const dest = join(ASSET_DIR, key);
+  mkdirSync(dirname(dest), { recursive: true });
+  const tmp = `${dest}.tmp.${process.pid}`;
+  writeFileSync(tmp, buf);
+  renameSync(tmp, dest);
+  return `${ASSET_BASE_URL}/client/${key}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -30,47 +38,27 @@ export async function POST(request: NextRequest) {
     let iconUrl: string | null = null;
     const uploadResults: string[] = [];
 
-    // Upload icon
+    // Stage icon
     if (icon) {
       const iconBuf = Buffer.from(icon.replace(/^data:image\/png;base64,/, ""), "base64");
-      if (isR2Configured()) {
-        const r2Key = `custom-items/${itemId}/icon.png`;
-        const result = await uploadToR2(r2Key, iconBuf);
-        if (result.success) {
-          iconUrl = `${R2_PUBLIC_URL}/${r2Key}`;
-          uploadResults.push("Uploaded icon.png");
-        }
-      } else {
-        iconUrl = icon; // Keep data URL for local dev
-      }
+      iconUrl = stageRenderFile(`custom-items/${itemId}/icon.png`, iconBuf);
+      uploadResults.push("Staged icon.png");
     }
 
-    // Upload animation frames
+    // Stage animation frames
     for (const [animName, dataUrls] of Object.entries(frames as Record<string, string[]>)) {
       frameUrls[animName] = [];
 
       for (let i = 0; i < dataUrls.length; i++) {
         const dataUrl = dataUrls[i];
         const pngBuf = Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ""), "base64");
-
-        if (isR2Configured()) {
-          const r2Key = `custom-items/${itemId}/${animName}/${i}.png`;
-          const result = await uploadToR2(r2Key, pngBuf);
-          if (result.success) {
-            frameUrls[animName].push(`${R2_PUBLIC_URL}/${r2Key}`);
-            uploadResults.push(`Uploaded ${animName}/${i}.png`);
-          }
-        } else {
-          frameUrls[animName].push(dataUrl); // Keep data URL for local dev
-        }
+        frameUrls[animName].push(stageRenderFile(`custom-items/${itemId}/${animName}/${i}.png`, pngBuf));
+        uploadResults.push(`Staged ${animName}/${i}.png`);
       }
     }
 
-    // Upload origins.json
-    if (isR2Configured()) {
-      const originsKey = `custom-items/${itemId}/origins.json`;
-      await uploadToR2(originsKey, Buffer.from(JSON.stringify(origins)));
-    }
+    // Stage origins.json
+    stageRenderFile(`custom-items/${itemId}/origins.json`, Buffer.from(JSON.stringify(origins)));
 
     return NextResponse.json({
       success: true,
@@ -78,13 +66,12 @@ export async function POST(request: NextRequest) {
       frames: frameUrls,
       iconUrl,
       uploaded: uploadResults.length,
-      message: isR2Configured()
-        ? `Uploaded ${uploadResults.length} files to R2`
-        : `${Object.values(frameUrls).flat().length} frames ready (R2 not configured, using data URLs)`,
+      message: `Staged ${uploadResults.length} files into asset dir`,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: `Upload failed: ${err.message}` },
+      { error: `Stage failed: ${message}` },
       { status: 500 }
     );
   }

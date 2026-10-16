@@ -1,25 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { renderWeaponFromConcept } from "@/lib/wz/sprite-2d";
-import { uploadToR2, isR2Configured } from "@/lib/r2";
+import { mkdirSync, renameSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
+import { ASSET_BASE_URL, ASSET_DIR } from "@/lib/assets";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
-
 /**
  * POST /api/admin/items/render-concept
  *
- * Runs the 2D sprite pipeline server-side from a concept image and uploads
- * the resulting icon + animation frames to R2. Same response shape as
- * /api/admin/items/render-weapon so the admin UI can treat them
- * interchangeably.
+ * Runs the 2D sprite pipeline server-side from a concept image and stages
+ * the resulting icon + animation frames into the self-hosted asset dir.
+ * Same response shape as /api/admin/items/render-weapon so the admin UI
+ * can treat them interchangeably.
  *
  * Body: { itemId: number, concept: "data:image/png;base64,..." }
  * Returns: { origins, frames: { animName: [url, ...] }, iconUrl }
  */
+function stageRenderFile(key: string, buf: Buffer): string {
+  const dest = join(ASSET_DIR, key);
+  mkdirSync(dirname(dest), { recursive: true });
+  const tmp = `${dest}.tmp.${process.pid}`;
+  writeFileSync(tmp, buf);
+  renameSync(tmp, dest);
+  return `${ASSET_BASE_URL}/client/${key}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { itemId, concept } = await request.json();
@@ -39,39 +46,23 @@ export async function POST(request: NextRequest) {
 
     if (rendered.iconDataUrl) {
       const iconBuf = Buffer.from(rendered.iconDataUrl.replace(/^data:image\/\w+;base64,/, ""), "base64");
-      if (isR2Configured()) {
-        const r2Key = `custom-items/${itemId}/icon.png`;
-        const result = await uploadToR2(r2Key, iconBuf);
-        if (result.success) {
-          iconUrl = `${R2_PUBLIC_URL}/${r2Key}`;
-          uploadResults.push("icon.png");
-        }
-      } else {
-        iconUrl = rendered.iconDataUrl;
-      }
+      iconUrl = stageRenderFile(`custom-items/${itemId}/icon.png`, iconBuf);
+      uploadResults.push("icon.png");
     }
 
     for (const [animName, dataUrls] of Object.entries(rendered.frames)) {
       frameUrls[animName] = [];
       for (let i = 0; i < dataUrls.length; i++) {
         const pngBuf = Buffer.from(dataUrls[i].replace(/^data:image\/\w+;base64,/, ""), "base64");
-        if (isR2Configured()) {
-          const r2Key = `custom-items/${itemId}/${animName}/${i}.png`;
-          const result = await uploadToR2(r2Key, pngBuf);
-          if (result.success) {
-            frameUrls[animName].push(`${R2_PUBLIC_URL}/${r2Key}`);
-            uploadResults.push(`${animName}/${i}.png`);
-          }
-        } else {
-          frameUrls[animName].push(dataUrls[i]);
-        }
+        frameUrls[animName].push(stageRenderFile(`custom-items/${itemId}/${animName}/${i}.png`, pngBuf));
+        uploadResults.push(`${animName}/${i}.png`);
       }
     }
 
-    if (isR2Configured()) {
-      const originsKey = `custom-items/${itemId}/origins.json`;
-      await uploadToR2(originsKey, Buffer.from(JSON.stringify(rendered.origins)));
-    }
+    stageRenderFile(
+      `custom-items/${itemId}/origins.json`,
+      Buffer.from(JSON.stringify(rendered.origins))
+    );
 
     return NextResponse.json({
       success: true,
@@ -79,13 +70,12 @@ export async function POST(request: NextRequest) {
       frames: frameUrls,
       iconUrl,
       uploaded: uploadResults.length,
-      message: isR2Configured()
-        ? `Rendered + uploaded ${uploadResults.length} files`
-        : `Rendered ${Object.values(frameUrls).flat().length} frames (R2 not configured, using data URLs)`,
+      message: `Rendered + staged ${uploadResults.length} files`,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: `Render-concept failed: ${err.message}` },
+      { error: `Render-concept failed: ${message}` },
       { status: 500 }
     );
   }

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { execute, query } from "@/lib/db";
-import { uploadToR2, isR2Configured } from "@/lib/r2";
+import { mkdirSync, renameSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
+import { ASSET_DIR } from "@/lib/assets";
 import { ASSET_RANGES, type AssetType } from "@/lib/assets/ranges";
 
 export const dynamic = "force-dynamic";
@@ -130,10 +132,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isR2Configured()) {
-    return NextResponse.json({ error: "R2 not configured" }, { status: 500 });
-  }
-
   let form: FormData;
   try {
     form = await request.formData();
@@ -210,10 +208,13 @@ export async function POST(request: NextRequest) {
 
   const ext = FILE_EXT_BY_TYPE[assetType];
   const fileKey = `assets/${assetType}/${String(inGameId).padStart(8, "0")}.${ext}`;
-  const upload = await uploadToR2(fileKey, buf);
-  if (!upload.success) {
-    return NextResponse.json({ error: `R2 upload failed: ${upload.error}` }, { status: 502 });
-  }
+  // Stage art bytes into the self-hosted asset dir (atomic tmp + rename);
+  // publish flows read them back via ASSET_BASE_URL file fetches, never R2.
+  const dest = join(ASSET_DIR, fileKey);
+  mkdirSync(dirname(dest), { recursive: true });
+  const tmp = `${dest}.tmp.${process.pid}`;
+  writeFileSync(tmp, buf);
+  renameSync(tmp, dest);
 
   const attrsJson = parsedAttrs.attrs ? JSON.stringify(parsedAttrs.attrs) : null;
 

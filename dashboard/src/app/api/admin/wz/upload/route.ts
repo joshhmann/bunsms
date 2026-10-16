@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { uploadFileToR2, uploadToR2, isR2Configured } from "@/lib/r2";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { dispatchWzToNx } from "@/lib/wz-to-nx";
-import { restartGameServer } from "@/lib/fly-restart";
 import { randomUUID } from "crypto";
 import { Readable } from "stream";
 import { pipeline } from "stream/promises";
@@ -9,12 +8,22 @@ import {
   createWriteStream,
   existsSync,
   mkdirSync,
-  readFileSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from "fs";
 import { tmpdir } from "os";
 import { dirname, join } from "path";
+import {
+  ASSET_DIR,
+  assetUrl,
+  bumpPatch,
+  hashFileStream,
+  readManifest,
+  resolveAssetPath,
+  writeManifestAtomic,
+} from "@/lib/assets";
+import type { ManifestRead } from "@/lib/assets";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 600;
@@ -25,39 +34,7 @@ const MAX_BYTES = 1024 * 1024 * 1024;
 
 const SERVER_TARBALL = "server-wz.tar.gz";
 
-interface ManifestFile {
-  name: string;
-  hash: string;
-  size: number;
-  url: string;
-  hd?: boolean;
-}
-interface Manifest {
-  version: string;
-  updatedAt?: string;
-  files: ManifestFile[];
-  downloadBase?: string;
-}
-
-function readManifest(): { manifest: Manifest; path: string } {
-  const VOLUME_MANIFEST = join(
-    process.env.COSMIC_ROOT || "/cosmic",
-    "launcher-manifest.json"
-  );
-  const BUNDLED_MANIFEST = join(process.cwd(), "launcher-manifest.json");
-  const path = existsSync(VOLUME_MANIFEST) ? VOLUME_MANIFEST : BUNDLED_MANIFEST;
-  const manifest = JSON.parse(readFileSync(path, "utf-8")) as Manifest;
-  return { manifest, path };
-}
-
 export async function POST(request: NextRequest) {
-  if (!isR2Configured()) {
-    return NextResponse.json(
-      { error: "R2 credentials not configured" },
-      { status: 500 }
-    );
-  }
-
   let form: FormData;
   try {
     form = await request.formData();
@@ -86,13 +63,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { manifest, path: manifestPath } = (() => {
-    try {
-      return readManifest();
-    } catch (err: any) {
-      throw new Error(`Failed to read launcher manifest: ${err.message}`);
-    }
-  })();
+  let manifestData: ManifestRead;
+  try {
+    manifestData = readManifest();
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json(
+      { error: `Failed to read launcher manifest: ${message}` },
+      { status: 500 }
+    );
+  }
+  const { manifest } = manifestData;
 
   const isServerTarball = name === SERVER_TARBALL;
   const manifestEntry = manifest.files.find((f) => f.name === name);
@@ -108,72 +89,66 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  if (!isServerTarball) {
+    try {
+      resolveAssetPath(name);
+    } catch {
+      return NextResponse.json({ error: `Invalid asset name: ${name}` }, { status: 400 });
+    }
+  }
 
   // Stream the upload to a temp file so we don't buffer it all in memory.
   const tempPath = join(tmpdir(), `wz-upload-${randomUUID()}.bin`);
   try {
-    const readable = Readable.fromWeb(file.stream() as any);
+    const readable = Readable.fromWeb(file.stream() as never);
     await pipeline(readable, createWriteStream(tempPath));
-
-    const upload = await uploadFileToR2(name, tempPath);
-    if (!upload.success) {
-      return NextResponse.json(
-        { error: `R2 upload failed: ${upload.error}` },
-        { status: 502 }
-      );
-    }
+    const { hash, size } = await hashFileStream(tempPath);
 
     let newVersion: string | undefined;
-    let serverRestart: { success: boolean; error?: string; machineId?: string } | undefined;
 
     if (isServerTarball) {
-      // Mirror the items/publish flow: drop a version marker so the server's
-      // entrypoint picks up the new tar, then restart.
-      try {
-        await uploadToR2(
-          "server-wz.version",
-          Buffer.from(new Date().toISOString())
-        );
-      } catch {}
-      try {
-        const machineId = await restartGameServer();
-        serverRestart = { success: true, machineId };
-      } catch (err: any) {
-        serverRestart = { success: false, error: err.message };
-      }
+      // Stage the tarball into the asset dir next to client files so the
+      // game-server path has no R2 dependency; no game-server restart here
+      // (restarts are owner-operated, never triggered by publish).
+      mkdirSync(ASSET_DIR, { recursive: true });
+      const dest = join(ASSET_DIR, SERVER_TARBALL);
+      const staged = `${dest}.tmp.${process.pid}`;
+      const { renameSync } = await import("fs");
+      renameSync(tempPath, staged);
+      renameSync(staged, dest);
+      writeFileSync(join(ASSET_DIR, "server-wz.version"), new Date().toISOString());
     } else if (manifestEntry) {
-      manifestEntry.hash = upload.hash;
-      manifestEntry.size = upload.size;
-      const parts = (manifest.version || "1.0.0").split(".");
-      parts[2] = String(parseInt(parts[2] || "0") + 1);
-      manifest.version = parts.join(".");
+      const dest = resolveAssetPath(name);
+      mkdirSync(dirname(dest), { recursive: true });
+      renameSync(tempPath, dest);
+      manifestEntry.hash = hash;
+      manifestEntry.size = size;
+      manifestEntry.url = assetUrl(name);
+      manifest.version = bumpPatch(manifest.version);
       manifest.updatedAt = new Date().toISOString();
       newVersion = manifest.version;
 
-      const VOLUME_MANIFEST = join(
-        process.env.COSMIC_ROOT || "/cosmic",
-        "launcher-manifest.json"
-      );
-      mkdirSync(dirname(VOLUME_MANIFEST), { recursive: true });
-      writeFileSync(VOLUME_MANIFEST, JSON.stringify(manifest, null, 2));
+      const manifestPath = writeManifestAtomic(manifest);
 
       // WZ → NX only for *.wz files; dlls / config / exe stay launcher-only.
       if (name.toLowerCase().endsWith(".wz")) {
         dispatchWzToNx([name]).catch(() => {});
       }
+
+      return NextResponse.json({
+        ok: true,
+        name,
+        hash,
+        size,
+        version: newVersion,
+        manifestPath,
+      });
     }
 
-    return NextResponse.json({
-      ok: true,
-      name,
-      hash: upload.hash,
-      size: upload.size,
-      version: newVersion,
-      manifestPath: manifestEntry ? manifestPath : null,
-      serverRestart,
-    });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ ok: true, name, hash, size, version: newVersion });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
   } finally {
     try {
       rmSync(tempPath, { force: true });

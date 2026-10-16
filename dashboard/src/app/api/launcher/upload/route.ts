@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
-import { uploadToR2 } from "@/lib/r2";
+import { existsSync, readFileSync } from "fs";
+import { basename } from "path";
+import { resolveAssetPath, storeAssetStream } from "@/lib/assets";
 
-// POST: Upload files to R2 (accepts multipart form data or JSON with file paths)
+// POST: stage client-asset bytes into the self-hosted asset dir
+// (accepts multipart form data or JSON with server-filesystem paths).
+// Replaces the old R2 multipart upload; hashes/sizes are recorded via the
+// manifest `register` mode, never trusted from the uploader.
 export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") || "";
 
-  // JSON mode: accept file info for manifest-only updates
+  // JSON mode: stage files already on the server filesystem (seeded/patched dir).
   if (contentType.includes("application/json")) {
     const body = await request.json();
 
@@ -13,36 +18,47 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No files provided" }, { status: 400 });
     }
 
-    // Files with paths = upload from server filesystem
     const results = [];
-    const fs = await import("fs");
-    const path = await import("path");
     for (const file of body.files) {
-      if (file.path && fs.existsSync(file.path)) {
-        const data = fs.readFileSync(file.path);
-        const result = await uploadToR2(file.name || path.basename(file.path), data);
-        results.push({ name: file.name, ...result });
+      if (file.path && existsSync(file.path)) {
+        const name = file.name || basename(file.path);
+        try {
+          resolveAssetPath(name);
+        } catch {
+          return NextResponse.json({ error: `Invalid asset name: ${name}` }, { status: 400 });
+        }
+        const data = readFileSync(file.path);
+        const blob = new Blob([new Uint8Array(data)]);
+        const staged = await storeAssetStream(name, blob.stream() as ReadableStream<Uint8Array>);
+        results.push({ name, ...staged });
       }
     }
 
     return NextResponse.json({ results });
   }
 
-  // Multipart mode: direct file upload
+  // Multipart mode: direct file upload, streamed to disk (no full buffering
+  // of 600 MB WZ files in the route handler beyond what formData requires).
   try {
     const formData = await request.formData();
     const results = [];
 
     for (const [key, value] of formData.entries()) {
       if (value instanceof File) {
-        const buffer = Buffer.from(await value.arrayBuffer());
-        const result = await uploadToR2(value.name || key, buffer);
-        results.push({ name: value.name || key, ...result });
+        const name = value.name || key;
+        try {
+          resolveAssetPath(name);
+        } catch {
+          return NextResponse.json({ error: `Invalid asset name: ${name}` }, { status: 400 });
+        }
+        const staged = await storeAssetStream(name, value.stream() as ReadableStream<Uint8Array>);
+        results.push({ name, ...staged });
       }
     }
 
     return NextResponse.json({ results });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

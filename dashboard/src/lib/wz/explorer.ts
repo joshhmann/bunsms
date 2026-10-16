@@ -23,9 +23,9 @@ import { Readable } from "stream";
 import { pipeline } from "stream/promises";
 import { dirname, join } from "path";
 
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
+const ASSET_BASE =
+  process.env.ASSET_BASE_URL || "https://buns.asslorde.com";
+const ASSET_PUBLIC_URL = `${ASSET_BASE}/client`;
 
 const CACHE_ROOT = join(process.env.COSMIC_ROOT || "/cosmic", "wz-cache");
 
@@ -60,7 +60,7 @@ async function fetchEtag(url: string): Promise<string | null> {
 }
 
 async function downloadWz(name: string, destPath: string): Promise<void> {
-  const url = `${R2_PUBLIC_URL}/${name}`;
+  const url = `${ASSET_PUBLIC_URL}/${name}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch ${name}: HTTP ${res.status}`);
   if (!res.body) throw new Error(`No body for ${name}`);
@@ -83,7 +83,7 @@ export async function getWzCached(
   const existing = IN_FLIGHT.get(name);
   if (existing) return existing;
 
-  const url = `${R2_PUBLIC_URL}/${name}`;
+  const url = `${ASSET_PUBLIC_URL}/${name}`;
   const cachePath = join(CACHE_ROOT, name);
   const cached = CACHE.get(name);
 
