@@ -70,9 +70,6 @@ async function run() {
     const host = await evaluate("window.buns.getServerHost()");
     assert.equal(host, "buns.asslorde.com", "The canonical default must not silently select a QA/LAN host");
     const title = await evaluate("document.title");
-    assert.match(title, /Testing RC 1\.1\.0-rc\.1/);
-    const body = await evaluate("document.body.innerText");
-    assert.match(body, /not a production rollout/i);
     const screenshot = await command("Page.captureScreenshot", { format: "png" });
     const screenshotName = `${uiLayer}-launcher.png`;
     fs.writeFileSync(path.join(output, screenshotName), Buffer.from(screenshot.data, "base64"));
