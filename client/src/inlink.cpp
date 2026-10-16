@@ -46,14 +46,6 @@ using VariantGetUnknown_t = IUnknown*(__thiscall*)(Ztl_variant_t*, bool, bool);
 VariantGetUnknown_t g_VariantGetUnknownOrig =
     reinterpret_cast<VariantGetUnknown_t>(addr::kVariantGetUnknown);
 
-IUnknownPtr* __cdecl get_unknown_hook(IUnknownPtr* result, Ztl_variant_t& v) {
-    g_GetUnknownOrig(result, v);
-    IWzCanvasPtr pCanvas;
-    if (SUCCEEDED(result->QueryInterface(__uuidof(IWzCanvas), &pCanvas))) {
-        HandleLinkProperty(pCanvas);
-    }
-    return result;
-}
 
 IUnknown* __fastcall VariantGetUnknown_hook(Ztl_variant_t* pThis, void* /*edx*/, bool fAddRef, bool fTryChangeType) {
     IUnknownPtr result = pThis->GetUnknown(fAddRef, fTryChangeType);
@@ -65,6 +57,14 @@ IUnknown* __fastcall VariantGetUnknown_hook(Ztl_variant_t* pThis, void* /*edx*/,
 }
 
 } // namespace
+IUnknownPtr* __cdecl get_unknown_hook(IUnknownPtr* result, Ztl_variant_t& v) {
+    g_GetUnknownOrig(result, v);
+    IWzCanvasPtr pCanvas;
+    if (SUCCEEDED(result->QueryInterface(__uuidof(IWzCanvas), &pCanvas))) {
+        HandleLinkProperty(pCanvas);
+    }
+    return result;
+}
 
 void AttachInlinkMod() {
     ATTACH_HOOK(g_GetUnknownOrig, get_unknown_hook);
