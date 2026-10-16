@@ -1,5 +1,6 @@
 package net.server.channel.handlers;
 
+import client.ClientCaps;
 import net.opcodes.RecvOpcode;
 import net.opcodes.SendOpcode;
 import net.packet.InPacket;
@@ -45,6 +46,18 @@ class CashShopWindowHandlerTest extends HandlerTest {
     private void openField() {
         lenient().when(chr.getCashShop()).thenReturn(cashShop);
         lenient().when(cashShop.isOpened()).thenReturn(false);
+        lenient().when(client.hasCaps(ClientCaps.CASHSHOP_WINDOW)).thenReturn(true);
+    }
+
+    @Test
+    void unflaggedSessionSendsNothing() {
+        lenient().when(chr.getCashShop()).thenReturn(cashShop);
+        lenient().when(cashShop.isOpened()).thenReturn(false);
+        lenient().when(client.hasCaps(ClientCaps.CASHSHOP_WINDOW)).thenReturn(false);
+
+        handler.handlePacket(Packets.buildInPacket(out -> out.writeByte(0)), client);
+
+        verify(client, never()).sendPacket(any());
     }
 
     @Test
