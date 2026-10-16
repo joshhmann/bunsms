@@ -118,13 +118,17 @@ try {
     if ($actualSha -ne $BaselineSha256.ToLowerInvariant()) { throw "Baseline provenance SHA256 mismatch: $actualSha" }
     $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
     if (-not $manifest.files -or $manifest.files.Count -eq 0) { throw 'Native provenance contains no files' }
+    $isClientManifest = $manifest.completeProfiles -contains 'kaentake'
+    $report.inputKind = if ($isClientManifest) { 'Pinned complete full-content client manifest; same-run native runtime overlaid explicitly for QA' } else { 'Pinned complete native provenance' }
+    $report.sourceCommit = $env:GITHUB_SHA
     $game = Join-Path $OutputDirectory 'baseline'
     New-Item -ItemType Directory -Force $game | Out-Null
     $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $base = [uri]($BaselineFilesBaseUrl.AbsoluteUri.TrimEnd('/') + '/')
     $verifiedFiles = [Collections.Generic.List[object]]::new()
     foreach ($file in $manifest.files) {
-        if (-not $file.name -or $file.sha256 -notmatch '^[0-9a-fA-F]{64}$' -or $file.size -le 0) {
+        $expectedHash = if ($isClientManifest) { $file.hash } else { $file.sha256 }
+        if (-not $file.name -or $expectedHash -notmatch '^[0-9a-fA-F]{64}$' -or $file.size -le 0) {
             throw 'Invalid native provenance file record'
         }
         if (-not $names.Add($file.name.Replace('\', '/'))) { throw "Case-colliding native filename: $($file.name)" }
@@ -133,11 +137,12 @@ try {
             throw "Native filename escapes baseline directory: $($file.name)"
         }
         $encoded = (($file.name.Replace('\', '/') -split '/') | ForEach-Object { [uri]::EscapeDataString($_) }) -join '/'
-        $url = [uri]::new($base, $encoded)
+        $url = if ($isClientManifest) { [uri]$file.url } else { [uri]::new($base, $encoded) }
+        if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https') { throw "Native file URL must be pinned HTTPS: $($file.name)" }
         New-Item -ItemType Directory -Force ([IO.Path]::GetDirectoryName($destination)) | Out-Null
         Invoke-WebRequest $url.AbsoluteUri -OutFile $destination -TimeoutSec 900
         $sha = (Get-FileHash $destination -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ((Get-Item $destination).Length -ne $file.size -or $sha -ne $file.sha256.ToLowerInvariant()) {
+        if ((Get-Item $destination).Length -ne $file.size -or $sha -ne $expectedHash.ToLowerInvariant()) {
             throw "Native baseline size/SHA256 mismatch: $($file.name)"
         }
         $verifiedFiles.Add([pscustomobject]@{ name = $file.name; size = $file.size; sha256 = $sha; url = $url.AbsoluteUri })

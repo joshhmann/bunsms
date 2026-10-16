@@ -42,19 +42,19 @@ on:
       backend_bundle_url:
         description: "Frozen QA server archive HTTPS URL"
         type: string
-        default: "https://buns.asslorde.com/client/candidates/full-content-bootstrap-20261016-0422/buns-full-content-bootstrap-20261016-0422.tar.gz.bin"
+        default: "https://buns.asslorde.com/rc-assets/client/r/4bf10f47bc05b2882a87435823742b7be2b77873bb45603ebd20f62fc13a6bb0/qa/backend-complete-0341c81.tar.gz"
       backend_bundle_sha256:
         description: "Exact frozen QA server archive SHA256"
         type: string
-        default: "ad147eb04df49ffe0f35eddc3356ae6e2b3b64fb83013b7b84baaccc3dd2ea7b"
+        default: "4bf10f47bc05b2882a87435823742b7be2b77873bb45603ebd20f62fc13a6bb0"
       backend_xml_url:
         description: "Matching complete server XML archive HTTPS URL"
         type: string
-        default: "https://buns.asslorde.com/client/candidates/full-content-bootstrap-20261016-0422/buns-full-content-bootstrap-xml-20261016-0422.tar.gz.bin"
+        default: "https://buns.asslorde.com/rc-assets/client/r/4fe81ac326226c37b5c8e4b92514d9f9ba4d536ce42e0fc3d236dafd3f768296/server-wz.tar.gz"
       backend_xml_sha256:
         description: "Exact matching complete server XML SHA256"
         type: string
-        default: "bd2ecfadc185d75cd33c32a0652c5ff89216d647a8542a068a4770735c6d9178"
+        default: "4fe81ac326226c37b5c8e4b92514d9f9ba4d536ce42e0fc3d236dafd3f768296"
 
 jobs:
   build-windows:

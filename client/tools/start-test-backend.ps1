@@ -43,8 +43,8 @@ try {
     tar -xzf (Join-Path $root 'xml.tar.gz') -C $xml
     if ($LASTEXITCODE) { throw 'QA XML archive extraction failed' }
     Expand-Archive (Join-Path $root 'mysql.zip') (Join-Path $root 'mysql')
-    $contractPath = @(Get-ChildItem $server -Filter bootstrap-contract.json -Recurse)
-    if ($contractPath.Count -ne 1) { throw 'QA bundle must have exactly one bootstrap-contract.json' }
+    $contractPath = @(Get-ChildItem $server -Filter runtime-contract.json -Recurse)
+    if ($contractPath.Count -ne 1) { throw 'QA bundle must have exactly one runtime-contract.json' }
     $server = $contractPath[0].Directory.FullName
     $contract = Get-Content $contractPath[0].FullName -Raw | ConvertFrom-Json
     $jar = Join-Path $server 'Cosmic.jar'
@@ -53,6 +53,9 @@ try {
     $xmlRoots = @(Get-ChildItem $xml -Filter Map.wz -Directory -Recurse)
     if ($xmlRoots.Count -ne 1) { throw 'QA XML archive must contain exactly one complete XML root with Map.wz' }
     $xml = $xmlRoots[0].Parent.FullName
+    $scripts = Join-Path (Split-Path $xml -Parent) 'scripts'
+    if (-not (Test-Path $scripts -PathType Container)) { throw 'Matched server pack has no scripts alongside its WZ root' }
+    Copy-Item (Join-Path $scripts '*') (Join-Path $server 'scripts') -Recurse -Force
     foreach ($name in @('Character.wz', 'Item.wz', 'Mob.wz', 'Npc.wz', 'Quest.wz', 'Skill.wz', 'String.wz')) {
         if (-not (Test-Path (Join-Path $xml $name) -PathType Container)) { throw "Incomplete QA XML root: $name" }
     }
