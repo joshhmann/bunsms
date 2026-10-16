@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "screen.h"
+#include "debug.h"
 
 namespace {
 using Metric = int(__cdecl*)();

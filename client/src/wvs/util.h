@@ -22,6 +22,12 @@ inline int get_int32(Ztl_variant_t& v, int nDefault) {
     }
 }
 
+// Property access returns an owned temporary variant. Bind it directly rather
+// than relying on MSVC's nonstandard temporary-to-mutable-lvalue extension.
+inline int get_int32(Ztl_variant_t&& value, int defaultValue) {
+    return get_int32(value, defaultValue);
+}
+
 // implementation in resolution.cpp
 int get_screen_width();
 int get_screen_height();

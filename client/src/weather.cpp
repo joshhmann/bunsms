@@ -1579,7 +1579,7 @@ void Weather_NoteObjProp(IWzProperty* pObjProp) {
         // Leafre's trees are whole trunk-and-crown canvases in `nature1`.  They need a
         // dedicated rooted-tree treatment rather than the normal small-plant band.
         if (WeatherSway_IsLeafreTreeObject(sOS, sL0, sL1)) {
-            g_uObjSwayKind = ObjIsAnimated(pObjProp) ? SWAY_NONE : SWAY_TREE;
+            g_uObjSwayKind = static_cast<unsigned char>(ObjIsAnimated(pObjProp) ? SWAY_NONE : SWAY_TREE);
             g_uObjIsPlant = 1;
             return;
         }
