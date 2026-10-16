@@ -63,12 +63,23 @@ CI artifact contains only `Kaentake.exe`, `Kaentake.dll`, `Custom.wz`, and
 the source/patch provenance JSON. Renderer build side-outputs are not runtime
 replacements and must not overwrite the verified stock engine DLLs.
 
-The native default host is `buns.asslorde.com`. The existing Nexon-only
-provider redirect resolves a configured hostname to IPv4 once per game process,
-outside loader lock; explicit IPv4 QA overrides retain their precedence.
-Resolution failure returns a Winsock error rather than connecting to the
-original Nexon address or silently selecting a LAN host. Non-Nexon destinations
-and the upstream login-port/channel handling are unchanged.
+Fresh Windows folders also require the `MSVC-x86-runtime` artifact. Its
+collection step accepts only genuine Microsoft-signed PE32 VC143 app-local
+redistributable DLLs and records their exact versions, sizes and SHA256 pins.
+Ship that payload beside the client, with its provenance JSON in the complete
+file manifest. Do not rely on the developer/CI machine's installed runtime.
+The build retains its existing dynamic CRT ABI; it does not change engine
+allocator or COM ownership. Windows 10 or later supplies the system UCRT/API
+sets. No fake runtime shim, system DLL replacement or registry install is used.
+
+The native default host is `buns.asslorde.com`. A single Winsock
+`connect`/`getpeername`/`closesocket` owner is installed at the post-unpack seam,
+not in DllMain; provider-SPI interception is not used. Only the original Nexon
+destinations are redirected. Configured hostnames resolve to IPv4 once on the
+actual ready socket path; numeric QA overrides take the literal fast path.
+Failure returns a Winsock error without Nexon/LAN fallback. Peer identity is
+remembered per redirected socket and removed on close; other channel targets
+remain unchanged. Stored host text and configuration precedence are retained.
 
 Actual Windows startup capture is an **explicit manual** `client.yml`
 dispatch with `native_smoke=true`, `native_baseline_url` pointing to an
@@ -76,7 +87,7 @@ unpromoted complete native provenance JSON (`files`: `name`, `sha256`, `size`),
 its exact `native_baseline_sha256`, and `native_baseline_files_url` containing
 those pinned bytes. Ordinary push/PR builds do not download that baseline.
 The smoke job verifies every native file and canonical executable / renderer
-pins, overlays only the built Kaentake pair, Custom.wz and BunsMS.dll,
+pins, overlays the built Kaentake pair, Custom.wz, BunsMS.dll and pinned app-local CRT,
 then launches the real Kaentake path under passive process/module and DBWIN
 OutputDebugString capture, without attaching a debugger. It records child PIDs,
 native initialization/ACK messages, natural exit codes, HWND/child text, actual client-area screenshots,

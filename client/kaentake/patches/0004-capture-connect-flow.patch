@@ -43,7 +43,7 @@
      m_ctxConnect.bLogin = ctx.bLogin;
      m_ctxConnect.posList = m_ctxConnect.lAddr.GetHeadPosition();
      auto next = ZList<ZInetAddr>::GetNext(m_ctxConnect.posList);
-+    DebugMessage("BUNS_RUNTIME flow client-connect-context next=%p login=%d\n", next, m_ctxConnect.bLogin);
++    DebugMessage("BUNS_RUNTIME flow client-connect-context next=%p login=%d\n", static_cast<const sockaddr*>(next), m_ctxConnect.bLogin);
      // CClientSocket::ClearSendReceiveCtx(this);
      reinterpret_cast<void(__thiscall*)(CClientSocket*)>(0x004969EE)(this);
  
@@ -170,31 +170,6 @@
          AttachClientHooks();
          LoadBunsCompanion();
      }
-@@ -204,11 +205,14 @@
-     const auto* original = reinterpret_cast<const sockaddr_in*>(name);
-     char sName[INET_ADDRSTRLEN];
-     InetNtopA(AF_INET, &original->sin_addr, sName, INET_ADDRSTRLEN);
-+    DebugMessage("BUNS_RUNTIME flow provider-connect pid=%lu socket=%u incoming=%s:%u\n", GetCurrentProcessId(), static_cast<unsigned>(s), sName, ntohs(original->sin_port));
-     for (auto sAddress : g_asOriginalAddress) {
-         if (strcmp(sName, sAddress)) {
-             continue;
-         }
-+        DebugMessage("BUNS_RUNTIME flow provider-resolve-enter\n");
-         const auto& server = ResolveServerAddress();
-+        DebugMessage("BUNS_RUNTIME flow provider-resolve-return address=%08lX error=%d\n", server.address.S_un.S_addr, server.error);
-         if (server.error) {
-             *lpErrno = server.error;
-             return SOCKET_ERROR;
-@@ -235,6 +239,9 @@
-     g_ProcTable = *lpProcTable;
-     lpProcTable->lpWSPConnect = &WSPConnect_hook;
-     lpProcTable->lpWSPGetPeerName = &WSPGetPeerName_hook;
-+    const DWORD savedError = GetLastError();
-+    DebugMessage("BUNS_RUNTIME flow provider-startup pid=%lu result=%d connect=%p peer=%p\n", GetCurrentProcessId(), result, reinterpret_cast<void*>(g_ProcTable.lpWSPConnect), reinterpret_cast<void*>(g_ProcTable.lpWSPGetPeerName));
-+    SetLastError(savedError);
-     return result;
- }
- 
 --- a/src/launcher.cpp
 +++ b/src/launcher.cpp
 @@ -3,6 +3,18 @@

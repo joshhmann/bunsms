@@ -4,6 +4,7 @@ param(
     [Parameter(Mandatory)][uri]$BaselineFilesBaseUrl,
     [Parameter(Mandatory)][string]$KaentakeArtifact,
     [Parameter(Mandatory)][string]$CompanionArtifact,
+    [Parameter(Mandatory)][string]$RuntimeArtifact,
     [string]$OutputDirectory = 'native-smoke-output',
     [ValidateRange(30, 180)][int]$ObserveSeconds = 90,
     [string]$GameHost = 'buns.asslorde.com'
@@ -134,6 +135,18 @@ try {
     $runtime = Join-Path $KaentakeArtifact 'Release'
     foreach ($file in @('Kaentake.exe', 'Kaentake.dll', 'Custom.wz')) { Copy-Item (Join-Path $runtime $file) (Join-Path $game $file) -Force }
     Copy-Item (Join-Path $CompanionArtifact 'BunsMS.dll') (Join-Path $game 'BunsMS.dll') -Force
+    $crtManifest = Join-Path $RuntimeArtifact 'msvc-runtime-provenance.json'
+    $report.crtProvenance = Get-Content $crtManifest -Raw | ConvertFrom-Json
+    if ($report.crtProvenance.architecture -ne 'x86') { throw 'Required app-local CRT payload is not x86' }
+    foreach ($file in $report.crtProvenance.files) {
+        $source = Join-Path $RuntimeArtifact $file.name
+        $sha = (Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ((Get-Item $source).Length -ne $file.size -or $sha -ne $file.sha256) {
+            throw "Microsoft app-local runtime payload mismatch: $($file.name)"
+        }
+        Copy-Item $source (Join-Path $game $file.name) -Force
+    }
+    Copy-Item $crtManifest (Join-Path $game 'msvc-runtime-provenance.json')
     "[config]`nhost=$GameHost`nport=8484`n" | Set-Content (Join-Path $game 'config.ini') -Encoding ascii
     $report.gameDirectory = $game
     $report.runtimeProvenance = Get-Content (Join-Path $KaentakeArtifact 'kaentake-build.json') -Raw | ConvertFrom-Json

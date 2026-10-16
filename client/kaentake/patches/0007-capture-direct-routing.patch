@@ -1,0 +1,40 @@
+--- a/src/system.cpp
++++ b/src/system.cpp
+@@ -259,6 +259,9 @@
+     if (bytes.s_b1 != 63 || bytes.s_b2 != 251 || bytes.s_b3 != 217 || bytes.s_b4 < 2 || bytes.s_b4 > 4)
+         return Connect_orig(socket, address, length);
+     const auto& server = ResolveServerAddress();
++    const int diagnosticError = WSAGetLastError();
++    DebugMessage("BUNS_RUNTIME flow routing-enter pid=%lu tid=%lu socket=%u original=%08lX configured=%s resolved=%08lX resolve-error=%d\n", GetCurrentProcessId(), GetCurrentThreadId(), static_cast<unsigned>(socket), original->sin_addr.S_un.S_addr, g_sServerHost ? g_sServerHost : CONSTANTS_DEFAULT_HOST, server.address.S_un.S_addr, server.error);
++    WSASetLastError(diagnosticError);
+     if (server.error) {
+         WSASetLastError(server.error);
+         return SOCKET_ERROR;
+@@ -270,8 +273,12 @@
+     sockaddr_in redirected = *original;
+     redirected.sin_addr = server.address;
+     if (g_nServerPort) redirected.sin_port = htons(static_cast<u_short>(g_nServerPort));
++    const int beforeConnectError = WSAGetLastError();
++    DebugMessage("BUNS_RUNTIME flow routing-sockaddr pid=%lu socket=%u pointer=%p family=%u address=%08lX port=%u\n", GetCurrentProcessId(), static_cast<unsigned>(socket), &redirected, redirected.sin_family, redirected.sin_addr.S_un.S_addr, ntohs(redirected.sin_port));
++    WSASetLastError(beforeConnectError);
+     const int result = Connect_orig(socket, reinterpret_cast<const sockaddr*>(&redirected), sizeof(redirected));
+     const int error = WSAGetLastError();
++    DebugMessage("BUNS_RUNTIME flow routing-return pid=%lu socket=%u result=%d error=%d\n", GetCurrentProcessId(), static_cast<unsigned>(socket), result, error);
+     if (result == SOCKET_ERROR && error != WSAEWOULDBLOCK && error != WSAEINPROGRESS && error != WSAEALREADY)
+         ForgetRedirect(socket);
+     WSASetLastError(error);
+@@ -299,9 +306,11 @@
+ }
+ 
+ static void InstallRoutingHooks() {
+-    if (!ATTACH_HOOK(Connect_orig, Connect_hook) ||
+-        !ATTACH_HOOK(GetPeerName_orig, GetPeerName_hook) ||
+-        !ATTACH_HOOK(CloseSocket_orig, CloseSocket_hook)) {
++    const bool connected = ATTACH_HOOK(Connect_orig, Connect_hook);
++    const bool peer = connected && ATTACH_HOOK(GetPeerName_orig, GetPeerName_hook);
++    const bool closed = peer && ATTACH_HOOK(CloseSocket_orig, CloseSocket_hook);
++    DebugMessage("BUNS_RUNTIME flow routing-attached pid=%lu connect=%d peer=%d close=%d\n", GetCurrentProcessId(), connected, peer, closed);
++    if (!connected || !peer || !closed) {
+         // Post-unpack/main-thread seam: never a modal or network work in DllMain.
+         ErrorMessage("Could not install required Winsock routing hooks.");
+         ExitProcess(ERROR_DLL_INIT_FAILED);
