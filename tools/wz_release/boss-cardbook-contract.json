@@ -1,16 +1,17 @@
 {
   "schema_version": 1,
   "ticket": "Ticket9 full shipped MR boss pack",
-  "scope": "Actual13 monster-card consumers: only missing genuine cover actor images/names plus exact native String/MonsterBook metadata; reward card Item/String/icons owned boss-rewards. No server/SQL/event edits.",
-  "status": "pinned-genuine-cardbook-intake-awaiting-parent-native-XML-NX-union-proofs",
-  "change_note": "Close SQL cover MobID and native Item info/mob views without inventing aliases; retain genuine optional metadata absence and explicitly unsupported browser UI.",
+  "scope": "All13 accepted card consumers: preserved genuine cover actors/names plus complete explicitly Buns-authored native Book maps/rewards/factual episodes; Item/card/SQL-cover identities unchanged.",
+  "status": "complete13-Buns-authored-Book-contract-native-materialization-and-actual-Book-UI-acceptance-pending",
+  "change_note": "Replace seven missing and six inaccurate historical Book definitions with complete Buns feature data from accepted real expedition arena/card-acquisition maps and actual guarded non-quest drop rows, not a claimed startup fix.",
   "policy": {
     "source_bytes": "Captured archive members unchanged, including every duplicate occurrence/order. No repair of source captures.",
-    "shared_files": "Only exact five missing Mob names and six genuine book metadata nodes; no String/Item/UI whole-image replacement. All old book entries and non-target siblings must remain unchanged.",
+    "shared_files": "Only exact five missing Mob names and13 explicitly Buns-authored Book nodes; stock343 Book nodes and every other non-target sibling remain unchanged. No String/Item/UI whole-image replacement.",
     "actors": "Complete original five actors, never sparse stand banks or renamed source actors. Exact explicit classic-source canvas donor materialization only; all referring metadata/order retained except resolved link, donor must have no source/_inlink/_outlink.",
     "server_XML": "Use actual deployed snapshot and merge_server_xml.py; deployed tuning/user scalar values win, additions only for full actors.",
     "separate_views": "SQL cover IDs999... and genuine item info/mob IDs888.../8645009 remain separate; no forced equalization.",
-    "verification_boundary": "Source intake/static semantic inspection only. Parent owns all final native/XML/NX integration and independent/runtime proofs."
+    "verification_boundary": "Derived source/data closure is recorded, not native engine/Book UI/gameplay acceptance. Full native/XML materialization, fresh independent reader and actual native Book UI/map/reward consumers are required before DONE.",
+    "book_authorship": "Buns authored factual release feature data, not GMS/MapleRoot source authorship. Use stock-v83 map/reward/episode schema; real zero-direct-drop rows justify an empty reward property. No invented lore/maps/rewards or modern-medal imports to appease historical placeholders."
   },
   "source_defaults": {
     "mapleroot_archive": "/root/maplestory_dump/MapleRoot Full Repack.zip",
@@ -202,7 +203,7 @@
         "8880002"
       ],
       "source_key": "gms",
-      "purpose": "Six genuine optional book metadata nodes used by native info/mob lookup. Raw Root647 nodes is authoritative for this addition; Root XML343 nodes lacks all six. Existing book entries untouched; no Etc book image exists in inspected stock/source."
+      "purpose": "Preserve exact historical Root647 raw source capture for provenance/quality comparison only. Its six450005000/Coming soon definitions are NOT emitted as final Book content; explicit Buns operations below own all13 current definitions."
     }
   ],
   "reference_sources": [
@@ -454,58 +455,567 @@
       "target_node": "8850009"
     },
     {
-      "op": "copy_subtree",
+      "op": "set_subtree",
       "target_wz": "String.wz",
       "target_image": "MonsterBook.img",
-      "source": "boss-cardbook/raw/String.wz/MonsterBook.img",
-      "source_key": "gms",
-      "source_node": "9400408",
-      "target_node": "9400408"
+      "target_node": "8840000",
+      "node": {
+        "name": "8840000",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 211070100
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": []
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Von Leon [8840000].\\nBuns card acquisition areas: Lion King's Castle [211070100].\\nCard drops from: VL [8847777].\\nThis illustrated form has no configured direct monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
     },
     {
-      "op": "copy_subtree",
+      "op": "set_subtree",
       "target_wz": "String.wz",
       "target_image": "MonsterBook.img",
-      "source": "boss-cardbook/raw/String.wz/MonsterBook.img",
-      "source_key": "gms",
-      "source_node": "8880150",
-      "target_node": "8880150"
+      "target_node": "8850005",
+      "node": {
+        "name": "8850005",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 271040100
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": []
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Mihile [8850005].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
     },
     {
-      "op": "copy_subtree",
+      "op": "set_subtree",
       "target_wz": "String.wz",
       "target_image": "MonsterBook.img",
-      "source": "boss-cardbook/raw/String.wz/MonsterBook.img",
-      "source_key": "gms",
-      "source_node": "8880302",
-      "target_node": "8880302"
+      "target_node": "8850006",
+      "node": {
+        "name": "8850006",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 271040100
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": []
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Oz [8850006].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
     },
     {
-      "op": "copy_subtree",
+      "op": "set_subtree",
       "target_wz": "String.wz",
       "target_image": "MonsterBook.img",
-      "source": "boss-cardbook/raw/String.wz/MonsterBook.img",
-      "source_key": "gms",
-      "source_node": "8645009",
-      "target_node": "8645009"
+      "target_node": "8850007",
+      "node": {
+        "name": "8850007",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 271040100
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": []
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Irena [8850007].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
     },
     {
-      "op": "copy_subtree",
+      "op": "set_subtree",
       "target_wz": "String.wz",
       "target_image": "MonsterBook.img",
-      "source": "boss-cardbook/raw/String.wz/MonsterBook.img",
-      "source_key": "gms",
-      "source_node": "8880415",
-      "target_node": "8880415"
+      "target_node": "8850008",
+      "node": {
+        "name": "8850008",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 271040100
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": []
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Eckhart [8850008].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
     },
     {
-      "op": "copy_subtree",
+      "op": "set_subtree",
       "target_wz": "String.wz",
       "target_image": "MonsterBook.img",
-      "source": "boss-cardbook/raw/String.wz/MonsterBook.img",
-      "source_key": "gms",
-      "source_node": "8880002",
-      "target_node": "8880002"
+      "target_node": "8850009",
+      "node": {
+        "name": "8850009",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 271040100
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": []
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Hawkeye [8850009].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
+    },
+    {
+      "op": "set_subtree",
+      "target_wz": "String.wz",
+      "target_image": "MonsterBook.img",
+      "target_node": "8850011",
+      "node": {
+        "name": "8850011",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 271040100
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": []
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Cygnus [8850011].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
+    },
+    {
+      "op": "set_subtree",
+      "target_wz": "String.wz",
+      "target_image": "MonsterBook.img",
+      "target_node": "9400408",
+      "node": {
+        "name": "9400408",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 800040410
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 1382045
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 1382046
+              },
+              {
+                "name": "2",
+                "type": "int",
+                "value": 1382047
+              },
+              {
+                "name": "3",
+                "type": "int",
+                "value": 1382048
+              },
+              {
+                "name": "4",
+                "type": "int",
+                "value": 2000005
+              },
+              {
+                "name": "5",
+                "type": "int",
+                "value": 2388159
+              },
+              {
+                "name": "6",
+                "type": "int",
+                "value": 4000345
+              },
+              {
+                "name": "7",
+                "type": "int",
+                "value": 4000346
+              }
+            ]
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: False Daimyo [9400408].\\nBuns card acquisition areas: Zipangu [800040410].\\nCard drops from: False Daimyo [9400408].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
+    },
+    {
+      "op": "set_subtree",
+      "target_wz": "String.wz",
+      "target_image": "MonsterBook.img",
+      "target_node": "8880150",
+      "node": {
+        "name": "8880150",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 450004750
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 450004751
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 1142802
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 2388160
+              }
+            ]
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Lucid [8880150].\\nBuns card acquisition areas: Lachelein [450004750], Arcane River [450004751].\\nCard drops from: Lucid [8880150], Normal Lucid [9990150].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
+    },
+    {
+      "op": "set_subtree",
+      "target_wz": "String.wz",
+      "target_image": "MonsterBook.img",
+      "target_node": "8880302",
+      "node": {
+        "name": "8880302",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 450007440
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 450007441
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 1142803
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 2000005
+              },
+              {
+                "name": "2",
+                "type": "int",
+                "value": 2388161
+              }
+            ]
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Will [8880302].\\nBuns card acquisition areas: Esfera [450007440], Arcane River [450007441].\\nCard drops from: Will [8880302], Normal Will [9990301].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
+    },
+    {
+      "op": "set_subtree",
+      "target_wz": "String.wz",
+      "target_image": "MonsterBook.img",
+      "target_node": "8645009",
+      "node": {
+        "name": "8645009",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 450012210
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 450012211
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 1142880
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 2388162
+              }
+            ]
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Guard Captain Darknell [8645009].\\nBuns card acquisition areas: Limina [450012210], Arcane River [450012211].\\nCard drops from: Guard Captain Darknell [8645009], Normal Darknell [9995009].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
+    },
+    {
+      "op": "set_subtree",
+      "target_wz": "String.wz",
+      "target_image": "MonsterBook.img",
+      "target_node": "8880415",
+      "node": {
+        "name": "8880415",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 450010100
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 450010101
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 1142558
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 2388163
+              }
+            ]
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Weakened Verus Hilla [8880415].\\nBuns card acquisition areas: Labyrinth of Suffering [450010100], Arcane River [450010101].\\nCard drops from: Weakened Verus Hilla [8880415], Normal Verus [9990415].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
+    },
+    {
+      "op": "set_subtree",
+      "target_wz": "String.wz",
+      "target_image": "MonsterBook.img",
+      "target_node": "8880002",
+      "node": {
+        "name": "8880002",
+        "type": "property",
+        "children": [
+          {
+            "name": "map",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 401060100
+              }
+            ]
+          },
+          {
+            "name": "reward",
+            "type": "property",
+            "children": [
+              {
+                "name": "0",
+                "type": "int",
+                "value": 1142520
+              },
+              {
+                "name": "1",
+                "type": "int",
+                "value": 2388164
+              }
+            ]
+          },
+          {
+            "name": "episode",
+            "type": "string",
+            "value": "Illustration: Magnus [8880002].\\nBuns card acquisition areas: Tyrant's Castle [401060100].\\nCard drops from: Magnus [8880002].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+          }
+        ]
+      },
+      "authorship": "Buns factual accepted-content integration; no GMS source authorship/startup-root claim"
     },
     {
       "op": "copy_subtree",
@@ -6979,114 +7489,6 @@
       "type": "string"
     },
     {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "9400408/map",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "9400408/reward",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "9400408/episode",
-      "type": "string"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880150/map",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880150/reward",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880150/episode",
-      "type": "string"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880302/map",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880302/reward",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880302/episode",
-      "type": "string"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8645009/map",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8645009/reward",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8645009/episode",
-      "type": "string"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880415/map",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880415/reward",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880415/episode",
-      "type": "string"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880002/map",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880002/reward",
-      "type": "property"
-    },
-    {
-      "wz": "String.wz",
-      "image": "MonsterBook.img",
-      "node": "8880002/episode",
-      "type": "string"
-    },
-    {
       "wz": "Mob.wz",
       "image": "8645009.img",
       "node": "",
@@ -7229,6 +7631,583 @@
       "image": "Mob.img",
       "node": "9995009/name",
       "type": "string"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8840000",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8840000/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8840000/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8840000/episode",
+      "type": "string",
+      "value": "Illustration: Von Leon [8840000].\\nBuns card acquisition areas: Lion King's Castle [211070100].\\nCard drops from: VL [8847777].\\nThis illustrated form has no configured direct monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8840000/map/0",
+      "type": "int",
+      "value": 211070100
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850005",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850005/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850005/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850005/episode",
+      "type": "string",
+      "value": "Illustration: Mihile [8850005].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850005/map/0",
+      "type": "int",
+      "value": 271040100
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850006",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850006/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850006/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850006/episode",
+      "type": "string",
+      "value": "Illustration: Oz [8850006].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850006/map/0",
+      "type": "int",
+      "value": 271040100
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850007",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850007/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850007/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850007/episode",
+      "type": "string",
+      "value": "Illustration: Irena [8850007].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850007/map/0",
+      "type": "int",
+      "value": 271040100
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850008",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850008/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850008/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850008/episode",
+      "type": "string",
+      "value": "Illustration: Eckhart [8850008].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850008/map/0",
+      "type": "int",
+      "value": 271040100
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850009",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850009/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850009/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850009/episode",
+      "type": "string",
+      "value": "Illustration: Hawkeye [8850009].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850009/map/0",
+      "type": "int",
+      "value": 271040100
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850011",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850011/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850011/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850011/episode",
+      "type": "string",
+      "value": "Illustration: Cygnus [8850011].\\nBuns card acquisition areas: Knight Stronghold [271040100].\\nCard drops from: Cygnus [8850012].\\nThis illustrated form has no configured direct monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8850011/map/0",
+      "type": "int",
+      "value": 271040100
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/episode",
+      "type": "string",
+      "value": "Illustration: False Daimyo [9400408].\\nBuns card acquisition areas: Zipangu [800040410].\\nCard drops from: False Daimyo [9400408].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/map/0",
+      "type": "int",
+      "value": 800040410
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/reward/0",
+      "type": "int",
+      "value": 1382045
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/reward/1",
+      "type": "int",
+      "value": 1382046
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/reward/2",
+      "type": "int",
+      "value": 1382047
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/reward/3",
+      "type": "int",
+      "value": 1382048
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/reward/4",
+      "type": "int",
+      "value": 2000005
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/reward/5",
+      "type": "int",
+      "value": 2388159
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/reward/6",
+      "type": "int",
+      "value": 4000345
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "9400408/reward/7",
+      "type": "int",
+      "value": 4000346
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880150",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880150/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880150/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880150/episode",
+      "type": "string",
+      "value": "Illustration: Lucid [8880150].\\nBuns card acquisition areas: Lachelein [450004750], Arcane River [450004751].\\nCard drops from: Lucid [8880150], Normal Lucid [9990150].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880150/map/0",
+      "type": "int",
+      "value": 450004750
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880150/map/1",
+      "type": "int",
+      "value": 450004751
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880150/reward/0",
+      "type": "int",
+      "value": 1142802
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880150/reward/1",
+      "type": "int",
+      "value": 2388160
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880302",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880302/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880302/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880302/episode",
+      "type": "string",
+      "value": "Illustration: Will [8880302].\\nBuns card acquisition areas: Esfera [450007440], Arcane River [450007441].\\nCard drops from: Will [8880302], Normal Will [9990301].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880302/map/0",
+      "type": "int",
+      "value": 450007440
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880302/map/1",
+      "type": "int",
+      "value": 450007441
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880302/reward/0",
+      "type": "int",
+      "value": 1142803
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880302/reward/1",
+      "type": "int",
+      "value": 2000005
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880302/reward/2",
+      "type": "int",
+      "value": 2388161
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8645009",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8645009/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8645009/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8645009/episode",
+      "type": "string",
+      "value": "Illustration: Guard Captain Darknell [8645009].\\nBuns card acquisition areas: Limina [450012210], Arcane River [450012211].\\nCard drops from: Guard Captain Darknell [8645009], Normal Darknell [9995009].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8645009/map/0",
+      "type": "int",
+      "value": 450012210
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8645009/map/1",
+      "type": "int",
+      "value": 450012211
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8645009/reward/0",
+      "type": "int",
+      "value": 1142880
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8645009/reward/1",
+      "type": "int",
+      "value": 2388162
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880415",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880415/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880415/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880415/episode",
+      "type": "string",
+      "value": "Illustration: Weakened Verus Hilla [8880415].\\nBuns card acquisition areas: Labyrinth of Suffering [450010100], Arcane River [450010101].\\nCard drops from: Weakened Verus Hilla [8880415], Normal Verus [9990415].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880415/map/0",
+      "type": "int",
+      "value": 450010100
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880415/map/1",
+      "type": "int",
+      "value": 450010101
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880415/reward/0",
+      "type": "int",
+      "value": 1142558
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880415/reward/1",
+      "type": "int",
+      "value": 2388163
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880002",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880002/map",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880002/reward",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880002/episode",
+      "type": "string",
+      "value": "Illustration: Magnus [8880002].\\nBuns card acquisition areas: Tyrant's Castle [401060100].\\nCard drops from: Magnus [8880002].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880002/map/0",
+      "type": "int",
+      "value": 401060100
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880002/reward/0",
+      "type": "int",
+      "value": 1142520
+    },
+    {
+      "wz": "String.wz",
+      "image": "MonsterBook.img",
+      "node": "8880002/reward/1",
+      "type": "int",
+      "value": 2388164
     }
   ],
   "cards": [
@@ -7363,9 +8342,41 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "preserve genuine absence; optional metadata null skips native description/map/reward panels at0x867213→0x8676ab; actor/name remain required",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": null
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": null,
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8840000",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388146,
+              8847777,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": "Actual owned upgraded drop_data query contains ZERO direct rows for this exact native illustrated MobID; associated encounter card-acquisition source recorded separately."
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Von Leon",
@@ -7532,9 +8543,41 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "preserve genuine absence; optional metadata null skips native description/map/reward panels at0x867213→0x8676ab; actor/name remain required",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": null
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": null,
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8850005",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388147,
+              8850012,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": "Actual owned upgraded drop_data query contains ZERO direct rows for this exact native illustrated MobID; associated encounter card-acquisition source recorded separately."
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Mihile",
@@ -7701,9 +8744,41 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "preserve genuine absence; optional metadata null skips native description/map/reward panels at0x867213→0x8676ab; actor/name remain required",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": null
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": null,
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8850006",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388148,
+              8850012,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": "Actual owned upgraded drop_data query contains ZERO direct rows for this exact native illustrated MobID; associated encounter card-acquisition source recorded separately."
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Oz",
@@ -7870,9 +8945,41 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "preserve genuine absence; optional metadata null skips native description/map/reward panels at0x867213→0x8676ab; actor/name remain required",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": null
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": null,
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8850007",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388149,
+              8850012,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": "Actual owned upgraded drop_data query contains ZERO direct rows for this exact native illustrated MobID; associated encounter card-acquisition source recorded separately."
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Irena",
@@ -8039,9 +9146,41 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "preserve genuine absence; optional metadata null skips native description/map/reward panels at0x867213→0x8676ab; actor/name remain required",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": null
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": null,
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8850008",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388150,
+              8850012,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": "Actual owned upgraded drop_data query contains ZERO direct rows for this exact native illustrated MobID; associated encounter card-acquisition source recorded separately."
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Eckhart",
@@ -8208,9 +9347,41 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "preserve genuine absence; optional metadata null skips native description/map/reward panels at0x867213→0x8676ab; actor/name remain required",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": null
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": null,
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8850009",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388151,
+              8850012,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": "Actual owned upgraded drop_data query contains ZERO direct rows for this exact native illustrated MobID; associated encounter card-acquisition source recorded separately."
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Hawkeye",
@@ -8377,9 +9548,41 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "preserve genuine absence; optional metadata null skips native description/map/reward panels at0x867213→0x8676ab; actor/name remain required",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": null
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": null,
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8850011",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388152,
+              8850012,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": "Actual owned upgraded drop_data query contains ZERO direct rows for this exact native illustrated MobID; associated encounter card-acquisition source recorded separately."
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Cygnus",
@@ -8542,9 +9745,9 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "copy exact genuine three-field raw metadata node",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": [
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": [
           {
             "name": "map",
             "kind": "property",
@@ -8605,7 +9808,104 @@
             "value": "Coming soon.",
             "children": []
           }
-        ]
+        ],
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/9400408",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [
+            [
+              9400408,
+              1382045,
+              1,
+              1,
+              0,
+              7000
+            ],
+            [
+              9400408,
+              1382046,
+              1,
+              1,
+              0,
+              7000
+            ],
+            [
+              9400408,
+              1382047,
+              1,
+              1,
+              0,
+              7000
+            ],
+            [
+              9400408,
+              1382048,
+              1,
+              1,
+              0,
+              7000
+            ],
+            [
+              9400408,
+              2000005,
+              1,
+              1,
+              0,
+              12000
+            ],
+            [
+              9400408,
+              2388159,
+              1,
+              1,
+              0,
+              100000
+            ],
+            [
+              9400408,
+              4000345,
+              1,
+              1,
+              0,
+              999999
+            ],
+            [
+              9400408,
+              4000346,
+              1,
+              1,
+              0,
+              999999
+            ]
+          ],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388159,
+              9400408,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": null
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "False Daimyo",
@@ -8767,9 +10067,9 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "copy exact genuine three-field raw metadata node",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": [
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": [
           {
             "name": "map",
             "kind": "property",
@@ -8800,7 +10100,64 @@
             "value": "Coming soon.",
             "children": []
           }
-        ]
+        ],
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8880150",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [
+            [
+              8880150,
+              1142802,
+              1,
+              1,
+              0,
+              20000
+            ],
+            [
+              8880150,
+              2388160,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388160,
+              8880150,
+              1,
+              1,
+              0,
+              100000
+            ],
+            [
+              2388160,
+              9990150,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": null
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Normal Lucid",
@@ -8965,9 +10322,9 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "copy exact genuine three-field raw metadata node",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": [
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": [
           {
             "name": "map",
             "kind": "property",
@@ -9003,7 +10360,72 @@
             "value": "Coming soon.",
             "children": []
           }
-        ]
+        ],
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8880302",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [
+            [
+              8880302,
+              1142803,
+              1,
+              1,
+              0,
+              20000
+            ],
+            [
+              8880302,
+              2000005,
+              1,
+              1,
+              0,
+              1000000
+            ],
+            [
+              8880302,
+              2388161,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388161,
+              8880302,
+              1,
+              1,
+              0,
+              100000
+            ],
+            [
+              2388161,
+              9990301,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": null
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Normal Will",
@@ -9168,9 +10590,9 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "copy exact genuine three-field raw metadata node",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": [
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": [
           {
             "name": "map",
             "kind": "property",
@@ -9201,7 +10623,64 @@
             "value": "Coming soon.",
             "children": []
           }
-        ]
+        ],
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8645009",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [
+            [
+              8645009,
+              1142880,
+              1,
+              1,
+              0,
+              20000
+            ],
+            [
+              8645009,
+              2388162,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388162,
+              8645009,
+              1,
+              1,
+              0,
+              100000
+            ],
+            [
+              2388162,
+              9995009,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": null
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Normal Darknell",
@@ -9366,9 +10845,9 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "copy exact genuine three-field raw metadata node",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": [
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": [
           {
             "name": "map",
             "kind": "property",
@@ -9399,7 +10878,64 @@
             "value": "Coming soon.",
             "children": []
           }
-        ]
+        ],
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8880415",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [
+            [
+              8880415,
+              1142558,
+              1,
+              1,
+              0,
+              20000
+            ],
+            [
+              8880415,
+              2388163,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388163,
+              8880415,
+              1,
+              1,
+              0,
+              100000
+            ],
+            [
+              2388163,
+              9990415,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": null
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Normal Verus",
@@ -9555,9 +11091,9 @@
           "server_C0_normalization_counts": {},
           "value": null
         },
-        "release_action": "copy exact genuine three-field raw metadata node",
-        "native_requirement": "Optional details, not card identity/art prerequisite; no invented aliases/descriptions/maps/rewards",
-        "metadata": [
+        "release_action": "Emit complete Buns-authored Book definition from the exact set_subtree operation for this unchanged native info/mob ID; historical source metadata is provenance only.",
+        "native_requirement": "Existing stock-v83 map/reward/episode schema; actual engine and Book UI/map/reward consumers still require post-materialization proof. Static unmatched-IDB null handling is not current-executable qualification.",
+        "historical_source_metadata": [
           {
             "name": "map",
             "kind": "property",
@@ -9588,7 +11124,56 @@
             "value": "Coming soon.",
             "children": []
           }
-        ]
+        ],
+        "buns_authored_definition": {
+          "operation_target": "String.wz/MonsterBook.img/8880002",
+          "authorship": "Buns authored factual release content; not GMS/MapleRoot authored map/reward/episode",
+          "actual_direct_drop_rows_columns": [
+            "dropperid",
+            "itemid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_direct_drop_rows": [
+            [
+              8880002,
+              1142520,
+              1,
+              1,
+              0,
+              25000
+            ],
+            [
+              8880002,
+              2388164,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "actual_card_drop_rows_columns": [
+            "itemid",
+            "dropperid",
+            "minimum_quantity",
+            "maximum_quantity",
+            "questid",
+            "chance"
+          ],
+          "actual_card_drop_rows": [
+            [
+              2388164,
+              8880002,
+              1,
+              1,
+              0,
+              100000
+            ]
+          ],
+          "empty_reward_reason": null
+        }
       },
       "known_meaning": {
         "SQL_cover_name": "Magnus",
@@ -9881,9 +11466,9 @@
       "fact": "124 exact source targets absent in BOTH Root+Community identical donor raw images; effects/skills only, not any cover stand-frame path. Do not repair/remap captured source, fabricate aliases or claim these combat effects are closed. Exact list in source-graph.json. All559reachable aliases have real exact donor ops."
     },
     {
-      "kind": "genuine-optional-metadata-absence",
-      "count": 7,
-      "fact": "No genuine metadata for8840000,8850005..09,8850011 in Root raw, Root old XML, Community raw. Native null branch skips optional details; no card alias/episode/map/reward invented."
+      "kind": "historical-genuine-book-source-incompleteness",
+      "count": 13,
+      "fact": "Seven missing Root/Community native Book nodes and six inaccurate450005000/Coming soon placeholders are replaced by explicit factual Buns-authored definitions. Original raw captures and historical metadata remain unchanged. No native startup-root/UI acceptance claim."
     },
     {
       "kind": "browser-unsupported-book-UI",
@@ -9894,5 +11479,35 @@
       "fact": "Angel.idb inputMD5 differs extracted official stock EXE; static consumer evidence is not deployed/native runtime proof."
     }
   ],
-  "integration_deltas": []
+  "integration_deltas": [],
+  "buns_book_authoring_provenance": {
+    "date": "2026-10-16",
+    "sourceCommit": "0c2bfaeba319559e79b740928be0def67bb76f05",
+    "derivedFactsManifestSha256": "2a151897c48b77a0ab15b9270616217be06a4f7ed20c3fa5b4e6ac774f4a7f8e",
+    "actualGuardedDirectDropRowsSha256": "2f70bf4051a0879c61c450b4d3d5ce5a25aba5be781e998b26725e56f9ee76ae",
+    "actualCardAcquisitionRowsSha256": "1846107f6c542f563ae7b90943c5e10ea9fe7cbc7bcb46e732403f07918f5996",
+    "sourceFilesSha256": {
+      "server/scripts/event/VonLeonBattle.js": "a810f3fdc6f2ec95ddd87c8b966e4901aeb2258ff90842199b62b6bd803465c3",
+      "server/scripts/event/CygnusBattle.js": "45c8126512f1cc68d5ff7a387b42ef9d2edf6bf52c2eaba7526b8a667fd322b6",
+      "server/scripts/event/CastellanBattle.js": "c3cd6939d34a4141791f9078f890f0cce534612c23c02ef8b6e766c65bfe930b",
+      "server/scripts/event/LucidBattle.js": "2df9af29223c97198ed2ac025bf0fc1802c58792369e2394874c5d0426ebe41f",
+      "server/scripts/event/WillBattle.js": "a80933cd14bac1164783dab4aa3994d03b6195cf74ca829011f161daafcb0fa1",
+      "server/scripts/event/DarknellBattle.js": "f20d5b111716ce49652aec93e9a5d0a8dc20b8583102ddb66cd3071d5fddbb9e",
+      "server/scripts/event/VerusBattle.js": "72c83f13fd4fd6ab92646fd3413ad7c7cdcdaeb918be8e14056cb24c237ef0fe",
+      "server/scripts/event/MagnusBattle.js": "c631993e15c8533301e0a37a215e13ad050f3d193de469aaf5bea8b0e73c93e1",
+      "server/scripts/event/NLucidBattle.js": "bde3368cbe1319f4f5fadab70d20995f96ad15b99e4c9d8dda38f9daa3a14454",
+      "server/scripts/event/NWillBattle.js": "8e53156d4b0d6925e406b2185d976f5f351eab9e3594cab072088ef96cf09dc6",
+      "server/scripts/event/NDarknellBattle.js": "79df35a1fd2741569695ee0a1ee4bfc7f5b43f773dee4089abecad2a94385335",
+      "server/scripts/event/NVerusBattle.js": "c8a9ee9853e5b633904716da086888d87c755ca632c4d289faaa125902fee59d",
+      "server/src/main/resources/db/data/033-mapleroot-expedition-content.sql": "f2c755c830a35c6a825602dd3b8ec4bb85a5ece0ec35d9c60da8ab2df8c52a08"
+    },
+    "nativeNamesSourceFullProvenanceSha256": "63500b4c5f2846aec9f6b967c94862f7a7b3f795e67b2674219b14a0aa5681d6",
+    "stockSchemaSource": "Exact healthy-reference String.wz5ae9b6ae738581e8c8f67ab7f15a57d848072ff33003e8dae576f0e3fffa1e5a/MonsterBook.img stock entries",
+    "mapPolicy": "Real accepted card-acquisition arena IDs, including corresponding normal source encounters; no invented450005000 or map rename. Card illustrations/native info-mob and server SQL-cover views remain distinct.",
+    "rewardPolicy": "Positive-quantity/chance non-quest item drops of exact native depicted actor, including actually configured card drops; zero itemID mesos not represented as item icons. No direct rows for7illustrated forms is evidenced, while actual encounter card-drop sources remain explicit.",
+    "episodePolicy": "Factual Buns card-illustration/source/area description only, literal stock-style newline escapes; no lore or Coming soon filler.",
+    "nativeMaterialization": "PENDING",
+    "nativeBookUiMapRewardAcceptance": "PENDING",
+    "notStartupRootFixClaim": true
+  }
 }

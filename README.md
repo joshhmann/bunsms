@@ -557,9 +557,9 @@ presence; no table entry implies unexercised functionality works.
 - Corrected reference-only ba6/zero-add95b controls both booted/alive/ACK:
   old0238 reencoding is not intrinsically failing. Current healthy-reference
   String-only frontier is diagnostic; all13 final cards remain required.
-  Complete Buns-authored Book maps/drops/descriptions are required to replace
-  inaccurate historical placeholders with accepted facts, never fake fallbacks;
-  implementation and subsequent native Book UI/map/reward proof remain pending.
+  All13 complete factual Buns Book definitions are now encoded with old343
+  entries/other raw images preserved. Matched full WZ/XML, fresh reader and
+  actual native Book UI/map/reward proof remain pending; no startup-root claim.
 - Fresh actual Windows MapleLib run38931713976 reads511 images/35375 BGRA
   canvases/4998 sounds. It retains95 failures:46 consumed gaps plus49 Sound
   aliases identical to official/working baselines; exact vector checks now run.
