@@ -41,9 +41,13 @@ try {
         $variants = @($authority.variants | Where-Object kind -eq 'on-reference')
     }
     if (-not $variants.Count) { throw 'No genuine discriminators in descriptor' }
-    if ($authority.isolateRemainingFullArchives -eq $true -and
+    $isolateRemaining = @($variants | Where-Object { $_.isolateRemainingFullArchives -eq $true }).Count -gt 0
+    if ($isolateRemaining -and
         ($fullSupport -or $variants.Count -ne 1 -or $variants[0].id -ne $authority.controlVariantId)) {
         throw 'Archive isolation requires one explicit reference-context working control'
+    }
+    if ($isolateRemaining -and $authority.currentFullCohort.manifestSha256 -ne $BaselineSha256) {
+        throw 'Remaining-archive experiment requires its exact pinned full manifest'
     }
     $result.supportCohort = if ($fullSupport) { 'FULL rc3 other archives; actual pairing inventory retained separately' } else { 'working-reference51 other archives' }
     $selectedIds = @($variants | ForEach-Object id)
@@ -143,11 +147,12 @@ try {
             throw 'STOP: semantically unchanged old-card re-encoding failed; investigate writer/representation compatibility before any card/schema/root attribution'
         }
     }
-    if ($authority.isolateRemainingFullArchives -eq $true) {
+    if ($isolateRemaining) {
         & (Join-Path $PSScriptRoot 'isolate-native-archives.ps1') -OutputDirectory $OutputDirectory -GameDirectory $GameDirectory `
             -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
             -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
-            -ObserveSeconds $ObserveSeconds -GameHost $GameHost -BaseItemVariant $variants[0] -BaseSupportFiles $supportFiles
+            -ObserveSeconds $ObserveSeconds -GameHost $GameHost -BaseItemVariant $variants[0] -BaseSupportFiles $supportFiles `
+            -ExpectedFullArchives $authority.currentFullCohort.remainingActualChangedArchives
         $result.archiveIsolation = Get-Content (Join-Path $OutputDirectory 'archive-bisection.json') -Raw | ConvertFrom-Json
     }
     $result.status = 'image-variant-observations-complete'

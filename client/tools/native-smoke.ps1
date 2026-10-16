@@ -390,7 +390,7 @@ try {
                         -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
                         -ObserveSeconds $ObserveSeconds -GameHost $GameHost -VariantsUrl $ItemImageVariantsUrl -VariantsSha256 $ItemImageVariantsSha256
                     $report.itemImageProbes = Get-Content (Join-Path $OutputDirectory 'item-image-probes.json') -Raw | ConvertFrom-Json
-                    if ($context.isolateRemainingFullArchives -eq $true) {
+                    if (@($context.variants | Where-Object { $_.isolateRemainingFullArchives -eq $true }).Count) {
                         $report.archiveBisection = $report.itemImageProbes.archiveIsolation
                         $report.inputKind = 'INTERNAL constant pinned Item/String control plus remaining full archives; no release or compiled-runtime acceptance'
                         if ($report.archiveBisection.status -ne 'remaining-full-archives-startup-observed') {

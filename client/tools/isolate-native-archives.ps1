@@ -10,7 +10,8 @@ param(
     [int]$ObserveSeconds = 90,
     [string]$GameHost = '127.0.0.1',
     [object]$BaseItemVariant,
-    [object[]]$BaseSupportFiles = @()
+    [object[]]$BaseSupportFiles = @(),
+    [string[]]$ExpectedFullArchives = @()
 )
 $ErrorActionPreference = 'Stop'
 $result = [ordered]@{ status = 'running'; sourceCommit = $env:GITHUB_SHA; steps = [Collections.Generic.List[object]]::new()
@@ -38,6 +39,10 @@ try {
         $old.sha256 -ne $next[0].hash
     } | ForEach-Object name)
     if (-not $deltas.Count -or @($deltas | Where-Object { $_ -notmatch '^[A-Za-z]+\.wz$' }).Count) { throw 'Archive-only delta prerequisite failed' }
+    if ($ExpectedFullArchives.Count -and
+        (@(Compare-Object ($ExpectedFullArchives | Sort-Object) ($deltas | Sort-Object)).Count)) {
+        throw 'STOP: actual remaining archive deltas differ from the sealed experiment'
+    }
     $root = Join-Path $OutputDirectory 'archive-bisection'
     New-Item -ItemType Directory -Force $root | Out-Null
     function Invoke-ArchiveSubset([string[]]$Names) {
