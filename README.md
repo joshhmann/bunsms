@@ -541,6 +541,11 @@ presence; no table entry implies unexercised functionality works.
 - Maker's real public opcode/material/cost/natural-failure/relog gate passed.
   The provided sanitized pre-upgrade snapshot plus owned inventory/price rows
   passed real40→51 migrations, idempotence and exact pre-backup restoration.
+- Public quicksell/buyback actual NPC/command/MySQL/relog acceptance passed:
+  protected items/slot97, exact stats/tints/flags, real SQL rollback, immutable
+  single claims and three casino chips charging only100 actual credited mesos.
+  Search option5 exercised existing real drop handlers and unchanged Purin
+  boat cancel/exit/relog. Both gates are DONE server-side, not native UI.
 - Deployment checkpoint `6d6e264` cleanly uses installed curl for immutable HTTP
   transport. Actual canonical-HTTPS full4fe81 download/hash/extraction installed
   54658 exact XML payload files and started plain matched Java/GMS83 listeners in
@@ -549,10 +554,12 @@ presence; no table entry implies unexercised functionality works.
   data files before Java startup; source/URLs/full hashes are in the single
   coordination contract. No seal activates production. Frozen rc3/old artifacts
   remain preserved and unqualified; fresh native engine acceptance is mandatory.
-- Exact native controls isolate the old-reference Item failure to0238, not a
-  proved bad card. Failed full0/6 and0/0 controls stopped correctly. Current
-  reference-only ba6→95b isolates zero-add old-image encoding; all13 final cards
-  remain required, with no fabricated Book data or release fallback.
+- Corrected reference-only ba6/zero-add95b controls both booted/alive/ACK:
+  old0238 reencoding is not intrinsically failing. Current healthy-reference
+  String-only frontier is diagnostic; all13 final cards remain required.
+  Complete Buns-authored Book maps/drops/descriptions are required to replace
+  inaccurate historical placeholders with accepted facts, never fake fallbacks;
+  implementation and subsequent native Book UI/map/reward proof remain pending.
 - Fresh actual Windows MapleLib run38931713976 reads511 images/35375 BGRA
   canvases/4998 sounds. It retains95 failures:46 consumed gaps plus49 Sound
   aliases identical to official/working baselines; exact vector checks now run.
