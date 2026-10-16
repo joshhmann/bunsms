@@ -200,6 +200,8 @@ public static class NativeSmoke
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern IntPtr SendMessageTimeout(IntPtr hwnd, uint message, UIntPtr wparam, StringBuilder text,
         uint flags, uint milliseconds, out UIntPtr result);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);
     private static string Text(IntPtr hwnd)
     {
         var text = new StringBuilder(4096);
@@ -229,5 +231,25 @@ public static class NativeSmoke
             return true;
         }, IntPtr.Zero);
         return result.ToArray();
+    }
+    public static string ContinueCompatibilityPrompt(int[] ids)
+    {
+        var selected = new HashSet<int>(ids); string action = "";
+        EnumWindows((hwnd, unused) =>
+        {
+            uint pid; GetWindowThreadProcessId(hwnd, out pid);
+            if (!selected.Contains((int)pid) || Text(hwnd) != "Program Compatibility Assistant") return true;
+            EnumChildWindows(hwnd, (child, ignored) =>
+            {
+                string text = Text(child);
+                if (text.Replace("&", "") != "Run the program without getting help") return true;
+                bool posted = PostMessage(child, 0x00F5, IntPtr.Zero, IntPtr.Zero); // Normal BM_CLICK, no compatibility policy changes.
+                action = "PCA normal Run button posted=" + posted + " pid=" + pid +
+                    " hwnd=0x" + child.ToInt64().ToString("X") + " error=" + Marshal.GetLastWin32Error();
+                return false;
+            }, IntPtr.Zero);
+            return action.Length == 0;
+        }, IntPtr.Zero);
+        return action;
     }
 }

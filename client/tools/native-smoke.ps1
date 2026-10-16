@@ -92,6 +92,13 @@ function Save-NativeSnapshot([int[]]$Ids) {
     }
     $report.snapshots.Add([pscustomobject]$row)
     $row | ConvertTo-Json -Depth 15 | Set-Content "$prefix.json"
+    if (-not $report.compatibilityAction) {
+        $action = [NativeSmoke]::ContinueCompatibilityPrompt($Ids)
+        if ($action) {
+            $report.compatibilityAction = [pscustomobject]@{ utc = [DateTime]::UtcNow.ToString('O'); action = $action
+                reason = 'Invoke the visible normal Windows Run button once; no registry, signature guard, or compatibility policy is changed' }
+        }
+    }
 }
 
 try {
