@@ -384,9 +384,31 @@ try {
                     throw "Full archive restore failed: $($delta.name)"
                 }
             }
-            $PublishedRuntimeControl = $true
-            $report.publishedRuntimeControl = $true
-            $report.inputKind = 'INTERNAL full65 assets vs working reference51; SAME exact published e363 runtime/backend/observer; NO compiled overlay or release fallback'
+            if ($ItemImageVariantsUrl) {
+                $PublishedRuntimeControl = $true
+                $report.publishedRuntimeControl = $true
+                $report.inputKind = 'INTERNAL full assets vs reference51; exact published runtime/backend/observer, no compiled overlay or release fallback'
+            } else {
+                $report.fullRuntimeComparison = $true
+                $report.referenceControl = $report.publishedControl
+                $fullControlDirectory = Join-Path $OutputDirectory 'published-full-control'
+                $password = $script:qaPassword
+                & $PSCommandPath -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
+                    -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
+                    -OutputDirectory $fullControlDirectory -ObserveSeconds $ObserveSeconds -GameHost $GameHost `
+                    -PreparedGameDirectory $game -PublishedRuntimeControl | Out-Null
+                $script:qaPassword = $password
+                $script:snapshotIndex = 0
+                $fullControl = Get-Content (Join-Path $fullControlDirectory 'result.json') -Raw | ConvertFrom-Json
+                $report.publishedControl = [pscustomobject]@{ source = $published.runtimeSourceCommit
+                    status = $fullControl.status; initializeSuccessObserved = $fullControl.initializeSuccessObserved
+                    nativeUiObserved = $fullControl.nativeUiObserved; capsAckObserved = $fullControl.capsAckObserved
+                    error = $fullControl.error; runtimeFiles = $fullControl.publishedRuntimeFiles; directory = $fullControlDirectory }
+                if ($fullControl.status -ne 'native-startup-observed') {
+                    throw 'Full published-runtime control A failed; STOP before compiled-runtime B, with no readiness/runtime attribution'
+                }
+                $report.inputKind = 'INTERNAL full-cohort published-runtime A passed; current compiled-runtime B on the same verified full assets/backend/observer, never a release fallback'
+            }
         }
     }
     if (-not $PublishedRuntimeControl) {
@@ -522,7 +544,7 @@ try {
             } catch { $report.controlledStops.Add([pscustomobject]@{ processId = $processId; observation = $_.Exception.Message }) }
         }
     }
-    if (-not $ReferenceAssetControl -and $report.publishedControl.status -eq 'native-startup-observed' -and
+    if (-not $ReferenceAssetControl -and -not $report.fullRuntimeComparison -and $report.publishedControl.status -eq 'native-startup-observed' -and
         $report.status -eq 'failed' -and $report.nativeCaptureStartedUtc -and -not $report.nativeUiObserved) {
         try {
             if ($ItemImageVariantsUrl) {

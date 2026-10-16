@@ -264,6 +264,10 @@ jobs:
             native-smoke-output/published-control/*.png
             native-smoke-output/published-control/*.log
             native-smoke-output/published-control/crash-receipts/receipt.json
+            native-smoke-output/published-full-control/*.json
+            native-smoke-output/published-full-control/*.png
+            native-smoke-output/published-full-control/*.log
+            native-smoke-output/published-full-control/crash-receipts/receipt.json
             native-smoke-output/ordinary-login/*.json
             native-smoke-output/ordinary-login/*.png
             native-smoke-output/ordinary-login/*.log
