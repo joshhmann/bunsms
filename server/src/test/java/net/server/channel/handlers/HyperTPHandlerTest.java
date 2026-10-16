@@ -62,6 +62,9 @@ class HyperTPHandlerTest extends HandlerTest {
         lenient().when(targetMap.getFieldLimit()).thenReturn(0);
         lenient().when(targetMap.getRandomPlayerSpawnpoint()).thenReturn(spawnPoint);
         lenient().when(chr.getId()).thenReturn(424242 + (int) (Math.random() * 100000));
+        // Source map: open vanilla map by default (source-map CANNOTVIPROCK
+        // check needs a non-null player map in every warp test).
+        lenient().when(chr.getMap()).thenReturn(targetMap);
     }
 
     private void stubRock(boolean present) {
@@ -144,16 +147,40 @@ class HyperTPHandlerTest extends HandlerTest {
     }
 
     @Test
-    void invalidMapIsRefused() {
+    void sourceMapVipRockBlockedIsRefused() {
         stubChannel();
         stubRock(true);
-        when(mapFactory.getMap(anyInt())).thenReturn(null);
+        // Target is open (stubbed 0) but the player's current map forbids VIP rock.
+        lenient().when(chr.getMap()).thenReturn(targetMap);
+        when(targetMap.getFieldLimit()).thenReturn(0x40); // FieldLimit.CANNOTVIPROCK
 
-        handler.handlePacket(warpPacket(999999999), client);
+        handler.handlePacket(warpPacket(105000000), client);
 
-        verify(chr).yellowMessage("Map is invalid.");
+        verify(chr).dropMessage(eq(1), org.mockito.ArgumentMatchers.contains("force of the ground"));
         verify(chr, never()).changeMap(any(MapleMap.class), any(Portal.class));
     }
+
+    @Test
+    void eventInstanceIsRefused() {
+        stubChannel();
+        stubRock(true);
+        lenient().when(chr.getMap()).thenReturn(targetMap);
+        lenient().when(chr.getEventInstance()).thenReturn(org.mockito.Mockito.mock(scripting.event.EventInstanceManager.class));
+
+        handler.handlePacket(warpPacket(105000000), client);
+
+        verify(chr).dropMessage(eq(1), org.mockito.ArgumentMatchers.contains("event instance"));
+        verify(chr, never()).changeMap(any(MapleMap.class), any(Portal.class));
+    }
+
+    @Test
+    void shortPacketIsIgnored() {
+        // 1-3 readable bytes: would previously pass the <=0 check and fail inside readInt.
+        handler.handlePacket(Packets.buildInPacket(out -> out.writeByte(0x01)), client);
+
+        verify(chr, never()).getInventory(any(InventoryType.class));
+    }
+
 
     @Test
     void restrictedMapRanges() {

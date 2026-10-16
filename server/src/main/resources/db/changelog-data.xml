@@ -63,5 +63,9 @@
         <sqlFile path="db/data/172-mapleroot-shops-data.sql"/>
     </changeSet>
 
+    <changeSet id="173" author="solobots">
+        <sqlFile path="db/data/173-mapleroot-shops-remainder-data.sql"/>
+    </changeSet>
+
 
 </databaseChangeLog>

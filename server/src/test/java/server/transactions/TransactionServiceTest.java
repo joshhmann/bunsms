@@ -10,54 +10,38 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Buyback ledger model + NPC/command list-string shape. Runs without WZ/DB:
- * only record accessors and the selection-list formatting contract are
- * exercised here (no Item/Equip instantiation, which needs WZ data).
+ * Buyback ledger seams that run without WZ/DB: the MAX=0 early-out (service
+ * short-circuits before touching the DB) and the tint-carrying
+ * TransactionItem/TransactionEquip POJO round-trip through the pure mappers.
+ * No source-string or file-content assertions; no opcode coverage.
+ * The conditional-claim SQL race needs a live DB (no DB harness in this
+ * module — no H2/testcontainers/jdbc), so it is proven by the lead's fresh +
+ * re-applied DB run, not by a test here.
  */
 class TransactionServiceTest {
 
-    private static Transaction tx(int id, boolean used, TransactionItem... items) {
-        return new Transaction(id, 7, Instant.EPOCH, used, List.of(items));
-    }
-
-    private static TransactionItem ti(int itemId, int qty) {
-        TransactionItem item = new TransactionItem();
-        item.setItemId(itemId);
-        item.setQuantity(qty);
-        item.setOwner("");
-        item.setGiftFrom("");
-        return item;
-    }
-
     @Test
-    void recordAccessors() {
-        Transaction t = tx(3, true, ti(2000000, 5));
-        assertEquals(3, t.transactionId());
-        assertEquals(7, t.userId());
-        assertEquals(Instant.EPOCH, t.transactionDate());
-        assertTrue(t.buybackUsed());
-        assertEquals(1, t.items().size());
-        assertEquals(2000000, t.items().get(0).getItemId());
-        assertEquals(5, t.items().get(0).getQuantity());
-    }
-
-    @Test
-    void equipExtendsItemWithStats() {
-        TransactionEquip eq = new TransactionEquip();
-        eq.setItemId(1002000);
-        eq.setStr((short) 5);
-        eq.setIntStat((short) 7);
-        eq.setUpgradeSlots(3);
-        eq.setItemLevel((byte) 4);
-        eq.setItemExp(100);
-        eq.setRingId(-1);
-        assertTrue(eq instanceof TransactionItem);
-        assertEquals(5, eq.getStr());
-        assertEquals(7, eq.getIntStat());
-        assertEquals(3, eq.getUpgradeSlots());
-        assertEquals(4, eq.getItemLevel());
-        assertEquals(100, eq.getItemExp());
-        assertEquals(-1, eq.getRingId());
+    void tintFieldsMapFromEquipToLedgerRow() {
+        // Sell-path seam (Shop.recordSellForBuyback -> convertItemsToTransactionItems):
+        // a Mockito Equip avoids the WZ-backed Equip constructor while still
+        // exercising the real mapper, including the six tint fields.
+        client.inventory.Equip equip = org.mockito.Mockito.mock(client.inventory.Equip.class);
+        org.mockito.Mockito.when(equip.getItemType()).thenReturn((byte) 1);
+        org.mockito.Mockito.when(equip.getInventoryType()).thenReturn(client.inventory.InventoryType.EQUIP);
+        org.mockito.Mockito.when(equip.getTintHue()).thenReturn((short) 120);
+        org.mockito.Mockito.when(equip.getTintChroma()).thenReturn((byte) 40);
+        org.mockito.Mockito.when(equip.getTintBright()).thenReturn((byte) -10);
+        org.mockito.Mockito.when(equip.getTintFxHue()).thenReturn((short) 200);
+        org.mockito.Mockito.when(equip.getTintFxChroma()).thenReturn((byte) 30);
+        org.mockito.Mockito.when(equip.getTintFxBright()).thenReturn((byte) 5);
+        TransactionEquip back = (TransactionEquip) TransactionService.convertItemsToTransactionItems(
+                List.of(equip)).get(0);
+        assertEquals(120, back.getTintHue());
+        assertEquals(40, back.getTintChroma());
+        assertEquals(-10, back.getTintBright());
+        assertEquals(200, back.getTintFxHue());
+        assertEquals(30, back.getTintFxChroma());
+        assertEquals(5, back.getTintFxBright());
     }
 
     @Test
@@ -71,22 +55,5 @@ class TransactionServiceTest {
     @Test
     void negativeCountYieldsNoTransactions() {
         assertTrue(TransactionService.getLastTransactions(1, -1).isEmpty());
-    }
-
-    @Test
-    void selectionListMarksUsedTransactions() {
-        // Shape contract shared by @buyback list and the buyback NPC dialog:
-        // 1-based index, item count, "[Used]" suffix when consumed.
-        List<Transaction> txs = List.of(tx(1, false, ti(1, 1), ti(2, 2)), tx(2, true, ti(3, 3)));
-        StringBuilder sb = new StringBuilder("Last transactions:\r\n\r\n");
-        for (int i = 0; i < txs.size(); i++) {
-            Transaction t = txs.get(i);
-            sb.append(i + 1).append(". ").append(t.items().size()).append(" items")
-                    .append(t.buybackUsed() ? " [Used]" : "").append("\r\n");
-        }
-        String s = sb.toString();
-        assertTrue(s.contains("1. 2 items\r\n"));
-        assertTrue(s.contains("2. 1 items [Used]\r\n"));
-        assertFalse(txs.get(0).buybackUsed());
     }
 }

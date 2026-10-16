@@ -230,8 +230,13 @@ public class Shop {
     /**
      * Records one NPC sell as a buyback-eligible transaction. Self-contained:
      * no-op when {@code MAXIMUM_TRANSACTIONS_FOR_BUYBACK} is 0 (default) or
-     * the ledger tables are not migrated yet; a recording failure never
-     * blocks the sell itself.
+     * the ledger tables are not migrated yet.
+     *
+     * <p>Deliberately fail-open: a ledger failure never blocks or rolls back
+     * the sell itself (the player already received mesos and lost the item —
+     * failing the sale after the fact would be worse than a missing ledger
+     * row). The failure is LOUD (warn-level log with the exception) so a
+     * broken ledger is noticed, never silent.
      */
     private static void recordSellForBuyback(Client c, Item sold) {
         if (config.YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK <= 0) {

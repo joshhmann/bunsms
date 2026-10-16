@@ -6114,9 +6114,14 @@ public class Character extends AbstractCharacterObject {
         return Math.floorMod(hue, 360);
     }
 
-    /** Pushes every tint this character owns to the client DLL (LP 0x372F). */
+    /**
+     * Pushes every tint this character owns to the client DLL (LP 0x372F).
+     * Contract v1: no-op unless this connection announced PRISM_SYNC, and no
+     * packet when there is nothing tinted to report.
+     */
     public void syncWeaponTint() {
-        if (client != null) {
+        if (client != null && client.hasCaps(ClientCaps.PRISM_SYNC)
+                && server.colorprism.ColorPrismPackets.hasTintEntries(this)) {
             sendPacket(server.colorprism.ColorPrismPackets.snapshot(this));
             server.colorprism.ColorPrismPackets.broadcastMapTable(getMap());
         }

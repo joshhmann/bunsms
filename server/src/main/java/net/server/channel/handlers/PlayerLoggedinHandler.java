@@ -484,9 +484,16 @@ public final class PlayerLoggedinHandler extends AbstractPacketHandler {
         }
     }
 
-    /** Daily Check-In auto-open: push the DLL-side window on login when a reward is ready (level-gated). */
+    /**
+     * Daily Check-In auto-open: push the DLL-side window on login when a reward
+     * is ready (level-gated). Contract v1: only to CHECKIN_WINDOW sessions;
+     * legacy clients never receive 0x17C unsolicited.
+     */
     private static void showDailyCheckinWindow(Client c, Character player) {
         if (player.getLevel() < server.DailyCheckinRewards.MIN_LEVEL) {
+            return;
+        }
+        if (!c.hasCaps(client.ClientCaps.CHECKIN_WINDOW)) {
             return;
         }
         int claimable = player.refreshCheckin();

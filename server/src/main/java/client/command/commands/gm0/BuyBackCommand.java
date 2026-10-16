@@ -42,7 +42,13 @@ public class BuyBackCommand extends Command {
 
         try {
             if (params.length == 1 && params[0].equalsIgnoreCase("list")) {
-                List<Transaction> transactions = TransactionService.getLastTransactions(player.getId(), YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+                final List<Transaction> transactions;
+                try {
+                    transactions = TransactionService.getLastTransactions(player.getId(), YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+                } catch (IllegalStateException e) {
+                    player.dropMessage(6, "Could not load transaction history. Please try again later.");
+                    return;
+                }
 
                 if (transactions.isEmpty()) {
                     player.dropMessage(6, "There are no previous transactions at this time.");

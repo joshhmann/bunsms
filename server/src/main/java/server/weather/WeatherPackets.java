@@ -111,13 +111,14 @@ public final class WeatherPackets {
     }
 
     /**
-     * Push the current sky to one player, snapped.
+     * Push the current sky to one player, snapped. Contract v1: only to
+     * WEATHER_SYNC sessions; legacy clients never receive 0x373D.
      *
      * <p>Used on map entry. Snapped rather than faded because the player has just warped:
      * a two second fade from day to night after every portal would read as a bug.
      */
     public static void sendTo(Character chr) {
-        if (chr == null || chr.getClient() == null) {
+        if (chr == null || chr.getClient() == null || !chr.getClient().hasCaps(client.ClientCaps.WEATHER_SYNC)) {
             return;
         }
         chr.sendPacket(weatherSync(chr.getMapId(), true));
@@ -146,10 +147,12 @@ public final class WeatherPackets {
         // The sky is regional now, so one packet no longer serves everyone. Built per
         // REGION rather than per player: there are a handful of regions and potentially
         // hundreds of players, so this is a few allocations instead of one each.
+        // Contract v1: WEATHER_SYNC sessions only; legacy clients are skipped.
         final java.util.Map<WeatherRegion, Packet> byRegion = new java.util.EnumMap<>(WeatherRegion.class);
         for (Character chr : storage.getAllCharacters()) {
             try {
-                if (chr == null || !chr.isLoggedinWorld()) {
+                if (chr == null || !chr.isLoggedinWorld() || chr.getClient() == null
+                        || !chr.getClient().hasCaps(client.ClientCaps.WEATHER_SYNC)) {
                     continue;
                 }
                 final int mapId = chr.getMapId();

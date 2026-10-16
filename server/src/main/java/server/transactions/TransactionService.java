@@ -9,6 +9,7 @@ import config.YamlConfig;
 import constants.game.GameConstants;
 import server.ItemInformationProvider;
 import server.responses.SelectionListStringResult;
+import soloMapling.Casino.CasinoChipConfig;
 import tools.DatabaseConnection;
 import tools.Pair;
 
@@ -25,8 +26,9 @@ import java.util.stream.IntStream;
 
 /**
  * Buyback ledger over recorded sell events (MapleRoot wave 3 port).
- * All reads tolerate a missing table (pre-migration deploy) by degrading
- * to "no transactions" instead of throwing.
+ * Reads are honest: a ledger failure throws IllegalStateException (callers
+ * surface an explicit error) instead of degrading to "no transactions".
+ * The only early-out is MAXIMUM_TRANSACTIONS_FOR_BUYBACK <= 0 (disabled).
  */
 public class TransactionService {
 
@@ -38,13 +40,24 @@ public class TransactionService {
         int total = 0;
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         for (TransactionItem item : transaction.items()) {
-            total += ii.getPrice(item.getItemId(), item.getQuantity());
+            // Casino chips sell at their lossless exchange price, not the generic
+            // NPC price — mirrors Shop.sell so buyback price == sell price.
+            if (CasinoChipConfig.isCasinoChip(item.getItemId())) {
+                total += CasinoChipConfig.getChipPrice(item.getItemId()) * item.getQuantity();
+            } else {
+                total += ii.getPrice(item.getItemId(), item.getQuantity());
+            }
         }
         return total;
     }
 
     public static SelectionListStringResult getTransactionSelectionListString(int userId) {
-        List<Transaction> transactions = getLastTransactions(userId, YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+        final List<Transaction> transactions;
+        try {
+            transactions = getLastTransactions(userId, YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+        } catch (IllegalStateException e) {
+            return new SelectionListStringResult(false, "#rCould not load transaction history. Please try again later.#k");
+        }
 
         if (transactions.isEmpty()) {
             return new SelectionListStringResult(false, "#rThere are no previous transactions at this time.#k");
@@ -71,7 +84,12 @@ public class TransactionService {
     }
 
     public static SelectionListStringResult getTransactionItemListString(int userId, int transactionIndex) {
-        List<Transaction> transactions = getLastTransactions(userId, YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+        final List<Transaction> transactions;
+        try {
+            transactions = getLastTransactions(userId, YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+        } catch (IllegalStateException e) {
+            return new SelectionListStringResult(false, "#rCould not load transaction history. Please try again later.#k");
+        }
 
         if (transactions.isEmpty()) {
             return new SelectionListStringResult(false, "#rThere are no previous transactions at this time. (haxor?)#k");
@@ -107,7 +125,12 @@ public class TransactionService {
     }
 
     public static SelectionListStringResult processTransaction(Character player, int transactionIndex) {
-        List<Transaction> transactions = getLastTransactions(player.getId(), YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+        final List<Transaction> transactions;
+        try {
+            transactions = getLastTransactions(player.getId(), YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+        } catch (IllegalStateException e) {
+            return new SelectionListStringResult(false, "Could not load transaction history. Please try again later.");
+        }
 
         if (transactionIndex < 0 || transactionIndex >= transactions.size()) {
             return new SelectionListStringResult(false, "Invalid transaction number.");
@@ -118,31 +141,87 @@ public class TransactionService {
             return new SelectionListStringResult(false, "This transaction has already been bought back.");
         }
 
-        int buybackPrice = getTotalPurchasePrice(transaction);
-        if (player.getMeso() < buybackPrice) {
-            return new SelectionListStringResult(false, "You don't have enough mesos to complete this buyback");
+        // Hold every player inventory lock in fixed InventoryType order across
+        // the whole redeem (same lockInventory/unlockInventory pair the sell and
+        // handler paths use; fixed order avoids lock-order inversion with them).
+        // This keeps concurrent sellers/redeemers on this character from moving
+        // mesos or slots between the claim, the re-validation, the grants, and
+        // the charge below.
+        List<client.inventory.Inventory> locked = new ArrayList<>();
+        for (client.inventory.InventoryType type : client.inventory.InventoryType.values()) {
+            if (type == client.inventory.InventoryType.UNDEFINED || type == client.inventory.InventoryType.EQUIPPED) {
+                continue;
+            }
+            client.inventory.Inventory inv = player.getInventory(type);
+            if (inv != null) {
+                inv.lockInventory();
+                locked.add(inv);
+            }
         }
+        try {
+            // Note: `transaction` above is a pre-lock snapshot; the claim below
+            // is the authority on whether this redeem proceeds, not this flag.
 
-        List<Pair<Item, InventoryType>> validationList = convertTransactionItemsToItemPairs(transaction.items());
-        if (!client.inventory.Inventory.checkSpots(player, validationList)) {
-            return new SelectionListStringResult(false, "You don't have enough space to complete this buyback");
-        }
-
-        if (updateTransactionBuybackStatus(transaction.transactionId(), true)) {
-            try {
-                List<Item> items = convertTransactionItemsToItems(transaction.items());
-                for (Item item : items) {
-                    InventoryManipulator.addFromDrop(player.getClient(), item, false);
-                }
-
-                player.gainMeso(-buybackPrice, true);
-            } catch (Exception e) {
-                return new SelectionListStringResult(false, "Interrupted, failed to process some or all items. Please contact support for additional assistance.");
+            // First-claimer gate: only one concurrent redeemer flips
+            // buyback_used 0 -&gt; 1; losers see 0 rows affected and abort here.
+            if (!claimTransactionBuyback(transaction.transactionId())) {
+                return new SelectionListStringResult(false, "This transaction has already been bought back.");
             }
 
+            // Re-validate AFTER the claim while holding the locks: exact stored
+            // sale quote (casino override included via getTotalPurchasePrice),
+            // mesos, and full capacity as they stand now, not as read earlier.
+            int buybackPrice = getTotalPurchasePrice(transaction);
+            if (player.getMeso() < buybackPrice) {
+                updateTransactionBuybackStatus(transaction.transactionId(), false);
+                return new SelectionListStringResult(false, "You don't have enough mesos to complete this buyback");
+            }
+
+            List<Pair<Item, InventoryType>> validationList = convertTransactionItemsToItemPairs(transaction.items());
+            if (!client.inventory.Inventory.checkSpots(player, validationList)) {
+                updateTransactionBuybackStatus(transaction.transactionId(), false);
+                return new SelectionListStringResult(false, "You don't have enough space to complete this buyback");
+            }
+
+            // Grant loop: abort WITHOUT charging on any failure; the row stays
+            // claimed so a partial grant cannot be re-redeemed into dupes —
+            // support resolves the stuck row from the ledger (row id is in the
+            // message). No unmark here: unmarking after a partial grant would
+            // re-open the already-granted items for a second redeem.
+            // Limit: a crash between the grant loop and the meso charge below
+            // leaves granted items uncharged with no cross-system 2PC to roll
+            // them back; support resolves that case from the ledger row.
+            List<Item> items = convertTransactionItemsToItems(transaction.items());
+            for (Item item : items) {
+                if (!InventoryManipulator.addFromDrop(player.getClient(), item, false)) {
+                    return new SelectionListStringResult(false, "Interrupted, failed to process some or all items. Transaction " + transaction.transactionId() + " is held claimed; please contact support for assistance.");
+                }
+            }
+
+            player.gainMeso(-buybackPrice, true);
             return new SelectionListStringResult(true, "Bought back items for " + GameConstants.numberWithCommas(buybackPrice) + " mesos.");
-        } else {
-            return new SelectionListStringResult(false, "Failed to update the transaction. Aborted.");
+        } finally {
+            for (int i = locked.size() - 1; i >= 0; i--) {
+                locked.get(i).unlockInventory();
+            }
+        }
+    }
+
+    /**
+     * First-claimer gate for a buyback redeem (0 -&gt; 1). Returns true only when
+     * this caller won the claim; false means already claimed (or DB error).
+     * Reliable only together with the redeem-wide inventory locks in
+     * {@link #processTransaction} — the UPDATE decides the winner, the locks
+     * keep validation, grants, and charge from interleaving on this character.
+     */
+    static boolean claimTransactionBuyback(int transactionId) {
+        String claimSQL = "UPDATE transactions SET buyback_used = 1 WHERE transaction_id = ? AND buyback_used = 0";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = conn.prepareStatement(claimSQL)) {
+            preparedStatement.setInt(1, transactionId);
+            return preparedStatement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            return false;
         }
     }
 
@@ -171,6 +250,12 @@ public class TransactionService {
                 transactionEquip.setSpeed(equip.getSpeed());
                 transactionEquip.setJump(equip.getJump());
                 transactionEquip.setVicious(equip.getVicious());
+                transactionEquip.setTintHue(equip.getTintHue());
+                transactionEquip.setTintChroma(equip.getTintChroma());
+                transactionEquip.setTintBright(equip.getTintBright());
+                transactionEquip.setTintFxHue(equip.getTintFxHue());
+                transactionEquip.setTintFxChroma(equip.getTintFxChroma());
+                transactionEquip.setTintFxBright(equip.getTintFxBright());
                 transactionEquip.setItemLevel(equip.getItemLevel());
                 transactionEquip.setItemExp(equip.getItemExp());
                 transactionEquip.setRingId(equip.getRingId());
@@ -216,6 +301,8 @@ public class TransactionService {
                 equip.setSpeed(transactionEquip.getSpeed());
                 equip.setJump(transactionEquip.getJump());
                 equip.setVicious(transactionEquip.getVicious());
+                equip.setTint(transactionEquip.getTintHue(), transactionEquip.getTintChroma(), transactionEquip.getTintBright());
+                equip.setFxTint(transactionEquip.getTintFxHue(), transactionEquip.getTintFxChroma(), transactionEquip.getTintFxBright());
                 equip.setItemLevel(transactionEquip.getItemLevel());
                 equip.setItemExp(transactionEquip.getItemExp());
                 equip.setRingId(transactionEquip.getRingId());
@@ -271,7 +358,7 @@ public class TransactionService {
     public static void createTransactionItems(int transactionId, List<TransactionItem> items) throws SQLException {
         String insertTransactionItemSQL = "INSERT INTO transaction_items (transaction_id, type, itemid, inventorytype, " +
                 "position, quantity, owner, petid, flag, expiration, giftFrom) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        String insertTransactionEquipSQL = "INSERT INTO transaction_equips (transaction_item_id, upgradeslots, level, str, dex, `int`, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, vicious, itemlevel, itemexp, ringid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String insertTransactionEquipSQL = "INSERT INTO transaction_equips (transaction_item_id, upgradeslots, level, str, dex, `int`, luk, hp, mp, watk, matk, wdef, mdef, acc, avoid, hands, speed, jump, vicious, tinthue, tintchroma, tintbright, tintfxhue, tintfxchroma, tintfxbright, itemlevel, itemexp, ringid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement itemPreparedStatement = conn.prepareStatement(insertTransactionItemSQL, Statement.RETURN_GENERATED_KEYS);
@@ -315,9 +402,15 @@ public class TransactionService {
                             equipPreparedStatement.setInt(17, equip.getSpeed());
                             equipPreparedStatement.setInt(18, equip.getJump());
                             equipPreparedStatement.setInt(19, equip.getVicious());
-                            equipPreparedStatement.setInt(20, equip.getItemLevel());
-                            equipPreparedStatement.setInt(21, equip.getItemExp());
-                            equipPreparedStatement.setInt(22, equip.getRingId());
+                            equipPreparedStatement.setShort(20, equip.getTintHue());
+                            equipPreparedStatement.setByte(21, equip.getTintChroma());
+                            equipPreparedStatement.setByte(22, equip.getTintBright());
+                            equipPreparedStatement.setShort(23, equip.getTintFxHue());
+                            equipPreparedStatement.setByte(24, equip.getTintFxChroma());
+                            equipPreparedStatement.setByte(25, equip.getTintFxBright());
+                            equipPreparedStatement.setInt(26, equip.getItemLevel());
+                            equipPreparedStatement.setInt(27, equip.getItemExp());
+                            equipPreparedStatement.setInt(28, equip.getRingId());
                             equipPreparedStatement.addBatch();
                         }
                     }
@@ -352,8 +445,9 @@ public class TransactionService {
                 }
             }
         } catch (SQLException e) {
-            // Pre-migration deploys have no ledger tables yet: degrade to empty.
-            return transactions;
+            // Honest failure: callers must surface an explicit error, never a
+            // fake-empty history (that would wrongly report "no transactions").
+            throw new IllegalStateException("Could not load transaction history for user " + userId, e);
         }
 
         return transactions;
@@ -362,7 +456,7 @@ public class TransactionService {
     public static Transaction getTransactionById(int transactionId) throws SQLException {
         Transaction transaction = null;
         String selectTransactionSQL = "SELECT * FROM transactions WHERE transaction_id = ?";
-        String selectTransactionItemsSQL = "SELECT ti.*, te.upgradeslots, te.level, te.str, te.dex, te.`int`, te.luk, te.hp, te.mp, te.watk, te.matk, te.wdef, te.mdef, te.acc, te.avoid, te.hands, te.speed, te.jump, te.vicious, te.itemlevel, te.itemexp, te.ringid " +
+        String selectTransactionItemsSQL = "SELECT ti.*, te.upgradeslots, te.level, te.str, te.dex, te.`int`, te.luk, te.hp, te.mp, te.watk, te.matk, te.wdef, te.mdef, te.acc, te.avoid, te.hands, te.speed, te.jump, te.vicious, te.tinthue, te.tintchroma, te.tintbright, te.tintfxhue, te.tintfxchroma, te.tintfxbright, te.itemlevel, te.itemexp, te.ringid " +
                 "FROM transaction_items ti " +
                 "LEFT JOIN transaction_equips te ON ti.transaction_item_id = te.transaction_item_id " +
                 "WHERE ti.transaction_id = ?";
@@ -398,7 +492,7 @@ public class TransactionService {
 
     private static List<TransactionItem> getTransactionItemsByTransactionId(int transactionId) throws SQLException {
         List<TransactionItem> items = new ArrayList<>();
-        String selectTransactionItemsSQL = "SELECT ti.*, te.upgradeslots, te.level, te.str, te.dex, te.`int`, te.luk, te.hp, te.mp, te.watk, te.matk, te.wdef, te.mdef, te.acc, te.avoid, te.hands, te.speed, te.jump, te.vicious, te.itemlevel, te.itemexp, te.ringid " +
+        String selectTransactionItemsSQL = "SELECT ti.*, te.upgradeslots, te.level, te.str, te.dex, te.`int`, te.luk, te.hp, te.mp, te.watk, te.matk, te.wdef, te.mdef, te.acc, te.avoid, te.hands, te.speed, te.jump, te.vicious, te.tinthue, te.tintchroma, te.tintbright, te.tintfxhue, te.tintfxchroma, te.tintfxbright, te.itemlevel, te.itemexp, te.ringid " +
                 "FROM transaction_items ti " +
                 "LEFT JOIN transaction_equips te ON ti.transaction_item_id = te.transaction_item_id " +
                 "WHERE ti.transaction_id = ?";
@@ -439,6 +533,12 @@ public class TransactionService {
                 equip.setSpeed(rs.getShort("te.speed"));
                 equip.setJump(rs.getShort("te.jump"));
                 equip.setVicious(rs.getInt("te.vicious"));
+                equip.setTintHue(rs.getShort("te.tinthue"));
+                equip.setTintChroma(rs.getByte("te.tintchroma"));
+                equip.setTintBright(rs.getByte("te.tintbright"));
+                equip.setTintFxHue(rs.getShort("te.tintfxhue"));
+                equip.setTintFxChroma(rs.getByte("te.tintfxchroma"));
+                equip.setTintFxBright(rs.getByte("te.tintfxbright"));
                 equip.setItemLevel(rs.getByte("te.itemlevel"));
                 equip.setItemExp(rs.getInt("te.itemexp"));
                 equip.setRingId(rs.getInt("te.ringid"));
@@ -462,6 +562,12 @@ public class TransactionService {
         }
     }
 
+    /**
+     * Status reset (unmark after an aborted pre-grant validation so the user can
+     * retry). Intentionally unconditional — it is NOT a claim; the
+     * first-claimer gate is {@link #claimTransactionBuyback(int)}. Only called
+     * before any item is granted; never after a partial grant.
+     */
     public static boolean updateTransactionBuybackStatus(int transactionId, boolean buybackUsed) {
         String updateTransactionSQL = "UPDATE transactions SET buyback_used = ? WHERE transaction_id = ?";
         try (Connection conn = DatabaseConnection.getConnection();

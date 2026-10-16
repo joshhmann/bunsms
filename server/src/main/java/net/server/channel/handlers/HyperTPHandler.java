@@ -35,6 +35,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *   list below remain the blocklist.
  * - lastTeleportTime is a ConcurrentHashMap (the source used a plain HashMap while
  *   channel packet threads can race on it).
+ * - Guards added beyond the source: short-packet guard (packet carries an int),
+ *   source-map CANNOTVIPROCK check (leaving matches arriving), event-instance
+ *   refusal (leaving mid-event breaks DKBONUS/YOSHI/Castellan), and an
+ *   in-flight per-player guard against double-submitted packets.
  */
 public final class HyperTPHandler extends AbstractPacketHandler {
 
@@ -46,15 +50,31 @@ public final class HyperTPHandler extends AbstractPacketHandler {
     // instance shares one server-side cooldown (mirrors the source).
     private static final Map<Integer, Long> lastTeleportTime = new ConcurrentHashMap<>();
 
+    // Player id -> in-flight warp marker. A second packet arriving while the
+    // first is still being processed is refused with a cooldown-style message.
+    private static final Map<Integer, Boolean> inFlightWarps = new ConcurrentHashMap<>();
+
     @Override
     public final void handlePacket(InPacket p, Client c) {
-        if (p.available() <= 0) {
+        if (p.available() < 4) {
             return;
         }
         Character player = c.getPlayer();
         if (player == null) {
             return;
         }
+        if (inFlightWarps.putIfAbsent(player.getId(), Boolean.TRUE) != null) {
+            player.dropMessage(1, "You need to wait a moment before teleporting again.");
+            return;
+        }
+        try {
+            handleWarp(p, player, c);
+        } finally {
+            inFlightWarps.remove(player.getId());
+        }
+    }
+
+    private void handleWarp(InPacket p, Character player, Client c) {
         int mapId = p.readInt();
 
         if (!hasRequiredItem(player)) {
@@ -84,6 +104,15 @@ public final class HyperTPHandler extends AbstractPacketHandler {
 
         if (isRestrictedMap(mapId)) {
             player.dropMessage(1, "You are not allowed to teleport to this map.");
+            return;
+        }
+        if (FieldLimit.CANNOTVIPROCK.check(player.getMap().getFieldLimit())) {
+            player.dropMessage(1, "Unable to approach due to the force of the ground.");
+            return;
+        }
+
+        if (player.getEventInstance() != null) {
+            player.dropMessage(1, "You cannot teleport while inside an event instance.");
             return;
         }
 

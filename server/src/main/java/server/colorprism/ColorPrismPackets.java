@@ -67,16 +67,28 @@ public final class ColorPrismPackets {
         return p;
     }
 
-    /** Sends every character on the map their own snapshot, so all clients converge. */
+    /**
+     * Sends every PRISM_SYNC-capable character on the map their own snapshot.
+     * Contract v1: legacy sessions never receive 0x372F (unsolicited or
+     * otherwise). Characters with no tint entries are skipped: an empty
+     * snapshot carries no information and needs no packet.
+     */
     public static void broadcastMapTable(MapleMap map) {
         if (map == null) {
             return;
         }
         for (Character chr : new ArrayList<>(map.getCharacters())) {
-            if (chr != null && chr.getClient() != null) {
+            if (chr != null && chr.getClient() != null
+                    && chr.getClient().hasCaps(client.ClientCaps.PRISM_SYNC)
+                    && hasTintEntries(chr)) {
                 chr.sendPacket(snapshot(chr));
             }
         }
+    }
+
+    /** True when the snapshot would carry at least one entry. */
+    public static boolean hasTintEntries(Character chr) {
+        return !collectEntries(chr).isEmpty();
     }
 
     static List<int[]> collectEntries(Character chr) {

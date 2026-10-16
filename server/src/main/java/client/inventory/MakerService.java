@@ -220,6 +220,13 @@ public class MakerService {
 
                     for (Pair<Integer, Integer> pair : recipe.getGainItems()) {
                         c.getPlayer().setCS(true);
+                        // Crystal luck delta (IDs 4250000-4252000, +1/+2): verbatim
+                        // from MapleRoot MakerService lines 203-221, where it is
+                        // pre-existing source behavior — but NEW to Buns players:
+                        // the pre-extraction BunsMS MakerProcessor (5c35efd^)
+                        // granted crystals directly with no luck logic; the delta
+                        // was introduced by extraction commit 5c35efd
+                        // ("luck-bonus addition"). Port-faithful, not Buns-original.
                         int luck = 0;
                         if (pair.getLeft() - 4250000 < 2000 && pair.getLeft() > 4250000) {
                             int rand = Randomizer.rand(1, 100);

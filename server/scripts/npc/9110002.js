@@ -55,7 +55,11 @@ function action(mode, type, selection) {
             if (cm.isQuestCompleted(8074)) {
                 cm.openNpc(9110002);
             } else {
-                cm.sendOk("Musssshhhhroooom Shrine~~~");
+                // MapleRoot wave 1 (ticket #5): chair shop 9110002 is stocked by
+                // migration 172; open it before quest 8074 completes. Post-quest
+                // self-reopen above is preserved; the old sendOk text shadowed
+                // the stocked shop and never opened anything.
+                cm.openShopNPC(9110002);
             }
 
             cm.dispose();

@@ -1,13 +1,14 @@
--- MapleRoot wave 1: shopupdate port (ticket #5).
+-- MapleRoot wave 1: shopupdate port (ticket #5), part 1 of 2.
 -- Source: 3-db_shopupdate.sql from "MapleRoot Full Repack.zip"
 -- (Server/database/sql/, md5 a496dd77b071dd6a2bdbcadf52de2259).
--- Scope: ONLY the 3 named shops from the source header comment
--- (scroll shop at Asia 2082014, chair shop at Kino Konoko 9110002,
--- potion shop at T-1337 9201101). Everything else in the source file
--- (GM shop 1337, antibanish scrolls, DietStory/Singapore rows for shops
--- 1200001/1200002/1301000/9270019/9270020, stray chair rows for already-
--- ported shops) is OUT OF SCOPE: those (shopid, itemid) pairs already
--- exist in 101-shops-data.sql / 102-shopitems-data.sql and are skipped.
+-- Accounting (machine-reconciled, 0 conflicts): 112 rows here (3 named shops
+-- from the source header comment: scroll shop at Asia 2082014, chair shop at
+-- Kino Konoko 9110002, potion shop at T-1337 9201101) + 169 rows already
+-- value-exact in the 102 baseline (never re-inserted — shopitems PK is
+-- shopitemid, so re-inserts would duplicate) + 37 genuinely missing rows in
+-- 173-mapleroot-shops-remainder-data.sql = 318 source rows. The source
+-- DELETE WHERE shopid=1337 is deliberately NOT ported (would wipe the live
+-- GM shop served by GmShopCommand). Casino shop 9999001 untouched.
 -- INSERT IGNORE semantics: never overwrite existing buns rows.
 -- 2082014 positions 33-79 prices are pre-multiplied 11x, matching the
 -- source file's UPDATE (e.g. position 33: 50000 -> 550000).
