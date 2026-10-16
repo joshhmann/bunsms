@@ -13,6 +13,7 @@ small allow-list of host:port pairs to prevent abuse.
 """
 
 import asyncio
+import hashlib
 import logging
 import os
 from aiohttp import web, WSMsgType
@@ -153,22 +154,54 @@ async def handle_nx(request: web.Request) -> web.StreamResponse:
 async def handle_client(request: web.Request) -> web.StreamResponse:
     """Serve self-hosted launcher assets (same box as /nx).
 
-    Deploys set CLIENT_ASSETS_DIR=/opt/buns/client-assets. Flat namespace:
-    basename only, no traversal. aiohttp FileResponse handles Range/206,
-    ETag, Content-Length natively (proven on /web/logo.png).
+    Deploys set CLIENT_ASSETS_DIR=/opt/buns/client-assets. Nested keys
+    allowed (e.g. assets/hair/00060000.img, server-wz.tar.gz); path
+    containment enforced via realpath — no traversal, no symlink escape,
+    never serves releases/* staging or dotfiles. aiohttp FileResponse
+    handles Range/206, ETag, Content-Length natively.
+
+    Cache semantics: immutable content-h addressed revision paths
+    (/r/<sha256>/<key>) are immutable (long cache); mutable live keys are
+    must-revalidate so a same-path new WZ can never stay stale.
     """
-    name = request.match_info['path']
-    if not name or '/' in name or '\\' in name or '..' in name:
+    raw = request.match_info['path']
+    immutable = False
+    if raw.startswith('r/'):
+        parts = raw.split('/', 2)
+        if len(parts) != 3 or not parts[1] or '/' in parts[1] or '\\' in parts[1] or '..' in parts[1]:
+            return web.Response(status=400, text='Invalid revision path')
+        immutable = True
+        name = parts[2]
+    else:
+        name = raw
+    if not name or '\\' in name or '..' in name:
         return web.Response(status=400, text='Invalid asset name')
-    filepath = os.path.join(CLIENT_ASSETS_DIR, os.path.basename(name))
-    if os.path.exists(filepath):
-        return web.FileResponse(
-            filepath,
-            headers={
-                'Access-Control-Allow-Origin': '*',
-                'Cache-Control': 'public, max-age=31536000, immutable',
-            },
-        )
+    if any(p in ('', '.', 'releases') or p.startswith('.') for p in name.split('/')):
+        return web.Response(status=404, text='Not found')
+    base = os.path.realpath(CLIENT_ASSETS_DIR)
+    filepath = os.path.realpath(os.path.join(base, *name.split('/')))
+    if filepath != base and not filepath.startswith(base + os.sep):
+        return web.Response(status=400, text='Invalid asset name')
+    if immutable:
+        # Revision path must match the addressed bytes; otherwise 404 so a
+        # stale/wrong revision never serves live bytes under an immutable URL.
+        digest = parts[1]
+        h = hashlib.sha256()
+        try:
+            with open(filepath, 'rb') as f:
+                for chunk in iter(lambda: f.read(1048576), b''):
+                    h.update(chunk)
+        except OSError:
+            return web.Response(status=404, text='Not found')
+        if h.hexdigest() != digest:
+            return web.Response(status=404, text='Not found')
+    if os.path.isfile(filepath):
+        headers = {'Access-Control-Allow-Origin': '*'}
+        if immutable:
+            headers['Cache-Control'] = 'public, max-age=31536000, immutable'
+        else:
+            headers['Cache-Control'] = 'public, max-age=60, must-revalidate'
+        return web.FileResponse(filepath, headers=headers)
     log.warning("Client asset not found: %s", filepath)
     return web.Response(status=404, text='Not found')
 

@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { existsSync, readFileSync } from "fs";
-import { basename } from "path";
-import { resolveAssetPath, storeAssetStream } from "@/lib/assets";
+import { randomUUID } from "crypto";
+import { resolveAssetPath, storeStagedStream } from "@/lib/assets";
 
-// POST: stage client-asset bytes into the self-hosted asset dir
-// (accepts multipart form data or JSON with server-filesystem paths).
-// Replaces the old R2 multipart upload; hashes/sizes are recorded via the
-// manifest `register` mode, never trusted from the uploader.
+// POST: stage client-asset bytes into a release staging dir
+// (multipart form data or JSON with server-filesystem paths).
+// Staged bytes are NOT live until verified + promoted via the manifest
+// `register` mode (expected-hash check, atomic promotion, version bump).
 export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") || "";
+  const url = new URL(request.url);
+  const releaseId = url.searchParams.get("releaseId") || randomUUID().slice(0, 8);
 
   // JSON mode: stage files already on the server filesystem (seeded/patched dir).
   if (contentType.includes("application/json")) {
@@ -21,24 +23,31 @@ export async function POST(request: Request) {
     const results = [];
     for (const file of body.files) {
       if (file.path && existsSync(file.path)) {
-        const name = file.name || basename(file.path);
+        const name = file.name;
+        if (!name) {
+          return NextResponse.json({ error: "file.name is required" }, { status: 400 });
+        }
         try {
           resolveAssetPath(name);
         } catch {
-          return NextResponse.json({ error: `Invalid asset name: ${name}` }, { status: 400 });
+          return NextResponse.json({ error: `Invalid asset key: ${name}` }, { status: 400 });
         }
         const data = readFileSync(file.path);
         const blob = new Blob([new Uint8Array(data)]);
-        const staged = await storeAssetStream(name, blob.stream() as ReadableStream<Uint8Array>);
-        results.push({ name, ...staged });
+        const staged = await storeStagedStream(
+          releaseId,
+          name,
+          blob.stream() as ReadableStream<Uint8Array>
+        );
+        results.push({ name, staged });
       }
     }
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ releaseId, results });
   }
 
-  // Multipart mode: direct file upload, streamed to disk (no full buffering
-  // of 600 MB WZ files in the route handler beyond what formData requires).
+  // Multipart mode: direct file upload, streamed chunk-by-chunk to a staging
+  // path (never live, partial cleaned on failure).
   try {
     const formData = await request.formData();
     const results = [];
@@ -49,14 +58,18 @@ export async function POST(request: Request) {
         try {
           resolveAssetPath(name);
         } catch {
-          return NextResponse.json({ error: `Invalid asset name: ${name}` }, { status: 400 });
+          return NextResponse.json({ error: `Invalid asset key: ${name}` }, { status: 400 });
         }
-        const staged = await storeAssetStream(name, value.stream() as ReadableStream<Uint8Array>);
-        results.push({ name, ...staged });
+        const staged = await storeStagedStream(
+          releaseId,
+          name,
+          value.stream() as ReadableStream<Uint8Array>
+        );
+        results.push({ name, staged });
       }
     }
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ releaseId, results });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });

@@ -1,9 +1,12 @@
 // Self-hosted asset authority — single source of truth for client file
-// serving, manifest read/write, and publish verification.
+// serving, staged publishing, and manifest read/write.
 //
-// Replaces dashboard/src/lib/r2.ts (Cloudflare R2, SigV4). All asset bytes
-// live under ASSET_DIR on persistent host storage, served publicly under
-// ASSET_BASE_URL/client/<name>. No network, no credentials, no stubs.
+// All asset bytes live under ASSET_DIR on persistent host storage, served
+// publicly under ASSET_BASE_URL/client/<key>. Publishing is staged:
+// candidate bytes land under releases/<id>/, are verified against EXPECTED
+// hashes, then promoted atomically (per-file rename + manifest write) under
+// a per-publish lock. Live bytes are never overwritten in place, so manifest
+// rollback restores the previous manifest AND its bytes still exist.
 import { createHash } from "crypto";
 import {
   createReadStream,
@@ -12,44 +15,55 @@ import {
   mkdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from "fs";
 import { Readable } from "stream";
-import { basename, dirname, join } from "path";
+import { dirname, join, normalize, sep } from "path";
 import { pipeline } from "stream/promises";
 
 /** Public base the launcher fetches bytes from (no trailing slash). */
 export const ASSET_BASE_URL =
   process.env.ASSET_BASE_URL || "https://buns.asslorde.com";
 
-/** Local directory holding one file per servable object (object name = file name). */
+/** Local directory holding live servable objects + staged releases. */
 export const ASSET_DIR =
   process.env.ASSET_DIR || join(process.env.COSMIC_ROOT || "/cosmic", "client-assets");
 
-/** Manifest object-name mapping: manifest `name` -> stored object file name. */
-const OBJECT_ALIASES: Record<string, string> = {
-  // Canonical renames: stored object matches manifest name.
-  // Legacy R2 objects were `AugurMS.exe` / `ezorsia-config.ini`.
-  "BunsMS.exe": "BunsMS.exe",
-  "config.ini": "config.ini",
-};
-
-export function objectName(manifestName: string): string {
-  return OBJECT_ALIASES[manifestName] ?? manifestName;
+export function assetUrl(key: string): string {
+  return `${ASSET_BASE_URL}/client/${key}`;
 }
 
-export function assetUrl(manifestName: string): string {
-  return `${ASSET_BASE_URL}/client/${objectName(manifestName)}`;
-}
-
-/** Reject path traversal / absolute / nested names. Returns object file or throws. */
-export function resolveAssetPath(name: string): string {
-  const base = basename(name);
-  if (!base || base !== name || name.includes("..") || name.includes("/") || name.includes("\\")) {
-    throw new Error(`Invalid asset name: ${name}`);
+/**
+ * Resolve an asset key to a live path. Keys are relative, forward-slash
+ * paths (flat client names like `Map.wz`, or nested art like
+ * `assets/hair/00060000.img` and `server-wz.tar.gz`). Absolute paths,
+ * backslashes, `..` segments, and empty segments are rejected.
+ */
+export function resolveAssetPath(key: string): string {
+  if (!key || key.includes("\\") || key.startsWith("/") || key.includes("..")) {
+    throw new Error(`Invalid asset key: ${key}`);
   }
-  return join(ASSET_DIR, objectName(base));
+  const parts = key.split("/");
+  if (parts.some((p) => !p)) {
+    throw new Error(`Invalid asset key: ${key}`);
+  }
+  const full = normalize(join(ASSET_DIR, ...parts));
+  if (full !== join(ASSET_DIR, ...parts) || !full.startsWith(ASSET_DIR + sep)) {
+    throw new Error(`Invalid asset key: ${key}`);
+  }
+  return full;
+}
+
+/** Resolve a staged-release path (releases/<id>/<key>), same key rules. */
+export function resolveStagingPath(releaseId: string, key: string): string {
+  if (!releaseId || /[^A-Za-z0-9_-]/.test(releaseId)) {
+    throw new Error(`Invalid release id: ${releaseId}`);
+  }
+  const live = resolveAssetPath(key);
+  const rel = live.slice(ASSET_DIR.length);
+  return join(ASSET_DIR, "releases", releaseId + rel);
 }
 
 export interface ManifestFile {
@@ -99,15 +113,53 @@ export function writeManifestAtomic(manifest: Manifest): string {
   return volume;
 }
 
-/** Stage a finished local file into the asset dir (atomic tmp + rename). */
-export function stageAssetFile(name: string, srcPath: string): string {
-  const dest = resolveAssetPath(name);
+/** Take the inter-process publish lock (mkdir is atomic). Throws if held. */
+export function acquirePublishLock(): void {
+  const dir = join(ASSET_DIR, ".publish-lock");
+  mkdirSync(ASSET_DIR, { recursive: true });
+  try {
+    mkdirSync(dir);
+  } catch {
+    throw new Error("A publish is already running (lock held)");
+  }
+  writeFileSync(join(dir, "pid"), String(process.pid));
+}
+
+/** Release the inter-process publish lock. */
+export function releasePublishLock(): void {
+  try {
+    const dir = join(ASSET_DIR, ".publish-lock");
+    rmSync(join(dir, "pid"), { force: true });
+    rmSync(dir, { recursive: true, force: true });
+  } catch {}
+}
+
+/**
+ * Promote one staged file to live, retaining the previous live bytes under
+ * releases/prev-<releaseId>/ so manifest rollback restores working bytes.
+ * Staged bytes MUST already be verified against expected hashes by the caller.
+ */
+export function promoteStagedFile(releaseId: string, key: string): { hash: string; size: number } {
+  const staged = resolveStagingPath(releaseId, key);
+  if (!existsSync(staged)) {
+    throw new Error(`Staged file missing: releases/${releaseId}/${key}`);
+  }
+  const dest = resolveAssetPath(key);
   mkdirSync(dirname(dest), { recursive: true });
-  const tmp = `${dest}.tmp.${process.pid}`;
-  const data = readFileSync(srcPath);
-  writeFileSync(tmp, data);
-  renameSync(tmp, dest);
-  return dest;
+  if (existsSync(dest)) {
+    const backup = resolveStagingPath(`prev-${releaseId}`, key);
+    mkdirSync(dirname(backup), { recursive: true });
+    const data = readFileSync(dest);
+    writeFileSync(backup, data);
+  }
+  const { hash, size } = hashFileSyncNow(staged);
+  renameSync(staged, dest);
+  return { hash, size };
+}
+
+function hashFileSyncNow(filePath: string): { hash: string; size: number } {
+  const data = readFileSync(filePath);
+  return { hash: createHash("sha256").update(data).digest("hex"), size: data.length };
 }
 
 /** Stream-hash a file without buffering it. */
@@ -125,34 +177,45 @@ export function hashFileStream(filePath: string): Promise<{ hash: string; size: 
   return promise;
 }
 
-/** Verify staged bytes against expected hash/size; fail-closed. */
+/** Verify bytes against expected hash/size; fail-closed, live untouched. */
 export async function verifyStagedBytes(
   filePath: string,
   expected: { hash: string; size: number }
 ): Promise<void> {
   const stat = statSync(filePath);
   if (stat.size !== expected.size) {
-    throw new Error(`Size mismatch for ${basename(filePath)}: got ${stat.size}, expected ${expected.size}`);
+    throw new Error(`Size mismatch for ${filePath}: got ${stat.size}, expected ${expected.size}`);
   }
   const { hash } = await hashFileStream(filePath);
   if (hash !== expected.hash) {
-    throw new Error(`Hash mismatch for ${basename(filePath)}`);
+    throw new Error(`Hash mismatch for ${filePath}`);
   }
 }
 
-/** Persist an uploaded stream to the asset dir (atomic: tmp + rename). */
-export async function storeAssetStream(
-  name: string,
+/**
+ * Persist an uploaded stream to a STAGING path (never live). Callers promote
+ * via promoteStagedFile after expected-hash verification. Cleans the partial
+ * file on failure. Streams chunk-by-chunk (no full buffering).
+ */
+export async function storeStagedStream(
+  releaseId: string,
+  key: string,
   webStream: ReadableStream<Uint8Array>
-): Promise<{ hash: string; size: number }> {
-  const dest = resolveAssetPath(name);
+): Promise<string> {
+  const dest = resolveStagingPath(releaseId, key);
   mkdirSync(dirname(dest), { recursive: true });
-  const tmp = `${dest}.tmp.${process.pid}`;
-  const readable = Readable.fromWeb(webStream as never);
-  await pipeline(readable, createWriteStream(tmp));
-  const { hash, size } = await hashFileStream(tmp);
-  renameSync(tmp, dest);
-  return { hash, size };
+  const tmp = `${dest}.part-${process.pid}`;
+  try {
+    const readable = Readable.fromWeb(webStream as never);
+    await pipeline(readable, createWriteStream(tmp));
+    renameSync(tmp, dest);
+    return dest;
+  } catch (err) {
+    try {
+      rmSync(tmp, { force: true });
+    } catch {}
+    throw err;
+  }
 }
 
 /** Bump patch version (1.0.5 -> 1.0.6). URL-only edits must NOT call this. */

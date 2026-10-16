@@ -11,7 +11,6 @@ const PUBLIC_PATHS = [
   "/api/register",
   "/api/server",
   "/api/config",
-  "/api/launcher/",
   "/api/vote/",
   "/worldmap",
   "/api/worldmap/",
@@ -21,6 +20,15 @@ const PUBLIC_PATHS = [
   "/api/npc/", // handles its own x-npc-secret auth at the route layer
   "/rankings",
   "/api/rankings",
+];
+
+// Launcher download surface: public reads only. Mutation (POST/PUT/DELETE)
+// always requires session/session or x-gm-secret auth below — the manifest
+// POST accepts full-replacement payloads and must never be anonymous.
+const PUBLIC_LAUNCHER_GETS = [
+  "/api/launcher/manifest",
+  "/api/launcher/news",
+  "/api/launcher/download/",
 ];
 
 // Exact-match paths and prefix-match paths kept separate — a single "/"
@@ -48,6 +56,15 @@ function isPublicAsset(pathname: string) {
   );
 }
 
+function isPublicLauncherGet(pathname: string, method: string) {
+  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") return false;
+  return PUBLIC_LAUNCHER_GETS.some((p) => {
+    if (p === pathname) return true;
+    if (p.endsWith("/") && p.length > 1 && pathname.startsWith(p)) return true;
+    return false;
+  });
+}
+
 /**
  * Timing-safe comparison to avoid leaking secret length/prefix via response
  * timing. Edge runtime doesn't expose crypto.timingSafeEqual, so we roll it.
@@ -63,6 +80,9 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicAsset(pathname) || isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+  if (isPublicLauncherGet(pathname, request.method)) {
     return NextResponse.next();
   }
 
