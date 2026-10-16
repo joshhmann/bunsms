@@ -13,11 +13,19 @@ bunsms/
   mcp-server/   # Standalone MCP tools server (external integrations)
 ```
 
+Current release boundary: the accepted full-content Windows TESTING RC and its
+matching Linux test server are required together. Production .164 Java/DB and
+the existing browser/NX world stay unchanged until verified acceptance/rollout.
+Browser and Linux/Wine work are parked, not new-world compatibility claims.
+See [current source, exact artifacts and evidence](server/docs/CURRENT-STATE.md)
+and [the accepted roadmap](server/docs/ROADMAP-BACKLOG.md); the Windows CI Java
+stack is temporary QA, not a Windows production backend/player dependency.
+
 ### Game Server
-- Cosmic v83 MapleStory emulator on LXC 164 (`192.168.0.164`)
-- MySQL 8.4 database with Liquibase migrations
-- Login server (port 8484) + 3 channel servers (7575-7577)
-- Config patched at runtime via environment variables
+- Cosmic v83 on the existing Linux LXC/Docker Compose `/opt/server` deployment
+- MySQL with shipped Liquibase migrations; isolated current RC proofs use8.0.36
+- Login8484 and channels7575–7577; private QA cohorts do not change public NAT
+- Runtime environment/config plus genuine authored bot data, not a Java source-tree copy
 
 ### Dashboard
 - Next.js 15 with App Router, on the private LAN Docker stack
@@ -515,6 +523,30 @@ prefetch are outside this desktop iteration. Candidate/browser acceptance,
 including synthetic versus live paths, is recorded separately from source
 presence; no table entry implies unexercised functionality works.
 
+
+## Testing RC checkpoint — 2026-10-16 (not production rollout)
+
+- Full accepted hard/normal/Magnus source, progression, drops/cards and native
+  intake are integrated; missing-asset/native-engine/family acceptance is still
+  held. No accepted family is silently deferred or replaced by a stock release.
+- Server checkpoint `1f93de5` fixes the real weak-map HP scheduling race while
+  retaining weak keys. Actual3188-background/eight-factory-bot runtime exercised
+  640 map transitions/80 HP callbacks, correct400 hazard/zero safe-map damage.
+  This is not bot expedition/combat proof; those actual controller paths remain open.
+- Maker's real public opcode/material/cost/natural-failure/relog gate passed.
+  The provided sanitized pre-upgrade snapshot plus owned inventory/price rows
+  passed real40→51 migrations, idempotence and exact pre-backup restoration.
+- Deployment checkpoint `6d6e264` cleanly uses installed curl for immutable HTTP
+  transport. Actual canonical-HTTPS full4fe81 download/hash/extraction installed
+  54658 exact XML payload files and started plain matched Java/GMS83 listeners in
+  an isolated Linux Compose cohort, not a mock or a native/LAN qualification.
+- HP-fixed backend seal `87179f72` contains exact JAR3745211c and all932 authored
+  data files before Java startup; source/URLs/full hashes are in the single
+  coordination contract. No seal activates production. Frozen rc3/old artifacts
+  remain preserved and unqualified; fresh native engine acceptance is mandatory.
+- Upstream review remains pinned16ab7b7/selective GROUPA0874223/GROUPB60b869c,
+  not unrelated-history parity or new AI/voting/Flux/Tripo3D scope. Evan review
+  remains complete REVIEW ONLY, not playable-class scope.
 
 ## Patch Notes — 2026-10-14 (solobots `9b56e04`)
 

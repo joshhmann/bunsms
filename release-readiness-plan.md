@@ -1,6 +1,15 @@
-# Release Readiness Plan v2 — server halves → combined server + desktop
+# Historical Release Readiness Plan v2 — superseded working plan
 Owner: release-integration lead. Worktree: /tmp/buns-release-validation (branch release-integration @ b8bfc93). Shared tree /tmp/browser-modernization NEVER touched. Published early per parent request; all roadmap completion stays evidence-gated.
 Constraints: prod .164 Java/DB unchanged; isolated DB/containers/ports only; no new prod opcodes without client contract (contract v1 ESTABLISHED with DLL lead — see §3). Own: server Java/SQL/scripts/tests/server-docs. NOT: launcher/dashboard/assets/client-DLL/web-viewport (other owners).
+
+**Historical only:** this plan's b8bfc93 scout findings and proposed repair
+queue are retained for provenance, not current source instructions or release
+scope. The authoritative full accepted Windows/Linux RC state is
+`server/docs/CURRENT-STATE.md` and `server/docs/ROADMAP-BACKLOG.md`. In particular,
+long mob HP is integrated (not descaled), economy operations are atomic, shop172
+uses per-pair guards without a global unique constraint, Maker public behavior
+has passed, and no accepted full-content family is USERDEFERRED. Old DLL/suite
+pins below do not qualify newer artifacts. Production remains unchanged.
 
 ## §1 File ownership (this workstream)
 - net/server/channel/handlers/AbstractDealDamageHandler.java (+ CloseRange/Ranged/Magic/Touch, TakeDamageHandler), tools/PacketCreator.java (attack bodies), server/life/Monster.java (HP path), soloMapling BotAttack* (bot damage integration only — no bot behavior changes)
@@ -22,7 +31,7 @@ Constraints: prod .164 Java/DB unchanged; isolated DB/containers/ports only; no 
 - Server strictness: C2S long-parse only from flagged senders; unflagged = legacy-exact; flagged-but-neither-form = drop+log, never reinterpret. S2C per-recipient encode (shared prebuilt attack packet is DEAD — build legacy + long, selective send). No unsolicited 0x372F/0x17C/0x373D/0x373F/0x3731 to unflagged sessions. Magnitude validator restored long-aware; counts preserved. Mob HP stays int this release (transport-only; backlog ticket-12 descaled).
 - DLL lead: green CI 38864427389, no width changes until schema, BunsMS.dll OUT of kaentake profile until co-load audit. Announce wiring on their side pending — selective-encode verification waits on it.
 
-## §4 Repair queue (narrow seams, acceptance each)
+## §4 Historical repair proposals (not the current implementation or work queue)
 R1 caps infra: Client caps fields + ClientCapsHandler (validateState=true pre-login) + PacketCreator.clientCapsAck + PacketProcessor reg + Recv/Send enum + registry rows + client/OPCODE_TABLE.md mirror (contract surface; check_opcodes.py must stay green). ACCEPT: announce→ack roundtrip unit; unflagged session zero behavior change.
 R2 damage C2S: caps-gated longLines; strict both-forms check, null-return on mismatch + null guards at 4 call sites; long-aware magnitude validator restored (from 35bd41a diff), counts untouched; saturating sums; bot-crit single-point fix (normalize at BotAttackDriver widen OR decode in BotAttackEffects — one place); meso-explosion stays int-only. ACCEPT: legacy-exact bytes test, neither-form drop test, flagged-long test, no-new-opcode test.
 R3 damage S2C: addAttackBody(boolean longLines) overload; factory overloads; per-recipient selective send at all broadcast sites (MapleMap paths); legacy default bytes-exact. ACCEPT: byte-compare legacy packet vs pre-change golden.

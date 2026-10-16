@@ -31,6 +31,13 @@ receipt or the old `selfhost-assets` branch is not evidence that a new repair
 commit has been built, deployed, or activated. Java/DB/schema/live browser-NX
 changes require the relevant owner gates; isolated tests do not authorize them.
 
+The current target is the full accepted **Windows TESTING RC plus a matching
+Linux test server**, not an unverified production switch or a Windows backend
+requirement. `/rc-assets/` is the approved read-only QA prefix on the canonical
+domain; sealed candidates there do not activate production Java/DB/browser/NX.
+Exact current pins, exercised receipts and holds are in `CURRENT-STATE.md` and
+the single-writer release coordination contract.
+
 ## One immutable release boundary
 
 `dashboard/src/lib/assets.ts` is the shared storage/manifest authority for every
@@ -44,8 +51,9 @@ publisher, not just the CLI. The durable layout under `ASSET_DIR` is:
 | `jobs/` | Atomic persistent async-publication status |
 | `nx-candidates/`, `cache/` | Private conversion output and disposable browsing caches |
 
-Only committed keys and validated immutable revisions are served. Staging,
-locks, release records, job status, and caches are not arbitrary static roots.
+Only validated retained/sealed immutable revisions are served. A sealed internal
+QA view is not the active manifest. Staging, locks, release records, job status
+and caches are never arbitrary static roots.
 The writable manifest authority is `LAUNCHER_MANIFEST_PATH`; a bundled manifest
 is only the initial approved seed. There is no legacy single-file authority or
 spare Next.js byte-download route.
@@ -62,9 +70,10 @@ spare Next.js byte-download route.
    the exact detached file, once, against expected bytes/size; preserve that
    identity in the object metadata. Reusing a retained digest checks its frozen
    identity, not merely its basename or read-only mode.
-4. When native WZ changes require browser changes, synchronously run the pinned
-   real converter/merger against this verified native candidate, then verify
-   and stage the complete NX output cohort. Conversion failure does not publish.
+4. The selected cohort is explicit. Native-only Windows publication retains its
+   exact complete native-file contract without inventing a browser gate.
+   A selected native-and-browser cohort runs the pinned real converter/merger,
+   verifies the complete NX cohort and fails publication if conversion fails.
 5. One inter-process authority lock and base-manifest compare-and-swap exclude
    stale writers. Retain the complete manifest first, then atomically replace
    the writable authority **last**. No mutable live-byte rename precedes it.
@@ -83,10 +92,18 @@ used to skip retaining the existing release and publish different client bytes.
 Subsequent client-byte changes bump the patch version; art/NX/server-only
 changes do not spuriously change launcher version/timestamp.
 
-Default/`?profile=stock` is stock only (currently 16 files); Kaentake is an
-explicit opt-in (currently 15). The complete private writer authority includes
-all 19 launcher entries, independent of the public profile. Public manifests
-do not disclose internal object identities/art inventory. Canonical
+`prepare`/`seal` can freeze a complete internal QA candidate without `commit`
+or an active-pointer change. Its exact file-cohort certification does not prove
+native engine/gameplay compatibility. Explicit RC versions use this same
+authority's version option, never a separate mutable manifest writer.
+
+No-profile/`?profile=stock` remains stock; Kaentake is explicit. The previously
+deployed16-stock/15-Kae subset is not full Windows content/runtime coverage.
+A full native catalog declares its exact names, sizes, hashes and count,
+including the paired runtime, CRT and config files;19 is not a writer ceiling.
+The current sealed QA example is65 files (native51 + runtime13 + config1),
+unactivated and unqualified. The new RC launcher must select its explicit full
+profile rather than reinterpret the legacy no-profile API.
 `BunsMS.exe`/`config.ini` bootstrap names preserve the original executable and
 config bytes; producer aliases are accepted only by the explicit bootstrap CLI.
 
@@ -94,6 +111,13 @@ Mutable aliases use revalidation. Revision URLs use immutable caching and
 stat/path resolution, **not public-request hashing of large WZ files**. Range
 and HEAD use the existing aiohttp file service. The WZ and server-XML explorers
 read the same committed objects; their caches are not another manifest source.
+
+Binary assets, including logical `.tar.gz` server packs, must arrive as exact
+source bytes with `application/octet-stream`/`application/gzip`, exact lengths
+and byte ranges, and no filename-derived `Content-Encoding:gzip` or transparent
+decompression. The generic immutable route satisfies this; a `.bin` rename is
+not the final transport contract. Actual HTTPS/full-file/Range/rollback evidence
+is recorded separately from filesystem pins.
 
 ## Private APIs and callers
 
@@ -103,7 +127,9 @@ read the same committed objects; their caches are not another manifest source.
   or JSON `{releaseId,files:[{name,path}]}` for trusted local producer paths.
   Art mode commits approved nested art keys and returns their durable URLs.
 - `POST /api/launcher/manifest {releaseId,register:[{name,hash,size}],operations}`:
-  prepare/convert/commit. No arbitrary manifest or URL-only replacement mode.
+  prepare/convert/commit; `prepareOnly:true` seals a candidate without activation.
+  Stage accepts the explicit approved native catalog/RC version. There is no
+  arbitrary manifest or URL-only replacement mode.
 - `POST /api/launcher/manifest {rollback:retainedReleaseId}`: select the exact
   retained SELFHOST manifest, native/art/server/NX bytes included. No byte copy
   back into mutable live paths and no R2 JSON restore.
@@ -146,11 +172,14 @@ path, not an R2-to-R2 conversion or an unconfigured self-hosted runner.
 ## Server overlay and marker
 
 `server-wz.version` is generated with its tar and contains release ID, immutable
-URL, expected SHA-256 and size. Startup fetches this descriptor once, verifies
-that exact same-authority tar, rejects traversal/links/special entries, and
-extracts privately before touching game files. Partial `wz/`/`scripts/` overlays
-preserve unrelated installed baseline files. Missing complete server WZ requires
-the independently pinned selfhost baseline; there is no fallback.
+URL, expected SHA-256 and size. Startup fetches the descriptor once, optionally
+from immutable `WZ_VERSION_URL`; `ASSET_BASE_URL` may include the QA prefix.
+The already installed curl transports opaque bytes with no retry/fallback;
+Python still streams pinned size/SHA verification, rejects traversal/links/
+special entries and extracts privately before touching game files. A nonzero
+HTTP-client exit aborts even if a response body otherwise resembles an archive.
+Partial `wz/`/`scripts/` overlays preserve unrelated baseline files. A missing
+complete WZ baseline requires its independent selfhost pin, never a fallback.
 
 `server/entrypoint.sh` retains pre-overlay originals plus a pending-apply ledger
 under `/opt/server/.selfhost-assets`. Its **persistent** bind is required across
@@ -160,6 +189,17 @@ application leaves the marker unchanged and Java unstarted; pending recovery
 runs even when the requested descriptor equals the old marker. The marker is
 written only after the complete verified overlay is applied. The private
 systemd apply command recreates/waits for **server only**, never the DB stack.
+
+Both existing Linux images and the coherent QA backend use the same Maven
+data-only producer:932 authored YAML/TXT/CSV/binary files at their existing
+loader paths, no entire Java source tree or invented replacement config.
+The complete bundle extracts these before Java, never after launch or by a
+manual supplement. Actual canonical-HTTPS full4fe81 application installed all
+54658 exact XML payload files and started plain `java -jar`/real GMS83 listeners
+on an owned internal-loopback Compose cohort. That receipt closes the actual
+Linux artifact-consumer gate, not remote LAN/native login/family acceptance.
+The predecessor Python HTTPS root cause remains unattributed; changing the one
+HTTP client is not a claim to repair Python/TLS underneath.
 
 ## Operator deployment and publication
 
@@ -171,12 +211,14 @@ by dashboard UID 1001; do not mount only the JSON file read-only. The game-state
 bind must persist separately. The Unix socket group permits the dashboard to
 reach the private controller; the credential file remains private.
 
-Install the pinned WZ tools, approved native PKG1 baseline+manifest, and complete
-observed NX baseline+manifest at the configured private paths before enabling
-content publication. Server XML WZ is not a native converter input. The measured
-complete baseline tar is 28,469,675 bytes with SHA-256
-`0139085a5542a638ca4a0c325203e36ab6d46d51fb2aac2fbebbfec2010b23ce`;
-the example pins its immutable `server-wz-baseline.tar.gz` URL, not a mutable URL.
+Install the approved pinned native PKG1 baseline/catalog before native content
+publication; an observed NX baseline is required only for a selected browser
+cohort. Server XML is not a native converter input. The older28,469,675-byte
+0139085a baseline is a retained smaller historical fixture, **not** the actual
+deployed54499-file XML snapshot or current full-content server pack. The current
+source baseline tree is55a6c288…, and matched full rc3 XML/scripts tar is
+3909493605 bytes/SHA4fe81ac3…. Use the exact approved current pins in the release
+contract; never relabel the old small fixture as complete full-content coverage.
 
 Bootstrap the current approved launcher set before accepting content updates;
 import independently pinned existing nested candidate/art keys before replacing
@@ -210,9 +252,11 @@ it invokes all four production publishers and streams every resulting NX file
 back through the real byte service, then calls the real retained rollback API.
 `tools/tests/test_server_assets.py` executes the actual shell entrypoint with
 isolated HTTP/filesystem fixtures and a Java-start sentinel (not a Java gameplay
-claim), including partial-copy failure and rollback restoration. The standalone
-Node20 production-image test `dashboard/test/production-stream.mjs` exercises
-actual Next HTTP and a 500 MiB stream with a bounded memory high-water check.
+claim), including partial-copy failure, rollback restoration and a403 response
+with an otherwise valid tar body; all eight consumer checks pass after the clean
+curl cutover. This is distinct from the actual full-HTTPS/plain-Java Compose
+receipt above. The standalone Node20 production-image stream test exercises
+actual Next HTTP and500 MiB with a bounded memory high-water check.
 
 The accepted `de4d851` review is not retroactively changed by this repair. Its
 per-file live rename/manual-copy rollback, stale R2/NX/server consumers,
@@ -221,6 +265,8 @@ and read-only mount instructions have been replaced by the common protocol
 above. Real producer verification also fixed compact server String XML edits,
 eight-digit ETC native/server keys and required `iconRaw`, and persistent job
 status moved off an unwritable image path. Old throwaway cycle/smoke assertion
-counts are not evidence for this implementation. Windows/native gameplay,
-public native activation, content-cohort approvals, live DB/schema changes and
-browser NX activation remain their separately owned gates.
+counts are not evidence for this implementation. Exact native file certification
+or a genuine independent reader alone does **not** qualify the v83 game engine.
+Native gameplay/visuals, full-family and actual bot-controller participation,
+public native activation and production rollout retain their explicit gates.
+Preserved browser/NX functionality is not a new Windows GUI/parity gate.

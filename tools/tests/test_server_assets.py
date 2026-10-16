@@ -37,6 +37,7 @@ class ServerOverlayTest(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(prefix="server-assets-")
         self.root = Path(self.temporary.name)
         self.bytes = {}
+        self.http_status = {}
         self.requests = []
         self.descriptor = {}
         for name in ARCHIVES:
@@ -61,7 +62,7 @@ class ServerOverlayTest(unittest.TestCase):
                 if payload is None:
                     self.send_error(404)
                     return
-                self.send_response(200)
+                self.send_response(fixture.http_status.get(self.path, 200))
                 self.send_header("Content-Length", str(len(payload)))
                 self.end_headers()
                 self.wfile.write(payload)
@@ -144,6 +145,17 @@ class ServerOverlayTest(unittest.TestCase):
         self.assertFalse((self.root / "wz/Item.wz/new.img.xml").exists())
         self.assertFalse((self.root / "scripts/new.js").exists())
         self.assertEqual((self.root / "scripts/existing.js").read_text(), "installed baseline script")
+
+    def test_http_error_with_valid_archive_body_keeps_installed_release(self):
+        self.descriptor = self.release("first", {"scripts/existing.js": "first"})
+        self.run_entrypoint()
+        previous = self.marker()
+        self.descriptor = self.release("denied", {"scripts/existing.js": "must not apply"})
+        self.http_status[self.descriptor["url"].removeprefix(self.origin)] = 403
+        self.run_entrypoint(False)
+        self.assertEqual(self.marker(), previous)
+        self.assertEqual((self.root / "scripts/existing.js").read_text(), "first")
+        self.assertEqual(self.starts(), 1)
 
     def test_wrong_hash_never_starts_java_or_advances_marker(self):
         self.descriptor = self.release("first", {"scripts/existing.js": "first"})
