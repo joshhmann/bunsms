@@ -11,10 +11,21 @@ from collections import Counter
 import hashlib
 import json
 from pathlib import Path
+import re
 import xml.etree.ElementTree as ET
 
 
 def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def parse_server_xml(path):
+    text=Path(path).read_text(encoding='utf-8')
+    controls=Counter(f'U+{ord(c):04X}' for c in re.findall(r'[\x00-\x08\x0B\x0C\x0E-\x1F]',text))
+    # Match the actual server provider, not a permissive recovery parser:
+    # server/src/main/java/provider/wz/XMLDomMapleData.java:54-56.
+    sanitized=re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F]','',text)
+    try:return ET.fromstring(sanitized),dict(controls)
+    except ET.ParseError as error:raise ValueError(f'Malformed XML after server-equivalent sanitation: {path}: {error}') from error
 
 
 def children(node):
@@ -81,8 +92,9 @@ def merge(baseline,candidate,contracts,output):
     files=[]
     for (archive,image),ops in groups.items():
         relative=Path(archive)/(image+'.xml');original=baseline/relative;native=candidate/relative
-        source=ET.parse(native).getroot()
-        root=ET.parse(original).getroot() if original.exists() else ET.Element('imgdir',{'name':source.get('name')})
+        source,source_controls=parse_server_xml(native)
+        if original.exists():root,original_controls=parse_server_xml(original)
+        else:root,original_controls=ET.Element('imgdir',{'name':source.get('name')}),{}
         before=flat(root);allowed=[];conflicts=[]
         def omitted(path):return any(path==n or path.startswith(n+'/') for n in omissions.get((archive,image),[]))
         for op in ops:
@@ -109,6 +121,7 @@ def merge(baseline,candidate,contracts,output):
         if flat(ET.parse(target).getroot())!=after:raise ValueError(f'XML serialization changed {relative}')
         files.append({'path':relative.as_posix(),'baseline_sha256':digest(original) if original.exists() else None,
             'candidate_source_sha256':digest(native),'merged_sha256':digest(target),'size':target.stat().st_size,
+            'server_equivalent_control_normalization':{'baseline':original_controls,'candidate':source_controls},
             'explicit_targets':allowed,'original_non_target_nodes_preserved':len(preserved),
             'original_non_target_semantic_sha256':hashlib.sha256(json.dumps(preserved,sort_keys=True).encode()).hexdigest(),
             'deployed_conflicts_retained':conflicts})

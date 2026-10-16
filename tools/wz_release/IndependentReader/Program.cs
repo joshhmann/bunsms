@@ -46,15 +46,15 @@ internal static class Program
         if (value is WzCanvasProperty canvas)
         {
             // This is MapleLib's established decoder, not a Python re-parse or header-only check.
-            using (var bitmap = canvas.GetLinkedWzCanvasBitmap())
+            // MapleLib owns/caches this bitmap. UOL aliases and later exact-node
+            // checks can return the same instance; WzFile.Dispose releases it.
+            var bitmap = canvas.GetLinkedWzCanvasBitmap();
+            if (bitmap == null || bitmap.Width <= 0 || bitmap.Height <= 0) throw new InvalidDataException("Empty decoded bitmap: " + path);
+            using (var png = new MemoryStream())
             {
-                if (bitmap == null || bitmap.Width <= 0 || bitmap.Height <= 0) throw new InvalidDataException("Empty decoded bitmap: " + path);
-                using (var png = new MemoryStream())
-                {
-                    bitmap.Save(png, ImageFormat.Png);
-                    png.Position = 0;
-                    Canvases.Add(new JObject { ["path"] = path, ["width"] = bitmap.Width, ["height"] = bitmap.Height, ["decoded_png_sha256"] = Hash(png) });
-                }
+                bitmap.Save(png, ImageFormat.Png);
+                png.Position = 0;
+                Canvases.Add(new JObject { ["path"] = path, ["width"] = bitmap.Width, ["height"] = bitmap.Height, ["decoded_png_sha256"] = Hash(png) });
             }
         }
         else if (value is WzBinaryProperty sound)
@@ -130,6 +130,12 @@ internal static class Program
             Attempt(path, () =>
             {
                 var node = Node(path);
+                string expected = (string)requirement["type"];
+                bool correctType = expected == null || expected == "image" && node is WzImage ||
+                    expected == "canvas" && node is WzCanvasProperty || expected == "property" && node is WzSubProperty ||
+                    expected == "sound" && node is WzBinaryProperty || expected == "int" && node is WzIntProperty ||
+                    expected == "string" && node is WzStringProperty || expected == "vector" && node is WzVectorProperty;
+                if (!correctType) throw new InvalidDataException("Required node type differs (" + expected + "): " + path);
                 Decode(path, node);
                 if (requirement["dimensions"] is JArray dimensions)
                 {
