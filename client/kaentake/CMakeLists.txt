@@ -33,6 +33,8 @@ FetchContent_Declare(kaentake
         COMMAND "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_SOURCE_DIR}/patches/0010-trace-consumed-config.patch"
         COMMAND "${GIT_EXECUTABLE}" apply --check "${CMAKE_CURRENT_SOURCE_DIR}/patches/0011-trace-final-sockaddr-and-completion.patch"
         COMMAND "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_SOURCE_DIR}/patches/0011-trace-final-sockaddr-and-completion.patch"
+        COMMAND "${GIT_EXECUTABLE}" apply --check "${CMAKE_CURRENT_SOURCE_DIR}/patches/0012-trace-resource-bootstrap.patch"
+        COMMAND "${GIT_EXECUTABLE}" apply "${CMAKE_CURRENT_SOURCE_DIR}/patches/0012-trace-resource-bootstrap.patch"
 )
 
 file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/patches/0001-load-buns-companion.patch" companion_patch_sha256)
@@ -43,8 +45,9 @@ file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/patches/0008-weather-viewport-bridge.pa
 file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/patches/0009-trace-windows-routing.patch" routing_trace_sha256)
 file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/patches/0010-trace-consumed-config.patch" consumed_config_sha256)
 file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/patches/0011-trace-final-sockaddr-and-completion.patch" completion_trace_sha256)
+file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/patches/0012-trace-resource-bootstrap.patch" bootstrap_trace_sha256)
 file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/kaentake-build.json" CONTENT
-    "{\n  \"upstreamCommit\": \"2a43a01e7f4cdd75cda08ab533049230760d7cfa\",\n  \"companionPatchSha256\": \"${companion_patch_sha256}\",\n  \"resolverPatchSha256\": \"${resolver_patch_sha256}\",\n  \"routingPatchSha256\": \"${routing_patch_sha256}\",\n  \"prismBridgePatchSha256\": \"${prism_patch_sha256}\",\n  \"weatherViewportPatchSha256\": \"${weather_patch_sha256}\",\n  \"routingTracePatchSha256\": \"${routing_trace_sha256}\",\n  \"consumedConfigTracePatchSha256\": \"${consumed_config_sha256}\",\n  \"completionTracePatchSha256\": \"${completion_trace_sha256}\",\n  \"diagnosticOnly\": false,\n  \"companionEntry\": \"BunsMS_Initialize\"\n}\n"
+    "{\n  \"upstreamCommit\": \"2a43a01e7f4cdd75cda08ab533049230760d7cfa\",\n  \"companionPatchSha256\": \"${companion_patch_sha256}\",\n  \"resolverPatchSha256\": \"${resolver_patch_sha256}\",\n  \"routingPatchSha256\": \"${routing_patch_sha256}\",\n  \"prismBridgePatchSha256\": \"${prism_patch_sha256}\",\n  \"weatherViewportPatchSha256\": \"${weather_patch_sha256}\",\n  \"routingTracePatchSha256\": \"${routing_trace_sha256}\",\n  \"consumedConfigTracePatchSha256\": \"${consumed_config_sha256}\",\n  \"completionTracePatchSha256\": \"${completion_trace_sha256}\",\n  \"bootstrapTracePatchSha256\": \"${bootstrap_trace_sha256}\",\n  \"diagnosticOnly\": false,\n  \"companionEntry\": \"BunsMS_Initialize\"\n}\n"
 )
 FetchContent_MakeAvailable(kaentake)
 target_include_directories(injector PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")

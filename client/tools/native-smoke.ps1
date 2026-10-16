@@ -8,7 +8,9 @@ param(
     [string]$OutputDirectory = 'native-smoke-output',
     [ValidateRange(30, 180)][int]$ObserveSeconds = 90,
     [string]$GameHost = 'buns.asslorde.com',
-    [switch]$ExerciseLogin
+    [switch]$ExerciseLogin,
+    [string]$PreparedGameDirectory = '',
+    [switch]$PublishedRuntimeControl
 )
 $ErrorActionPreference = 'Stop'
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
@@ -18,6 +20,7 @@ $report = [ordered]@{
     baselineUrl = $BaselineUrl.AbsoluteUri; baselineSha256 = $BaselineSha256.ToLowerInvariant()
     baselineFilesBaseUrl = $BaselineFilesBaseUrl.AbsoluteUri
     observeSeconds = $ObserveSeconds; gameHost = $GameHost
+    publishedRuntimeControl = [bool]$PublishedRuntimeControl
     status = 'not-completed'; nativeUiObserved = $false; initializeSuccessObserved = $false
     capsAckObserved = $false; snapshots = [Collections.Generic.List[object]]::new()
     controlledStops = [Collections.Generic.List[object]]::new()
@@ -117,18 +120,25 @@ try {
     }
     Add-Type -AssemblyName System.Drawing
     Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -Path (Join-Path $PSScriptRoot 'NativeSmoke.cs')
-    $manifestPath = Join-Path $OutputDirectory 'baseline-provenance.json'
-    Invoke-WebRequest $BaselineUrl.AbsoluteUri -OutFile $manifestPath -TimeoutSec 60
+    if (-not ('NativeSmoke' -as [type])) { Add-Type -Path (Join-Path $PSScriptRoot 'NativeSmoke.cs') }
+    if ($PreparedGameDirectory) {
+        if (-not $PublishedRuntimeControl) { throw 'Prepared game reuse is only for the exact published-runtime control' }
+        $PreparedGameDirectory = [IO.Path]::GetFullPath($PreparedGameDirectory)
+        $manifestPath = Join-Path (Split-Path $PreparedGameDirectory -Parent) 'baseline-provenance.json'
+    } else {
+        $manifestPath = Join-Path $OutputDirectory 'baseline-provenance.json'
+        Invoke-WebRequest $BaselineUrl.AbsoluteUri -OutFile $manifestPath -TimeoutSec 60
+    }
     $actualSha = (Get-FileHash $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
     $report.baselineActualSha256 = $actualSha
     if ($actualSha -ne $BaselineSha256.ToLowerInvariant()) { throw "Baseline provenance SHA256 mismatch: $actualSha" }
     $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
     if (-not $manifest.files -or $manifest.files.Count -eq 0) { throw 'Native provenance contains no files' }
     $isClientManifest = $manifest.completeProfiles -contains 'kaentake'
-    $report.inputKind = if ($isClientManifest) { 'Pinned complete full-content client manifest; same-run native runtime overlaid explicitly for QA' } else { 'Pinned complete native provenance' }
+    if ($PublishedRuntimeControl -and -not $isClientManifest) { throw 'Published runtime control requires a pinned complete client manifest' }
+    $report.inputKind = if ($PublishedRuntimeControl) { 'Exact published runtime control A; NOT a feature-release fallback' } elseif ($isClientManifest) { 'Pinned complete full-content client manifest; compiled runtime overlay B for causal QA' } else { 'Pinned complete native provenance' }
     $report.sourceCommit = $env:GITHUB_SHA
-    $game = Join-Path $OutputDirectory 'baseline'
+    $game = if ($PreparedGameDirectory) { $PreparedGameDirectory } else { Join-Path $OutputDirectory 'baseline' }
     New-Item -ItemType Directory -Force $game | Out-Null
     $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $base = [uri]($BaselineFilesBaseUrl.AbsoluteUri.TrimEnd('/') + '/')
@@ -149,7 +159,7 @@ try {
         if (-not $url.IsAbsoluteUri -or $url.Scheme -ne 'https') { throw "Native file URL must be pinned HTTPS: $($file.name)" }
         New-Item -ItemType Directory -Force ([IO.Path]::GetDirectoryName($destination)) | Out-Null
         $report.currentDownload = [ordered]@{ name = $file.name; url = $url.AbsoluteUri; expectedSize = $file.size; expectedSha256 = $expectedHash; startedUtc = [DateTime]::UtcNow.ToString('O'); status = 'downloading' }
-        Invoke-WebRequest $url.AbsoluteUri -OutFile $destination -TimeoutSec 900
+        if (-not $PreparedGameDirectory) { Invoke-WebRequest $url.AbsoluteUri -OutFile $destination -TimeoutSec 900 }
         $sha = (Get-FileHash $destination -Algorithm SHA256).Hash.ToLowerInvariant()
         if ((Get-Item $destination).Length -ne $file.size -or $sha -ne $expectedHash.ToLowerInvariant()) {
             throw "Native baseline size/SHA256 mismatch: $($file.name)"
@@ -170,21 +180,47 @@ try {
         $sha = (Get-FileHash (Join-Path $game $pin.Key) -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($sha -ne $pin.Value) { throw "Unsupported baseline $($pin.Key) SHA256=$sha" }
     }
-    $runtime = Join-Path $KaentakeArtifact 'Release'
-    foreach ($file in @('Kaentake.exe', 'Kaentake.dll', 'Custom.wz')) { Copy-Item (Join-Path $runtime $file) (Join-Path $game $file) -Force }
-    Copy-Item (Join-Path $CompanionArtifact 'BunsMS.dll') (Join-Path $game 'BunsMS.dll') -Force
-    $crtManifest = Join-Path $RuntimeArtifact 'msvc-runtime-provenance.json'
-    $report.crtProvenance = Get-Content $crtManifest -Raw | ConvertFrom-Json
-    if ($report.crtProvenance.architecture -ne 'x86') { throw 'Required app-local CRT payload is not x86' }
-    foreach ($file in $report.crtProvenance.files) {
-        $source = Join-Path $RuntimeArtifact $file.name
-        $sha = (Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant()
-        if ((Get-Item $source).Length -ne $file.size -or $sha -ne $file.sha256) {
-            throw "Microsoft app-local runtime payload mismatch: $($file.name)"
+    if ($isClientManifest) {
+        $publishedPath = Join-Path (Split-Path $game -Parent) 'published-provenance.json'
+        if (-not $PreparedGameDirectory) {
+            $publishedUrl = [uri]$manifest.provenance.url
+            if ($publishedUrl.Scheme -ne 'https') { throw 'Published control provenance must use pinned HTTPS' }
+            Invoke-WebRequest $publishedUrl.AbsoluteUri -OutFile $publishedPath -TimeoutSec 60
         }
-        Copy-Item $source (Join-Path $game $file.name) -Force
+        if ((Get-FileHash $publishedPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $manifest.provenance.sha256) { throw 'Published control provenance SHA256 mismatch' }
+        $published = Get-Content $publishedPath -Raw | ConvertFrom-Json
+        $report.publishedRuntimeSource = $published.runtimeSourceCommit
+        if (-not $PublishedRuntimeControl) {
+            $controlDirectory = Join-Path $OutputDirectory 'published-control'
+            $password = $script:qaPassword
+            & $PSCommandPath -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
+                -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
+                -OutputDirectory $controlDirectory -ObserveSeconds $ObserveSeconds -GameHost $GameHost `
+                -PreparedGameDirectory $game -PublishedRuntimeControl
+            $controlExit = $LASTEXITCODE
+            $script:qaPassword = $password
+            $script:snapshotIndex = 0
+            $control = Get-Content (Join-Path $controlDirectory 'result.json') -Raw | ConvertFrom-Json
+            $report.publishedControl = [pscustomobject]@{ source = $published.runtimeSourceCommit; exitCode = $controlExit; status = $control.status; nativeUiObserved = $control.nativeUiObserved; initializeSuccessObserved = $control.initializeSuccessObserved; capsAckObserved = $control.capsAckObserved; error = $control.error; directory = $controlDirectory }
+        }
     }
-    Copy-Item $crtManifest (Join-Path $game 'msvc-runtime-provenance.json')
+    if (-not $PublishedRuntimeControl) {
+        $runtime = Join-Path $KaentakeArtifact 'Release'
+        foreach ($file in @('Kaentake.exe', 'Kaentake.dll', 'Custom.wz')) { Copy-Item (Join-Path $runtime $file) (Join-Path $game $file) -Force }
+        Copy-Item (Join-Path $CompanionArtifact 'BunsMS.dll') (Join-Path $game 'BunsMS.dll') -Force
+        $crtManifest = Join-Path $RuntimeArtifact 'msvc-runtime-provenance.json'
+        $report.crtProvenance = Get-Content $crtManifest -Raw | ConvertFrom-Json
+        if ($report.crtProvenance.architecture -ne 'x86') { throw 'Required app-local CRT payload is not x86' }
+        foreach ($file in $report.crtProvenance.files) {
+            $source = Join-Path $RuntimeArtifact $file.name
+            $sha = (Get-FileHash $source -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ((Get-Item $source).Length -ne $file.size -or $sha -ne $file.sha256) { throw "Microsoft app-local runtime payload mismatch: $($file.name)" }
+            Copy-Item $source (Join-Path $game $file.name) -Force
+        }
+        Copy-Item $crtManifest (Join-Path $game 'msvc-runtime-provenance.json')
+    } else {
+        $report.publishedRuntimeFiles = @($verifiedFiles | Where-Object { $_.name -in @('Kaentake.exe', 'Kaentake.dll', 'Custom.wz', 'BunsMS.dll') -or $_.name -match '^(msvcp|vcruntime|vccorlib|concrt)[^/\\]*\.dll$' })
+    }
     "[config]`nhost=$GameHost`nport=8484`n" | Set-Content (Join-Path $game 'config.ini') -Encoding ascii
     $configPath = Join-Path $game 'config.ini'
     $report.stagedConfiguration = [pscustomobject]@{
@@ -194,7 +230,7 @@ try {
         evidenceKind = 'Actual staged file bytes; consumed native values require the independent BUNS_RUNTIME consumed-config event'
     }
     $report.gameDirectory = $game
-    $report.runtimeProvenance = Get-Content (Join-Path $KaentakeArtifact 'kaentake-build.json') -Raw | ConvertFrom-Json
+    $report.runtimeProvenance = if ($PublishedRuntimeControl) { [pscustomobject]@{ runtimeSourceCommit = $published.runtimeSourceCommit; runtimeRunId = $published.runtimeRunId; authority = 'SHA256-verified published full-profile provenance; no runtime overlay' } } else { Get-Content (Join-Path $KaentakeArtifact 'kaentake-build.json') -Raw | ConvertFrom-Json }
     $report.diagnosticOnly = [bool]$report.runtimeProvenance.diagnosticOnly
     $report.runtimeFiles = @(foreach ($file in @('MapleStory.exe', 'Gr2D_DX8.dll', 'Kaentake.exe', 'Kaentake.dll', 'Custom.wz', 'BunsMS.dll')) {
         $path = Join-Path $game $file
@@ -215,9 +251,14 @@ try {
         $report.networkObserver = 'Concurrent backend query handles and kernel TCP owner/address/port samples; no debugger, detour, socket replacement, or backend restart'
     }
     $callback = [Action[int[]]]{ param([int[]]$Ids) Save-NativeSnapshot $Ids }
+    $report.nativeCaptureStartedUtc = [DateTime]::UtcNow.ToString('O')
     $report.processIds = [NativeSmoke]::Capture((Join-Path $game 'Kaentake.exe'), $game, $ObserveSeconds, $debugLog, $callback)
     Save-NativeSnapshot ([NativeSmoke]::LastProcessIds)
     $events = Get-Content $debugLog -Raw
+    $report.naturalExits = @([regex]::Matches($events, '(?m)^EXIT_PROCESS pid=(\d+) code=(-?\d+) reason=natural-before-controller-cleanup\r?$') | ForEach-Object {
+        $code = [int]$_.Groups[2].Value
+        [pscustomobject]@{ processId = [int]$_.Groups[1].Value; exitCode = $code; exitHex = '{0:X8}' -f ([long]$code -band 0xffffffffL); controllerCleanup = $false }
+    })
     $report.initializeSuccessObserved = $events.Contains('BUNS_RUNTIME initialize-success')
     $report.capsAckObserved = $events.Contains('BUNS_RUNTIME caps-ack ')
     $report.companionModuleObserved = $events -match 'MODULE_OBSERVED .*BunsMS\.dll'
@@ -227,6 +268,8 @@ try {
     $report.gameAliveAfterObservation = @($final.processes | Where-Object { $_.name -eq 'MapleStory' -and $_.alive }).Count -gt 0
     $report.nativeUiObserved = @($final.screenshots | Where-Object visualContent).Count -gt 0
     $report.errorDialogObserved = @($final.windows | Where-Object { $_.Visible -and $_.Class -eq '#32770' }).Count -gt 0
+    $failures = @($report.naturalExits | Where-Object { $_.exitCode -ne 0 })
+    if ($failures.Count) { throw "Observed native process natural failure: $($failures | ConvertTo-Json -Compress). Cause remains unattributed; inspect independent crash receipts." }
     if ($ExerciseLogin -and $report.loginInput.status -ne 'submitted-normal-OS-login-input') {
         throw 'Requested actual QA login input was not submitted; inspect observed native UI and input receipt'
     }
@@ -246,6 +289,11 @@ try {
         $report.networkObserverState = $networkJob.State.ToString()
         Receive-Job $networkJob -ErrorAction Continue | Out-Null
         Remove-Job $networkJob
+    }
+    if ($report.nativeCaptureStartedUtc -and $game) {
+        try {
+            & (Join-Path $PSScriptRoot 'save-native-crash-evidence.ps1') -GameDirectory $game -OutputDirectory $OutputDirectory -StartedUtc ([datetime]$report.nativeCaptureStartedUtc)
+        } catch { $report.crashEvidenceError = $_.Exception.ToString() }
     }
     if ('NativeSmoke' -as [type]) {
         foreach ($processId in [NativeSmoke]::LastProcessIds) {

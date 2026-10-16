@@ -1,0 +1,97 @@
+--- a/src/bypass.cpp
++++ b/src/bypass.cpp
+@@ -1,3 +1,9 @@
++static void TraceBootstrapStep(const char* phase) {
++    const DWORD savedError = GetLastError();
++    DebugMessage("BUNS_RUNTIME bootstrap stage=%s\n", phase);
++    SetLastError(savedError);
++}
++
+ void CWvsApp::SetUp_hook() {
+     DEBUG_MESSAGE("CWvsApp::SetUp");
+     // CWvsApp::InitializeAuth(this);
+@@ -7,13 +13,19 @@
+     reinterpret_cast<void(__cdecl*)()>(0x0044E824)();
+ 
+     // CWvsApp::InitializePCOM(this);
++    TraceBootstrapStep("pcom-enter");
+     reinterpret_cast<void(__thiscall*)(CWvsApp*)>(0x009F6D77)(this);
++    TraceBootstrapStep("pcom-return");
+     // CWvsApp::CreateMainWindow(this);
++    TraceBootstrapStep("main-window-enter");
+     reinterpret_cast<void(__thiscall*)(CWvsApp*)>(0x009F6D97)(this);
++    TraceBootstrapStep("main-window-return");
+     // TSingleton<CClientSocket::CreateInstance();
+     reinterpret_cast<void(__cdecl*)()>(0x009F9E53)();
+     // CWvsApp::ConnectLogin(this);
++    TraceBootstrapStep("connect-login-enter");
+     reinterpret_cast<void(__thiscall*)(CWvsApp*)>(0x009F6F27)(this);
++    TraceBootstrapStep("connect-login-return");
+     // TSingleton<CFuncKeyMappedMan>::CreateInstance();
+     reinterpret_cast<void(__cdecl*)()>(0x009F9E98)();
+     // TSingleton<CQuickslotKeyMappedMan>::CreateInstance();
+@@ -21,10 +33,14 @@
+     // TSingleton<CMacroSysMan>::CreateInstance();
+     reinterpret_cast<void(__cdecl*)()>(0x009F9EEE)();
+     // CWvsApp::InitializeResMan(this);
++    TraceBootstrapStep("resman-enter");
+     reinterpret_cast<void(__thiscall*)(CWvsApp*)>(0x009F7159)(this);
++    TraceBootstrapStep("resman-return");
+ 
+     // CWvsApp::InitializeGr2D(this);
++    TraceBootstrapStep("gr2d-enter");
+     reinterpret_cast<void(__thiscall*)(CWvsApp*)>(0x009F7A3B)(this);
++    TraceBootstrapStep("gr2d-return");
+     // TSingleton<CInputSystem>::CreateInstance();
+     auto pInputSystem = static_cast<CInputSystem*>(ZAllocEx<ZAllocAnonSelector>::s_Alloc(0x9D0));
+     if (pInputSystem) {
+@@ -36,20 +52,28 @@
+     // CWvsApp::InitializeSound(this);
+     reinterpret_cast<void(__thiscall*)(CWvsApp*)>(0x009F82BC)(this);
+     // CWvsApp::InitializeGameData(this);
++    TraceBootstrapStep("game-data-enter");
+     reinterpret_cast<void(__thiscall*)(CWvsApp*)>(0x009F8B61)(this);
++    TraceBootstrapStep("game-data-return");
+     // CWvsApp::CreateWndManager(this);
++    TraceBootstrapStep("wnd-manager-enter");
+     reinterpret_cast<void(__thiscall*)(CWvsApp*)>(0x009F7034)(this);
++    TraceBootstrapStep("wnd-manager-return");
+     // CConfig::ApplySysOpt(TSingleton<CConfig>::ms_pInstance, nullptr, nullptr);
+     reinterpret_cast<void(__thiscall*)(CConfig*, void*, void*)>(0x0049EA33)(CConfig::GetInstance(), nullptr, nullptr);
+ 
+     // TSingleton<CActionMan>::CreateInstance()->Init();
+     auto pActionMan = reinterpret_cast<void*(__cdecl*)()>(0x009F9DA6)();
++    TraceBootstrapStep("action-manager-enter");
+     reinterpret_cast<void(__thiscall*)(void*)>(0x00406ABD)(pActionMan);
++    TraceBootstrapStep("action-manager-return");
+     // TSingleton<CAnimationDisplayer>::CreateInstance();
+     reinterpret_cast<void*(__cdecl*)()>(0x009F9DFC)();
+     // TSingleton<CMapleTVMan>::CreateInstance()->Init()
+     auto pMapleTVMan = reinterpret_cast<void*(__cdecl*)()>(0x009F9F87)();
++    TraceBootstrapStep("maple-tv-enter");
+     reinterpret_cast<void(__thiscall*)(void*)>(0x00636F4E)(pMapleTVMan);
++    TraceBootstrapStep("maple-tv-return");
+     // TSingleton<CQuestMan>::CreateInstance()->LoadDemand();
+     auto pQuestMan = reinterpret_cast<void*(__cdecl*)()>(0x009F9AC2)();
+     if (!reinterpret_cast<int(__thiscall*)(void*)>(0x0071D8DF)(pQuestMan)) {
+@@ -65,14 +89,20 @@
+         ErrorMessage("Failed to load monster book data.");
+     }
+     // TSingleton<CRadioManager>::CreateInstance();
++    TraceBootstrapStep("radio-enter");
+     reinterpret_cast<void*(__cdecl*)()>(0x009FA078)();
++    TraceBootstrapStep("radio-return");
+ 
+     // (CLogo*) operator new(0x38); -> (CLogin*) operator new(0x28C);
+     CStage* pStage = static_cast<CStage*>(ZAllocEx<ZAllocAnonSelector>::s_Alloc(0x28C));
+     if (pStage) {
+         // CLogo::CLogo(pStage); -> CLogin::Clogin(pStage);
++        TraceBootstrapStep("login-constructor-enter");
+         reinterpret_cast<void(__thiscall*)(void*)>(0x005F3C59)(pStage);
++        TraceBootstrapStep("login-constructor-return");
+     }
+     // set_stage(pStage, nullptr);
++    TraceBootstrapStep("login-stage-enter");
+     reinterpret_cast<void(__cdecl*)(CStage*, void*)>(0x00777347)(pStage, nullptr);
++    TraceBootstrapStep("login-stage-return");
+ }

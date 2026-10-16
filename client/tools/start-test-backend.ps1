@@ -12,9 +12,14 @@ New-Item -ItemType Directory -Force $root | Out-Null
 $report = [ordered]@{ status = 'starting'; startedUtc = [DateTime]::UtcNow.ToString('O'); host = '127.0.0.1'; productionTouched = $false }
 function Receive-Pinned([uri]$Url, [string]$Sha, [string]$Path) {
     if ($Url.Scheme -ne 'https') { throw 'QA backend inputs require pinned HTTPS URLs' }
+    $report.currentDownload = [ordered]@{ url = $Url.AbsoluteUri; expectedSha256 = $Sha; startedUtc = [DateTime]::UtcNow.ToString('O'); status = 'downloading' }
     Invoke-WebRequest $Url.AbsoluteUri -OutFile $Path -TimeoutSec 1800
     $actual = (Get-FileHash $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+    $report.currentDownload.actualSha256 = $actual
+    $report.currentDownload.bytes = (Get-Item $Path).Length
     if ($actual -ne $Sha.ToLowerInvariant()) { throw "QA backend artifact mismatch: $Url SHA256=$actual" }
+    $report.currentDownload.status = 'verified'
+    $report.currentDownload.finishedUtc = [DateTime]::UtcNow.ToString('O')
 }
 function Wait-Listening([int]$Port, [Diagnostics.Process]$Process, [int]$Seconds) {
     $deadline = [DateTime]::UtcNow.AddSeconds($Seconds)

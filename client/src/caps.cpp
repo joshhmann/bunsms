@@ -47,6 +47,15 @@ void* ClientSocketInstance() {
     return *reinterpret_cast<void**>(addr::dailycheckin::kClientSocketInstance);
 }
 
+void TracePrerequisite(const char* step) {
+    const DWORD savedError = GetLastError();
+    char event[128];
+    _snprintf_s(event, sizeof(event), _TRUNCATE,
+        "BUNS_RUNTIME caps-prerequisite step=%s\n", step);
+    OutputDebugStringA(event);
+    SetLastError(savedError);
+}
+
 void ResetFeatures() {
     DailyCheckin_Reset();
     CashShopWnd_Reset();
@@ -152,10 +161,18 @@ void CapsPrepareReadiness() {
     // No WZ lookup is repeated per frame while either subsystem is absent.
     if (!get_rm() || !get_gr()) return;
 
+    TracePrerequisite("checkin-enter");
     const bool checkin = DailyCheckin_ResourcesReady();
+    TracePrerequisite("checkin-return");
+    TracePrerequisite("cash-enter");
     const bool cash = CashShopWnd_ResourcesReady();
+    TracePrerequisite("cash-return");
+    TracePrerequisite("prism-enter");
     const bool prism = ColorPrism_ResourcesReady();
+    TracePrerequisite("prism-return");
+    TracePrerequisite("lamps-enter");
     const bool lamps = Lamps_ResourcesReady();
+    TracePrerequisite("lamps-return");
     int mask = caps::kLongDamageLines; // Validated patch sites and both attack codecs attached.
     if (checkin) mask |= caps::kCheckinWindow;
     if (cash) mask |= caps::kCashshopWindow;

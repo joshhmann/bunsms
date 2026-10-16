@@ -64,6 +64,19 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Parse real Windows smoke scripts before native execution
+        shell: pwsh
+        run: |
+          foreach ($script in Get-ChildItem client/tools -Filter '*.ps1') {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($script.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors.Count) {
+              $errors | ForEach-Object { Write-Error "$($script.Name):$($_.Extent.StartLineNumber): $($_.Message)" }
+              throw 'Windows smoke script syntax is invalid'
+            }
+          }
+
       - name: Configure (release-win32)
         run: cmake --preset release-win32
         working-directory: client
@@ -228,6 +241,11 @@ jobs:
             native-smoke-output/*.json
             native-smoke-output/*.png
             native-smoke-output/*.log
+            native-smoke-output/crash-receipts/receipt.json
+            native-smoke-output/published-control/*.json
+            native-smoke-output/published-control/*.png
+            native-smoke-output/published-control/*.log
+            native-smoke-output/published-control/crash-receipts/receipt.json
             native-backend-output/*.json
             native-backend-output/*.log
           if-no-files-found: warn
