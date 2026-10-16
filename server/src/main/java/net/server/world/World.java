@@ -2176,7 +2176,13 @@ public class World {
     }
 
     public void addUnclaimed(server.expeditions.ExpeditionBossLog.BossLogEntry boss, int cid) {
-        unclaimedRewards.compute(cid, (k, chrUnclaimed) -> chrUnclaimed);
+        unclaimedRewards.compute(cid, (k, chrUnclaimed) -> {
+            if (chrUnclaimed == null) {
+                chrUnclaimed = new java.util.HashMap<>();
+            }
+            chrUnclaimed.put(boss, (short) (chrUnclaimed.getOrDefault(boss, (short) 0) + 1));
+            return chrUnclaimed;
+        });
     }
 
     public void removeUnclaimed(server.expeditions.ExpeditionBossLog.BossLogEntry boss, int cid) {
@@ -2184,7 +2190,14 @@ public class World {
         if (chrUnclaimed != null) {
             Short unclaimedAmount = chrUnclaimed.get(boss);
             if (unclaimedAmount != null) {
-                chrUnclaimed.put(boss, unclaimedAmount);
+                if (unclaimedAmount <= 1) {
+                    chrUnclaimed.remove(boss);
+                } else {
+                    chrUnclaimed.put(boss, (short) (unclaimedAmount - 1));
+                }
+            }
+            if (chrUnclaimed.isEmpty()) {
+                unclaimedRewards.remove(cid);
             }
         }
     }
