@@ -31,6 +31,26 @@ on:
         description: "HTTPS base URL containing the provenance-pinned native files"
         type: string
         default: ""
+      test_backend:
+        description: "Start the pinned real Java/MySQL/XML QA backend on this same Windows runner; never connects to production DB"
+        type: boolean
+        default: false
+      backend_bundle_url:
+        description: "Frozen QA server archive HTTPS URL"
+        type: string
+        default: "https://buns.asslorde.com/client/candidates/full-content-bootstrap-20261016-0422/buns-full-content-bootstrap-20261016-0422.tar.gz"
+      backend_bundle_sha256:
+        description: "Exact frozen QA server archive SHA256"
+        type: string
+        default: "ad147eb04df49ffe0f35eddc3356ae6e2b3b64fb83013b7b84baaccc3dd2ea7b"
+      backend_xml_url:
+        description: "Matching complete server XML archive HTTPS URL"
+        type: string
+        default: "https://buns.asslorde.com/client/candidates/full-content-bootstrap-20261016-0422/buns-full-content-bootstrap-xml-20261016-0422.tar.gz"
+      backend_xml_sha256:
+        description: "Exact matching complete server XML SHA256"
+        type: string
+        default: "bd2ecfadc185d75cd33c32a0652c5ff89216d647a8542a068a4770735c6d9178"
 
 jobs:
   build-windows:
@@ -96,7 +116,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.native_smoke
     needs: build-windows
     runs-on: windows-2022
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -111,13 +131,33 @@ jobs:
         with:
           name: MSVC-x86-runtime
           path: native-crt
+      - uses: actions/setup-java@v4
+        if: inputs.test_backend
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Start matching isolated real QA backend
+        if: inputs.test_backend
+        shell: pwsh
+        env:
+          BACKEND_BUNDLE_URL: ${{ inputs.backend_bundle_url }}
+          BACKEND_BUNDLE_SHA256: ${{ inputs.backend_bundle_sha256 }}
+          BACKEND_XML_URL: ${{ inputs.backend_xml_url }}
+          BACKEND_XML_SHA256: ${{ inputs.backend_xml_sha256 }}
+        run: |
+          ./client/tools/start-test-backend.ps1 `
+            -BundleUrl $env:BACKEND_BUNDLE_URL -BundleSha256 $env:BACKEND_BUNDLE_SHA256 `
+            -XmlUrl $env:BACKEND_XML_URL -XmlSha256 $env:BACKEND_XML_SHA256 `
+            -MySqlSha256 a1bc2ad567eef672be20b591ad25b14f221e60bde3ae3eb235128d91e4166557
       - name: Capture actual native Windows startup
         shell: pwsh
         env:
           NATIVE_BASELINE_URL: ${{ inputs.native_baseline_url }}
           NATIVE_BASELINE_SHA256: ${{ inputs.native_baseline_sha256 }}
           NATIVE_BASELINE_FILES_URL: ${{ inputs.native_baseline_files_url }}
+          NATIVE_TEST_BACKEND: ${{ inputs.test_backend }}
         run: |
+          $gameHost = if ($env:NATIVE_TEST_BACKEND -eq 'true') { '127.0.0.1' } else { 'buns.asslorde.com' }
           ./client/tools/native-smoke.ps1 `
             -BaselineUrl $env:NATIVE_BASELINE_URL `
             -BaselineSha256 $env:NATIVE_BASELINE_SHA256 `
@@ -125,7 +165,19 @@ jobs:
             -KaentakeArtifact native-runtime `
             -CompanionArtifact native-companion `
             -RuntimeArtifact native-crt `
+            -GameHost $gameHost `
             -OutputDirectory native-smoke-output
+      - name: Stop only this job's QA backend
+        if: always() && inputs.test_backend
+        shell: pwsh
+        run: |
+          $path = 'native-backend-output/result.json'
+          if (Test-Path $path) {
+            $backend = Get-Content $path -Raw | ConvertFrom-Json
+            foreach ($id in @($backend.serverPid, $backend.mysqlPid)) {
+              if ($id) { Stop-Process -Id $id -Force -ErrorAction SilentlyContinue }
+            }
+          }
       - name: Publish actual native startup evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -135,4 +187,6 @@ jobs:
             native-smoke-output/*.json
             native-smoke-output/*.png
             native-smoke-output/*.log
+            native-backend-output/*.json
+            native-backend-output/*.log
           if-no-files-found: warn

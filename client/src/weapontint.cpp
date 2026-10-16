@@ -711,7 +711,7 @@ void WeaponTint_ClearPreview(void* avatar) {
 uint64_t WeaponTint_ItemEffRevision(void* avatar) {
     return CapsAccepted(caps::kPrismSync) ? Version(avatar) : 0;
 }
-bool WeaponTint_BeginItemEffSwap(void* avatar, int item) {
+bool WeaponTint_BeginItemEffSwap(void* avatar, int item) noexcept(false) {
     // Nested misuse cannot restore the outer swap early; the owner still must
     // obey its non-reentrant contract. Every Begin consumes one matching End.
     if (itemEffDepth++ != 0) return false;

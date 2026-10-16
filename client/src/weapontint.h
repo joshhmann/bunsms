@@ -25,7 +25,7 @@ void WeaponTint_ClearPreview(void* avatar);
 // Native itemeff.cpp owns its hooks. Always pair, even when Begin returns false.
 // ItemEff is deliberately non-reentrant. Use WeaponTint_ItemEffRevision() as a
 // fourth cache key beside item/action/facing in that owner (see integration).
-extern "C" __declspec(dllexport) bool WeaponTint_BeginItemEffSwap(void* avatar, int itemId);
+extern "C" __declspec(dllexport) bool WeaponTint_BeginItemEffSwap(void* avatar, int itemId) noexcept(false);
 extern "C" __declspec(dllexport) void WeaponTint_EndItemEffSwap();
 extern "C" __declspec(dllexport) uint64_t WeaponTint_ItemEffRevision(void* avatar);
 // Attack owners bracket the whole cast, not just ShowSkillEffect: missile and
