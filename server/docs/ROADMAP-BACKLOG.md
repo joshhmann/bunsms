@@ -103,8 +103,11 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
 
 - [ ] **Ticket 15 — R2 uploads (NX/community pack)** — Owner: unassigned
   Scope: Inventory-then-fit TengaMS 4.9G / Community IMG 6.3G against WZ
-  symlink + manifest + launcher hosting; upload settled NX set to R2;
-  record hashes. Do not schedule content fit until WZ story settled.
+  symlink + manifest + launcher hosting; settled NX set stages to the
+  self-hosted asset dir (ticket 17 replaced R2); record hashes. Do not
+  schedule content fit until WZ story settled. STAYS OPEN until full native
+  requirements + final triple/DLL decisions land (hosting ready, content
+  pending — no 'all tickets complete' claim from cutover).
   Dependencies: Blocked by ticket 2 (NX coverage baseline) + ticket 4 (Evan manifest
   answer); needs WZ symlink gap closed (no `/opt/cosmicms/wz` locally).
 
@@ -118,19 +121,23 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
 - [x] **Ticket 17 — Self-hosted asset serving (R2 replacement)** — Owner: selfhost-assets-spec
   Scope: IMPLEMENTED on branch `selfhost-assets` (2026-10-16, actually
   exercised — not a status claim): single manifest authority (19 files,
-  `?profile=` server-side filter, atomic writes), Range/206/416/HEAD download
-  route + `/client/*` static on .164 (systemd `buns-web.service`,
-  `CLIENT_ASSETS_DIR=/opt/buns/client-assets`), public Caddy rules on .70
-  (`/client/*`, `/api/launcher/manifest|news`, `/api/server` only — admin/ops
+  `?profile=` server-side filter with stock default, atomic staged publish
+  with expected-hash verify + previous-bytes retention, Caddy+middleware
+  POST containment), `/client/*` static on .164 (systemd `buns-web.service`,
+  nested keys + immutable revision paths), public Caddy rules on .70
+  (GET/HEAD-only `/api/launcher/manifest|news`, `/api/server`; admin/ops
   stay LAN-only), all publish flows migrated off R2 (no Fly restart calls;
   game-server restart is owner-manual on LXC), seed 19/19 hash-verified from
   R2 bytes + local Kaentake triple, canonical `BunsMS.exe`/`config.ini`
   object names (bytes preserved). R2 objects NOT deleted (rollback standby).
-  Proven: tsc clean, launcher profiles tests pass, 22-assertion asset smoke,
-  live 200/206/416/HEAD/traversal on real server.py, remote 19/19 sha256.
-  Remaining: dashboard rebuild + manifest-publish cutover on .164 (in
-  progress), then soak + retire. Ticket 15's "upload to R2" scope is
-  superseded by this ticket — NX/community packs stage to the asset dir.
+  Proven: tsc clean, launcher profiles tests pass, 16-assertion staged-cycle
+  proof (wrong-hash reject, atomic promote, rollback), live stock-default 16
+  + kaentake 15, Map.wz full-SHA + tail-206, candidate-3/4 staged unpromoted.
+  Native reachability truth: LAN 192.168.0.164:8484 OPEN; public :8484 CLOSED
+  (Caddy HTTP-only, no TCP proxy) — external friends need LAN/VPN; `/api/server`
+  `running` = in-compose check only (documented in response + `gameHost`/
+  `gamePort` fields for launcher preference). Ticket 15 STAYS OPEN (content
+  pending); no 'all tickets complete' claim from cutover.
 
 ## Dependency graph (summary)
 

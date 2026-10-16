@@ -75,6 +75,13 @@ export async function GET() {
       accounts,
       characters,
       maxLevel,
+      // Measured game host as the dashboard sees it (in-compose TCP check
+      // target). `status` proves in-compose reachability ONLY — not public
+      // reachability. Launchers prefer stored-config, then this field, then
+      // LAN fallback. External friends need LAN/VPN until a measured TCP
+      // forward exists.
+      gameHost: GAME_HOST,
+      gamePort: LOGIN_PORT,
     });
   } catch {
     return NextResponse.json({
