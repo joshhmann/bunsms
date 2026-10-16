@@ -21,6 +21,8 @@ RUN git apply --check /tmp/patches/remote-movement.patch \
     && git apply /tmp/patches/nx-bitmap-decoder.patch \
     && git apply --check /tmp/patches/inventory-equipment.patch \
     && git apply /tmp/patches/inventory-equipment.patch \
+    && git apply --check /tmp/patches/inventory-equipment-slot24.patch \
+    && git apply /tmp/patches/inventory-equipment-slot24.patch \
     && git apply --check /tmp/patches/shop-storage.patch \
     && git apply /tmp/patches/shop-storage.patch \
     && ./scripts/build_wasm.sh --jobs 4
