@@ -35,10 +35,10 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import subprocess
 import tarfile
 import tempfile
 from urllib.parse import urlparse
-from urllib.request import urlopen
 
 root = Path(os.environ["GAME_ROOT"])
 state_root = root / ".selfhost-assets"
@@ -83,13 +83,19 @@ def apply(descriptor, baseline=False):
     with tempfile.TemporaryDirectory(prefix="wz-verified-", dir=root) as temp:
         archive = Path(temp) / "archive.tar.gz"
         h, received = hashlib.sha256(), 0
-        with urlopen(url, timeout=120) as source, archive.open("xb") as output:
-            while block := source.read(1024 * 1024):
+        # Curl transports opaque bytes; verification still precedes any overlay write.
+        with subprocess.Popen(
+                ["curl", "--fail", "--location", "--silent", "--show-error",
+                 "--connect-timeout", "120", "--speed-time", "120", "--speed-limit", "1", url],
+                stdout=subprocess.PIPE) as source, archive.open("xb") as output:
+            while block := source.stdout.read(1024 * 1024):
                 received += len(block)
                 if received > size:
                     raise RuntimeError("WZ tar exceeded pinned size")
                 h.update(block)
                 output.write(block)
+            if source.wait() != 0:
+                raise RuntimeError("WZ tar HTTP download failed")
         if received != size or h.hexdigest() != digest:
             raise RuntimeError("WZ tar hash/size mismatch")
         extracted = Path(temp) / "extract"
@@ -154,8 +160,10 @@ if any(not (root / "wz" / name).exists() for name in required):
     apply({"url": os.environ["WZ_BASELINE_URL"], "hash": os.environ["WZ_BASELINE_HASH"],
            "size": int(os.environ["WZ_BASELINE_SIZE"])}, baseline=True)
 if os.environ.get("WZ_SEED_BASELINE_ONLY") != "1":
-    with urlopen(os.environ.get("WZ_VERSION_URL") or base + "/client/server-wz.version", timeout=30) as source:
-        descriptor = json.load(source)
+    descriptor = json.loads(subprocess.check_output(
+        ["curl", "--fail", "--location", "--silent", "--show-error",
+         "--connect-timeout", "30", "--speed-time", "30", "--speed-limit", "1",
+         os.environ.get("WZ_VERSION_URL") or base + "/client/server-wz.version"]))
     if not isinstance(descriptor.get("releaseId"), str) or not descriptor["releaseId"]:
         raise RuntimeError("Server WZ descriptor has no release identity")
     marker = root / "wz" / ".version"
