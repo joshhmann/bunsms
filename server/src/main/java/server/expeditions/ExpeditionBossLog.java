@@ -20,6 +20,7 @@
 package server.expeditions;
 
 import config.YamlConfig;
+import client.Character;
 import tools.DatabaseConnection;
 import tools.Pair;
 
@@ -31,6 +32,9 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.HOURS;
@@ -101,7 +105,7 @@ public class ExpeditionBossLog {
             return resetTimestamps;
         }
 
-        private static BossLogEntry getBossEntryByName(String name) {
+        public static BossLogEntry getBossEntryByName(String name) {
             for (BossLogEntry b : BossLogEntry.values()) {
                 if (name.contentEquals(b.name())) {
                     return b;
@@ -202,12 +206,13 @@ public class ExpeditionBossLog {
     }
 
     public static boolean attemptBoss(int cid, int channel, Expedition exped, boolean log) {
-        if (!YamlConfig.config.server.USE_ENABLE_DAILY_EXPEDITIONS) {
+        BossLogEntry boss = BossLogEntry.getBossEntryByName(exped.getType().name());
+        if (boss == null) {
             return true;
         }
 
-        BossLogEntry boss = BossLogEntry.getBossEntryByName(exped.getType().name());
-        if (boss == null) {
+        // Preserve the existing stock-boss flag; imported families retain their source quotas.
+        if (!YamlConfig.config.server.USE_ENABLE_DAILY_EXPEDITIONS && boss.index <= 5) {
             return true;
         }
 
@@ -223,5 +228,105 @@ public class ExpeditionBossLog {
             insertPlayerEntry(cid, boss);
         }
         return true;
+    }
+
+    /** Source boss-log summaries; stock quota counting remains unchanged. */
+    public static Map<BossLogEntry, BossLogData> getBossEntries(int cid, boolean showZeros, boolean weekly) {
+        Map<BossLogEntry, BossLogData> result = new LinkedHashMap<>();
+        for (BossLogEntry boss : BossLogEntry.values()) {
+            if (boss.week == weekly) {
+                result.put(boss, new BossLogData());
+            }
+        }
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement query = con.prepareStatement("SELECT bosstype, complete FROM "
+                     + getBossLogTable(weekly) + " WHERE characterid = ?")) {
+            query.setInt(1, cid);
+            try (ResultSet rows = query.executeQuery()) {
+                while (rows.next()) {
+                    BossLogData data = result.get(BossLogEntry.getBossEntryByName(rows.getString("bosstype")));
+                    if (data != null) {
+                        data.updateAttempts(rows.getBoolean("complete"));
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Unable to read expedition attempts for " + cid, ex);
+        }
+        if (!showZeros) {
+            result.entrySet().removeIf(entry -> entry.getValue().getAttempts() == 0);
+        }
+        return result;
+    }
+
+    public static Map<BossLogEntry, BossLogData> getWeeklyBossEntries(int cid, boolean showZeros) {
+        return getBossEntries(cid, showZeros, true);
+    }
+
+    /**
+     * Persist the existing attempt's result and its party leaderboard together.
+     * MapleRoot stores the same party UUID, duration and credited damage in both.
+     */
+    public static void completeExpedition(ExpeditionType type, List<Character> players,
+                                         Map<Integer, AtomicLong> damage, long duration, String partyUuid) {
+        BossLogEntry boss = BossLogEntry.getBossEntryByName(type.name());
+        if (boss == null) {
+            return; // Source HARDLOTUS has no BossLog entry.
+        }
+        String attempts = getBossLogTable(boss.week);
+        try (Connection con = DatabaseConnection.getConnection()) {
+            boolean autoCommit = con.getAutoCommit();
+            con.setAutoCommit(false);
+            try (PreparedStatement find = con.prepareStatement("SELECT id FROM " + attempts
+                         + " WHERE characterid = ? AND bosstype = ? AND complete = 0"
+                         + " ORDER BY attempttime DESC, id DESC LIMIT 1 FOR UPDATE");
+                 PreparedStatement update = con.prepareStatement("UPDATE " + attempts
+                         + " SET complete = 1, duration = ?, damage = ?, party_uuid = ? WHERE id = ?");
+                 PreparedStatement insert = con.prepareStatement("INSERT INTO " + attempts
+                         + " (characterid, bosstype, complete, duration, damage, party_uuid) VALUES (?, ?, 1, ?, ?, ?)");
+                 PreparedStatement board = con.prepareStatement("INSERT INTO " + ExpeditionLeaderboard.table(boss)
+                         + " (characterid, bosstype, duration, damage, party_uuid) VALUES (?, ?, ?, ?, ?)")) {
+                for (Character player : players) {
+                    AtomicLong credited = damage.get(player.getId());
+                    long dealt = credited == null ? 0 : credited.get();
+                    find.setInt(1, player.getId());
+                    find.setString(2, boss.name());
+                    int attemptId;
+                    try (ResultSet row = find.executeQuery()) {
+                        attemptId = row.next() ? row.getInt("id") : 0;
+                    }
+                    if (attemptId != 0) {
+                        update.setLong(1, duration);
+                        update.setLong(2, dealt);
+                        update.setString(3, partyUuid);
+                        update.setInt(4, attemptId);
+                        update.executeUpdate();
+                    } else {
+                        // Disabling daily limits must not disable result/leaderboard recording.
+                        insert.setInt(1, player.getId());
+                        insert.setString(2, boss.name());
+                        insert.setLong(3, duration);
+                        insert.setLong(4, dealt);
+                        insert.setString(5, partyUuid);
+                        insert.executeUpdate();
+                    }
+                    board.setInt(1, player.getId());
+                    board.setString(2, boss.name());
+                    board.setLong(3, duration);
+                    board.setLong(4, dealt);
+                    board.setString(5, partyUuid);
+                    board.addBatch();
+                }
+                board.executeBatch();
+                con.commit();
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(autoCommit);
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Unable to persist expedition result for " + type, ex);
+        }
     }
 }

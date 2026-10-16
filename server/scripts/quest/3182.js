@@ -39,6 +39,7 @@ function start(mode, type, selection) {
 function end(mode, type, selection)  {
     if (mode == -1) {
         qm.dispose();
+        return;
     } else {
         if (mode == 0 && type > 0) {
             qm.dispose();
@@ -58,7 +59,8 @@ function end(mode, type, selection)  {
         qm.sendNext("You weren't kidding... I'm not cold anymore. I'm not in pain either! I can move freely! Ha ha ha ha! Thanks a lot!");
     } else if (status == 2) {
         qm.sendOk("I owe Alcaster big! And you, too.");
-        qm.forceCompleteQuest();
+        const Quest = Java.type('server.quest.Quest');
+        Quest.getInstance(qm.getQuest()).complete(qm.getPlayer(), qm.getNpc());
         qm.dispose();
     }
 }

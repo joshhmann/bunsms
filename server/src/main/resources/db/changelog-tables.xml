@@ -129,4 +129,8 @@
         <sqlFile path="db/tables/031-buyback-credit.sql" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="32" author="mapleroot-expeditions">
+        <sqlFile path="db/tables/032-expedition-leaderboards.sql" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

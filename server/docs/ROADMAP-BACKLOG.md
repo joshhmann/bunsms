@@ -57,7 +57,7 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   Ranked after buyback; same exclusions as ticket 5.
   Dependencies: None (ranked after ticket 7).
 
-- [ ] **Ticket 9 — MapleRoot wave 5: boss-pack expeditions (FULL scope: all accepted families, not Wave 0 alone)** — Owner: unassigned — server-half [partial] (wa0 landed: DKBONUS1/YOSHIJQ events + portals + Castellan path 93fa6fd; REMAINS: full accepted-family event/entry/exit/reward/drop/log/leaderboard paths once WZ-owner dependency closure arrives; later waves pending; MAGNUS/LOTUS ladders dead-until-scripted)
+- [ ] **Ticket 9 — MapleRoot wave 5: boss-pack expeditions (FULL scope: all accepted families, not Wave 0 alone)** — Owner: expedition-content-waves — server-half [partial, NOT runtime accepted] (existing DKBONUS1/YOSHIJQ + genuine Castellan retained; source-backed BossLog/leaderboard persistence and migration 032, Krexel ordinary transport/registrar/event/exit, and three Alcaster/Rulax consumer fixes implemented on the isolated content branch; Maven packaging only, no booted lifecycle proof yet; all remaining accepted-family scripts, guarded drop/card migration 033 and full player progression remain unfinished; unused MAGNUS/LOTUS enum ladders remain unimplemented)
   Scope per ticket: +13 `ExpeditionType` + event scripts + registrar NPCs; map/mob WZ
   checks first, then BossLog/leaderboard, HyperTP handler, Rulax/Alcaster
   bundle, config flags per verdict. Wave-0-only + enum additions do NOT complete
@@ -67,6 +67,13 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   real prerequisite — no placeholder/fake completion. Server R12 acceptance
   exercises the genuine event lifecycle + ordinary player entry route, not
   syntax/enum counts.
+  New-family quotas retain MapleRoot's actual limits while the existing stock-five
+  daily-limit flag remains unchanged. Source origin: `MapleRoot Full Repack.zip`,
+  `Server/scripts/` and `Server/src/main/java/server/expeditions/`; persistence
+  schema comes only from `Database/CLEANDB.sql`, never its accounts/admin data.
+  The staged first-family asset contract is not runtime acceptance. Do not mark
+  this ticket complete before normal GM0 entry, genuine phases/kill callbacks,
+  rewards, stored results after relog and failure cleanup are actually exercised.
   Dependencies: Blocked on map/mob WZ checks (NX coverage); ranked after ticket 8.
 
 - [ ] **Ticket 10 — Cash-shop window** — Owner: unassigned — server-half [x] (landed; WZ merge + client window pending)

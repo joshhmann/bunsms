@@ -38,6 +38,8 @@ import server.StatEffect;
 import server.ThreadManager;
 import server.TimerManager;
 import server.expeditions.Expedition;
+import server.expeditions.ExpeditionBossLog;
+import server.expeditions.ExpeditionType;
 import server.life.LifeFactory;
 import server.life.Monster;
 import server.life.NPC;
@@ -79,6 +81,8 @@ public class EventInstanceManager {
     private final Map<String, Object> objectProps = new HashMap<>();
     private long timeStarted = 0;
     private long eventTime = 0;
+    private final long instanceCreatedAt = System.currentTimeMillis();
+    private String expeditionPartyUuid;
     private Expedition expedition = null;
     private final List<Integer> mapIds = new LinkedList<>();
 
@@ -1134,6 +1138,45 @@ public class EventInstanceManager {
             ex.printStackTrace();
         }
     }
+    /** Claim Tana's party reward once, even when two players confirm together. */
+    public final boolean claimExpeditionRewards() {
+        propertyLock.lock();
+        try {
+            if (!eventCleared || Boolean.parseBoolean(props.getProperty("rewarded"))) {
+                return false;
+            }
+            props.setProperty("rewarded", "true");
+            return true;
+        } finally {
+            propertyLock.unlock();
+        }
+    }
+
+    /**
+     * MapleRoot's typed clear records party timing and actual credited boss damage.
+     * Keep stock no-argument clears unchanged; only typed content opts in.
+     */
+    public final synchronized void completeExpedition(ExpeditionType type) {
+        if (eventCleared) {
+            return;
+        }
+        if (expedition == null || expedition.getType() != type) {
+            throw new IllegalStateException("Expedition type does not match event " + name + ": " + type);
+        }
+        long started = timeStarted == 0 ? instanceCreatedAt : timeStarted;
+        if (expeditionPartyUuid == null) {
+            expeditionPartyUuid = UUID.randomUUID().toString();
+        }
+        ExpeditionBossLog.completeExpedition(type, getPlayers(), dmgDealt,
+                System.currentTimeMillis() - started, expeditionPartyUuid);
+        stopEventTimer();
+        setEventCleared();
+    }
+
+    public final void setEventCleared(ExpeditionType type) {
+        completeExpedition(type);
+    }
+
 
     public final void setEventCleared() {
         eventCleared = true;
