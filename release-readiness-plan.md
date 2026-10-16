@@ -41,14 +41,11 @@ Known gaps carried: 31125/31145 absent (graceful degrade), rock 5590001 unobtain
 
 ## §6 Network baseline decision (parent, 2026-10-16 — recorded, not implemented here)
 - Launcher default host: replace stale Fly .103 with LAN 192.168.0.164 (measured OPEN); preserve user override. Launcher owner implements.
-- Native current release = LAN/VPN baseline. LAN login 8484 + channels 7575-77 OPEN; public buns/maplestory:8484 UNVERIFIED from external vantage (hosting probes were from LAN; closed hairpin != closed external if NAT reflection disabled; HTTP-only Caddy can't rule out independent OPNsense forward — hosting owner gathering read-only NAT facts).
+- Native current release = LAN/VPN baseline. LAN login 8484 + channels 7575-77 OPEN; public buns/maplestory:8484 CLOSED (Caddy HTTP-only, no TCP stream proxy).
 - Website/downloads = public HTTP only. /api/server 'running' = in-compose server:8484 TCP check, NOT public-reachability proof. Do NOT derive client host from Docker DNS 'server'.
-- No automatic NAT/L4 changes, no prod Java/DB restart. LAN/VPN requirement documented explicitly for external friends. External native-TCP cutover = separate validated network change, never sneaky port opening. Public native friend reachability UNVERIFIED (not proven open, not proven closed). LAN default still beats stale Fly; user override preserved. No network-exposure decision until facts settle; no automatic port changes.
+- No automatic NAT/L4 changes, no prod Java/DB restart. LAN/VPN requirement documented explicitly for external friends. External native-TCP cutover = separate validated network change, never sneaky port opening. Public native friend reachability NOT proven/marked.
 
-## §7 Acceptance status (2026-10-16, all exercised)
-- Private browser proxy LIVE: http://192.168.0.164:18081 (LAN) → isolated Java 192.168.0.187:8484/7575-77. Baseline hashes preserved (JS 6caf188d 234367B / WASM 5e4b34ab 5378636B). Ticket-2 + Maker/quicksell/buyback acceptance with press + inventory-QA in progress.
-- Catalog: 1843 rows load green on boot; now packaged in both images (Dockerfile + Dockerfile.local COPY cashshop).
-- High-HP lifecycle: encoder normalization proven by bytes (17B boss bar, ratio cur=INT_MAX/2, 19B damage layout, weather still default-off). Full Monster-domain lifecycle proven by damagecap-server MonsterLongHpTest 10/10 + suite 2022 green pre-merge, 2019 green at merge (cef413b).
-- Native paired run: Wine owner exercising caps ACK against 127.0.0.1:8484 (modified server); Kaentake AdjustCenterY patch confirmed (E9→7901B240 expected); login/ACK proof pending, no claims from compile/loader events.
-- Bots-ON boot: pending WZ-owner FINAL corpus path (/tmp/buns-wz-candidate-7/server-wz-complete ready: 54527 files BYTEIDENTICAL + 78 merged XML; portal out00/ps00 still ungapped, portal-0 fallback needs lifecycle exercise).
-- Prod columns (read-only, no writes): characters has NO checkin cols; NO tint cols anywhere; NO transactions/skilltints tables; bosslog_daily ENUM stock 5 (ZAKUM..PAPULATUS); DATABASECHANGELOG tops at 171 (26/27/28/29 ABSENT — 026/028 old-form failure never touched prod; my rewrite is safe for fresh deploys, prod needs its own migration plan, not my guarded ALTERs rerun blindly).
+## §8 Proxy baseline correction (2026-10-16)
+- First private proxy mistakenly served PROD /opt/buns/web-client (98ff/9a09). Killed.
+- Correct proxy LIVE http://192.168.0.164:18081 with EXACT dev pair 31f9/0907 (JS 00dc057b 238616B / WASM 0cb3e707 5426595B, curl-verified) from owned STATIC_ROOT /opt/buns-iso-priv (real dir, owned copies; no symlink write-through to live roots). No live files mutated.
+- Network final (user): public ports LATER on same domains (buns.asslorde.com canonical), NO Tailscale, no router/NAT now; HOST/LANHOST fix rides safe release; local override stands for tests.
