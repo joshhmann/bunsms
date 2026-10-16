@@ -145,40 +145,6 @@ namespace
         assert(Constants::viewwidth() == 1920 && Constants::viewheight() == 1080);
     }
 
-    void login_button_roundtrip()
-    {
-        // Real devdbg geometry: UILogin BT_LOGIN at (475, 248), legacy
-        // Title/BtLogin art 50x50 with origin (0, 0), UILogin at (0, 0).
-        // True C++ hitbox: x[475, 525] y[248, 298] (contains() inclusive).
-        Constants::set_viewsize(800, 600);
-        const Rectangle<int16_t> hitbox({475, 248}, {525, 298});
-        const Point<int16_t> center(500, 273);
-        assert(hitbox.contains(center));
-        // A dead-center visual click must map back to the box center through
-        // the real input path, at any DPR and any aspect-correct canvas size.
-        // Forward projection mirrors the GL shader: backing = logical * backing / logical.
-        for (auto css : {Point<int16_t>(800, 600), Point<int16_t>(1052, 789), Point<int16_t>(1600, 1200)})
-        {
-            for (int dpr : {1, 2})
-            {
-                const int backing_width = css.x() * dpr;
-                const int backing_height = css.y() * dpr;
-                // Backing-pixel coords of the drawn center, as emsdk reports them.
-                const double x = (center.x() + 0.25) * backing_width / 800.0;
-                const double y = (center.y() + Constants::VIEWYOFFSET + 0.25) * backing_height / 600.0;
-                const auto click = Viewport::input_position(x, y, backing_width, backing_height,
-                    800, 600, Constants::VIEWYOFFSET);
-                assert(click == center);
-                assert(hitbox.contains(click));
-            }
-        }
-        // The devdbg click (501, 237) missed 11px above the box top: guard that
-        // regression direction explicitly (near-miss stays a miss, center hits).
-        assert(!hitbox.contains(Point<int16_t>(501, 237)));
-        Constants::set_viewsize(800, 600);
-    }
-
-
     void supported_map_modes()
     {
         const Point<int16_t> classic(800, 600), medium(1280, 720), wide(1920, 1080);
@@ -285,7 +251,6 @@ namespace
 int main()
 {
     coordinates_and_layouts();
-    login_button_roundtrip();
     camera_bounds();
     supported_map_modes();
     hud_geometry();

@@ -15,8 +15,6 @@ RUN git apply --check /tmp/patches/remote-movement.patch \
     && git apply /tmp/patches/deployed-npc-chat.patch \
     && git apply --check /tmp/patches/browser-modernization.patch \
     && git apply /tmp/patches/browser-modernization.patch \
-    && git apply --check /tmp/patches/press-mapping-fix.patch \
-    && git apply /tmp/patches/press-mapping-fix.patch \
     && git apply --check /tmp/patches/inventory-equipment.patch \
     && git apply /tmp/patches/inventory-equipment.patch \
     && git apply --check /tmp/patches/shop-storage.patch \
