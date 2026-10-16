@@ -4,7 +4,6 @@ add_library(injector SHARED
     system.cpp
     dispatcher.cpp
     tick.cpp
-    inlink.cpp
     screen.cpp
     caps.cpp
     dailycheckin.cpp

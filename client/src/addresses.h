@@ -19,9 +19,9 @@ inline constexpr uintptr_t kImageBase = 0x400000;
 inline constexpr uintptr_t kCOutPacket_Encode4 = 0x004065A6; // shared: COutPacket::Encode4 (XREF)
 inline constexpr uintptr_t kCInPacket_Decode4  = 0x00406629; // shared: CInPacket::Decode4 (XREF)
 
-// --- COM link resolution (owned by inlink.cpp) ------------------------------
-inline constexpr uintptr_t kGetUnknown        = 0x00414ADA; // get_unknown (Kaentake inlink.cpp)
-inline constexpr uintptr_t kVariantGetUnknown = 0x004032B2; // Ztl_variant_t::GetUnknown (Kaentake inlink.cpp)
+// NOTE (Kaentake-primary): get_unknown (0x00414ADA) + Ztl_variant_t::GetUnknown
+// (0x004032B2) are owned SOLELY by Kaentake.dll's inlink. This tree installs
+// NO hooks there — see wvs/util.h (direct engine call) and XREF co-load table.
 
 // --- Engine allocators (owned here; ZALLOCEX in injector.cpp) --------------
 inline constexpr uintptr_t kZAllocAnon      = 0x00BF0B00; // ZAllocAnonSelector (Kaentake constants)

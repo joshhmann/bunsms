@@ -69,14 +69,14 @@ loaded (GetModuleHandle probe); stock-profile loads install ours.
 |---|---|---|---|
 | `CClientSocket::ProcessPacket` 0x004965F1 | none (no hook found in sources) | single dispatcher + routes | BunsMS owns; no conflict |
 | `CWvsApp::CallUpdate` 0x009F84D0 | none (CallUpdate_hook is a plain call from its Run_hook reimpl, NOT a Detour) | single tick Detour | BunsMS owns; no conflict |
-| `get_unknown` 0x00414ADA + `Ztl_variant_t::GetUnknown` 0x004032B2 | Detours both (inlink.cpp:88-89) + raw_Serialize half | link-following half | **DEFER to Kaentake when present** (inlink.cpp probe); ours for stock loads |
+| `get_unknown` 0x00414ADA + `Ztl_variant_t::GetUnknown` 0x004032B2 | Detours both (inlink.cpp:88-89) + raw_Serialize half | NONE — duplicate half REMOVED (util.h calls engine directly) | Kaentake SOLE owner; no stacked Detours possible |
 | `CClientSocket::Connect` 0x00494CA3 | full reimplement Detour | none (announce send is direct SendPacket, no Connect hook) | Kaentake owns; BunsMS sends announce via existing socket, no hook needed |
 | `CLogin::SendCheckPasswordPacket` | Detour (bypass) | none | Kaentake owns; no conflict |
 | `CWvsApp::Run/Constructor/SetUp`, `CWndMan::TranslateMessage` | Detours | none | Kaentake owns; no conflict |
 
-Unverified until a co-loaded process smoke pass: the deferral probe itself
-(GetModuleHandle timing vs load order) + announce-before-login ordering
-against Kaentake's Connect reimplement. Do not ship BunsMS.dll in the
+Unverified until a co-loaded process smoke pass: announce-before-login ordering
+against Kaentake's Connect reimplement + link-sprite resolution via Kaentake's
+hooks under BunsMS-driven loads. Do not ship BunsMS.dll in the
 kaentake profile until that pass.
 
 ## Drift call: prism schema 12 vs 18 columns (locked)

@@ -27,10 +27,11 @@ int get_screen_width();
 int get_screen_height();
 int get_adjust_cy();
 
-// implementation in inlink.cpp
-IUnknownPtr* __cdecl get_unknown_hook(IUnknownPtr* result, Ztl_variant_t& v);
+// Kaentake-primary: direct engine call (0x00414ADA). Kaentake.dll's inlink
+// supplies link-following when co-loaded; this tree installs no hook here.
 inline IUnknownPtr get_unknown(Ztl_variant_t& v) {
     IUnknownPtr pUnk;
-    get_unknown_hook(std::addressof(pUnk), v);
+    reinterpret_cast<IUnknownPtr*(__cdecl*)(IUnknownPtr*, Ztl_variant_t&)>(0x00414ADA)(
+        std::addressof(pUnk), v);
     return pUnk;
 }
