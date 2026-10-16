@@ -28,15 +28,20 @@ static volatile LONG g_initState = 0;
 extern "C" __declspec(dllexport) BOOL __cdecl BunsMS_Initialize(void) {
     // Main-thread-only contract; the Interlocked guards accidental double-call.
     LONG prev = InterlockedCompareExchange(&g_initState, 1, 0);
+    OutputDebugStringA("BUNS_RUNTIME initialize-enter\n");
     if (prev == 1)
-        return TRUE;  // completed init — success without re-attaching
-    if (prev == 2)
+        return TRUE;  // completed init — success without re-attaching (no second marker)
+    if (prev == 2) {
+        OutputDebugStringA("BUNS_RUNTIME initialize-failure\n");
         return FALSE; // failed init — fail closed, do not retry partial hooks
+    }
     if (!AttachSystemHooks()) {
         g_initState = 2;
+        OutputDebugStringA("BUNS_RUNTIME initialize-failure\n");
         return FALSE;
     }
-    return TRUE; // g_initState already 1 (latched above before attach ran)
+    OutputDebugStringA("BUNS_RUNTIME initialize-success\n");
+    return TRUE;
 }
 
 // Paired-release version stamp (spec §5): CLIENT_DLL_VERSION comes from

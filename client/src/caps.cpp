@@ -84,6 +84,14 @@ bool CapsAck_Route(unsigned short opcode, CInPacket* pPacket) {
     // Accept only bits we actually offered (server must AND, but belt-and-
     // braces: never enable a feature whose module is absent).
     g_acceptedMask = acceptedMask & CapsOfferedMask();
+    {
+        char buf[96];
+        _snprintf_s(buf, sizeof(buf), _TRUNCATE,
+                    "BUNS_RUNTIME caps-ack version=%d accepted=0x%X\n",
+                    serverVersion, (unsigned int)g_acceptedMask);
+        buf[sizeof(buf) - 1] = 0;
+        OutputDebugStringA(buf);
+    }
     return true;
 }
 
