@@ -327,8 +327,11 @@ try {
         $published = Get-Content $publishedPath -Raw | ConvertFrom-Json
         $report.publishedRuntimeSource = $published.runtimeSourceCommit
         if (-not $PublishedRuntimeControl) {
+            # Preserve publisher bytes before any child applies the explicit QA host.
+            $publisherConfigPath = Join-Path $OutputDirectory 'private-published-config.ini'
+            Copy-Item (Join-Path $game 'config.ini') $publisherConfigPath
             $controlDirectory = Join-Path $OutputDirectory 'published-control'
-            # Keep the runtime/backend/observer fixed; only the eleven proven archive deltas change.
+            # Keep runtime/backend/observer fixed; cache only hash-different archives.
             $referencePath = Join-Path $OutputDirectory 'reference-provenance.json'
             Invoke-WebRequest $referenceUrl.AbsoluteUri -OutFile $referencePath -TimeoutSec 60
             if ((Get-FileHash $referencePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $referenceSha256) {
@@ -432,6 +435,7 @@ try {
                 $report.fullRuntimeComparison = $true
                 $report.referenceControl = $report.publishedControl
                 $fullControlDirectory = Join-Path $OutputDirectory 'published-full-control'
+                Copy-Item $publisherConfigPath (Join-Path $game 'config.ini') -Force
                 $password = $script:qaPassword
                 & $PSCommandPath -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
                     -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
