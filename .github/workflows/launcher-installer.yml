@@ -22,6 +22,10 @@ on:
         description: 'Immutable testing RC complete-client manifest; never the production patch API'
         type: string
         default: 'https://buns.asslorde.com/client/candidates/full-content-rc1/launcher-manifest.json'
+      full_install_smoke:
+        description: 'Drive installed GUI/native folder picker through actual complete asset download, preflight and OS start; not gameplay acceptance'
+        type: boolean
+        default: false
 
 jobs:
   build-installer:
@@ -62,8 +66,15 @@ jobs:
         working-directory: launcher
         run: npx electron-builder --win --x64
 
-      - name: Exercise actual installed Windows launcher UI
+      - name: Isolate official unpacked Electron UI
+        if: always()
         shell: pwsh
+        run: node launcher/test/windows-ui.test.js "launcher/dist/win-unpacked/BunsMS Testing RC.exe" launcher-ui-evidence/unpacked unpacked
+      - name: Exercise actual installed Windows launcher UI
+        if: always()
+        shell: pwsh
+        env:
+          FULL_GUI_INSTALL: ${{ inputs.full_install_smoke }}
         run: |
           $ErrorActionPreference = 'Stop'
           $started = Get-Date
@@ -86,7 +97,12 @@ jobs:
             $record.exitCode = $process.ExitCode
             $record.exitCodeHex = '{0:X8}' -f ([long]$process.ExitCode -band 0xffffffffL)
             if ($process.ExitCode -ne 0) { throw "RC installer failed: $($process.ExitCode) ($($record.exitCodeHex))" }
-            node launcher/test/windows-ui.test.js "$install/BunsMS Testing RC.exe" $evidence
+            if ($env:FULL_GUI_INSTALL -eq 'true') {
+              $game = Join-Path $env:RUNNER_TEMP 'BunsRcGuiManagedProfile'
+              node launcher/test/windows-ui.test.js "$install/BunsMS Testing RC.exe" $evidence installed $game
+            } else {
+              node launcher/test/windows-ui.test.js "$install/BunsMS Testing RC.exe" $evidence
+            }
             if ($LASTEXITCODE) { throw 'Actual installed Electron UI check failed' }
             $record.status = 'installed-ui-observed'
           } catch {
@@ -100,10 +116,6 @@ jobs:
             $record | ConvertTo-Json -Depth 12 | Set-Content "$evidence/installer-result.json" -Encoding utf8NoBOM
           }
 
-      - name: Isolate official unpacked Electron UI
-        if: always()
-        shell: pwsh
-        run: node launcher/test/windows-ui.test.js "launcher/dist/win-unpacked/BunsMS Testing RC.exe" launcher-ui-evidence/unpacked unpacked
 
       - name: Upload actual installed launcher evidence
         if: always()

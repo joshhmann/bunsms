@@ -10,8 +10,8 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function run() {
   assert.equal(process.platform, "win32", "This smoke must exercise an actual Windows launcher");
-  const [executable, output, uiLayer = "installed"] = process.argv.slice(2);
-  assert.ok(executable && output, "Usage: node windows-ui.test.js <exe> <evidence-dir> [installed|unpacked]");
+  const [executable, output, uiLayer = "installed", gameDirectory = "", expectedHost = "buns.asslorde.com"] = process.argv.slice(2);
+  assert.ok(executable && output, "Usage: node windows-ui.test.js <exe> <evidence-dir> [installed|unpacked] [fresh-game-dir] [expected-host]");
   assert.ok(["installed", "unpacked"].includes(uiLayer), "Unknown launcher UI layer");
   fs.mkdirSync(output, { recursive: true });
   const listener = net.createServer();
@@ -117,7 +117,7 @@ async function run() {
     assert.ok(profile, "Packaged preload bridge is unavailable");
     assert.equal(profile.active, "kaentake", "A fresh RC install must prefer Kaentake");
     const host = await evaluate("window.buns.getServerHost()");
-    assert.equal(host, "buns.asslorde.com", "The canonical default must not silently select a QA/LAN host");
+    assert.equal(host, expectedHost, "The actual stored/default host must match the expected consumer choice");
     const title = await evaluate("document.title");
     Object.assign(report, { profile, host, title });
     report.networkIpc = await evaluate(`Promise.all([
@@ -130,6 +130,91 @@ async function run() {
       catch (error) { return { name, startedUtc, finishedUtc: new Date().toISOString(), durationMs: Date.now() - start, error: String(error) }; }
     }))`);
     report.filePreflight = await evaluate("window.buns.checkUpdates()");
+    if (gameDirectory) {
+      const directory = path.resolve(gameDirectory);
+      fs.mkdirSync(directory, { recursive: true });
+      assert.equal(fs.readdirSync(directory).length, 0, "Full GUI install must start in an empty owned directory");
+      const click = async (id) => {
+        const box = await evaluate(`(() => { const element = document.getElementById(${JSON.stringify(id)}); const box = element.getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 }; })()`);
+        await command("Input.dispatchMouseEvent", { type: "mousePressed", ...box, button: "left", clickCount: 1 });
+        await command("Input.dispatchMouseEvent", { type: "mouseReleased", ...box, button: "left", clickCount: 1 });
+      };
+      const ui = () => evaluate(`({ path: document.getElementById("path-display").title,
+        buttonDisabled: document.getElementById("btn-play").disabled,
+        updateClass: document.getElementById("update-status").className,
+        updateText: document.getElementById("update-text").textContent,
+        events: globalThis.__bunsConsumerEvents })`);
+      const snapshot = async (name) => {
+        const image = await command("Page.captureScreenshot", { format: "png" });
+        fs.writeFileSync(path.join(output, name), Buffer.from(image.data, "base64"));
+      };
+      report.fullInstall = { directory, startedUtc: new Date().toISOString(), status: "not-completed",
+        scope: "Actual installed UI folder picker/download/preflight/OS start only; NOT account/world/addon acceptance" };
+      try {
+        await evaluate(`globalThis.__bunsConsumerEvents = { downloads: {}, downloadEventCount: 0, launches: [] };
+          window.buns.onDownloadProgress(data => { const events = globalThis.__bunsConsumerEvents; events.downloadEventCount++; events.downloads[data.file] = { utc: new Date().toISOString(), ...data }; });
+          window.buns.onLaunchStatus(data => { globalThis.__bunsConsumerEvents.launches.push({ utc: new Date().toISOString(), ...data }); });`);
+        await click("server-host");
+        await command("Input.dispatchKeyEvent", { type: "keyDown", key: "a", code: "KeyA", windowsVirtualKeyCode: 65, modifiers: 2 });
+        await command("Input.dispatchKeyEvent", { type: "keyUp", key: "a", code: "KeyA", windowsVirtualKeyCode: 65, modifiers: 2 });
+        await command("Input.insertText", { text: "127.0.0.1" });
+        await command("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", windowsVirtualKeyCode: 9 });
+        await command("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", windowsVirtualKeyCode: 9 });
+        await click("btn-browse");
+        await new Promise((resolve, reject) => {
+          const picker = spawn("powershell.exe", ["-NoProfile", "-STA", "-ExecutionPolicy", "Bypass", "-File",
+            path.join(__dirname, "windows-folder-picker.ps1"), "-OwnerProcessId", String(child.pid),
+            "-Directory", directory, "-EvidenceDirectory", path.resolve(output, "native-dialog")],
+          { stdio: ["ignore", "pipe", "pipe"] });
+          let log = "";
+          picker.stdout.on("data", data => { log += data; });
+          picker.stderr.on("data", data => { log += data; });
+          picker.on("error", reject);
+          picker.on("close", code => {
+            fs.writeFileSync(path.join(output, "folder-picker.log"), log);
+            code === 0 ? resolve() : reject(new Error(`Actual native folder picker failed: ${code}`));
+          });
+        });
+        const selectionDeadline = Date.now() + 120000;
+        let selected;
+        while (Date.now() < selectionDeadline) {
+          selected = await ui();
+          if (selected.path && path.resolve(selected.path).toLowerCase() === directory.toLowerCase() && !selected.buttonDisabled) break;
+          await delay(250);
+        }
+        report.fullInstall.afterSelection = selected;
+        assert.equal(path.resolve(selected.path || "").toLowerCase(), directory.toLowerCase(), "Native picker did not persist the actual chosen profile directory");
+        assert.equal(await evaluate("window.buns.getServerHost()"), "127.0.0.1", "Explicit QA host entered through UI was not preserved");
+        await snapshot("installed-selected-folder.png");
+        assert.ok(!selected.buttonDisabled, `Chosen fresh folder did not settle into an actionable GUI state: ${JSON.stringify(selected)}`);
+        await click("btn-play");
+        const transferDeadline = Date.now() + 45 * 60 * 1000;
+        let state;
+        while (Date.now() < transferDeadline) {
+          state = await ui();
+          if (state.events.launches.some(event => event.state === "process-started" || event.state === "error")) break;
+          if (!state.buttonDisabled && state.updateClass.split(" ").includes("error")) throw new Error(`Actual GUI transfer/launch failed: ${state.updateText}`);
+          if (child.exitCode !== null) throw new Error(`Installed launcher exited during real transfer: ${child.exitCode}`);
+          await delay(1000);
+        }
+        report.fullInstall.consumerState = state;
+        const started = state?.events.launches.find(event => event.state === "process-started");
+        assert.ok(started && Number.isInteger(started.pid) && started.pid > 0, "Real GUI did not receive an actual OS process-start receipt");
+        assert.ok(state.events.downloadEventCount > 0, "No actual production downloader progress was observed");
+        // This read-only final inspection occurs AFTER the GUI-owned lease/transfer,
+        // never between GUI manifest inspection and its one-use download.
+        report.fullInstall.finalPreflight = await evaluate("window.buns.checkUpdates()");
+        assert.equal(report.fullInstall.finalPreflight.status, "up_to_date", "Actual complete managed files did not pass production preflight");
+        report.fullInstall.osStart = started;
+        report.fullInstall.status = "gui-full-transfer-preflight-os-start-observed";
+      } catch (error) {
+        report.fullInstall.status = "failed";
+        report.fullInstall.error = error.stack;
+        report.fullInstall.errorUi = await ui().catch(error => ({ observationError: String(error) }));
+        await snapshot("installed-operation-failure.png").catch(() => {});
+        throw error;
+      } finally { report.fullInstall.finishedUtc = new Date().toISOString(); }
+    }
     report.renderedAtCapture = await evaluate("document.body.innerText");
     report.screenshotCapturedUtc = new Date().toISOString();
     const screenshot = await command("Page.captureScreenshot", { format: "png" });
@@ -144,6 +229,26 @@ async function run() {
   } finally {
     if (connection) connection.close();
     if (child.exitCode === null) { await delay(1000); if (child.exitCode === null) child.kill(); }
+    if (gameDirectory) {
+      const quote = value => `'${String(value).replaceAll("'", "''")}'`;
+      const cleanup = `$root=${quote(path.resolve(gameDirectory))}; $since=[datetime]${quote(report.startedUtc)};
+        $allowed=@((Join-Path $root 'Kaentake.exe'),(Join-Path $root 'MapleStory.exe'));
+        $rows=@(); foreach($p in Get-CimInstance Win32_Process -Filter "Name='Kaentake.exe' OR Name='MapleStory.exe'" -Property ProcessId,ExecutablePath,CreationDate) {
+          if($p.ExecutablePath -in $allowed -and $p.CreationDate.ToUniversalTime() -ge $since.ToUniversalTime()) {
+            $row=[ordered]@{id=$p.ProcessId;path=$p.ExecutablePath;createdUtc=$p.CreationDate.ToUniversalTime().ToString('O');controlled=$false};
+            try { Stop-Process -Id $p.ProcessId -Force -ErrorAction Stop; $row.controlled=$true } catch { $row.error=$_.Exception.Message };
+            $rows += [pscustomobject]$row
+          }
+        }; ConvertTo-Json -InputObject @($rows) -Depth 5`;
+      await new Promise(resolve => {
+        const cleaner = spawn("powershell.exe", ["-NoProfile", "-Command", cleanup], { stdio: ["ignore", "pipe", "pipe"] });
+        let receipt = "";
+        cleaner.stdout.on("data", data => { receipt += data; });
+        cleaner.stderr.on("data", data => { receipt += data; });
+        cleaner.on("error", error => { report.nativeCleanupError = String(error); resolve(); });
+        cleaner.on("close", code => { report.nativeCleanup = { exitCode: code, receipt, scope: "Only exact owned fresh-directory executables created after this smoke began" }; resolve(); });
+      });
+    }
     report.finishedUtc = new Date().toISOString();
     fs.writeFileSync(path.join(output, "result.json"), JSON.stringify(report, null, 2));
     fs.writeFileSync(path.join(output, "electron.log"), diagnostics);
