@@ -1,3 +1,10 @@
 [submodule "web-client/vendor/maplestory-wasm"]
 	path = web-client/vendor/maplestory-wasm
 	url = https://github.com/themrzmaster/maplestory-wasm.git
+[submodule "client/external/Detours"]
+	path = client/external/Detours
+	url = https://github.com/microsoft/Detours.git
+[submodule "client/external/WzLib"]
+	path = client/external/WzLib
+	url = https://github.com/iw2d/WzLib.git
+	branch = v83_DX8to9

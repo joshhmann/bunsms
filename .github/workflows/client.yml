@@ -1,0 +1,44 @@
+name: Client DLL
+
+# Windows-only build of the BunsMS injector DLL. Linux jobs must NEVER
+# depend on this workflow; client/ is Win32-only by design (all addresses,
+# Detours, WZ COM wrappers). Windows CI is the compile gate for client/.
+
+on:
+  push:
+    paths:
+      - "client/**"
+      - ".github/workflows/client.yml"
+  pull_request:
+    paths:
+      - "client/**"
+      - ".github/workflows/client.yml"
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure (release-win32)
+        run: cmake --preset release-win32
+        working-directory: client
+
+      - name: Build (release-win32)
+        run: cmake --build --preset release-win32
+        working-directory: client
+
+      - name: Opcode drift gate
+        run: python tools/check_opcodes.py
+        working-directory: client
+
+      - name: Publish DLL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BunsMS-dll
+          path: |
+            client/build/Release/*.dll
+            client/build/Release/*.pdb

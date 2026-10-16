@@ -1,5 +1,6 @@
-# Game client files - never push to GitHub
-/client/
+# Game client binaries - never push to GitHub (source tree client/ is tracked)
+/client/*.wz
+/client/*.exe
 *.wz
 *.exe
 *.zip
