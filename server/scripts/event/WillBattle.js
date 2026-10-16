@@ -147,10 +147,7 @@ function monsterKilled(mob, eim, hasKiller) {
     }
     clearPQ(eim);
     eim.showClearEffect();
-    var players = eim.getPlayers();
-    for (var i = 0; i < players.size(); i++) {
-        players.get(i).getClient().getAbstractPlayerInteraction().gainItem(4001126, 500);
-    }
+    eim.giveEventPlayersItem(4001126, 500);
     mob.getMap().killAllMonsters();
 }
 

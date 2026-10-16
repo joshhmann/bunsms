@@ -142,9 +142,9 @@ function monsterKilled(mob, eim, hasKiller) {
     eim.setIntProperty('defeatedBoss', 1);
     clearPQ(eim);
     eim.showClearEffect();
+    eim.giveEventPlayersItem(4001126, 60);
     var players = eim.getPlayers();
     for (var i = 0; i < players.size(); i++) {
-        players.get(i).getClient().getAbstractPlayerInteraction().gainItem(4001126, 60);
         players.get(i).gainExp(884000, true, true, true);
     }
 }

@@ -33,9 +33,8 @@ public final class ExpeditionLeaderboard {
                 + "DATE_FORMAT(MIN(attempttime), '%M %d, %Y') AS attempt_date FROM " + table
                 + " WHERE bosstype = ?" + (characterId == null ? "" : " AND characterid = ?")
                 + " GROUP BY party_uuid ORDER BY duration, party_uuid LIMIT " + (characterId == null ? 10 : 3);
-        String members = "SELECT bl.*, c.name FROM " + table
-                + " bl JOIN characters c ON c.id = bl.characterid WHERE bl.party_uuid = ? AND bl.bosstype = ?"
-                + " ORDER BY bl.damage DESC, bl.characterid";
+        String members = "SELECT * FROM " + table
+                + " WHERE party_uuid = ? AND bosstype = ? ORDER BY damage DESC, characterid";
         try (Connection con = DatabaseConnection.getConnection();
              PreparedStatement top = con.prepareStatement(parties);
              PreparedStatement partyMembers = con.prepareStatement(members)) {
@@ -54,9 +53,12 @@ public final class ExpeditionLeaderboard {
                 partyMembers.setString(2, boss.name());
                 try (ResultSet rows = partyMembers.executeQuery()) {
                     while (rows.next()) {
-                        party.addRecord(new ExpeditionBossLogRecord(rows.getInt("id"), rows.getInt("characterid"),
-                                rows.getString("name"), boss.name(), rows.getTimestamp("attempttime"),
-                                rows.getLong("damage"), rows.getLong("duration"), party.getPartyUuid(), true));
+                        int memberId = rows.getInt("characterid");
+                        String memberName = rows.getString("character_name");
+                        party.addRecord(new ExpeditionBossLogRecord(rows.getInt("id"), memberId,
+                                memberName == null ? "[unavailable character " + memberId + "]" : memberName,
+                                boss.name(), rows.getTimestamp("attempttime"), rows.getLong("damage"),
+                                rows.getLong("duration"), party.getPartyUuid(), true));
                     }
                 }
             }

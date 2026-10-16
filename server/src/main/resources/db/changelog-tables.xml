@@ -133,4 +133,8 @@
         <sqlFile path="db/tables/032-expedition-leaderboards.sql" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="36" author="mapleroot-expeditions">
+        <sqlFile path="db/tables/036-expedition-participant-names.sql" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

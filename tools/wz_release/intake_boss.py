@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import struct
 from pathlib import Path, PurePosixPath
 import xml.etree.ElementTree as ET
 import zipfile
@@ -244,6 +245,8 @@ def intake_published(args: argparse.Namespace) -> dict:
             raise ValueError(f"Unexpected scalar children: {path}")
         if kind == 4 and isinstance(value, int) and not isinstance(value, bool):
             return Node(name, "int", value)
+        if kind == 6 and isinstance(value, (int, float)) and not isinstance(value, bool):
+            return Node(name, "float", struct.pack("<f", value))
         if kind == 8 and isinstance(value, str):
             return Node(name, "string", value)
         if kind == 9 and all(isinstance(value[axis], int) and not isinstance(value[axis], bool) for axis in ("x", "y")):

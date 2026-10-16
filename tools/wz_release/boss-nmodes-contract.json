@@ -1662,15 +1662,6 @@
     },
     {
       "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "target_node": "200/level/222",
-      "source_node": "200/level/222",
-      "source": "boss-nmodes/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms"
-    },
-    {
-      "op": "copy_subtree",
       "target_wz": "Sound.wz",
       "target_image": "Bgm46.img",
       "target_node": "ClockTowerofNightmare",

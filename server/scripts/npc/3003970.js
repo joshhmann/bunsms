@@ -115,6 +115,7 @@ function action(mode, type, selection) {
 }
 
 function showManagement() {
+    cm.registerExpeditionFollowers(cm.getExpedition(exped));
     status = 2;
     cm.sendSimple('Manage your Cygnus expedition:\r\n#L1#View or expel members.#l\r\n'
         + '#L2#Start the fight.#l\r\n#L3#End the expedition.#l');

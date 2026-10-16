@@ -9070,6 +9070,19 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    public boolean clearEventInstance(EventInstanceManager owner) {
+        evtLock.lock();
+        try {
+            if (eventInstance != owner) {
+                return false;
+            }
+            eventInstance = null;
+            return true;
+        } finally {
+            evtLock.unlock();
+        }
+    }
+
     public void setExp(int amount) {
         this.exp.set(amount);
     }

@@ -69,6 +69,7 @@ function action(mode, type, selection) {
                     cm.sendOk("Your expedition is already in progress, for those who remain battling lets pray for those brave souls.");
                     cm.dispose();
                 } else {
+                    cm.registerExpeditionFollowers(expedition);
                     cm.sendSimple(list);
                     status = 2;
                 }

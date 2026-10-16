@@ -24,6 +24,7 @@ package scripting.event;
 import client.Character;
 import client.Skill;
 import client.SkillFactory;
+import client.inventory.manipulator.InventoryManipulator;
 import config.YamlConfig;
 import constants.inventory.ItemConstants;
 import net.server.coordinator.world.EventRecallCoordinator;
@@ -40,6 +41,7 @@ import server.TimerManager;
 import server.expeditions.Expedition;
 import server.expeditions.ExpeditionBossLog;
 import server.expeditions.ExpeditionType;
+import soloMapling.ArtificialPlayer.BotMessagingSystem.CharacterStorage;
 import server.life.LifeFactory;
 import server.life.Monster;
 import server.life.NPC;
@@ -84,6 +86,8 @@ public class EventInstanceManager {
     private final long instanceCreatedAt = System.currentTimeMillis();
     private String expeditionPartyUuid;
     private Expedition expedition = null;
+    // Registration is released at clear, before the remaining live actors leave.
+    private volatile ExpeditionType registeredExpeditionType;
     private final List<Integer> mapIds = new LinkedList<>();
 
     private final Lock readLock;
@@ -246,7 +250,9 @@ public class EventInstanceManager {
     }
 
     public synchronized void registerPlayer(final Character chr, boolean runEntryScript) {
-        if (chr == null || !chr.isLoggedinWorld() || disposed) {
+        if (chr == null || disposed || (!chr.isLoggedinWorld()
+                && !(expedition != null && expedition.getType().allowsFollowerRegistration()
+                    && expedition.contains(chr) && CharacterStorage.isRegisteredBot(chr)))) {
             return;
         }
 
@@ -387,6 +393,7 @@ public class EventInstanceManager {
 
     private void registerExpeditionTeam(Expedition exped, int recruitMap) {
         expedition = exped;
+        registeredExpeditionType = exped.getType();
 
         for (Character chr : exped.getActiveMembers()) {
             if (chr.getMapId() == recruitMap) {
@@ -396,22 +403,42 @@ public class EventInstanceManager {
     }
 
     public void unregisterPlayer(final Character chr) {
+        ExpeditionType type = registeredExpeditionType;
+        boolean ownedExpedition = type != null && type.allowsFollowerRegistration();
+        boolean disposeEmptyExpedition = false;
+        if (ownedExpedition) {
+            writeLock.lock();
+            try {
+                if (chars.get(chr.getId()) != chr || !chr.clearEventInstance(this)) {
+                    return;
+                }
+                chars.remove(chr.getId());
+                disposeEmptyExpedition = chars.isEmpty();
+            } finally {
+                writeLock.unlock();
+            }
+        }
         try {
             invokeScriptFunction("playerUnregistered", EventInstanceManager.this, chr);
         } catch (ScriptException | NoSuchMethodException ex) {
             log.error("Event script {} does not implement the playerUnregistered function", em.getName(), ex);
         }
 
-        writeLock.lock();
-        try {
-            chars.remove(chr.getId());
-            chr.setEventInstance(null);
-        } finally {
-            writeLock.unlock();
+        if (!ownedExpedition) {
+            writeLock.lock();
+            try {
+                chars.remove(chr.getId());
+                chr.setEventInstance(null);
+            } finally {
+                writeLock.unlock();
+            }
         }
 
         gridRemove(chr);
         dropExclusiveItems(chr);
+        if (disposeEmptyExpedition) {
+            dispose();
+        }
     }
 
     public int getPlayerCount() {
@@ -421,6 +448,12 @@ public class EventInstanceManager {
         } finally {
             readLock.unlock();
         }
+    }
+
+    public boolean isFollowerExpeditionParticipant(Character participant) {
+        ExpeditionType type = registeredExpeditionType;
+        return type != null && type.allowsFollowerRegistration()
+                && getPlayerById(participant.getId()) == participant;
     }
 
     public Character getPlayerById(int id) {
@@ -650,7 +683,7 @@ public class EventInstanceManager {
         readLock.lock();
         try {
             for (Character chr : chars.values()) {
-                chr.setEventInstance(null);
+                chr.clearEventInstance(this);
             }
         } finally {
             readLock.unlock();
@@ -676,7 +709,7 @@ public class EventInstanceManager {
         writeLock.lock();
         try {
             for (Character chr : chars.values()) {
-                chr.setEventInstance(null);
+                chr.clearEventInstance(this);
             }
             chars.clear();
             mobs.clear();
@@ -1063,6 +1096,20 @@ public class EventInstanceManager {
         }
 
         return true;
+    }
+
+    public final boolean giveEventPlayersItem(int itemId, short quantity) {
+        boolean allGranted = true;
+        for (Character player : getPlayers()) {
+            if (InventoryManipulator.addByIdForCharacter(player, itemId, quantity)) {
+                player.sendPacket(tools.PacketCreator.getShowItemGain(itemId, quantity, true));
+            } else {
+                player.dropMessage(1, "Your inventory is full. Please remove an item from your "
+                        + ItemConstants.getInventoryType(itemId).name() + " inventory.");
+                allGranted = false;
+            }
+        }
+        return allGranted;
     }
 
     public final boolean giveEventReward(Character player) {

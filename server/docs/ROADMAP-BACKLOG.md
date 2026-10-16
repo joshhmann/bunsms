@@ -94,7 +94,7 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   window (injector or browser UI per decision). Server half standalone.
   Dependencies: actual paired native negotiation/catalog/window acceptance; no parked browser baseline gate.
 
-- [ ] **Ticket 11 — Coloring prism** — server remote-owner delivery, zero-count clear and legacy-owner relog exercised through real public packets; paired native compiled; actual native tint/observer/relog acceptance pending
+- [ ] **Ticket 11 — Coloring prism** — server remote-owner delivery, zero-count clear and legacy-owner disconnect/save/reload exercised through real production handlers and raw outbound fixture capture (not v83 AES/account login/native wire); paired native compiled; actual native tint/observer/relog acceptance pending
   Scope: DB xml (12 cols) → server → opcodes `0x372E`/`0x372F` + item
   5782000 → `weapontint.cpp` hooks (`CAvatar::PrepareActionLayer 0x00453AD1`);
   merge (don't stack) with ImGui color-picker work. Registry reserved `f868346`.

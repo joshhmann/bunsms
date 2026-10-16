@@ -2380,24 +2380,6 @@
     },
     {
       "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-magnus/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "112/level/11",
-      "target_node": "112/level/11"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-magnus/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "126/level/18",
-      "target_node": "126/level/18"
-    },
-    {
-      "op": "copy_subtree",
       "target_wz": "Sound.wz",
       "target_image": "Bgm28.img",
       "source": "boss-magnus/raw/Sound.wz/Bgm28.img",

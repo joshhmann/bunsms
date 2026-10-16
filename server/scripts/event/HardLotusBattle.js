@@ -130,10 +130,7 @@ function monsterKilled(mob, eim, hasKiller) {
     eim.setIntProperty('defeatedBoss', 1);
     clearPQ(eim);
     eim.showClearEffect();
-    var players = eim.getPlayers();
-    for (var i = 0; i < players.size(); i++) {
-        players.get(i).getClient().getAbstractPlayerInteraction().gainItem(4001126, 500);
-    }
+    eim.giveEventPlayersItem(4001126, 500);
 }
 
 function allMonstersDead(eim) {}

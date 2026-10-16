@@ -1,7 +1,28 @@
 {
   "schema_version": 1,
-  "scope": "Genuine missing source Java phase/meteor actor closure, no stat overrides",
+  "scope": "Genuine missing source Java phase/meteor/summon actor closure, no stat overrides",
   "issues": [],
+  "published_dependencies": {
+    "mob8610015": {
+      "name": "Ifrit",
+      "consumer": "MobSkill.img/200/level/224/0 STRING8610015, declared by real caster8610011 and8850006",
+      "genuine_source": "https://maplestory.io/api/wz/GMS/195/Mob/8610015.img",
+      "snapshot_manifest_sha256": "aeb31bb80ecb40ab3cfbcac82f423d230ee73fb75359cfe7b3bbb299cc6e7184",
+      "snapshot_records": 348,
+      "lossless_png_frames": 52,
+      "raw_mob_img_sha256": "927a1de40d19e008980795ba7044ab2e23407ce3a9dfff22ed198a7e93e58575",
+      "raw_prefix": "published-ifrit/raw/",
+      "same_actor_link_materialization": {
+        "attack1/0": "stand/0",
+        "hit1/0": "die1/2"
+      },
+      "sound_source": "Existing preserved MapleRoot boss-core/raw/Sound.wz/Mob.img/8610015 Attack1,Damage,Die",
+      "sound_raw_img_sha256": "2b3d6084aa9247d56e4610d66b2a68c4b0333c2791d1fcc5fd306c2eb945a5de",
+      "sound_actor_semantic_sha256": "43b800c4546e97bd2aeab2549a962f0ed76698c6bbb6804ba598908c5831a57b",
+      "metadata_policy": "All genuine authored info/stats/frames and ordered non-link metadata retained; published float6 fs10 is native float payload00002041. No remap, fake art, rebalance or whole shared image import.",
+      "acceptance": "Donor materialized; full native/XML, actual server summon/combat and native visibility remain pending. Not a startup-root claim."
+    }
+  },
   "assets": [
     {
       "target_wz": "Mob.wz",
@@ -413,6 +434,1115 @@
     {
       "op": "import_image",
       "target_wz": "Mob.wz",
+      "target_image": "8610015.img",
+      "source": "published-ifrit/raw/Mob.wz/8610015.img",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "String.wz",
+      "target_image": "Mob.img",
+      "target_node": "8610015",
+      "source": "published-ifrit/raw/String.wz/Mob.img",
+      "source_node": "8610015",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Sound.wz",
+      "target_image": "Mob.img",
+      "target_node": "8610015",
+      "source": "boss-core/raw/Sound.wz/Mob.img",
+      "source_node": "8610015",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8610015.img",
+      "target_node": "attack1/0",
+      "source": "published-ifrit/raw/Mob.wz/8610015.img",
+      "source_node": "stand/0",
+      "source_key": "gms",
+      "pixels_only": true,
+      "expected_link": "stand/0"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8610015.img",
+      "target_node": "hit1/0",
+      "source": "published-ifrit/raw/Mob.wz/8610015.img",
+      "source_node": "die1/2",
+      "source_key": "gms",
+      "pixels_only": true,
+      "expected_link": "die1/2"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "110/level/10",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "110/level/10",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "110/level/11",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "110/level/11",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "110/level/12",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "110/level/12",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "112/level/6",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "112/level/6",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "112/level/7",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "112/level/7",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "112/level/8",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "112/level/8",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "112/level/9",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "112/level/9",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "112/level/10",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "112/level/10",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "112/level/11",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "112/level/11",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "113/level/9",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "113/level/9",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "113/level/10",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "113/level/10",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "113/level/11",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "113/level/11",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/35",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/35",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/36",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/36",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/37",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/37",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/38",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/38",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/39",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/39",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/40",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/40",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/41",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/41",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/42",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/42",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/43",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/43",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/44",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/44",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/45",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/45",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/46",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/46",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/47",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/47",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/48",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/48",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/49",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/49",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/50",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/50",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/51",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/51",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/52",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/52",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/53",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/53",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/54",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/54",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/55",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/55",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/56",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/56",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/57",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/57",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/58",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/58",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/59",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/59",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/60",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/60",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/61",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/61",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/62",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/62",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/63",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/63",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/64",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/64",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "114/level/65",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "114/level/65",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/24",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/24",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/25",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/25",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/26",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/26",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/27",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/27",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/28",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/28",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/29",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/29",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/30",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/30",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/31",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/31",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/32",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/32",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/33",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/33",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/34",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/34",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "123/level/35",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "123/level/35",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "126/level/13",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "126/level/13",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "126/level/14",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "126/level/14",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "126/level/15",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "126/level/15",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "126/level/16",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "126/level/16",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "126/level/17",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "126/level/17",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "126/level/18",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "126/level/18",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "127/level/15",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "127/level/15",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "127/level/16",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "127/level/16",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "127/level/17",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "127/level/17",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "127/level/18",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "127/level/18",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "127/level/19",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "127/level/19",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "127/level/20",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "127/level/20",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "129/level/12",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "129/level/12",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "145/level/6",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "145/level/6",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "145/level/7",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "145/level/7",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/177",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/177",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/178",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/178",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/179",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/179",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/180",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/180",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/181",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/181",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/182",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/182",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/183",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/183",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/184",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/184",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/185",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/185",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/186",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/186",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/187",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/187",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/188",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/188",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/189",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/189",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/190",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/190",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/191",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/191",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/192",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/192",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/193",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/193",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/194",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/194",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/195",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/195",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/196",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/196",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/197",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/197",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/198",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/198",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/199",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/199",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/200",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/200",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/201",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/201",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/202",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/202",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/203",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/203",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/204",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/204",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/205",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/205",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/206",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/206",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/207",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/207",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/208",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/208",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/209",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/209",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/210",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/210",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/211",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/211",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/212",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/212",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/213",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/213",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/214",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/214",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/215",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/215",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/216",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/216",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/217",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/217",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/218",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/218",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/219",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/219",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/220",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/220",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/221",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/221",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/222",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/222",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/223",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/223",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Skill.wz",
+      "target_image": "MobSkill.img",
+      "target_node": "200/level/224",
+      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+      "source_node": "200/level/224",
+      "source_key": "gms"
+    },
+    {
+      "op": "import_image",
+      "target_wz": "Mob.wz",
       "target_image": "8850013.img",
       "source": "boss-mechanics/raw/Mob.wz/8850013.img",
       "source_key": "gms"
@@ -603,6 +1733,60 @@
   "requirements": [
     {
       "wz": "Mob.wz",
+      "image": "8610015.img",
+      "node": "info",
+      "type": "property"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8610015.img",
+      "node": "info/fs",
+      "type": "float"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8610015.img",
+      "node": "stand/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8610015.img",
+      "node": "attack1/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8610015.img",
+      "node": "hit1/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "String.wz",
+      "image": "Mob.img",
+      "node": "8610015/name",
+      "type": "string"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "Mob.img",
+      "node": "8610015/Attack1",
+      "type": "sound"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "Mob.img",
+      "node": "8610015/Damage",
+      "type": "sound"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "Mob.img",
+      "node": "8610015/Die",
+      "type": "sound"
+    },
+    {
+      "wz": "Mob.wz",
       "image": "8850013.img",
       "node": "info",
       "type": "property"
@@ -762,10 +1946,824 @@
       "image": "8889014.img",
       "node": "info",
       "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "110/level/11",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "112/level/7",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "112/level/9",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "112/level/10",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "113/level/9",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "113/level/10",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/35",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/36",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/37",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/38",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/39",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/40",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/41",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/42",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/43",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/44",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/45",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/46",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/47",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/48",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/49",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/50",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/51",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/52",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/53",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/54",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/55",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/56",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/57",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/58",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/59",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/60",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/61",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/62",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/63",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "114/level/64",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/24",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/25",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/26",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/27",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/28",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/29",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/30",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/31",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/32",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/33",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "123/level/34",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "126/level/13",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "126/level/14",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "126/level/15",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "126/level/16",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "126/level/17",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "127/level/15",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "127/level/16",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "127/level/17",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "127/level/18",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "127/level/19",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "145/level/6",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/177",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/178",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/179",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/180",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/181",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/182",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/183",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/184",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/185",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/186",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/187",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/188",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/189",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/190",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/191",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/192",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/193",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/194",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/195",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/196",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/197",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/198",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/199",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/200",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/201",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/202",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/203",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/204",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/205",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/206",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/207",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/208",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/209",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/210",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/211",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/212",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/214",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/215",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/216",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/217",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/218",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/219",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/220",
+      "type": "property"
+    },
+    {
+      "wz": "Skill.wz",
+      "image": "MobSkill.img",
+      "node": "200/level/223",
+      "type": "property"
     }
   ],
   "source_java": {
     "member": "MapleRoot Full Repack/Server/src/main/java/server/maps/MapleMap.java",
     "sha256": "e52f031665594b9c495f2b6df6594c79e79cc34a514b1e7fb208f4ed69692825"
+  },
+  "native_skill_prefix_dependencies": {
+    "policy": "Preserve every original stock level and all16 accepted source levels. Native38974227378 demonstrates unchanged1128 requires genuine6/7 context, not native internal iteration. Shared ordered118-level import replaces exactly16 sparse producer ops in the four family contracts, adding only102 genuine prefix prerequisites. No fake fillers, wholesale level-root replacement, renumbering, writer patch or release cut.",
+    "source": "boss-mid/raw/Skill.wz/MobSkill.img",
+    "source_sha256": "eeb048f3d36e6e46371dc4d341d3e8c927e13cdb05bca93b83eac2dc5ae6fb20",
+    "provided_family_raw_hashes_identical": true,
+    "actual_causal_run": 38974227378,
+    "native_internal_iteration_proven": false,
+    "prefixes": {
+      "110": {
+        "originalLevelCount": 9,
+        "originalMaxLevel": 9,
+        "requiredMaxLevel": 12,
+        "genuineSourceLevelsToAdd": [
+          11
+        ]
+      },
+      "112": {
+        "originalLevelCount": 5,
+        "originalMaxLevel": 5,
+        "requiredMaxLevel": 11,
+        "genuineSourceLevelsToAdd": [
+          7,
+          9,
+          10
+        ]
+      },
+      "113": {
+        "originalLevelCount": 8,
+        "originalMaxLevel": 8,
+        "requiredMaxLevel": 11,
+        "genuineSourceLevelsToAdd": [
+          9,
+          10
+        ]
+      },
+      "114": {
+        "originalLevelCount": 34,
+        "originalMaxLevel": 34,
+        "requiredMaxLevel": 65,
+        "genuineSourceLevelsToAdd": [
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64
+        ]
+      },
+      "123": {
+        "originalLevelCount": 23,
+        "originalMaxLevel": 23,
+        "requiredMaxLevel": 35,
+        "genuineSourceLevelsToAdd": [
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34
+        ]
+      },
+      "126": {
+        "originalLevelCount": 12,
+        "originalMaxLevel": 12,
+        "requiredMaxLevel": 18,
+        "genuineSourceLevelsToAdd": [
+          13,
+          14,
+          15,
+          16,
+          17
+        ]
+      },
+      "127": {
+        "originalLevelCount": 14,
+        "originalMaxLevel": 14,
+        "requiredMaxLevel": 20,
+        "genuineSourceLevelsToAdd": [
+          15,
+          16,
+          17,
+          18,
+          19
+        ]
+      },
+      "129": {
+        "originalLevelCount": 11,
+        "originalMaxLevel": 11,
+        "requiredMaxLevel": 12,
+        "genuineSourceLevelsToAdd": []
+      },
+      "145": {
+        "originalLevelCount": 5,
+        "originalMaxLevel": 5,
+        "requiredMaxLevel": 7,
+        "genuineSourceLevelsToAdd": [
+          6
+        ]
+      },
+      "200": {
+        "originalLevelCount": 176,
+        "originalMaxLevel": 176,
+        "requiredMaxLevel": 224,
+        "genuineSourceLevelsToAdd": [
+          177,
+          178,
+          179,
+          180,
+          181,
+          182,
+          183,
+          184,
+          185,
+          186,
+          187,
+          188,
+          189,
+          190,
+          191,
+          192,
+          193,
+          194,
+          195,
+          196,
+          197,
+          198,
+          199,
+          200,
+          201,
+          202,
+          203,
+          204,
+          205,
+          206,
+          207,
+          208,
+          209,
+          210,
+          211,
+          212,
+          214,
+          215,
+          216,
+          217,
+          218,
+          219,
+          220,
+          223
+        ]
+      }
+    },
+    "original_accepted_level_nodes": [
+      "110/level/10",
+      "110/level/12",
+      "112/level/6",
+      "112/level/8",
+      "112/level/11",
+      "113/level/11",
+      "114/level/65",
+      "123/level/35",
+      "126/level/18",
+      "127/level/20",
+      "129/level/12",
+      "145/level/7",
+      "200/level/213",
+      "200/level/221",
+      "200/level/222",
+      "200/level/224"
+    ],
+    "new_genuine_prefix_nodes": 102,
+    "ordered_new_level_nodes": 118,
+    "native_full_engine_and_visual_acceptance": "PENDING_NEW_EXACT_COHORT"
   }
 }

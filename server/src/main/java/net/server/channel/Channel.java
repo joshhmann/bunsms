@@ -430,12 +430,14 @@ public final class Channel {
 
     public void removeExpedition(Expedition exped) {
         synchronized (expeditions) {
-            expeditions.remove(exped.getType());
+            expeditions.remove(exped.getType(), exped);
         }
     }
 
     public Expedition getExpedition(ExpeditionType type) {
-        return expeditions.get(type);
+        synchronized (expeditions) {
+            return expeditions.get(type);
+        }
     }
 
     public List<Expedition> getExpeditions() {

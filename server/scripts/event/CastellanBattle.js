@@ -226,9 +226,7 @@ function monsterKilled(mob, eim) {
     if (isCastellan(mob)) {
         eim.showClearEffect();
         eim.clearPQ();
-        party = eim.getPlayers()
-        for (var i = 0; i < party.size(); i++)
-        eim.getPlayers().get(i).getClient().getAbstractPlayerInteraction().gainItem(4001126, 20);
+        eim.giveEventPlayersItem(4001126, 20);
     }
 }
 

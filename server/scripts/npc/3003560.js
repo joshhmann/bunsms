@@ -23,7 +23,7 @@ var status = 0;
 var members;
 
 function start() {
-    if (!cm.isQuestCompleted(31162)) {
+    if (!exped.meetsQuestRequirements(cm.getPlayer())) {
         cm.sendOk('You must complete #q31162# before challenging Normal Will.');
         cm.dispose();
         return;
@@ -120,6 +120,7 @@ function action(mode, type, selection) {
 }
 
 function showManagement() {
+    cm.registerExpeditionFollowers(cm.getExpedition(exped));
     status = 2;
     cm.sendSimple('Manage your Normal Will expedition:\r\n#L1#View or expel members.#l\r\n'
         + '#L2#Start the fight.#l\r\n#L3#End the expedition.#l');

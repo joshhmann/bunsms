@@ -21826,96 +21826,6 @@
       "target_node": "04032923"
     },
     {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "127/level/20",
-      "target_node": "127/level/20"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "145/level/7",
-      "target_node": "145/level/7"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "129/level/12",
-      "target_node": "129/level/12"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "200/level/213",
-      "target_node": "200/level/213"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "110/level/12",
-      "target_node": "110/level/12"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "112/level/6",
-      "target_node": "112/level/6"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "200/level/221",
-      "target_node": "200/level/221"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "112/level/8",
-      "target_node": "112/level/8"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "113/level/11",
-      "target_node": "113/level/11"
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "114/level/65",
-      "target_node": "114/level/65"
-    },
-    {
       "op": "import_image",
       "target_wz": "Mob.wz",
       "target_image": "8210006.img",
@@ -26996,15 +26906,6 @@
           }
         ]
       }
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "200/level/224",
-      "target_node": "200/level/224"
     },
     {
       "op": "copy_subtree",
@@ -156759,15 +156660,6 @@
         "name": "reactor",
         "type": "property"
       }
-    },
-    {
-      "op": "copy_subtree",
-      "target_wz": "Skill.wz",
-      "target_image": "MobSkill.img",
-      "source": "boss-mid/raw/Skill.wz/MobSkill.img",
-      "source_key": "gms",
-      "source_node": "123/level/35",
-      "target_node": "123/level/35"
     },
     {
       "op": "copy_subtree",

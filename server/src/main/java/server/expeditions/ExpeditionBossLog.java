@@ -292,7 +292,7 @@ public class ExpeditionBossLog {
                  PreparedStatement insert = con.prepareStatement("INSERT INTO " + attempts
                          + " (characterid, bosstype, complete, duration, damage, party_uuid) VALUES (?, ?, 1, ?, ?, ?)");
                  PreparedStatement board = con.prepareStatement("INSERT INTO " + ExpeditionLeaderboard.table(boss)
-                         + " (characterid, bosstype, duration, damage, party_uuid) VALUES (?, ?, ?, ?, ?)")) {
+                         + " (characterid, bosstype, duration, damage, party_uuid, character_name) VALUES (?, ?, ?, ?, ?, ?)")) {
                 for (Character player : players) {
                     AtomicLong credited = damage.get(player.getId());
                     long dealt = credited == null ? 0 : credited.get();
@@ -322,6 +322,7 @@ public class ExpeditionBossLog {
                     board.setLong(3, duration);
                     board.setLong(4, dealt);
                     board.setString(5, partyUuid);
+                    board.setString(6, player.getName());
                     board.addBatch();
                 }
                 board.executeBatch();
