@@ -249,6 +249,14 @@ const DEFAULT_SERVER_HOST = "192.168.0.164";
 // owns this file after download (manifest ships a prod-default copy), so the
 // recipe is coherent: host here + host:8484 reachable + port-forward only if
 // the operator remaps 8484 elsewhere.
+ipcMain.handle("server:getHostStored", () => {
+  const configPath = path.join(app.getPath("userData"), "config.json");
+  try {
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    if (config.serverHost) return config.serverHost;
+  } catch {}
+  return null;
+});
 ipcMain.handle("server:getHost", () => {
   const configPath = path.join(app.getPath("userData"), "config.json");
   try {
@@ -361,6 +369,10 @@ ipcMain.handle("server:status", async () => {
     return {
       online: data?.status === "running",
       players: data?.players || 0,
+      // gameHost: dashboard-measured game host (optional additive field).
+      // Renderer preference: stored-config → this → LAN fallback.
+      gameHost: typeof data?.gameHost === "string" ? data.gameHost : undefined,
+      gamePort: data?.gamePort || 8484,
     };
   } catch {
     return { online: false, players: 0 };

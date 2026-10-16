@@ -128,9 +128,20 @@ async function findGamePath() {
     $("path-display").textContent = "Not found - click browse to set";
     $("path-display").style.color = "var(--orange)";
   }
-  // Load saved server host into the field
+  // Host resolution: stored-config → API gameHost → field default (LAN).
   try {
-    $("server-host").value = await window.buns.getServerHost();
+    const stored = await window.buns.getServerHostStored();
+    if (stored) {
+      $("server-host").value = stored;
+    } else {
+      try {
+        const st = await window.buns.getStatus();
+        if (st && st.gameHost) $("server-host").value = st.gameHost;
+        else $("server-host").value = await window.buns.getServerHost();
+      } catch {
+        $("server-host").value = await window.buns.getServerHost();
+      }
+    }
   } catch {}
 }
 
