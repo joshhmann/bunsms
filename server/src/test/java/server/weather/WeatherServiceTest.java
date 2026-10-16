@@ -125,8 +125,10 @@ class WeatherServiceTest {
         assertEquals(0, WeatherCombat.scaleDamageToMonster(0));
         assertEquals(-5, WeatherCombat.scaleDamageToMonster(-5));
         assertEquals(0, WeatherCombat.scaleDamageToPlayer(0));
-        assertEquals(100, WeatherCombat.scaleDamageToPlayer(100) == 100
-                || WeatherCombat.scaleDamageToPlayer(100) > 100 ? WeatherCombat.scaleDamageToPlayer(100) : -1);
+        // scaleDamageToPlayer(100) is clock-dependent (100 by day, 110 at night):
+        // assert only the documented pair, never the wall clock.
+        int scaled = WeatherCombat.scaleDamageToPlayer(100);
+        assertTrue(scaled == 100 || scaled == 110, "expected day(100) or night(110), got " + scaled);
     }
 
     @Test

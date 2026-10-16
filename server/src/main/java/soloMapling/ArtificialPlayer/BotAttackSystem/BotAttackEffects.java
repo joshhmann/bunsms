@@ -40,8 +40,20 @@ import java.util.Map;
  */
 public final class BotAttackEffects {
 
-    private BotAttackEffects() {}
-
+    /**
+     * Real magnitude of a bot damage line. Crit lines carry the legacy v83
+     * negative-int encoding widened to long; plain lines pass through.
+     */
+    static long decodeBotLine(Long line) {
+        if (line == null) {
+            return 0L;
+        }
+        long v = line;
+        if (v < 0 && v >= (long) Integer.MIN_VALUE) {
+            return v + Integer.MAX_VALUE;
+        }
+        return Math.abs(v);
+    }
     /*
      * Credits to NutNNut for Packet IDs
      * Land a melee hit on one or more mobs: broadcast the swing carrying each mob's damage
@@ -120,11 +132,14 @@ public final class BotAttackEffects {
         GCMovement.markAlerted(bot); // hold the 5s ALERT pose so the bot's own idle/move broadcasts don't cancel it
         boolean anyKilled = false;
         for (Map.Entry<Monster, List<Long>> hit : hits.entrySet()) {
-            // Ticket #12: lines are long (negative == crit); mob HP is still
-            // int, so the applied sum clamps at the int boundary.
+            // Ticket #12 (contract v1): bot crit lines use the legacy v83
+            // negative-int encoding widened to long (encodeCritLine); decode
+            // with the same rule as the player path, never abs() the raw
+            // value (that inflates a 1k crit to ~2.1B). Mob HP is still int,
+            // so the applied sum clamps at the int boundary.
             long total = 0;
             for (Long line : hit.getValue()) {
-                total += line == null ? 0L : Math.abs(line); // crit lines arrive negative-encoded
+                total = net.server.channel.handlers.AbstractDealDamageHandler.saturatedAdd(total, decodeBotLine(line));
             }
             if (applyDamageAndLoot(bot, hit.getKey(), (int) Math.min(total, Integer.MAX_VALUE), hitDelay)) {
                 anyKilled = true;

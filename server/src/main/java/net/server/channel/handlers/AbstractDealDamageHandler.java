@@ -167,6 +167,51 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         return (int) value;
     }
 
+    /** Saturating long add: overflow pins at Long.MAX_VALUE, never wraps. */
+    public static long saturatedAdd(long a, long b) {
+        long r = a + b;
+        if (((a ^ r) & (b ^ r)) < 0) {
+            return Long.MAX_VALUE;
+        }
+        return r;
+    }
+    /**
+     * Contract v1 per-recipient attack broadcast. Builds the legacy (byte-exact
+     * v83) and long-line packets once, then sends each map recipient the form
+     * its connection negotiated. Mirrors broadcastMessage source/range/bot
+     * semantics; legacy sessions never see long bytes.
+     */
+    protected static void broadcastAttack(Character source, boolean repeatToSource, boolean ranged, java.util.function.Function<Boolean, net.packet.Packet> builder) {
+        // Contract v1 per-recipient attack broadcast. Builds the legacy
+        // (byte-exact v83) packet always and the long-line packet lazily on
+        // first LONG_DAMAGE_LINES recipient. Ranges/bots/source echo mirror
+        // MapleMap.broadcastMessage(source, packet, repeatToSource, ranged).
+        net.packet.Packet legacy = builder.apply(false);
+        net.packet.Packet longForm = null;
+        server.maps.MapleMap map = source.getMap();
+        Character exclude = repeatToSource ? null : source;
+        for (Character chr : map.getCharacters()) {
+            // 722500 mirrors MapleMap.getRangedDistance (private there).
+            boolean inRange = !ranged || chr.getPosition().distanceSq(source.getPosition()) <= 722500;
+            if (chr == null || chr == exclude || soloMapling.ArtificialPlayer.BotHelpers.isBot(chr) || !inRange) {
+                continue;
+            }
+            net.packet.Packet pkt;
+            if (chr.getClient() != null && chr.getClient().hasCaps(client.ClientCaps.LONG_DAMAGE_LINES)) {
+                if (longForm == null) {
+                    longForm = builder.apply(true);
+                }
+                pkt = longForm;
+            } else {
+                pkt = legacy;
+            }
+            chr.sendPacket(pkt);
+        }
+        if (repeatToSource) {
+            source.sendPacket(source.getClient() != null && source.getClient().hasCaps(client.ClientCaps.LONG_DAMAGE_LINES) ? (longForm != null ? longForm : (longForm = builder.apply(true))) : legacy);
+        }
+    }
+
     // Ticket #12, C2S half (paired release with the DLL client hook): a
     // long-capable client appends the real 64-bit line (little-endian, positive
     // magnitude) after each vanilla damage int, so each line is 12 bytes
@@ -328,9 +373,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     // HP applies the positive magnitude.
                     for (Long eachd : onedList) {
                         long trackedDamage = eachd == null ? 0L : Math.abs(eachd);
-                        totDamageToOneMonster += trackedDamage;
+                        totDamageToOneMonster = saturatedAdd(totDamageToOneMonster, trackedDamage);
                     }
-                    totDamage += totDamageToOneMonster;
+                    totDamage = saturatedAdd(totDamage, totDamageToOneMonster);
                     monster.aggroMonsterDamage(player, clampToInt(totDamageToOneMonster));
                     if (player.getBuffedValue(BuffStat.PICKPOCKET) != null && (attack.skill == 0 || attack.skill == Rogue.DOUBLE_STAB || attack.skill == Bandit.SAVAGE_BLOW || attack.skill == ChiefBandit.ASSAULTER || attack.skill == ChiefBandit.BAND_OF_THIEVES || attack.skill == Shadower.ASSASSINATE || attack.skill == Shadower.TAUNT || attack.skill == Shadower.BOOMERANG_STEP)) {
                         Skill pickpocket = SkillFactory.getSkill(ChiefBandit.PICKPOCKET);
@@ -810,20 +855,27 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 calcDmgMax = fixed;
             }
         }
-        // Ticket #12: the per-line long is negotiated once per packet from its
-        // exact remaining length. A long-capable client widens every damage
-        // line from 4 to 12 bytes (vanilla int + real long); everything else in
-        // the target block is fixed-size (oid 4 + skip 4 + two positions 4+4 +
-        // delay 2 + trailer 4, plus the Poison Bomb tail when present).
+        // Ticket #12 (contract v1): the per-line long is negotiated per-session, not
+        // per-packet. Only a sender whose connection announced LONG_DAMAGE_LINES may
+        // send 12-byte lines; everyone else is legacy-exact. A flagged packet that
+        // matches neither form is REJECTED (null), never reinterpreted.
         // Legacy/vanilla int32 packets (including spectator/browser traffic)
         // match the 4-byte form and are NEVER reinterpreted; anything that
-        // matches neither form falls back to legacy so the stream is never
-        // over-read.
+        // matches neither form is dropped so a forged/truncated packet cannot
+        // inject phantom lines by reinterpretation.
         int totalLines = ret.numAttacked * ret.numDamage;
         int perTargetOverhead = 4 + 4 + 4 + 4 + 2 + 4;
         int tailBytes = ret.skill == NightWalker.POISON_BOMB ? 8 : 0;
         long longFormBytes = (long) perTargetOverhead * ret.numAttacked + 12L * totalLines + tailBytes;
-        boolean longLines = totalLines > 0 && p.available() == longFormBytes;
+        long legacyFormBytes = (long) perTargetOverhead * ret.numAttacked + 4L * totalLines + tailBytes;
+        boolean flagged = client.ClientCaps.has(chr.getClient().getCapsMask(), client.ClientCaps.LONG_DAMAGE_LINES);
+        boolean longLines = totalLines > 0 && flagged && p.available() == longFormBytes;
+        if (totalLines > 0 && p.available() != (longLines ? longFormBytes : legacyFormBytes)) {
+            // Mismatch (including an unflagged sender whose bytes happen to
+            // equal the long form, or a flagged sender with a truncated
+            // packet): reject, never reinterpret as the other form.
+            return null;
+        }
         for (int i = 0; i < ret.numAttacked; i++) {
             int oid = p.readInt();
             p.skip(4);
@@ -930,12 +982,24 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     maxWithCrit *= 2;
                 }
 
-                // Ticket #12: magnitude DAMAGE_HACK checks are removed. The
-                // Cosmic MaxDMG guess cannot model uncapped lines, so every
-                // legit overflow hit logged "DMG: ... MaxDMG: ..." spam. Only
-                // the "too many lines" check below stays.
+                // Ticket #12 (contract v1): long-aware magnitude guard. Legacy lines
+                // keep the stock 1.5x-warn / 5x-point bounds against the MaxDMG
+                // guess; long lines from flagged senders are uncapped by design
+                // (mob-HP-long is a separate project) so only absurd values —
+                // beyond 100x the guess or the int wire range — alert/point.
+                // Overflow-safe: the guess is long, bounds use division, never
+                // maxWithCrit * N.
                 long magnitude = Math.abs(damage);
-
+                if (!longLines) {
+                    if (magnitude > maxWithCrit + maxWithCrit / 2) {
+                        AutobanFactory.DAMAGE_HACK.alert(chr, "DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                    }
+                    if (maxWithCrit > 0 && magnitude / maxWithCrit >= 5) {
+                        AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                    }
+                } else if ((maxWithCrit > 0 && magnitude / Math.max(maxWithCrit, 1L) >= 100) || magnitude > Integer.MAX_VALUE) {
+                    AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Long-line DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                }
                 // Keep the crit display encoding on the stored line (negative ==
                 // crit). Long lines already carry the sign from readDamageLine;
                 // legacy int32 lines encode crits that beat the single-hit max.

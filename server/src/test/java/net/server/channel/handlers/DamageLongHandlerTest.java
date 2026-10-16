@@ -2,6 +2,7 @@ package net.server.channel.handlers;
 
 import client.BuffStat;
 import client.Character;
+import client.ClientCaps;
 import client.Job;
 import net.packet.InPacket;
 import net.packet.OutPacket;
@@ -55,8 +56,15 @@ class DamageLongHandlerTest extends HandlerTest {
     }
 
     private final ProbeHandler handler = new ProbeHandler();
-
     private void stubVanillaChr() {
+        stubChrWithCaps(0);
+    }
+
+    private void stubChrWithCaps(int capsMask) {
+        lenient().when(client.getCapsMask()).thenReturn(capsMask);
+        lenient().when(chr.getClient()).thenReturn(client);
+        lenient().when(chr.getAutobanManager()).thenReturn(mock(client.autoban.AutobanManager.class));
+        lenient().when(chr.getName()).thenReturn("TestChr");
         lenient().when(chr.getSkillLevel(anyInt())).thenReturn(0);
         lenient().when(chr.getJob()).thenReturn(Job.BEGINNER);
         lenient().when(chr.getBuffedValue(BuffStat.WK_CHARGE)).thenReturn(null);
@@ -126,7 +134,7 @@ class DamageLongHandlerTest extends HandlerTest {
 
     @Test
     void longPacketCarriesRealMagnitudeAboveIntMax() {
-        stubVanillaChr();
+        stubChrWithCaps(ClientCaps.LONG_DAMAGE_LINES);
         long real = 3_000_000_000L;
         InPacket p = attackPacket(1, 1, true, real);
 
@@ -135,10 +143,47 @@ class DamageLongHandlerTest extends HandlerTest {
         assertEquals(real, attack.targets.get(1000).damageLines().get(0));
         assertEquals(0, p.available());
     }
+    @Test
+    void unflaggedSenderLongBytesRejectedNotReinterpreted() {
+        stubVanillaChr();
+        long real = 3_000_000_000L;
+        InPacket p = attackPacket(1, 1, true, real);
+
+        // Contract v1: legacy session + long-form bytes matches neither the
+        // legacy form nor an authorized long form -> reject (null).
+        assertEquals(null, handler.callParse(p, chr, false, false));
+    }
+
+    @Test
+    void neitherFormPacketRejected() {
+        stubVanillaChr();
+        InPacket p = Packets.buildInPacket(out -> {
+            out.writeByte(0);
+            out.writeByte((1 << 4) | 1);
+            out.writeInt(0);
+            out.skip(8);
+            out.writeByte(0);
+            out.writeByte(0);
+            out.writeByte(0);
+            out.writeByte(0);
+            out.writeByte(4);
+            out.skip(4);
+            out.writeInt(1000);
+            out.skip(4);
+            out.writePos(new Point(0, 0));
+            out.writePos(new Point(0, 0));
+            out.writeShort(0);
+            out.writeInt(1234);
+            out.writeByte(0x7F); // one stray byte: matches neither form
+            out.skip(4);
+        });
+
+        assertEquals(null, handler.callParse(p, chr, false, false));
+    }
 
     @Test
     void longPacketCritKeepsNegativeSignWithRealMagnitude() {
-        stubVanillaChr();
+        stubChrWithCaps(ClientCaps.LONG_DAMAGE_LINES);
         long real = 2_500_000_000L;
         InPacket p = Packets.buildInPacket(out -> {
             out.writeByte(0);
@@ -167,14 +212,36 @@ class DamageLongHandlerTest extends HandlerTest {
     }
 
     @Test
-    void s2cWritesIntClampPlusLongRealPerLine() {
+    void s2cLegacyDefaultIsByteExactV83() {
         Character bot = mock(Character.class);
         lenient().when(bot.getId()).thenReturn(42);
         long real = 5_000_000_000L;
         Map<Integer, AbstractDealDamageHandler.AttackTarget> targets = Map.of(
                 7, new AbstractDealDamageHandler.AttackTarget((short) 0, new ArrayList<>(List.of(real))));
 
+        // Default (legacy) overload: int32 line only, no long bytes.
         Packet packet = PacketCreator.closeRangeAttack(bot, 0, 0, 0, 0x11, targets, 4, 0, 0);
+        byte[] bytes = packet.getBytes();
+        int perLine = bytes.length - (2 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 4 + 1);
+        assertEquals(4, perLine);
+
+        InPacket in = Packets.buildInPacket(out -> out.writeBytes(bytes));
+        in.skip(2); // opcode
+        in.skip(4 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 4); // cid + fixed header + projectile
+        in.skip(4 + 1); // oid + padding
+        assertEquals(Integer.MAX_VALUE, in.readInt());
+        assertEquals(0, in.available());
+    }
+
+    @Test
+    void s2cLongFormOnlyForFlaggedRecipients() {
+        Character bot = mock(Character.class);
+        lenient().when(bot.getId()).thenReturn(42);
+        long real = 5_000_000_000L;
+        Map<Integer, AbstractDealDamageHandler.AttackTarget> targets = Map.of(
+                7, new AbstractDealDamageHandler.AttackTarget((short) 0, new ArrayList<>(List.of(real))));
+
+        Packet packet = PacketCreator.closeRangeAttack(bot, 0, 0, 0, 0x11, targets, 4, 0, 0, true);
         byte[] bytes = packet.getBytes();
 
         // Body: cid(4) + header bytes + oid(4) + 0x00 + per-line int(4) + long(8).
@@ -199,7 +266,7 @@ class DamageLongHandlerTest extends HandlerTest {
         Map<Integer, AbstractDealDamageHandler.AttackTarget> targets = Map.of(
                 7, new AbstractDealDamageHandler.AttackTarget((short) 0, new ArrayList<>(List.of(-real))));
 
-        Packet packet = PacketCreator.closeRangeAttack(bot, 0, 0, 0, 0x11, targets, 4, 0, 0);
+        Packet packet = PacketCreator.closeRangeAttack(bot, 0, 0, 0, 0x11, targets, 4, 0, 0, true);
         InPacket in = Packets.buildInPacket(out -> out.writeBytes(packet.getBytes()));
         in.skip(2 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 1 + 4 + 4 + 1);
         int vanillaInt = in.readInt();

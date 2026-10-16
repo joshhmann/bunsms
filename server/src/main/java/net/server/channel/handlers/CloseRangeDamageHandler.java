@@ -61,6 +61,10 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
         chr.getAutobanManager().spam(8);*/
 
         AttackInfo attack = parseDamage(p, chr, false, false);
+        if (attack == null) {
+            // Contract v1 strict reject: malformed/foreign-form packet dropped.
+            return;
+        }
         if (chr.getBuffEffect(BuffStat.MORPH) != null) {
             if (chr.getBuffEffect(BuffStat.MORPH).isMorphWithoutAttack()) {
                 // How are they attacking when the client won't let them?
@@ -78,9 +82,9 @@ public final class CloseRangeDamageHandler extends AbstractDealDamageHandler {
             c.sendPacket(PacketCreator.getEnergy("energy", chr.getDojoEnergy()));
         }
 
-        chr.getMap().broadcastMessage(chr, PacketCreator.closeRangeAttack(chr, attack.skill, attack.skilllevel,
-                attack.stance, attack.numAttackedAndDamage, attack.targets, attack.speed, attack.direction,
-                attack.display), false, true);
+        broadcastAttack(chr, false, false, longLines -> PacketCreator.closeRangeAttack(chr, attack.skill,
+                attack.skilllevel, attack.stance, attack.numAttackedAndDamage, attack.targets, attack.speed,
+                attack.direction, attack.display, longLines));
         int numFinisherOrbs = 0;
         Integer comboBuff = chr.getBuffedValue(BuffStat.COMBO);
         if (GameConstants.isFinisherSkill(attack.skill)) {
