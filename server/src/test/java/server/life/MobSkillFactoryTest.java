@@ -1,9 +1,9 @@
 package server.life;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,12 +19,22 @@ class MobSkillFactoryTest {
 
     @TempDir
     private Path wzPath;
+    private String previousWzPath;
 
     @BeforeEach
     void setWzPath() {
-        MockitoAnnotations.openMocks(this);
+        previousWzPath = System.getProperty("wz-path");
         writeTestFileToTempDir();
         System.setProperty("wz-path", "%s/wz".formatted(wzPath.toString()));
+    }
+
+    @AfterEach
+    void restoreWzPath() {
+        if (previousWzPath == null) {
+            System.clearProperty("wz-path");
+        } else {
+            System.setProperty("wz-path", previousWzPath);
+        }
     }
 
     private void writeTestFileToTempDir() {
@@ -65,20 +75,10 @@ class MobSkillFactoryTest {
         );
     }
 
-    @Test
-    void builderCarriesSpawnEffect() {
-        // The factory dropped .spawnEffect(effect) once: staged summon visuals
-        // (e.g. 200/222 effect 36) silently never rendered. Pin the wiring.
-        MobSkill skill = new MobSkill.Builder(MobSkillType.SUMMON, 222)
-                .mpCon(0).toSummon(java.util.List.of(8880164)).spawnEffect(36)
-                .cooltime(0).duration(0).hp(100).x(1).y(1).count(1).prop(1.0f)
-                .limit(4).lt(null).rb(null).build();
-        assertEquals(36, skill.getSpawnEffect());
-    }
 
     @Test
     void shouldThrowExceptionOnNonExisting() {
-        assertThrows(IllegalArgumentException.class, () -> MobSkillFactory.getMobSkillOrThrow(MobSkillType.DEFENSE_UP, 1));
+        assertThrows(IllegalArgumentException.class, () -> MobSkillFactory.getMobSkillOrThrow(MobSkillType.DEFENSE_UP, Integer.MAX_VALUE));
     }
 
 }

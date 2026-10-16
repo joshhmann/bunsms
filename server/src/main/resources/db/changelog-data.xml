@@ -60,11 +60,21 @@
     </changeSet>
 
     <changeSet id="172" author="solobots">
+        <!-- Observed pre-pair-guard checksum: preserve already-applied installations. -->
+        <validCheckSum>9:67f0d41280acd0ea092e7b295e069a63</validCheckSum>
         <sqlFile path="db/data/172-mapleroot-shops-data.sql"/>
     </changeSet>
 
     <changeSet id="173" author="solobots">
         <sqlFile path="db/data/173-mapleroot-shops-remainder-data.sql"/>
+    </changeSet>
+
+    <changeSet id="033" author="solobots">
+        <sqlFile path="db/data/033-mapleroot-expedition-content.sql"/>
+    </changeSet>
+
+    <changeSet id="034" author="solobots">
+        <sqlFile path="db/data/034-mapleroot-progression-content.sql"/>
     </changeSet>
 
 

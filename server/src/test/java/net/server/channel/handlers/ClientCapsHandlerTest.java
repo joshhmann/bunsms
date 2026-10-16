@@ -41,8 +41,7 @@ class ClientCapsHandlerTest extends HandlerTest {
             out.writeInt(ClientCaps.CHECKIN_WINDOW | ClientCaps.LONG_DAMAGE_LINES);
         });
         handler.handlePacket(in, client);
-        // LONG_DAMAGE_LINES is not server-enabled yet: accepted = announced AND enabled.
-        verify(client).setCaps(1, ClientCaps.CHECKIN_WINDOW);
+        verify(client).setCaps(1, ClientCaps.CHECKIN_WINDOW | ClientCaps.LONG_DAMAGE_LINES);
         verify(client).sendPacket(any());
     }
 

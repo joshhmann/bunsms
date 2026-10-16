@@ -25,11 +25,16 @@ export interface PublishedAsset extends AssetExpectation { url: string; identity
 export interface ManifestFile {
   name: string; hash: string; size: number; url: string;
   profiles?: string[]; hd?: boolean; experimental?: boolean; attribution?: string;
+  configKind?: "kaentake"; mutable?: boolean;
 }
+export type CatalogFile = Omit<ManifestFile, "url">;
 export interface Manifest {
   version: string; updatedAt: string; files: ManifestFile[]; downloadBase: string;
   releaseId?: string; previousReleaseId?: string | null;
+  nxReleaseId?: string;
   assets?: Record<string, PublishedAsset>;
+  completeProfiles?: string[];
+  provenance?: { url: string; sha256: string };
 }
 export interface ManifestRead { manifest: Manifest; path: string }
 export interface PreparedRelease {
@@ -37,11 +42,22 @@ export interface PreparedRelease {
   assets: PublishedAsset[]; manifest: Manifest;
 }
 export interface PublishResult extends PreparedRelease { manifestPath: string }
-export interface ReleaseOptions { baseReleaseId?: string | null }
+export interface ReleaseCertification { completeProfiles: string[]; provenance: AssetExpectation }
+export interface ReleaseOptions { baseReleaseId?: string | null; catalog?: CatalogFile[]; certification?: ReleaseCertification }
+export interface NxConsumerProof {
+  success: true; releaseId: string;
+  files: Array<{ name: string; sha256: string; size: number }>;
+  reportSha256: string; readerJsSha256: string; readerWasmSha256: string;
+}
+export const NX_ARCHIVE_NAMES = ["Base", "Character", "Effect", "Etc", "Item", "Map", "Mob", "Morph", "Npc", "Quest", "Reactor", "Skill", "Sound", "String", "TamingMob", "UI"].map((name) => `${name}.nx`);
 interface ReleaseRecord {
-  id: string; baseReleaseId: string | null; baseToken: string; base: Manifest;
-  state: "open" | "prepared" | "committed" | "failed";
+  id: string; createdAt: string; baseReleaseId: string | null; baseToken: string; base: Manifest;
+  state: "open" | "prepared" | "sealed" | "committed" | "failed";
   prepared: Record<string, PublishedAsset>;
+  catalog?: CatalogFile[];
+  certification?: ReleaseCertification;
+  requiresNxVerification?: boolean;
+  nxVerification?: NxConsumerProof;
 }
 
 function sha256(data: string | Buffer): string { return createHash("sha256").update(data).digest("hex"); }
@@ -180,15 +196,56 @@ async function locked<T>(path: string, work: () => Promise<T>): Promise<T> {
 export function lockPublicationJob(file: PublicationStatusFile): Promise<() => void> {
   return acquireLock(internalPath(`jobs/${file}.lock`));
 }
+function freezeCatalog(values: CatalogFile[]): CatalogFile[] {
+  if (!Array.isArray(values) || !values.length) throw new AssetError("A non-empty approved file catalog is required");
+  const names = new Set<string>();
+  return values.map((value) => {
+    if (!value || typeof value !== "object") throw new AssetError("Invalid approved catalog entry");
+    validateExpectation({ key: value.name, hash: value.hash, size: value.size });
+    if (names.has(value.name.toLowerCase())) throw new AssetError(`Duplicate catalog entry: ${value.name}`);
+    names.add(value.name.toLowerCase());
+    if (value.profiles !== undefined && !Array.isArray(value.profiles)) throw new AssetError("Catalog profiles must be an array");
+    const profiles = value.profiles === undefined ? undefined : [...value.profiles];
+    if (profiles && (!profiles.length || profiles.some((profile) => profile !== "stock" && profile !== "kaentake") || new Set(profiles).size !== profiles.length)) throw new AssetError(`Invalid profiles for ${value.name}`);
+    if (["Kaentake.exe", "Kaentake.dll", "Custom.wz", "BunsMS.dll"].includes(value.name) && (profiles?.length !== 1 || profiles[0] !== "kaentake")) throw new AssetError("Kaentake-exclusive files must stay out of the stock profile");
+    if (value.hd !== undefined && typeof value.hd !== "boolean") throw new AssetError("Invalid catalog HD flag");
+    if (value.experimental !== undefined && typeof value.experimental !== "boolean") throw new AssetError("Invalid catalog experimental flag");
+    if (value.attribution !== undefined && typeof value.attribution !== "string") throw new AssetError("Invalid catalog attribution");
+    if (value.mutable !== undefined && typeof value.mutable !== "boolean") throw new AssetError("Invalid catalog mutable flag");
+    if (value.configKind !== undefined && (value.configKind !== "kaentake" || value.name !== "config.ini"
+        || profiles?.length !== 1 || profiles[0] !== "kaentake")) throw new AssetError("Only the Kaentake config.ini may declare configKind");
+    if (value.mutable === true && value.configKind !== "kaentake") throw new AssetError("Only the declared Kaentake config may remain mutable");
+    return { name: value.name, hash: value.hash, size: value.size, ...(profiles ? { profiles } : {}), ...(value.hd !== undefined ? { hd: value.hd } : {}), ...(value.experimental !== undefined ? { experimental: value.experimental } : {}), ...(value.attribution !== undefined ? { attribution: value.attribution } : {}), ...(value.configKind ? { configKind: value.configKind } : {}), ...(value.mutable !== undefined ? { mutable: value.mutable } : {}) };
+  });
+}
+/** Writers use their frozen complete catalog, never the filtered public profile. */
+export function releaseFileNames(id: string): Set<string> {
+  const record = readRecord(id);
+  return new Set([...(record.catalog || record.base.files).map((file) => file.name), "server-wz.tar.gz", "server-wz-baseline.tar.gz", ...(record.certification ? [record.certification.provenance.key] : [])]);
+}
+
 export function beginRelease(options: ReleaseOptions = {}): string {
   const { manifest } = readManifest();
   const baseReleaseId = manifest.releaseId || null;
   if (options.baseReleaseId !== undefined && options.baseReleaseId !== baseReleaseId) {
     throw new AssetError("Asset authority changed while the candidate was built", 409);
   }
+  const catalog = options.catalog === undefined ? undefined : freezeCatalog(options.catalog);
+  if (catalog && !baseReleaseId) throw new AssetError("First bootstrap and retain the approved existing seed before replacing its catalog", 409);
+  let certification: ReleaseCertification | undefined;
+  if (options.certification) {
+    if (!catalog || !Array.isArray(options.certification.completeProfiles) || !options.certification.completeProfiles.length
+        || new Set(options.certification.completeProfiles).size !== options.certification.completeProfiles.length
+        || options.certification.completeProfiles.some((profile) => profile !== "stock" && profile !== "kaentake")) {
+      throw new AssetError("Certification requires a complete approved catalog and explicit unique profiles");
+    }
+    validateExpectation(options.certification.provenance);
+    if (options.certification.provenance.size > 4 * 1024 * 1024) throw new AssetError("Launcher provenance must be bounded JSON metadata");
+    certification = { completeProfiles: [...options.certification.completeProfiles], provenance: { ...options.certification.provenance } };
+  }
   const id = randomUUID();
   mkdirSync(releaseDir(id), { recursive: true });
-  writeJsonAtomic(releaseFile(id), { id, baseReleaseId, baseToken: token(manifest), base: manifest, state: "open", prepared: {} } satisfies ReleaseRecord);
+  writeJsonAtomic(releaseFile(id), { id, createdAt: new Date().toISOString(), baseReleaseId, baseToken: token(manifest), base: manifest, state: "open", prepared: {}, ...(catalog ? { catalog } : {}), ...(certification ? { certification } : {}) } satisfies ReleaseRecord);
   return id;
 }
 async function stage(id: string, key: string, write: (temporary: string) => Promise<void>): Promise<void> {
@@ -281,20 +338,49 @@ async function freezeAndVerify(id: string, expected: AssetExpectation, base: Man
 }
 function candidate(record: ReleaseRecord): Manifest {
   const assets = { ...(record.base.assets || {}), ...record.prepared };
-  let launcherChanged = false;
-  const files = record.base.files.map((file) => {
+  const catalog = record.catalog || record.base.files;
+  if (record.catalog) {
+    const names = new Set(catalog.map((file) => file.name));
+    for (const file of record.base.files) if (!names.has(file.name)) delete assets[file.name];
+  }
+  let launcherChanged = !!record.catalog;
+  const files = catalog.map((file) => {
     const asset = assets[file.name];
-    if (!asset) throw new AssetError(`Bootstrap must verify every launcher entry; missing ${file.name}`, 409);
-    if (!record.baseReleaseId && (file.hash !== asset.hash || file.size !== asset.size)) {
-      throw new AssetError(`Bootstrap must preserve the approved seed bytes for ${file.name}`, 409);
+    if (!asset) throw new AssetError(`Every catalog entry must be verified; missing ${file.name}`, 409);
+    if ((!record.baseReleaseId || record.catalog) && (file.hash !== asset.hash || file.size !== asset.size)) {
+      throw new AssetError(`Approved catalog bytes do not match ${file.name}`, 409);
     }
     if (file.hash !== asset.hash || file.size !== asset.size) launcherChanged = true;
     return { ...file, hash: asset.hash, size: asset.size, url: asset.url };
   });
+  if (record.catalog) {
+    const metadata = (entries: CatalogFile[]) => entries.map((file) => [file.name, file.hash, file.size, file.profiles || ["stock"], !!file.hd, !!file.experimental, file.attribution || "", file.configKind || "", !!file.mutable]);
+    launcherChanged = JSON.stringify(metadata(files)) !== JSON.stringify(metadata(record.base.files));
+  }
+  const nxReleaseId = NX_ARCHIVE_NAMES.every((name) => record.prepared[`nx/${name}`]) ? record.id : record.base.nxReleaseId;
+  let certification = record.base.provenance ? { completeProfiles: record.base.completeProfiles, provenance: record.base.provenance } : {};
+  if (record.catalog && !record.certification) certification = {};
+  if (record.certification) {
+    const expected = record.certification.provenance;
+    const asset = assets[expected.key];
+    if (!asset || asset.hash !== expected.hash || asset.size !== expected.size) throw new AssetError("Certified provenance must be independently verified with the complete catalog", 409);
+    const proof = JSON.parse(readFileSync(objectPath(asset), "utf8")) as { files?: Array<{ name: string; size: number; sha256: string }> };
+    if (!Array.isArray(proof?.files) || proof.files.some((file) => !file || typeof file.name !== "string")) {
+      throw new AssetError("Launcher provenance does not contain a valid catalog", 409);
+    }
+    const proofFiles = new Map(proof.files.map((file) => [file.name.toLowerCase(), file]));
+    if (proof.files.length !== files.length || proofFiles.size !== files.length
+        || files.some((file) => {
+          const row = proofFiles.get(file.name.toLowerCase());
+          return !row || row.size !== file.size || row.sha256 !== file.hash;
+        })) throw new AssetError("Launcher provenance does not describe the exact complete catalog", 409);
+    certification = { completeProfiles: record.certification.completeProfiles, provenance: { url: asset.url, sha256: asset.hash } };
+  }
   return {
-    ...record.base, releaseId: record.id, previousReleaseId: record.baseReleaseId,
+    ...record.base, completeProfiles: undefined, provenance: undefined, ...certification,
+    releaseId: record.id, previousReleaseId: record.baseReleaseId, nxReleaseId,
     version: launcherChanged ? bumpPatch(record.base.version) : record.base.version,
-    updatedAt: launcherChanged ? new Date().toISOString() : record.base.updatedAt,
+    updatedAt: launcherChanged ? record.createdAt : record.base.updatedAt,
     downloadBase: `${ASSET_BASE_URL}/client/`, files, assets,
   };
 }
@@ -305,6 +391,23 @@ export async function prepareRelease(id: string, values: AssetExpectation[]): Pr
     if (token(readManifest().manifest) !== record.baseToken) throw new AssetError("Asset authority changed; rebuild the candidate", 409);
     const list: AssetExpectation[] = expected.map((item) => ({ ...item }));
     if (list.some((item) => item.key === "server-wz.version")) throw new AssetError("The server marker is generated with its tarball");
+    if (!record.catalog && !record.certification && record.base.provenance && record.base.completeProfiles?.length
+        && list.some((item) => record.base.files.some((file) => file.name === item.key && (file.hash !== item.hash || file.size !== item.size)))) {
+      // Every existing producer gets a fresh complete byte fingerprint. Never
+      // carry an old certified provenance URL across changed launcher bytes.
+      const updates = new Map(list.map((item) => [item.key, item]));
+      const data = Buffer.from(JSON.stringify({ generatedFromReleaseId: record.baseReleaseId,
+        files: record.base.files.map((file) => {
+          const update = updates.get(file.name);
+          return { name: file.name, size: update?.size ?? file.size, sha256: update?.hash ?? file.hash };
+        }) }));
+      const proof = { key: "release-provenance.json", hash: sha256(data), size: data.length };
+      const path = stagedPath(id, proof.key);
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, data, { flag: "wx" });
+      list.push(proof);
+      record.certification = { completeProfiles: [...record.base.completeProfiles], provenance: proof };
+    }
     const tar = list.find((item) => item.key === "server-wz.tar.gz");
     if (tar) {
       if (record.prepared["server-wz.version"]) throw new AssetError("Server tarball is already frozen", 409);
@@ -357,10 +460,63 @@ export function readRelease(id: string): Manifest {
   if (!existsSync(path)) throw new AssetError("Unknown retained release", 404);
   return JSON.parse(readFileSync(path, "utf8")) as Manifest;
 }
+
+/** A sealed prepared view is immutable metadata, but is not the current authority. */
+export function readSealedRelease(id: string): PreparedRelease & { requiresNxVerification: boolean } {
+  const record = readRecord(id);
+  if (record.state !== "sealed") throw new AssetError(`Release is ${record.state}, not sealed`, 409);
+  const manifest = candidate(record);
+  for (const asset of Object.values(manifest.assets!)) assertObject(asset);
+  return { releaseId: id, baseReleaseId: record.baseReleaseId, manifest, assets: Object.values(record.prepared), requiresNxVerification: record.requiresNxVerification === true };
+}
+export function readReleaseView(id: string): Manifest {
+  validateReleaseId(id);
+  return existsSync(internalPath(`manifests/${id}.json`)) ? readRelease(id) : readSealedRelease(id).manifest;
+}
+export async function sealRelease(id: string, requiresNxVerification = false): Promise<PreparedRelease> {
+  return locked(join(releaseDir(id), ".lock"), async () => {
+    const record = readRecord(id);
+    if (record.state !== "prepared") throw new AssetError(`Release is ${record.state}`, 409);
+    if (token(readManifest().manifest) !== record.baseToken) throw new AssetError("Asset authority changed; rebuild the candidate", 409);
+    const manifest = candidate(record);
+    for (const asset of Object.values(manifest.assets!)) assertObject(asset);
+    if (requiresNxVerification && NX_ARCHIVE_NAMES.some((name) => !record.prepared[`nx/${name}`])) {
+      throw new AssetError("A sealed NX candidate must prepare the entire 16-file cohort", 409);
+    }
+    record.requiresNxVerification = requiresNxVerification;
+    record.state = "sealed";
+    writeJsonAtomic(releaseFile(id), record);
+    return { releaseId: id, baseReleaseId: record.baseReleaseId, manifest, assets: Object.values(record.prepared) };
+  });
+}
+export async function acceptNxConsumerProof(id: string, value: unknown): Promise<void> {
+  await locked(join(releaseDir(id), ".lock"), async () => {
+    const record = readRecord(id);
+    if (record.state !== "sealed" || !record.requiresNxVerification) throw new AssetError("Release is not awaiting NX verification", 409);
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new AssetError("NX consumer returned no proof", 502);
+    const proof = value as NxConsumerProof;
+    if (proof.success !== true || proof.releaseId !== id || !Array.isArray(proof.files) || proof.files.length !== NX_ARCHIVE_NAMES.length ||
+      ![proof.reportSha256, proof.readerJsSha256, proof.readerWasmSha256].every((hash) => typeof hash === "string" && /^[a-f0-9]{64}$/.test(hash))) {
+      throw new AssetError("NX consumer proof is incomplete or belongs to another release", 502);
+    }
+    const manifest = candidate(record);
+    const seen = new Set<string>();
+    for (const file of proof.files) {
+      const expected = manifest.assets?.[`nx/${file.name}`];
+      if (!NX_ARCHIVE_NAMES.includes(file.name) || seen.has(file.name) || !expected || file.sha256 !== expected.hash || file.size !== expected.size) {
+        throw new AssetError("NX consumer proof does not match the sealed cohort", 502);
+      }
+      seen.add(file.name);
+    }
+    record.nxVerification = structuredClone(proof);
+    writeJsonAtomic(releaseFile(id), record);
+  });
+}
 export async function commitRelease(id: string): Promise<PublishResult> {
   return locked(internalPath(".publish-lock"), () => locked(join(releaseDir(id), ".lock"), async () => {
     const record = readRecord(id);
-    if (record.state !== "prepared") throw new AssetError(`Release is ${record.state}`, 409);
+    if (record.state !== "prepared" && record.state !== "sealed") throw new AssetError(`Release is ${record.state}`, 409);
+    if (record.requiresNxVerification && !record.nxVerification) throw new AssetError("The sealed cohort has no actual WASM/HTTP consumer proof", 409);
     const { manifest: current } = readManifest();
     if (token(current) !== record.baseToken) throw new AssetError("Asset authority changed; rebuild the candidate", 409);
     const manifest = candidate(record);

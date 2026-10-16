@@ -4,7 +4,7 @@ Routes:
   GET /           -> index.html (or WS upgrade bridged to game server)
   GET /web/*      -> static /app/web
   GET /build/*    -> static /app/build
-  GET /nx/*       -> NX files from local disk (NX_DIR, live systemd deploys)
+  GET /nx/*       -> unchanged local baseline; /nx/r/<id>/* -> sealed retained cohort
   GET /healthz    -> 'ok'
 
 The WS proxy accepts the target address as its first text message (same protocol
@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import stat
+from urllib.parse import urlsplit
 from aiohttp import web, WSMsgType
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s %(message)s')
@@ -165,26 +166,114 @@ def immutable_asset_path(key, digest):
     return path
 
 
+NX_NAMES = (
+    'Base.nx', 'Character.nx', 'Effect.nx', 'Etc.nx', 'Item.nx', 'Map.nx',
+    'Mob.nx', 'Morph.nx', 'Npc.nx', 'Quest.nx', 'Reactor.nx', 'Skill.nx',
+    'Sound.nx', 'String.nx', 'TamingMob.nx', 'UI.nx',
+)
+
+
+def validate_release_id(value):
+    if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9_-]{8,80}', value):
+        raise web.HTTPBadRequest(text='Invalid release id')
+    return value
+
+
+def read_registry_json(relative):
+    base = os.path.realpath(CLIENT_ASSETS_DIR)
+    path = os.path.join(base, *relative.split('/'))
+    if os.path.realpath(path) != path:
+        raise web.HTTPNotFound(text='Invalid registry path')
+    with open(path, encoding='utf-8') as source:
+        return json.load(source)
+
+
+def resolve_nx_view(release_id=None):
+    """Read one sealed/retained registry snapshot, never merge current per file."""
+    try:
+        if release_id is None:
+            release_id = read_asset_authority().get('releaseId')
+        validate_release_id(release_id)
+        try:
+            view = read_registry_json('manifests/' + release_id + '.json')
+        except FileNotFoundError:
+            record = read_registry_json('staging/' + release_id + '/release.json')
+            if record.get('id') != release_id or record.get('state') != 'sealed':
+                raise web.HTTPNotFound(text='Cohort is not sealed')
+            view = dict(record['base'])
+            view['assets'] = {**view.get('assets', {}), **record['prepared']}
+            view['releaseId'] = release_id
+        if view.get('releaseId') != release_id:
+            raise ValueError('Mismatched release')
+        assets = view['assets']
+        expected = {'nx/' + name for name in NX_NAMES}
+        if {key for key in assets if key.startswith('nx/')} != expected:
+            raise ValueError('Incomplete NX cohort')
+        files, paths = [], {}
+        for name in NX_NAMES:
+            key = 'nx/' + name
+            asset = assets[key]
+            paths[name] = checked_asset_path(key, asset)
+            files.append({'name': name, 'sha256': asset['hash'], 'size': asset['size']})
+        native_files = []
+        for name in tuple(name[:-3] + '.wz' for name in NX_NAMES) + ('List.wz',):
+            asset = assets[name]
+            checked_asset_path(name, asset)
+            native_files.append({
+                'name': name, 'sha256': asset['hash'], 'size': asset['size'],
+                'url': '/client/r/' + asset['hash'] + '/' + name,
+            })
+        archive = assets['server-wz.tar.gz']
+        checked_asset_path('server-wz.tar.gz', archive)
+        server_tar = {
+            'sha256': archive['hash'], 'size': archive['size'],
+            'url': '/client/r/' + archive['hash'] + '/server-wz.tar.gz',
+        }
+        return view, {
+            'releaseId': release_id, 'baseUrl': '/nx/r/' + release_id,
+            'files': files, 'nativeFiles': native_files, 'serverTar': server_tar,
+        }, paths
+    except (OSError, ValueError, TypeError, KeyError, AttributeError):
+        raise web.HTTPNotFound(text='Complete sealed NX cohort unavailable')
+
+
+def checked_asset_path(key, asset):
+    if (not isinstance(asset, dict) or asset.get('key') != key or
+            type(asset.get('size')) is not int or not 0 <= asset['size'] <= 9007199254740991):
+        raise ValueError('Invalid asset metadata')
+    path = immutable_asset_path(key, asset.get('hash'))
+    if os.stat(path).st_size != asset['size']:
+        raise ValueError('Asset size mismatch')
+    return path
+
+
+async def handle_nx_manifest(request):
+    _, projection, _ = await asyncio.to_thread(resolve_nx_view, request.query.get('releaseId'))
+    return web.json_response(projection, headers={
+        'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*',
+    })
+
+
+async def handle_nx_cohort(request):
+    name = request.match_info['name']
+    if name not in NX_NAMES:
+        raise web.HTTPNotFound()
+    _, _, paths = await asyncio.to_thread(resolve_nx_view, request.match_info['release_id'])
+    return web.FileResponse(paths[name], headers={
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'public, max-age=31536000, immutable',
+    })
+
+
 async def handle_nx(request: web.Request) -> web.StreamResponse:
-    """A complete committed cohort overrides the unchanged, local approved baseline."""
+    """The approved local baseline never follows registry publication or rollback."""
     name = request.match_info['path']
     if '/' in name or '\\' in name or not name.endswith('.nx') or name.startswith('.'):
         raise web.HTTPBadRequest(text='Invalid NX name')
-    try:
-        manifest = await asyncio.to_thread(read_asset_authority)
-    except FileNotFoundError:
-        manifest = {}
-    assets = manifest.get('assets', {})
-    if any(key.startswith('nx/') for key in assets):
-        asset = assets.get('nx/' + name)
-        if not asset:
-            raise web.HTTPNotFound()
-        path = immutable_asset_path(asset['key'], asset['hash'])
-    else:
-        base = os.path.realpath(NX_LOCAL_DIR)
-        path = os.path.realpath(os.path.join(base, name))
-        if not path.startswith(base + os.sep) or not os.path.isfile(path):
-            raise web.HTTPNotFound()
+    base = os.path.realpath(NX_LOCAL_DIR)
+    path = os.path.realpath(os.path.join(base, name))
+    if not path.startswith(base + os.sep) or not os.path.isfile(path):
+        raise web.HTTPNotFound()
     return web.FileResponse(path, headers={
         'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'no-cache, must-revalidate',
@@ -292,11 +381,51 @@ async def control_prepare_nx(request):
     return web.json_response(response)
 
 
+async def control_verify_nx(request):
+    payload = await request.json()
+    if not isinstance(payload, dict):
+        raise web.HTTPBadRequest(text='A sealed release is required')
+    release_id = validate_release_id(payload.get('releaseId'))
+    view, projection, _ = await asyncio.to_thread(resolve_nx_view, release_id)
+    origin = os.environ.get('NX_HTTP_ORIGIN', '').rstrip('/')
+    parsed = urlsplit(origin)
+    if (parsed.scheme not in ('http', 'https') or not parsed.hostname or
+            parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment):
+        raise web.HTTPServiceUnavailable(text='NX_HTTP_ORIGIN must be a service-configured HTTP origin')
+    native = []
+    try:
+        for item in projection['nativeFiles']:
+            key = item['name']
+            asset = view['assets'][key]
+            native.append({'key': key, 'hash': asset['hash'], 'size': asset['size'],
+                           'path': checked_asset_path(key, asset)})
+    except (ValueError, KeyError, TypeError):
+        raise web.HTTPNotFound(text='Native assets unavailable')
+    result = await run_control(request, 'NX_CONSUMER_VERIFY_COMMAND', {
+        **projection, 'baseUrl': origin + projection['baseUrl'], 'nativeFiles': native,
+    }, 1800)
+    if isinstance(result, web.StreamResponse):
+        return result
+    try:
+        response = json.loads(result)
+        if (not isinstance(response, dict) or response.get('success') is not True or
+                response.get('releaseId') != release_id or
+                response.get('files') != projection['files'] or
+                any(not isinstance(response.get(key), str) or
+                    not re.fullmatch(r'[a-f0-9]{64}', response[key])
+                    for key in ('reportSha256', 'readerJsSha256', 'readerWasmSha256'))):
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise web.HTTPBadGateway(text='NX verifier did not prove the requested cohort')
+    return web.json_response(response)
+
+
 def build_control_app():
     app = web.Application(middlewares=[authenticate_control], client_max_size=2 * 1024 * 1024)
     app['command_lock'] = asyncio.Lock()
     app.router.add_post('/restart', control_restart)
     app.router.add_post('/prepare-nx', control_prepare_nx)
+    app.router.add_post('/verify-nx', control_verify_nx)
     return app
 
 
@@ -332,12 +461,24 @@ async def revalidate_client_files(request: web.Request, handler):
     return response
 
 
+async def preserve_asset_representation(request: web.Request, response: web.StreamResponse):
+    # FileResponse guesses Content-Encoding:gzip from .tar.gz. These files are
+    # publisher-hashed archives, not HTTP-compressed representations: decoding
+    # them in a proxy or downloader changes the immutable bytes and breaks Range.
+    if request.path.startswith('/client/') and isinstance(response, web.FileResponse):
+        response.headers.pop('Content-Encoding', None)
+        response.headers['Content-Type'] = 'application/octet-stream'
+
+
 def build_app() -> web.Application:
     app = web.Application(middlewares=[revalidate_client_files])
+    app.on_response_prepare.append(preserve_asset_representation)
     app.on_startup.append(start_private_control)
     app.on_cleanup.append(stop_private_control)
     app.router.add_get('/', handle_root)
     app.router.add_get('/healthz', healthz)
+    app.router.add_get('/nx/manifest.json', handle_nx_manifest)
+    app.router.add_get('/nx/r/{release_id}/{name}', handle_nx_cohort)
     app.router.add_get('/nx/{path:.*}', handle_nx)
     app.router.add_get('/client/{path:.*}', handle_client)
     # Static mounts. Route order matters — these only match if the path starts with /web or /build.
@@ -346,6 +487,16 @@ def build_app() -> web.Application:
     return app
 
 
+def build_asset_app() -> web.Application:
+    """Read-only RC byte service using the same immutable registry and handler."""
+    app = web.Application()
+    app.on_response_prepare.append(preserve_asset_representation)
+    app.router.add_get('/healthz', healthz)
+    app.router.add_get('/client/{path:.*}', handle_client)
+    return app
+
+
 if __name__ == '__main__':
     log.info('starting on :%d, static_root=%s, allowed_targets=%s', PORT, STATIC_ROOT, sorted(ALLOWED_TARGETS))
-    web.run_app(build_app(), host='0.0.0.0', port=PORT, print=None)
+    web.run_app(build_asset_app() if os.environ.get('ASSET_ONLY') == '1' else build_app(),
+                host='0.0.0.0', port=PORT, print=None)

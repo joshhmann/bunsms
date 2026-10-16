@@ -24,8 +24,10 @@ def split(path):
     return archive.removesuffix('.wz'),image+'.img',node
 
 
-def verify(catalog,native,xml,nx,output,native_report=None,inventory=False):
-    catalog,native,xml,nx,output=map(Path,(catalog,native,xml,nx,output))
+def verify(catalog,native,xml,nx,output,native_report=None,inventory=False,native_only=False):
+    catalog,native,xml,output=map(Path,(catalog,native,xml,output))
+    if not native_only and nx is None:raise ValueError('Combined catalog qualification requires --nx; Windows qualification uses --native-only')
+    nx=Path(nx) if nx is not None else None
     if output.exists():raise ValueError('Do not overwrite existing catalog evidence')
     with catalog.open(encoding='utf-8-sig',newline='') as f:
         rows=[r for r in csv.reader((s for s in f if s.strip() and not s.lstrip().startswith('#')),delimiter='\t')]
@@ -42,18 +44,19 @@ def verify(catalog,native,xml,nx,output,native_report=None,inventory=False):
     elif not inventory:raise ValueError('Release gate needs independent native canvas evidence')
     xml_manifest=json.loads((xml/'server-corpus-provenance.json').read_text())
     xml_files={e['name']:e for e in xml_manifest['files']};xml_cache={};nx_cache={};checked_files=set()
-    nx_manifest_path=nx/'provenance-manifest.json'
-    if nx_manifest_path.exists():
+    nx_manifest_path=nx/'provenance-manifest.json' if nx is not None else None
+    if not native_only and nx_manifest_path.exists():
         nx_manifest=json.loads(nx_manifest_path.read_text())
         if nx_manifest['status']!='complete-candidate':raise ValueError('NX candidate is not complete')
         nx=nx/'corpus'
         for entry in nx_manifest['files']:
             actual=file_identity(nx/entry['name'])
             if any(actual[k]!=entry[k] for k in ('size','sha256')):raise ValueError('Final NX cohort hash drift')
-    elif not inventory:raise ValueError('Release gate requires final complete NX candidate provenance')
+    elif not native_only and not inventory:raise ValueError('Release gate requires final complete NX candidate provenance')
     report={'status':'inventory' if inventory else 'pass','catalog':file_identity(catalog),'catalog_rows':len(rows),
         'unique_item_ids':len({int(r[0]) for r in rows}),'items':[],'gaps':[],
         'native_independent_report':file_identity(native_report) if native_report else None,
+        'target':'windows-native-server' if native_only else 'native-server-browser',
         'scope':'Exact catalog dependency closure only; no Community bulk import; prices/delivery/persistence tested by server owner'}
     corpus=Corpus(native)
     with ExitStack() as stack:
@@ -126,8 +129,10 @@ def verify(catalog,native,xml,nx,output,native_report=None,inventory=False):
                 reader,index=nx_node(name);value=reader.value(index)
                 if reader.record(index)[3]!=3 or not value.strip():raise ValueError('Browser item name absent')
                 return {'status':'present','value':value}
-            for label,operation in (('native_icon',native_icon),('native_info',native_info),('native_name',native_name),
-                ('server_info',server_info),('server_name',server_name),('nx_icon',browser_icon),('nx_info',browser_info),('nx_name',browser_name)):
+            checks=[('native_icon',native_icon),('native_info',native_info),('native_name',native_name),
+                ('server_info',server_info),('server_name',server_name)]
+            if not native_only:checks += [('nx_icon',browser_icon),('nx_info',browser_info),('nx_name',browser_name)]
+            for label,operation in checks:
                 check(label,operation)
             report['items'].append(record)
     report['gap_counts']=dict(Counter(g['check'] for g in report['gaps']))
@@ -137,8 +142,8 @@ def verify(catalog,native,xml,nx,output,native_report=None,inventory=False):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--catalog',required=True);p.add_argument('--native',required=True)
-    p.add_argument('--server-xml',required=True);p.add_argument('--nx',required=True);p.add_argument('--output',required=True)
-    p.add_argument('--native-report');p.add_argument('--inventory-only',action='store_true')
-    a=p.parse_args();r=verify(a.catalog,a.native,a.server_xml,a.nx,a.output,a.native_report,a.inventory_only)
+    p.add_argument('--server-xml',required=True);p.add_argument('--nx');p.add_argument('--output',required=True)
+    p.add_argument('--native-report');p.add_argument('--inventory-only',action='store_true');p.add_argument('--native-only',action='store_true')
+    a=p.parse_args();r=verify(a.catalog,a.native,a.server_xml,a.nx,a.output,a.native_report,a.inventory_only,a.native_only)
     print(json.dumps({'status':r['status'],'catalog_rows':r['catalog_rows'],'unique_item_ids':r['unique_item_ids'],'gaps':len(r['gaps']),'gap_counts':r['gap_counts']}))
     raise SystemExit(2 if r['gaps'] else 0)

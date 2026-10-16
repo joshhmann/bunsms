@@ -2,8 +2,7 @@ import { afterAll, beforeAll, expect, mock, test } from "bun:test";
 import type { Subprocess } from "bun";
 import { Database } from "bun:sqlite";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, watch } from "node:fs";
-import type { FSWatcher } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PNG } from "pngjs";
@@ -41,15 +40,14 @@ const serverXml = await import("../src/lib/wz/server-xml");
 const nativeRecords: Array<{ name: string; sha256: string; size: number }> = JSON.parse(readFileSync(process.env.NATIVE_WZ_BASELINE_MANIFEST!, "utf8")).files;
 const originalNx: Array<{ name: string; sha256: string; size: number }> = JSON.parse(readFileSync(process.env.NX_BASELINE_MANIFEST!, "utf8")).files;
 const proof: Array<Record<string, unknown>> = [];
-let processHandle: Subprocess<"ignore", "pipe", "pipe">;
+let processHandle: Subprocess<"ignore", "pipe", "inherit">;
 let origin = "";
 let baselineId = "";
 let iconUrl = "";
 let spriteKey = "";
-const watchers = new Set<FSWatcher>();
 
 async function hashDownload(path: string) {
-  const response = await fetch(origin + path);
+  const response = await fetch(origin + path, { signal: AbortSignal.timeout(180_000) });
   if (!response.ok || !response.body) throw new Error(`Actual byte service failed ${path}: ${response.status}`);
   const hash = createHash("sha256"); let size = 0;
   const reader = response.body.getReader();
@@ -71,18 +69,17 @@ async function verifyPublished(label: string) {
   expect(descriptor.hash).toBe(tar.hash); expect(descriptor.url).toBe(tar.url);
   proof.push({ label, releaseId: manifest.releaseId, version: manifest.version, launcher: manifest.files.map(({ name, hash, size }) => ({ name, hash, size })), nx: nx.map(({ key, hash, size }) => ({ key, hash, size })), serverTar: { hash: tar.hash, size: tar.size }, applyAcknowledgements: readFileSync(join(root, "apply-log"), "utf8").trim().split("\n").length });
 }
-function completion(statusFile: string): Promise<Record<string, unknown>> {
-  const deferred = Promise.withResolvers<Record<string, unknown>>();
-  const jobs = join(assets, "jobs"); mkdirSync(jobs, { recursive: true });
-  const watcher = watch(jobs, (_event, filename) => {
-    if (filename !== statusFile) return;
-    try {
-      const value = JSON.parse(readFileSync(join(jobs, statusFile), "utf8"));
-      if (value.status === "done" || value.status === "error") { watcher.close(); watchers.delete(watcher); deferred.resolve(value); }
-    } catch { /* A subsequent filesystem event reports the completed status write. */ }
-  });
-  watchers.add(watcher); // Synchronization is the actual completion event, never a guessed sleep.
-  return deferred.promise;
+async function completion(getStatus: () => Promise<Response>, jobId: string): Promise<Record<string, unknown>> {
+  for (;;) {
+    const response = await getStatus();
+    if (!response.ok) throw new Error(`Publication status failed: HTTP ${response.status}`);
+    const value = await response.json();
+    if (value.id !== jobId) throw new Error("Publication status does not acknowledge the started job");
+    if (value.status === "done" || value.status === "error") return value;
+    // Exercise the shipped asynchronous status protocol, not a guessed
+    // completion delay or an unreliable/coalesced filesystem watch event.
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
 }
 
 beforeAll(async () => {
@@ -111,26 +108,25 @@ beforeAll(async () => {
   database.query("INSERT INTO custom_reactors VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)").run(1,9999900,"Publication isolated reactor",art.assets.find((asset)=>asset.key==="reactors/9999900/idle.png")!.url,0,100,1,"breakable","drop_items",120,150,null,1,null);
   const staticRoot = join(root,"static"); mkdirSync(join(staticRoot,"web"),{recursive:true}); mkdirSync(join(staticRoot,"build")); writeFileSync(join(staticRoot,"web","index.html"),"isolated genuine pipeline");
   const applyScript=join(root,"apply.py"); writeFileSync(applyScript,`from pathlib import Path\np=Path(${JSON.stringify(join(root,"apply-log"))})\nwith p.open('a') as f:f.write('isolated command acknowledged\\n')\n`);
-  processHandle = Bun.spawn(["python3","test/asset_http_fixture.py"], {cwd:process.cwd(),stdin:"ignore",stdout:"pipe",stderr:"pipe",env:{...process.env,STATIC_ROOT:staticRoot,CLIENT_ASSETS_DIR:assets,GM_SECRET_FILE:secretFile,NX_DIR:process.env.NX_BASELINE_DIR!,GAME_RESTART_COMMAND:JSON.stringify(["python3",applyScript]),NX_PREPARE_COMMAND:JSON.stringify(["python3",join(process.cwd(),"..","tools","prepare_nx_release.py")])}});
+  processHandle = Bun.spawn(["python3","test/asset_http_fixture.py"], {cwd:process.cwd(),stdin:"ignore",stdout:"pipe",stderr:"inherit",env:{...process.env,STATIC_ROOT:staticRoot,CLIENT_ASSETS_DIR:assets,GM_SECRET_FILE:secretFile,NX_DIR:process.env.NX_BASELINE_DIR!,GAME_RESTART_COMMAND:JSON.stringify(["python3",applyScript]),NX_PREPARE_COMMAND:JSON.stringify(["python3",join(process.cwd(),"..","tools","prepare_nx_release.py")])}});
   const reader=processHandle.stdout.getReader(); const decoder=new TextDecoder();let ready="";
-  while(!ready.includes("\n")){const next=await reader.read();if(next.done)throw new Error(await new Response(processHandle.stderr).text());ready+=decoder.decode(next.value);}
+  while(!ready.includes("\n")){const next=await reader.read();if(next.done)throw new Error("Actual byte-service fixture exited before readiness");ready+=decoder.decode(next.value);}
   reader.releaseLock();origin=`http://127.0.0.1:${JSON.parse(ready).port}`;
 },180_000);
 afterAll(async()=>{
-  for (const watcher of watchers) watcher.close();
   processHandle?.kill("SIGTERM");if(processHandle)await processHandle.exited;
   if(process.env.SELFHOST_PROOF_PATH)writeFileSync(process.env.SELFHOST_PROOF_PATH,JSON.stringify({toolsCommit:process.env.WZ_RELEASE_TOOLS_COMMIT,proof},null,2));
   database.close();rmSync(root,{recursive:true,force:true});
 });
 
 test("actual item publication, native conversion, preserved full NX cohort and private apply",async()=>{
-  const done=completion("publish-status.json");expect((await items.POST()).status).toBe(200);
-  const status=await done;if(status.status!=="done"){proof.push({label:"items-failed",status});throw new Error(JSON.stringify(status));}
+  const response=await items.POST();expect(response.status).toBe(200);
+  const status=await completion(items.GET,(await response.json()).id);if(status.status!=="done"){proof.push({label:"items-failed",status});throw new Error(JSON.stringify(status));}
   await verifyPublished("items");
 },1_200_000);
 test("actual generic ETC publication preserves shared bucket siblings and commits server marker",async()=>{
-  const done=completion("assets-publish-status.json");expect((await generic.POST()).status).toBe(200);
-  const status=await done;if(status.status!=="done"){proof.push({label:"assets-failed",status});throw new Error(JSON.stringify(status));}
+  const response=await generic.POST();expect(response.status).toBe(200);
+  const status=await completion(generic.GET,(await response.json()).id);if(status.status!=="done"){proof.push({label:"assets-failed",status});throw new Error(JSON.stringify(status));}
   expect(database.query<{status:string},[]>("SELECT status FROM custom_assets WHERE id=1").get()?.status).toBe("published");
   await verifyPublished("assets-etc");
 },1_200_000);
@@ -140,8 +136,8 @@ test("actual Baker publication uses committed art and complete atomic release",a
   expect(result.success).toBe(true);await verifyPublished("baker");
 },1_200_000);
 test("actual reactor publication commits before DB publication flags and preserves generated script",async()=>{
-  const done=completion("reactor-publish-status.json");expect((await reactors.POST()).status).toBe(200);
-  const status=await done;if(status.status!=="done"){proof.push({label:"reactors-failed",status});throw new Error(JSON.stringify(status));}
+  const response=await reactors.POST();expect(response.status).toBe(200);
+  const status=await completion(reactors.GET,(await response.json()).id);if(status.status!=="done"){proof.push({label:"reactors-failed",status});throw new Error(JSON.stringify(status));}
   expect(database.query<{published:number},[]>("SELECT published FROM custom_reactors WHERE id=1").get()?.published).toBe(1);
   await verifyPublished("reactors");
 },1_200_000);

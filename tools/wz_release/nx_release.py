@@ -484,8 +484,6 @@ def merge_file(baseline, donor, trie, destination):
             if entries is not None:
                 children = [(n, source, i, {}) for n, i in entries]
                 old_names = [n for n, _ in entries]
-                if source is donor and len(set(old_names)) != len(old_names):
-                    raise NXError(f'New donor has ambiguous duplicate children: {name}')
                 if branch and old_names != sorted(old_names, key=lambda n: n.encode()):
                     raise NXError(f'Cannot mutate unsorted legacy child array: {name}')
                 for child_name, child_branch in branch.items():

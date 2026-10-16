@@ -4,7 +4,7 @@ import { privateApiSecret } from "@/lib/auth";
 
 
 /** No TCP fallback: this socket is mounted only into the private dashboard. */
-export async function requestGameControl(action: "restart" | "prepare-nx", payload?: unknown): Promise<Record<string, unknown>> {
+export async function requestGameControl(action: "restart" | "prepare-nx" | "verify-nx", payload?: unknown): Promise<Record<string, unknown>> {
   const socketPath = process.env.GAME_CONTROL_SOCKET;
   if (!socketPath) throw new Error("GAME_CONTROL_SOCKET is not configured");
   const body = JSON.stringify(payload ?? {});
@@ -13,7 +13,7 @@ export async function requestGameControl(action: "restart" | "prepare-nx", paylo
     socketPath, path: `/${action}`, method: "POST",
     headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body), "x-gm-secret": secret },
   });
-  req.setTimeout(action === "prepare-nx" ? 2 * 60 * 60 * 1000 : 240_000, () => req.destroy(new Error("Private game control timed out")));
+  req.setTimeout(action === "restart" ? 240_000 : 2 * 60 * 60 * 1000, () => req.destroy(new Error("Private game control timed out")));
   const received = once(req, "response");
   req.end(body);
   const [message] = await received;

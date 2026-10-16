@@ -8,12 +8,15 @@ Requires Python >=3.11 and the explicitly pinned existing WZ tool checkout.
 """
 from __future__ import annotations
 
+import errno
+import fcntl
 import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
 import re
 import stat
+import shutil
 import subprocess
 import sys
 
@@ -78,6 +81,26 @@ def copy_verified(source, destination, expected):
         raise ValueError(f"Snapshot hash/size mismatch: {source.name}")
     Path(destination).chmod(0o444)
 
+def snapshot_immutable(root, key, value, destination):
+    source = immutable_object(root, key, value)
+    expected = expectation(value)
+    def identity(info):
+        return {"dev": str(info.st_dev), "ino": str(info.st_ino), "size": str(info.st_size),
+                "mtimeNs": str(info.st_mtime_ns), "ctimeNs": str(info.st_ctime_ns)}
+    with source.open("rb") as incoming, Path(destination).open("xb") as outgoing:
+        before = os.fstat(incoming.fileno())
+        if identity(before) != value.get("identity") or before.st_size != expected["size"]:
+            raise ValueError("Verified immutable input identity changed")
+        try:
+            fcntl.ioctl(outgoing.fileno(), 0x40049409, incoming.fileno())  # Linux FICLONE
+        except OSError as error:
+            if error.errno not in (errno.EOPNOTSUPP, errno.ENOTTY, errno.EINVAL, errno.EXDEV, errno.ENOSYS):
+                raise
+            shutil.copyfileobj(incoming, outgoing, 1024 * 1024)
+        if identity(os.fstat(incoming.fileno())) != identity(before):
+            raise ValueError("Immutable input changed while snapshotting")
+    Path(destination).chmod(0o444)
+
 
 def baseline_snapshot(directory, manifest_path, destination, names, *, native_extras=False):
     observed = json.loads(Path(manifest_path).read_text())
@@ -89,6 +112,7 @@ def baseline_snapshot(directory, manifest_path, destination, names, *, native_ex
         raise ValueError("Native baseline may contain only explicitly approved flat WZ files")
     for name in sorted(records):
         copy_verified(regular_beneath(directory, name), destination / name, records[name])
+    return {name: expectation(row) for name, row in records.items()}
 
 
 def immutable_object(root, key, value):
@@ -151,7 +175,7 @@ def run_tool(argv, log):
         raise ValueError(f"{Path(argv[1]).name} failed: {detail}") from error
 
 
-def validate_result(result, donor, native, nx_baseline, tools):
+def validate_result(result, donor, native_expected, nx_expected, tools):
     provenance = json.loads((result / "provenance-manifest.json").read_text())
     coverage = json.loads((result / "candidate-coverage.json").read_text())
     preservation = json.loads((result / "semantic-preservation.json").read_text())
@@ -162,8 +186,9 @@ def validate_result(result, donor, native, nx_baseline, tools):
     if build.get("commit") != CONVERTER_COMMIT or expectation(build["patch"]) != metadata(tools / "nx_converter.patch"):
         raise ValueError("Donor does not identify the pinned genuine converter and source patch")
     for name, record in genuine["archives"].items():
-        if expectation(record["input"]) != metadata(native / (name + ".wz")) or expectation(record["output"]) != metadata(donor / (name + ".nx")):
-            raise ValueError("Donor provenance differs from verified native inputs/output bytes")
+        output = regular_beneath(donor, name + ".nx")
+        if expectation(record["input"]) != native_expected[name + ".wz"] or output.stat().st_size != expectation(record["output"])["size"]:
+            raise ValueError("Donor provenance differs from verified native inputs/output size")
     if expectation(provenance["donor_provenance"]) != metadata(donor / "donor-manifest.json"):
         raise ValueError("Merger donor provenance does not match genuine conversion")
     builders = {Path(row["name"]).name: expectation(row) for row in provenance["builder_sources"]}
@@ -178,19 +203,90 @@ def validate_result(result, donor, native, nx_baseline, tools):
     rows = []
     for name in sorted(NX_NAMES):
         path = regular_beneath(corpus, name)
-        actual = metadata(path)
-        if expectation(records[name]) != actual:
-            raise ValueError("Candidate output differs from its provenance digest")
+        actual = expectation(records[name])
+        if path.stat().st_size != actual["size"]:
+            raise ValueError("Candidate output size differs from producer provenance")
+        path.chmod(0o444)
         proof = preservation[name]
         if proof.get("whole_file_byte_identical") is True:
-            if actual != metadata(nx_baseline / name):
+            if actual != nx_expected[name]:
                 raise ValueError("Untargeted NX bytes were not preserved")
         elif proof.get("preservation", {}).get("all_untargeted_nodes_equal") is not True or not proof.get("targets") or any(target.get("equal") is not True for target in proof["targets"]):
             raise ValueError("Candidate lacks exact target equality/non-target preservation proof")
-        if name in ("UI.nx", "Effect.nx") and actual != metadata(nx_baseline / name):
+        if name in ("UI.nx", "Effect.nx") and actual != nx_expected[name]:
             raise ValueError("Protected browser UI/Effect archive changed")
         rows.append({"name": name, **actual})
     return rows
+
+
+class CapacityError(ValueError):
+    def __init__(self, receipt):
+        self.receipt = receipt
+        super().__init__("Insufficient candidate filesystem capacity: " + json.dumps(receipt, sort_keys=True))
+
+
+def baseline_records(directory, manifest_path, names, *, native_extras=False):
+    rows = json.loads(Path(manifest_path).read_text())["files"]
+    records = {row["name"]: row for row in rows}
+    if len(records) != len(rows) or not names.issubset(records) or (not native_extras and set(records) != names):
+        raise ValueError("Approved baseline manifest is not the complete 16-file cohort")
+    for name, row in records.items():
+        if Path(name).name != name or (native_extras and not name.endswith(".wz")):
+            raise ValueError("Unsafe baseline name")
+        if regular_beneath(directory, name).stat().st_size != expectation(row)["size"]:
+            raise ValueError("Baseline size differs from approved capacity input")
+    return records
+
+
+def capacity_preflight(root, request, current, assets):
+    native = baseline_records(os.environ["NATIVE_WZ_BASELINE_DIR"], os.environ["NATIVE_WZ_BASELINE_MANIFEST"], WZ_NAMES, native_extras=True)
+    native_bytes = sum(expectation(row)["size"] for row in native.values())
+    # Snapshot is copied before replacements; count both writes conservatively.
+    replacement_bytes = sum(immutable_object(root, key, row).stat().st_size for key, row in assets.items() if key.endswith(".wz") and Path(key).name == key)
+    committed = {name: current.get("assets", {}).get("nx/" + name) for name in NX_NAMES}
+    if any(committed.values()):
+        if not all(committed.values()):
+            raise ValueError("Committed NX authority is an incomplete cohort")
+        nx_bytes = sum(immutable_object(root, "nx/" + name, row).stat().st_size for name, row in committed.items())
+    else:
+        records = baseline_records(os.environ["NX_BASELINE_DIR"], os.environ["NX_BASELINE_MANIFEST"], NX_NAMES)
+        nx_bytes = sum(expectation(row)["size"] for row in records.values())
+    # Future output sizes are budgets, not measured converter output.
+    # Two full validated corpora per output, plus a cold-build reserve.
+    corpus_budget = 2 * max(native_bytes + replacement_bytes, nx_bytes)
+    build_reserve = int(os.environ.get("NX_CONVERTER_BUILD_RESERVE_BYTES", str(2 * 1024**3)))
+    overhead_reserve = int(os.environ.get("NX_PREPARE_OVERHEAD_RESERVE_BYTES", str(512 * 1024**2)))
+    if build_reserve < 0 or overhead_reserve < 0:
+        raise ValueError("Capacity reserves cannot be negative")
+    plan = {"converterOutputBudgetBytes": corpus_budget,
+            "converterBuildReserveBytes": build_reserve,
+            "candidateOutputBudgetBytes": corpus_budget,
+            "publicationCopyBudgetBytes": corpus_budget,
+            "overheadReserveBytes": overhead_reserve}
+    if request.get("mode") == "baseline":
+        plan = {"converterOutputBudgetBytes": 0, "converterBuildReserveBytes": 0,
+                "candidateOutputBudgetBytes": 0,
+                "publicationCopyBudgetBytes": native_bytes + replacement_bytes + nx_bytes,
+                "overheadReserveBytes": overhead_reserve}
+    required = native_bytes + replacement_bytes + nx_bytes + sum(plan.values())
+    fs = os.statvfs(root)
+    receipt = {"path": str(root), "filesystemDevice": root.stat().st_dev,
+               "requiredBytes": required, "availableBytes": fs.f_bavail * fs.f_frsize,
+               "nativeSnapshotBytes": native_bytes, "replacementBytes": replacement_bytes,
+               "nxSnapshotBytes": nx_bytes, "budgets": plan}
+    if receipt["availableBytes"] < required:
+        raise CapacityError(receipt)
+    return receipt
+
+def require_remaining_capacity(root, required, phase):
+    fs = os.statvfs(root)
+    receipt = {"path": str(root), "filesystemDevice": root.stat().st_dev,
+               "phase": phase, "requiredBytes": required,
+               "availableBytes": fs.f_bavail * fs.f_frsize}
+    if receipt["availableBytes"] < required:
+        raise CapacityError(receipt)
+    return receipt
+
 
 
 def prepare(request):
@@ -200,12 +296,16 @@ def prepare(request):
     candidate = request["manifest"]
     if candidate.get("releaseId") != release_id:
         raise ValueError("Prepared manifest does not identify this release")
-    operations = approved_operations(request["operations"])
+    mode = request.get("mode", "convert")
+    if mode not in ("baseline", "convert"):
+        raise ValueError("Unknown NX preparation mode")
+    operations = [] if mode == "baseline" else approved_operations(request["operations"])
     root = Path(os.environ["ASSET_DIR"]).resolve(strict=True)
     tools = pinned_tools(os.environ["WZ_RELEASE_TOOLS_DIR"])
     current = json.loads(Path(os.environ["LAUNCHER_MANIFEST_PATH"]).read_text())
     if candidate.get("previousReleaseId") != current.get("releaseId"):
         raise ValueError("Committed authority changed before NX preparation")
+    capacity = capacity_preflight(root, request, current, candidate["assets"])
     job = root / "nx-candidates" / release_id
     if job.parent.is_symlink():
         raise ValueError("NX candidate storage is a symlink")
@@ -214,35 +314,52 @@ def prepare(request):
     native, nx_baseline, donor, result = (job / name for name in ("native", "nx-baseline", "donor", "result"))
     native.mkdir()
     nx_baseline.mkdir()
-    baseline_snapshot(os.environ["NATIVE_WZ_BASELINE_DIR"], os.environ["NATIVE_WZ_BASELINE_MANIFEST"], native, WZ_NAMES, native_extras=True)
+    native_expected = {name: expectation(row) for name, row in baseline_records(
+        os.environ["NATIVE_WZ_BASELINE_DIR"], os.environ["NATIVE_WZ_BASELINE_MANIFEST"], WZ_NAMES, native_extras=True).items()}
     assets = candidate["assets"]
-    for key in sorted(key for key in assets if key.endswith(".wz") and Path(key).name == key):
-        # Replace only in this new isolated native snapshot, never baseline/live.
-        destination = native / key
-        if destination.exists():
-            destination.unlink()
-        copy_verified(immutable_object(root, key, assets[key]), destination, assets[key])
+    for key, value in assets.items():
+        if key.endswith(".wz") and Path(key).name == key:
+            native_expected[key] = expectation(value)
+    for name, expected in sorted(native_expected.items()):
+        if name in assets:
+            snapshot_immutable(root, name, assets[name], native / name)
+        else:
+            copy_verified(regular_beneath(os.environ["NATIVE_WZ_BASELINE_DIR"], name), native / name, expected)
     committed_nx = {name: current.get("assets", {}).get("nx/" + name) for name in NX_NAMES}
     if any(committed_nx.values()):
         if not all(committed_nx.values()):
             raise ValueError("Committed NX authority is an incomplete cohort")
+        nx_expected = {name: expectation(value) for name, value in committed_nx.items()}
         for name, value in committed_nx.items():
-            copy_verified(immutable_object(root, "nx/" + name, value), nx_baseline / name, value)
+            snapshot_immutable(root, "nx/" + name, value, nx_baseline / name)
     else:
-        baseline_snapshot(os.environ["NX_BASELINE_DIR"], os.environ["NX_BASELINE_MANIFEST"], nx_baseline, NX_NAMES)
+        nx_expected = baseline_snapshot(os.environ["NX_BASELINE_DIR"], os.environ["NX_BASELINE_MANIFEST"], nx_baseline, NX_NAMES)
+    native_files = [{"name": name, **expected, "relativePath": f"nx-candidates/{release_id}/native/{name}"} for name, expected in sorted(native_expected.items())]
+    if mode == "baseline":
+        nx_baseline.rename(job / "corpus")
+        files = [{"name": name, **expected, "relativePath": f"nx-candidates/{release_id}/corpus/{name}"} for name, expected in sorted(nx_expected.items())]
+        return {"success": True, "files": files, "nativeFiles": native_files, "capacity": capacity}
     observed = job / "observed-nx.json"
-    observed.write_text(json.dumps({"files": [{"name": name, "sha256": (meta := metadata(nx_baseline / name))["hash"], "size": meta["size"]} for name in sorted(NX_NAMES)]}))
+    observed.write_text(json.dumps({"files": [{"name": name, "sha256": nx_expected[name]["hash"], "size": nx_expected[name]["size"]} for name in sorted(NX_NAMES)]}))
     contract = job / "operations.json"
     contract.write_text(json.dumps({"operations": operations}))
-    run_tool([sys.executable, str(tools / "nx_convert.py"), "--native", str(native), "--output", str(donor), "--build-dir", str(job / "converter-build"), "--archives", *CONVERTIBLE, "--contract", str(contract)], job / "convert.log")
+    touched = sorted({operation["target_wz"].removesuffix(".wz") for operation in operations})
+    run_tool([sys.executable, str(tools / "nx_convert.py"), "--native", str(native), "--output", str(donor), "--build-dir", str(job / "converter-build"), "--archives", *touched, "--contract", str(contract)], job / "convert.log")
+    donor_bytes = sum(path.stat().st_size for path in donor.rglob("*") if path.is_file())
+    capacity["beforeMerge"] = require_remaining_capacity(
+        root, 2 * max(donor_bytes, capacity["nxSnapshotBytes"]) + capacity["budgets"]["overheadReserveBytes"],
+        "before-merge")
     run_tool([sys.executable, str(tools / "nx_release.py"), "--baseline", str(nx_baseline), "--baseline-manifest", str(observed), "--donor", str(donor), "--contract", str(contract), "--output", str(result)], job / "merge.log")
-    files = validate_result(result, donor, native, nx_baseline, tools)
+    files = validate_result(result, donor, native_expected, nx_expected, tools)
+    capacity["beforePublicationCopy"] = require_remaining_capacity(
+        root, sum(row["size"] for row in files) + capacity["budgets"]["overheadReserveBytes"],
+        "before-publication-copy")
     (result / "corpus").rename(job / "corpus")
     for row in files:
         (job / "corpus" / row["name"]).chmod(0o444)
         row["relativePath"] = f"nx-candidates/{release_id}/corpus/{row['name']}"
     (job / "bridge-provenance.json").write_text(json.dumps({"toolsCommit": TOOLS_COMMIT, "releaseId": release_id, "files": files}, indent=2) + "\n")
-    return {"success": True, "files": files}
+    return {"success": True, "files": files, "nativeFiles": native_files, "capacity": capacity}
 
 
 def main():
@@ -253,7 +370,10 @@ def main():
         result = prepare(json.loads(raw))
         print(json.dumps(result))
     except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as error:
-        print(json.dumps({"success": False, "error": str(error)}))
+        result = {"success": False, "error": str(error)}
+        if isinstance(error, CapacityError):
+            result["capacity"] = error.receipt
+        print(json.dumps(result))
         raise SystemExit(1)
 
 

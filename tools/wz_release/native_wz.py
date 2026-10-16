@@ -155,7 +155,10 @@ class Node:
     def put(self, path, node, replace=False):
         parts = path.split('/')
         parent = self.get('/'.join(parts[:-1]))
-        old = parent.child(parts[-1])
+        matches = [n for n in parent.children if n.name == parts[-1]]
+        if len(matches) > 1:
+            raise FormatError(f'Ambiguous exact mutation target: {path}')
+        old = matches[0] if matches else None
         if old is not None and not replace:
             raise FormatError(f'Node already exists: {path}')
         node.name = parts[-1]
@@ -208,12 +211,12 @@ def properties(r):
     count = r.int()
     if not 0 <= count <= 1000000:
         raise FormatError(f'Invalid property count {count}')
-    result, names = [], set()
+    # PKG1 properties are ordered lists, not uniqueness-constrained maps.
+    # Preserve shadowed names exactly; pinned MapleLib and Java XML lookup use
+    # the first matching property. Exact mutations reject ambiguous targets.
+    result = []
     for _ in range(count):
         name = r.string_block()
-        if name in names:
-            raise FormatError(f'Duplicate property {name!r}')
-        names.add(name)
         tag = r.byte()
         if tag == 0:
             node = Node(name, 'null')

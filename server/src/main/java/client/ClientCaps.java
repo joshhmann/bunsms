@@ -31,8 +31,9 @@ public final class ClientCaps {
     /** Cash-shop window packets (0x3730/0x3731). */
     public static final int CASHSHOP_WINDOW = 0x20;
 
-    /** Bits the server currently enables. Prism/weather/lamp/cashshop follow later. */
-    public static final int SERVER_ENABLED = CHECKIN_WINDOW;
+    /** Implemented paired RC features; legacy connections still negotiate no bits. */
+    public static final int SERVER_ENABLED = LONG_DAMAGE_LINES | PRISM_SYNC | CHECKIN_WINDOW
+            | WEATHER_SYNC | LAMP_PREVIEW | CASHSHOP_WINDOW;
 
     private ClientCaps() {
     }

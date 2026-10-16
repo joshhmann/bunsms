@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 
 SPEC = importlib.util.spec_from_file_location("prepare_nx_release", Path(__file__).parents[1] / "prepare_nx_release.py")
 bridge = importlib.util.module_from_spec(SPEC)
@@ -77,6 +79,33 @@ class CandidateInputTests(unittest.TestCase):
         for node in ("../other", "/other", "a//b", "a/./b", "a\\b", "*"):
             with self.subTest(node=node), self.assertRaises(ValueError):
                 bridge.approved_operations([{"target_wz": "String.wz", "target_image": "Eqp.img", "op": "set_subtree", "target_node": node}])
+
+    def test_capacity_failure_has_filesystem_receipt_without_writes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            with patch.object(bridge.os, "statvfs", return_value=SimpleNamespace(f_bavail=2, f_frsize=4)):
+                with self.assertRaises(bridge.CapacityError) as caught:
+                    bridge.require_remaining_capacity(root, 9, "before-copy")
+            self.assertEqual(caught.exception.receipt["requiredBytes"], 9)
+            self.assertEqual(caught.exception.receipt["availableBytes"], 8)
+            self.assertEqual(caught.exception.receipt["path"], str(root))
+            self.assertEqual(list(root.iterdir()), [])
+
+    def test_automatic_capacity_budget_uses_validated_corpus_sizes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            native = {name: {"hash": "a" * 64, "size": 10} for name in bridge.WZ_NAMES}
+            nx = {name: {"hash": "b" * 64, "size": 20} for name in bridge.NX_NAMES}
+            environment = {"NATIVE_WZ_BASELINE_DIR": temp, "NATIVE_WZ_BASELINE_MANIFEST": temp,
+                           "NX_BASELINE_DIR": temp, "NX_BASELINE_MANIFEST": temp,
+                           "NX_CONVERTER_BUILD_RESERVE_BYTES": "100",
+                           "NX_PREPARE_OVERHEAD_RESERVE_BYTES": "20"}
+            with patch.dict(os.environ, environment), patch.object(bridge, "baseline_records", side_effect=[native, nx]), patch.object(bridge.os, "statvfs", return_value=SimpleNamespace(f_bavail=10000, f_frsize=1)):
+                receipt = bridge.capacity_preflight(root, {}, {}, {})
+            self.assertEqual(receipt["nativeSnapshotBytes"], 160)
+            self.assertEqual(receipt["nxSnapshotBytes"], 320)
+            self.assertEqual(receipt["requiredBytes"], 160 + 320 + 3 * 640 + 100 + 20)
+            self.assertEqual(list(root.iterdir()), [])
 
 
 @unittest.skipUnless(os.environ.get("NX_BRIDGE_FIXTURE_REQUEST"), "Requires approved genuine pinned-tool native/NX fixture; no fake converter substituted")

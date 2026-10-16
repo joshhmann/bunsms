@@ -2,6 +2,7 @@
 import asyncio
 import importlib.util
 import json
+import os
 import pathlib
 import signal
 from aiohttp import web
@@ -17,7 +18,9 @@ async def main():
     await runner.setup()
     site = web.TCPSite(runner, '127.0.0.1', 0)
     await site.start()
-    print(json.dumps({'port': site._server.sockets[0].getsockname()[1]}), flush=True)
+    port = site._server.sockets[0].getsockname()[1]
+    os.environ['NX_HTTP_ORIGIN'] = 'http://127.0.0.1:' + str(port)
+    print(json.dumps({'port': port}), flush=True)
     stop = asyncio.Event()
     loop = asyncio.get_running_loop()
     loop.add_signal_handler(signal.SIGTERM, stop.set)

@@ -157,7 +157,7 @@ describe("immutable release transaction through actual handlers and byte service
 
   test("first publication must retain the approved existing bytes before accepting a content update", async () => {
     const files = Object.entries(initial).map(([key, data]) => source(key, key === "BunsMS.exe" ? Buffer.from("new content before seed retention") : data));
-    await expect(A.publishFiles(files)).rejects.toThrow(/Bootstrap must preserve/);
+    await expect(A.publishFiles(files)).rejects.toMatchObject({ status: 409 });
     expect(A.readManifest().manifest.releaseId).toBeUndefined();
     expect(A.readManifest().manifest.files[0].hash).toBe(metadata("BunsMS.exe", initial["BunsMS.exe"]).hash);
   });
@@ -339,7 +339,7 @@ describe("immutable release transaction through actual handlers and byte service
     expect(bad.status).not.toBe(200);
   });
 
-  test("server tar and marker commit together; conversion failure leaves both old", async () => {
+  test("server tar and marker commit together; explicit browser conversion failure leaves both old", async () => {
     await bootstrap(); const tar = source("server-wz.tar.gz", Buffer.from("isolated tar-byte transport fixture"));
     const committed = await A.publishFiles([tar]);
     const descriptor = JSON.parse((await downloaded(committed.manifest.assets!["server-wz.version"].url)).toString());
@@ -347,7 +347,7 @@ describe("immutable release transaction through actual handlers and byte service
     expect(await downloaded(descriptor.url)).toEqual(fs.readFileSync(tar.path));
     const id = A.beginRelease(); const changed = source("server-wz.tar.gz", Buffer.from("candidate that cannot convert"));
     await A.stageFile(id, changed.key, changed.path);
-    await expect(publishStagedWzRelease(id, [changed], [{ op: "import_image", target_wz: "Npc.wz", target_image: "9900200.img" }])).rejects.toThrow("isolated conversion rejection");
+    await expect(publishStagedWzRelease(id, [changed], [{ op: "import_image", target_wz: "Npc.wz", target_image: "9900200.img" }], "native-and-browser")).rejects.toThrow("isolated conversion rejection");
     expect(A.readManifest().manifest.releaseId).toBe(committed.releaseId);
     expect(await downloaded(descriptor.url)).toEqual(fs.readFileSync(tar.path));
     expect((await fetch(`${httpOrigin}/restart`, { method: "POST" })).status).toBe(404);

@@ -80,10 +80,16 @@ function handleInitialStatus() {
         var inventoryOption = options[i];
         selectionOptionsString += "\r\n#L" + inventoryOption + "# " + InventoryTypeOptions.StringMap[inventoryOption] + "#l";
     }
+    selectionOptionsString += "\r\n#L5#Search monster drops or item sources.#l";
     cm.sendSimple(selectionOptionsString);
 }
 
 function handleInventoryStartSelectionStatus(selection) {
+    if (selection === 5) {
+        cm.dispose();
+        cm.openNpc(9000041, 'search');
+        return;
+    }
     if (selection !== Math.floor(selection) || options.indexOf(selection) === -1) {
         cm.dispose();
         return;

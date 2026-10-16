@@ -2,12 +2,12 @@ package soloMapling.Casino;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import provider.wz.WZFiles;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
 public class WzXmlPatcher {
 
     private static final Logger log = LoggerFactory.getLogger(WzXmlPatcher.class);
-    private static final String WZ_BASE_PATH = "wz";
 
     /**
      * Apply all casino chip patches. Call this once during server startup
@@ -44,12 +43,11 @@ public class WzXmlPatcher {
     public static void applyAllPatches() {
         log.info("[WzXmlPatcher] Applying casino chip patches...");
         patchCasinoChipItems();
-        log.info("[WzXmlPatcher] All patches applied.");
     }
 
     private static void patchCasinoChipItems() {
         // Casino chip items 4002000-4002003 live in Item.wz/Etc/0400.img.xml
-        Path xmlPath = Paths.get(WZ_BASE_PATH, "Item.wz", "Etc", "0400.img.xml");
+        Path xmlPath = WZFiles.ITEM.getFile().resolve("Etc").resolve("0400.img.xml");
         if (!Files.exists(xmlPath)) {
             log.warn("[WzXmlPatcher] File not found: {}. Skipping casino chip patches.", xmlPath);
             return;
@@ -106,7 +104,7 @@ public class WzXmlPatcher {
         String infoBlock = content.substring(infoStart, infoEnd);
 
         // Check if price line already exists
-        Pattern pricePattern = Pattern.compile("<int name=\"price\" value=\"(\\d+)\"/>");
+        Pattern pricePattern = Pattern.compile("<int name=\"price\" value=\"(\\d+)\"\\s*/>");
         Matcher matcher = pricePattern.matcher(infoBlock);
 
         String newInfoBlock;
@@ -116,7 +114,7 @@ public class WzXmlPatcher {
                 return content; // Already correct
             }
             newInfoBlock = infoBlock.replaceFirst(
-                    "<int name=\"price\" value=\"\\d+\"/>",
+                    "<int name=\"price\" value=\"\\d+\"\\s*/>",
                     "<int name=\"price\" value=\"" + newPrice + "\"/>"
             );
         } else {
@@ -145,11 +143,11 @@ public class WzXmlPatcher {
         }
 
         String itemBlock = content.substring(startIdx, itemEnd);
-        String flagLine = "<int name=\"" + flagName + "\" value=\"1\"/>";
+        String flagLine = "<int name=\"" + flagName + "\" value=\"1\"\\s*/>";
 
-        if (itemBlock.contains(flagLine)) {
+        if (Pattern.compile(flagLine).matcher(itemBlock).find()) {
             // Remove the entire line including surrounding whitespace
-            String patternStr = "\\s*<int name=\"" + flagName + "\" value=\"1\"/>";
+            String patternStr = "\\s*" + flagLine;
             String newItemBlock = itemBlock.replaceFirst(patternStr, "");
             log.info("[WzXmlPatcher] Item {}: removed {} flag", paddedItemId, flagName);
             return content.substring(0, startIdx) + newItemBlock + content.substring(itemEnd);

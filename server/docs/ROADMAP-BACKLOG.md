@@ -1,31 +1,39 @@
 # Roadmap backlog — PlayerBots+Augur fusion on `solobots`
 
-Date: 2026-10-15. Base: `solobots`. Completed: opcode registry `f868346`,
-launcher profiles `0af7a62`+`35099e0`, Kaentake compat GO, NX coverage.
-In flight: press-mapping fix (`press-debug-lead`), daily check-in
-(`daily-checkin-lead`). Cross-cutting blocker (decision, not a ticket):
-Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
-(prism, damage-cap, weather clients, daily check-in DLL window).
-(GitHub Issues are OFF for this repo; this file is the tracker.)
+Date: 2026-10-16. Required delivery is **all accepted content/addons/fixes together
+in a Windows TESTING RC with a matching full-content test server**, not a reduced
+stock baseline. [CURRENT-STATE.md](CURRENT-STATE.md) records exact source,
+artifacts, exercised evidence and holds. Only full-content-server and
+full-content-windows are active; old worker names are historical. Browser and
+Linux/Wine are PARKED, not completed and not Windows runtime gates. Existing
+production Java/DB/browser/NX remain unchanged until explicit verified rollout.
+The backend retains its actual existing Linux deployment method; Windows backend
+execution is a temporary CI harness only. GitHub Issues remain OFF.
+
+Upstream review is pinned16ab7b7, unrelated histories: selective picks, not rebase.
+Preserve GROUPA0874223/GROUPB60b869c; historical236 is not a latest436-behind claim.
+No AI-GM/voting/Flux/Tripo3D/new-product parity is added. Evan remains REVIEW ONLY.
+No accepted full-content item is USERDEFERRED. Source/test counts do not close
+ordinary-player, bot, native-visual or lifecycle acceptance.
 
 - [x] **Ticket 1 — Browser pointer input proven; false press-mapping bug closed (no fix was necessary)** — Owner: press-debug-lead (done)
   Evidence: durable `/tmp/shared/pointer-proof/browser-pointer-proof.json` (parent-viewed world-select + char-select images; trusted Login→Go transitions). Scope: viewport, DPR 1.25; native viewport tests only, no inventory/parity claim. Served bytes pre-b8bfc93 (31f9ca8a/090715ad); b8bfc93 hardening reverted separately (cleanup-press-mapping-noop 46dfd6c). The alleged CSS→logical Y-leg defect was a false diagnosis — backlog records proof, not a mapping fix.
 
-- [ ] **Ticket 2 — Inventory/equipment acceptance + dev WASM promotion** — Owner: unassigned
+- [ ] **Ticket 2 — Inventory/equipment acceptance + dev WASM promotion** — PARKED browser track
   Scope: Dev-smoke WASM pair `31f9ca8a`/`090715ad` (inventory-equipment +
   shop-storage, PacketSwitch op 306, BuyState soldout fix); promote to prod
   pair only after dev smoke passes; rollback = whole-root swap, never
   single JS/WASM file. Verifies the browser baseline later features test on.
-  Dependencies: Blocked by ticket 1. Blocks: ticket 3 ship, ticket 10 testing, ticket 15.
+  Dependencies: retained browser-track work only; not a Windows RC prerequisite.
 
-- [ ] **Ticket 3 — Daily check-in: server → window → WZ → ship** — Owner: unassigned
+- [ ] **Ticket 3 — Daily check-in: server → window → WZ → ship** — server integrated; paired native compiled; actual ACK/window/reward/relog acceptance pending
   Scope: Server handler + rewards + gm0 command, Liquibase port of
   `daily_checkin.sql`, opcode enum + PacketProcessor/Creator (registry range
   already reserved), tiny `UI.wz` fragment merge, client window (injector C++
-  or browser UI per step-0 decision); ship end-to-end. In flight with
-  `daily-checkin-lead`; proves the 5-half pipeline on reconciled seam files.
-  Dependencies: Opcode registry done; server half unblocked; window half
-  blocked on injector-or-browser-UI decision; ship blocked by ticket 1 + ticket 2 baseline.
+  or the accepted paired native client); ship end-to-end. Native build success
+  is not ordinary-player window/reward/relog proof.
+  Dependencies: opcode registry/injector choice resolved; actual paired Windows
+  negotiation and feature acceptance required, not parked browser promotion.
 
 - [x] **Ticket 4 — Evan WZ merge review + playable prerequisites (REVIEW ONLY)** — Owner: WZ integration
   Evidence: [durable per-file review](EVAN-WZ-REVIEW.md) and its linked full SHA256 manifest.
@@ -34,30 +42,30 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   same-numbered skill books. Creation/packet/skill/action/dragon prerequisites recorded.
   No Evan assets merged, no playable class claimed. Informs ticket 15 asset manifest only.
 
-- [ ] **Ticket 5 — MapleRoot wave 1: shopupdate SQL** — Owner: unassigned — server-half [x] (landed)
+- [x] **Ticket 5 — MapleRoot wave 1: shopupdate SQL** — integrated; actual172 per-pair/custom-row/idempotence and8074 NPC shop paths accepted
   Scope: Port `3-db_shopupdate.sql` (INSERT IGNORE, 3 shops + 318 rows) as
   Liquibase change; near-zero risk, no rates/packets/infra. First ranked
   MapleRoot slice; never bulk-port (rates, `USE_MTS`, multiclient/PIC,
   packet/exploit hunks, jedis/jackson, hardcoded Discord/admin SQL).
-  Dependencies: None (needs prod-commit pin recorded before porting).
+  Evidence: recovered real MySQL per-pair repair and actual NPC conversation/shop tests; parent accepted. Full item/native catalog qualification remains ticket15.
 
-- [ ] **Ticket 6 — MapleRoot wave 2: Maker extraction** — Owner: unassigned — server-half [x] (landed)
+- [ ] **Ticket 6 — MapleRoot wave 2: Maker extraction** — pure extraction integrated; actual public craft materials/cost/failure acceptance pending
   Scope: Port `MakerService` + delegation delta; pure Java, no WZ/DB/client.
   Follows wave 1 in rank order; same never-bulk-port exclusions as ticket 5.
   Dependencies: None (ranked after ticket 5; unblocked server-only).
 
-- [ ] **Ticket 7 — MapleRoot wave 3: buyback ledger** — Owner: unassigned — server-half [x] (landed)
+- [ ] **Ticket 7 — MapleRoot wave 3: buyback ledger** — actual transactional economy seams green; combined ordinary-player persistence/relog acceptance pending
   Scope: +1 Liquibase table + `MAXIMUM_TRANSACTIONS_FOR_BUYBACK` port;
   server-only, no client/WZ. Ranked after Maker; same exclusions as ticket 5.
   Dependencies: None (ranked after ticket 6).
 
-- [ ] **Ticket 8 — MapleRoot wave 4: QoL scripts (quicksell + search first)** — Owner: unassigned — server-half [partial] (quicksell landed per `2b1d966`; search pending — search.js skipped, NPC 1032009 taken, needs own ticket or explicit WONTFIX)
+- [ ] **Ticket 8 — MapleRoot wave 4: QoL scripts (quicksell + search first)** — both scripts integrated; quicksell seam green; ordinary search/persistence acceptance pending, not WONTFIX/new-ticket
   Scope: Port quicksell + search-first NPC scripts (buns already has
   WhatDrops/WhoDrops; skip duplicates); script-only, no Java/WZ/DB.
   Ranked after buyback; same exclusions as ticket 5.
   Dependencies: None (ranked after ticket 7).
 
-- [ ] **Ticket 9 — MapleRoot wave 5: boss-pack expeditions (FULL scope: all accepted families, not Wave 0 alone)** — Owner: expedition-content-waves — server-half [partial, NOT runtime accepted] (existing DKBONUS1/YOSHIJQ + genuine Castellan retained; source-backed BossLog/leaderboard persistence and migration 032, Krexel ordinary transport/registrar/event/exit, and three Alcaster/Rulax consumer fixes implemented on the isolated content branch; Maven packaging only, no booted lifecycle proof yet; all remaining accepted-family scripts, guarded drop/card migration 033 and full player progression remain unfinished; unused MAGNUS/LOTUS enum ladders remain unimplemented)
+- [ ] **Ticket 9 — MapleRoot wave 5: boss-pack expeditions (FULL scope: all accepted families, not Wave 0 alone)** — remaining family/registrar/progression source plus033/034 and complete native/XML candidate integrated; NOT runtime accepted; family/bot/visual consumers pending
   Scope per ticket: +13 `ExpeditionType` + event scripts + registrar NPCs; map/mob WZ
   checks first, then BossLog/leaderboard, HyperTP handler, Rulax/Alcaster
   bundle, config flags per verdict. Wave-0-only + enum additions do NOT complete
@@ -71,22 +79,26 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   daily-limit flag remains unchanged. Source origin: `MapleRoot Full Repack.zip`,
   `Server/scripts/` and `Server/src/main/java/server/expeditions/`; persistence
   schema comes only from `Database/CLEANDB.sql`, never its accounts/admin data.
-  The staged first-family asset contract is not runtime acceptance. Do not mark
-  this ticket complete before normal GM0 entry, genuine phases/kill callbacks,
-  rewards, stored results after relog and failure cleanup are actually exercised.
-  Dependencies: Blocked on map/mob WZ checks (NX coverage); ranked after ticket 8.
+  The complete candidate is not runtime acceptance:46 MISSING and five bounded
+  UNCONSUMED references remain machine-recorded. A native null guard does not
+  classify missing effects as cosmetic. Require genuine ordinary GM0 phases,
+  rewards/relog/failure cleanup and bounded real bots-ON party/expedition
+  combat/drop/clear/leave behavior wherever existing bot capabilities apply.
+  Six human GM0 fixtures are not bot proof; preserve GM4 exclusion and bot cap0.
+  Dependencies: matching full native/XML, fresh reader/catalog and actual
+  lifecycle/visual/bot evidence, not parked browser GUI development.
 
-- [ ] **Ticket 10 — Cash-shop window** — Owner: unassigned — server-half [x] (landed; WZ merge + client window pending)
+- [ ] **Ticket 10 — Cash-shop window** — server integrated; paired native compiled; actual catalog/window/purchase/relog acceptance pending
   Scope: New `server/cashshop/` classes + handler + `CASHSHOP_*`
   (0x145–0x14D exist), catalog tooling, `UI/CashShop.img` merge, client
   window (injector or browser UI per decision). Server half standalone.
-  Dependencies: Blocked by ticket 1 + ticket 2 baseline and injector-or-browser-UI decision.
+  Dependencies: actual paired native negotiation/catalog/window acceptance; no parked browser baseline gate.
 
-- [ ] **Ticket 11 — Coloring prism** — Owner: unassigned — server-half [x] (landed; injector hooks pending)
+- [ ] **Ticket 11 — Coloring prism** — server/zero-count clear integrated; paired native compiled; actual tint/observer/relog acceptance pending
   Scope: DB xml (12 cols) → server → opcodes `0x372E`/`0x372F` + item
   5782000 → `weapontint.cpp` hooks (`CAvatar::PrepareActionLayer 0x00453AD1`);
   merge (don't stack) with ImGui color-picker work. Registry reserved `f868346`.
-  Dependencies: Blocked on injector-YES decision + ticket 14 smoke. Blocks: ticket 12.
+  Dependencies: actual paired native smoke/feature behavior. Blocks paired ticket12 acceptance.
 
 - [ ] **Ticket 12 — Damage cap to long** — Owner: unassigned — server-half [x] (landed; paired client release pending)
   Scope: Client + server ship together (mob HP already `long`); SP hooks +
@@ -94,52 +106,53 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   release only. Needs injector toolchain proven by ticket 11.
   Dependencies: Blocked by ticket 11 (hooks + injector proven).
 
-- [ ] **Ticket 13 — Weather/time (LAST, highest cost)** — Owner: unassigned — server-half [x] (landed; NightCommand decision + injector client pending)
+- [ ] **Ticket 13 — Weather/time (LAST, highest cost)** — server and paired weather/lamps native compiled; actual native acceptance pending; weather gameplay independently default-off
   Scope: 15 new Java destinations (clean add) + 10 `.java.patch` hunks over
   bot-touched files + Effect/Sound.wz manifest gap + injector client;
   NightCommand merge-or-rename first; elemental-bonus stays optional.
   Do after every other feature.
-  Dependencies: Blocked by NightCommand decision + injector toolchain (tickets 11/12
-  proven) + Effect/Sound.wz story. Last in queue.
+  Dependencies: paired native feature/runtime proof and exact Effect/Sound source
+  disposition; consumed missing effects require actual visual classification.
 
-- [ ] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz)** — Owner: unassigned
+- [ ] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz)** — full-content-windows; actual ACK/login/world/feature acceptance pending
   Scope: Smoke staged Windows EXE/DLL/Custom.wz trial (Kaentake opt-in profile
   `0af7a62`+`35099e0` normally hosted); record pass/fail incl. Windows/Wine
   status; no behavior changes. Compat GO already recorded; this is the
   runtime proof the injector-based clients (tickets 11–13) build on.
   Dependencies: None (parallel). Blocks: ticket 11, ticket 12-client, ticket 13-client.
 
-- [ ] **Ticket 15 — Verified selfhost content intake (NX/community pack)** — Owner: unassigned
+- [ ] **Ticket 15 — Verified selfhost content intake (NX/community pack)** — full51/17WZ and matching54659-file XML candidate assembled; fresh native/catalog/profile acceptance pending
   Scope: Inventory-then-fit TengaMS 4.9G / Community IMG 6.3G against WZ
   symlink + manifest + launcher hosting; settled NX set stages to the
   self-hosted asset dir (ticket 17 replaced R2); record hashes. Do not
-  schedule content fit until WZ story settled. STAYS OPEN until full native
-  requirements + final triple/DLL decisions land (hosting ready, content
-  pending — no 'all tickets complete' claim from cutover).
-  Dependencies: Blocked by ticket 2 (NX coverage baseline) + ticket 4 (Evan manifest
-  answer); needs WZ symlink gap closed (no `/opt/cosmicms/wz` locally).
+  schedule indiscriminate whole-archive/Drive imports. STAYS OPEN until the exact
+  full native catalog plus paired Kae/Buns/Custom/config/CRT9 and matching XML,
+  JAR/tar are frozen and actually validated. Preserve MISSING/UNCONSUMED records
+  and review-only Evan scope; do not claim full asset coverage.
+  Dependencies: fresh genuine Windows reader/item-catalog and gameplay evidence
+  for this hash set. Retained NX functionality is not a new browser runtime gate.
 
-- [ ] **Ticket 16 — Linux/Wine spike** — Owner: unassigned
+- [ ] **Ticket 16 — Linux/Wine spike** — PARKED; checkpoint/findings preserved, not a Windows RC gate
   Scope: Time-boxed spike: stock EXE and Kaentake EXE under Wine on Linux;
   record what runs (login/move/chat baseline), failures, and version pins;
   no fixes in this ticket — findings feed ticket 14 and client-work estimates.
   Parallel investigation, no build/deploy.
   Dependencies: None (parallel). Informs: ticket 14, tickets 11–13 estimates.
 
-- [ ] **Ticket 17 — Self-hosted asset serving and atomic publication** — Owner: selfhost-publication-review (source); selfhost-assets-spec (operations)
-  Source repair branch: `selfhost-assets-repair`, based on frozen `faa818c`.
-  The accepted `de4d851` fixed review remains changes-requested; old throwaway
-  cycle counts and manual byte-copy rollback do not close its findings.
+- [ ] **Ticket 17 — Self-hosted asset serving and atomic publication** — full-content-server
+  True ancestry9396e2c plus recovered native-catalog/NX-cohort work integrated.
+  Failedfaa818c is not deployable. Current publisher/control checks22 pass;
+  actual Node20/public HTTPS gzip GET/HEAD/Range/common-publisher rollback proven.
   Repair implements one verified immutable object/retained-manifest boundary,
   stock-default/private-complete profiles, authenticated streaming upload/CLI,
   all art/GM/raw-WZ/four publisher callers, actual pinned WZ→NX I/O and a
   committed complete NX authority, server tar/marker/baseline application, and
   exact retained overlay rollback with persistent pending recovery.
   Source-compose/systemd/CI/runbook parity is part of the repair, not a manual
-  substitute for a missing API. Isolated actual-handler/SQL/byte-service,
-  CLI/GM, real converter/cohort, and actual-entrypoint checks are permanent.
-  Final fixed-commit independent review and gated service/content activation
-  are distinct from the previous live read-serving receipt.
+  substitute for a missing API. Final hash-set handler/SQL/byte-service,
+  producer/cohort and entrypoint acceptance remain required. New read-only
+  TESTING CAS `/rc-assets/` leaves production Java/DB/browser/NX unchanged.
+  Generic binary tar headers are fixed; a `.bin` bootstrap alias alone is not final.
   Network contract is final: existing domains/ports, canonical advertised
   production client host `buns.asslorde.com`, explicit LAN/loopback overrides,
   no Tailscale/NAT changes. Public native activation deferred by owner.
@@ -151,10 +164,10 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
 
 ## Dependency graph (summary)
 
-- 1 → 2 → (3 ship, 10 testing, 15).
-- 4 parallel filler → informs 15.
-- 5 → 6 → 7 → 8 → 9 (ranked server-only waves; 9 also needs WZ checks).
-- Step-0 injector decision → 3 window, 10 window, 11 → 12 → 13 (last).
-- 14 smoke → 11/12-client/13-client. 16 informs 14.
-- 15 after 2 + 4 + WZ story settled.
-- 17 source/activation gates precede downstream publication for 3/4/9/11–13; all use the verified selfhost authority, never direct-live/R2 paths.
+- Browser2 and Linux/Wine16 are parked, not Windows RC prerequisites.
+- Evan4 REVIEW ONLY is complete and constrains intake, not a playable class.
+- 5→6→7→8→9 remain accepted full-content slices, never baseline-first deferrals.
+- Paired native3/10/11/12/13/14 need actual negotiation/gameplay/UI proof.
+- 9 also needs ordinary/bot lifecycle and missing-art visual disposition.
+- 15 needs exact native/XML/catalog/runtime pins and fresh actual reader proof.
+- 17 needs common immutable publication/real-byte rollback; rollout is separate.

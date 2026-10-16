@@ -90,6 +90,11 @@ public class Expedition {
             MobId.TARGA,
             MobId.ANGRY_TARGA,
             MobId.FURIOUS_TARGA,
+            // Genuine imported expedition phases/finals; exclude scripted hazards and fake Cygnus.
+            9420521, 9420522, 9400408, 9400409,
+            8840000, 8847777, 8850011, 8850012,
+            8880344, 8880301, 8880302, 8645009, 8880150, 8880415,
+            8240099, 9990301, 9990150, 9990415, 9995009, 8880002,
     };
 
     private final Character leader;

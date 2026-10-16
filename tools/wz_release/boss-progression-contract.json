@@ -1,0 +1,2698 @@
+{
+  "schema_version": 1,
+  "scope": "Full accepted ordinary progression closure: scripted source portals, Lion King3171 ancestry, genuine permit/drop and scouting action repair",
+  "issues": [],
+  "assets": [
+    {
+      "target_wz": "Item.wz",
+      "target_image": "Consume/0203.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Item/Consume/0203.img",
+        "sha256": "a4bc5ad2f53afcaaf24adbd4ca7cc09c8f707cf1c2bafee56558e3f4e7cc4d14"
+      },
+      "xml_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Server/wz/Item.wz/Consume/0203.img.xml",
+        "sha256": "76085f81cd9d15f2223f1b2309fe70be608b7cafa7784b66c9b1e336791f8cfe"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map0/000000065.img",
+      "action": "import-image",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Map/Map0/000000065.img",
+        "sha256": "b1e61d8707800d5b64a2eb17b06f52f4560ea5499d44aca2b669afb08018316e"
+      },
+      "xml_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Server/wz/Map.wz/Map/Map0/000000065.img.xml",
+        "sha256": "b91d51880d98c13f056c329bc10e23f29bd5a089d7b99967d9b42c2fbd13eda5"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map0/000000066.img",
+      "action": "import-image",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Map/Map0/000000066.img",
+        "sha256": "967fb3df50298051284b1bb04c480a8c36e55bdafc6382af1f3f0ddfbf09e19a"
+      },
+      "xml_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Server/wz/Map.wz/Map/Map0/000000066.img.xml",
+        "sha256": "ba531aca6f157dfe67417a3320487bcbab223031550e1cfa3d09b383eb77cc7c"
+      }
+    },
+    {
+      "target_wz": "Sound.wz",
+      "target_image": "BgmSpiderverse.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Sound/BgmSpiderverse.img",
+        "sha256": "d665f8b7e18c6961b762d7daaaa1c73f0a94e7dd041452f6ac9fc1a0b9678ef2"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Back/PL_NeoTokyo_Boss.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Back/PL_NeoTokyo_Boss.img",
+        "sha256": "f899efd636dafbc504dd9567d1560fe4020836623db00a74638744c5ef09b687"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Back/orientalDemonGate.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Back/orientalDemonGate.img",
+        "sha256": "0873a465b45ae23dbed74ce234f2561e4156ec7bd6007b887232afd6fb87dda6"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Back/kain.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Back/kain.img",
+        "sha256": "ba2c93a26b7408399a4fb12f2f9aa19996bdc9b09b1f2f0259ac1ec68abe376d"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/cadena.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/cadena.img",
+        "sha256": "dd7f4d2113b68c8d117997f2eeef329d1db109fc9b1915ca3bfe012f59f23564"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/ReverseCity.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/ReverseCity.img",
+        "sha256": "bac58b5feb585554789e2493e819233e6d00d9bc3aa3148671f3d9ccc8252af2"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/TokyoJP.img",
+        "sha256": "d161dbd625464858b0e4a535f087e48fbd1d07392c3305889892155de1ad74cc"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/kain.img",
+        "sha256": "e686ea3b479d86af25de73128eb1fb86333c249419f53362c0ce35d1aebaeb5b"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/PL_NeoTokyo.img",
+        "sha256": "b4d2aeab661d7b70925e07a217fbe8b4a4e1d295ab37de9c02d72c1620f0bda2"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/orientalDemonGate.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/orientalDemonGate.img",
+        "sha256": "2d5ff5db9d29b97a6a39d016d75293917b13cd31c3336140e3b47daf4554b5be"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/Wz2_AnnualEvent.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/Wz2_AnnualEvent.img",
+        "sha256": "23e2d43ddc5b35ae17efa51bbc7dec069d397f1cfefdfcf7c0f32de669c7aaf9"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/dowonkyung.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/dowonkyung.img",
+        "sha256": "5ca7300c5bbc5fa25706ef352943e2b86c28811faacda5feeae8778cf74cec86"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/madHouse.img",
+        "sha256": "f2ef9d6dd42600357d5cbfacce67b9f843be9878f1b4da1335b7fe27af8590f2"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/esfera_boss.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/esfera_boss.img",
+        "sha256": "565de291ba7d68c15c4a77dcd2dace9986d54104de5afc9d1c8ba61e1eee1f4c"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/xenonLab.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/xenonLab.img",
+        "sha256": "cda9035a3b744faf9de7c8df17b88e449395d665212cbfc9e4024b8606c0279a"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Obj/morass.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/morass.img",
+        "sha256": "d7a047ac82d1268bdffe045f3cc7b6d2e4505205f37c5781bc60e68a63df6a62"
+      }
+    },
+    {
+      "target_wz": "Mob.wz",
+      "target_image": "8250023.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Mob/8250023.img",
+        "sha256": "c0390191327e2ff595f39eb4c9713c164cc222773d7253d234f1c851aef5db25"
+      }
+    },
+    {
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Mob/8250006.img",
+        "sha256": "0a79ed8675e178a4627359e3a4ac30b2bb3ab15b65db9a8a7f99028e0feb6642"
+      }
+    },
+    {
+      "target_wz": "Map.wz",
+      "target_image": "Back/PL_NeoTokyo_3Sibuya.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Map/Back/PL_NeoTokyo_3Sibuya.img",
+        "sha256": "0acc5e05e0f9452badb9ca2299b3af6931671484c2f43464a9c9cad4e4432ebe"
+      }
+    },
+    {
+      "target_wz": "Mob.wz",
+      "target_image": "8250000.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Mob/8250000.img",
+        "sha256": "91754ba536152eeed90acc093d7806807763b9049952dc2b8a46bbcfc78728ee"
+      }
+    },
+    {
+      "target_wz": "Mob.wz",
+      "target_image": "8250001.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Mob/8250001.img",
+        "sha256": "dad3d1f763dabef183ebc68ad7c8c407870ccdce1410a2dd01b282eb8e748d2c"
+      }
+    }
+  ],
+  "operations": [
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Check.img",
+      "target_node": "3168",
+      "source": "boss-mid/raw/Quest.wz/Check.img",
+      "source_key": "gms",
+      "source_node": "3168"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Check.img",
+      "target_node": "3169",
+      "source": "boss-mid/raw/Quest.wz/Check.img",
+      "source_key": "gms",
+      "source_node": "3169"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Check.img",
+      "target_node": "3170",
+      "source": "boss-mid/raw/Quest.wz/Check.img",
+      "source_key": "gms",
+      "source_node": "3170"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Check.img",
+      "target_node": "3171",
+      "source": "boss-mid/raw/Quest.wz/Check.img",
+      "source_key": "gms",
+      "source_node": "3171"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Act.img",
+      "target_node": "3168",
+      "source": "boss-mid/raw/Quest.wz/Act.img",
+      "source_key": "gms",
+      "source_node": "3168"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Act.img",
+      "target_node": "3169",
+      "source": "boss-mid/raw/Quest.wz/Act.img",
+      "source_key": "gms",
+      "source_node": "3169"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Act.img",
+      "target_node": "3170",
+      "source": "boss-mid/raw/Quest.wz/Act.img",
+      "source_key": "gms",
+      "source_node": "3170"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Act.img",
+      "target_node": "3171",
+      "source": "boss-mid/raw/Quest.wz/Act.img",
+      "source_key": "gms",
+      "source_node": "3171"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "QuestInfo.img",
+      "target_node": "3168",
+      "source": "boss-mid/raw/Quest.wz/QuestInfo.img",
+      "source_key": "gms",
+      "source_node": "3168"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "QuestInfo.img",
+      "target_node": "3169",
+      "source": "boss-mid/raw/Quest.wz/QuestInfo.img",
+      "source_key": "gms",
+      "source_node": "3169"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "QuestInfo.img",
+      "target_node": "3170",
+      "source": "boss-mid/raw/Quest.wz/QuestInfo.img",
+      "source_key": "gms",
+      "source_node": "3170"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "QuestInfo.img",
+      "target_node": "3171",
+      "source": "boss-mid/raw/Quest.wz/QuestInfo.img",
+      "source_key": "gms",
+      "source_node": "3171"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Say.img",
+      "target_node": "3168",
+      "source": "boss-mid/raw/Quest.wz/Say.img",
+      "source_key": "gms",
+      "source_node": "3168"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Say.img",
+      "target_node": "3169",
+      "source": "boss-mid/raw/Quest.wz/Say.img",
+      "source_key": "gms",
+      "source_node": "3169"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Say.img",
+      "target_node": "3170",
+      "source": "boss-mid/raw/Quest.wz/Say.img",
+      "source_key": "gms",
+      "source_node": "3170"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Say.img",
+      "target_node": "3171",
+      "source": "boss-mid/raw/Quest.wz/Say.img",
+      "source_key": "gms",
+      "source_node": "3171"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/271000300.img",
+      "properties": [
+        {
+          "path": "portal/3/script",
+          "type": "string",
+          "value": "in_knights00"
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/271000300.img",
+      "properties": [
+        {
+          "path": "portal/3/pt",
+          "type": "int",
+          "value": 7
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/271030010.img",
+      "properties": [
+        {
+          "path": "portal/2/script",
+          "type": "string",
+          "value": "in_knights01"
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/271030010.img",
+      "properties": [
+        {
+          "path": "portal/2/pt",
+          "type": "int",
+          "value": 7
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/271030200.img",
+      "properties": [
+        {
+          "path": "portal/3/script",
+          "type": "string",
+          "value": "spirit00"
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/271030200.img",
+      "properties": [
+        {
+          "path": "portal/3/pt",
+          "type": "int",
+          "value": 7
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/271030600.img",
+      "properties": [
+        {
+          "path": "portal/3/script",
+          "type": "string",
+          "value": "in_cygnusGarden"
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/271030600.img",
+      "properties": [
+        {
+          "path": "portal/3/pt",
+          "type": "int",
+          "value": 7
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map1/103000000.img",
+      "properties": [
+        {
+          "path": "portal/38/pt",
+          "type": "int",
+          "value": 2
+        }
+      ],
+      "reason": "Source gm04 is a pt1/sentinel broken reciprocal; approved narrow Kerning\u219265 inbound repair"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map1/103000000.img",
+      "properties": [
+        {
+          "path": "portal/38/tm",
+          "type": "int",
+          "value": 65
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map1/103000000.img",
+      "properties": [
+        {
+          "path": "portal/38/tn",
+          "type": "string",
+          "value": "earth65"
+        }
+      ],
+      "reason": "Exact source-shipped ordinary progression binding; preserve all other portal fields"
+    },
+    {
+      "op": "remove_node",
+      "target_wz": "Quest.wz",
+      "target_image": "Check.img",
+      "target_node": "31124/1/item"
+    },
+    {
+      "op": "set_properties",
+      "target_wz": "Quest.wz",
+      "target_image": "Check.img",
+      "properties": [
+        {
+          "path": "31124/1/infoNumber",
+          "type": "int",
+          "value": 31124
+        }
+      ]
+    },
+    {
+      "op": "set_subtree",
+      "target_wz": "Quest.wz",
+      "target_image": "Check.img",
+      "target_node": "31124/1/infoex",
+      "node": {
+        "name": "infoex",
+        "type": "property",
+        "children": [
+          {
+            "name": "0",
+            "type": "property",
+            "children": [
+              {
+                "name": "order",
+                "type": "int",
+                "value": 0
+              },
+              {
+                "name": "value",
+                "type": "string",
+                "value": "1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Item.wz",
+      "target_image": "Consume/0203.img",
+      "target_node": "02030021",
+      "source": "boss-progression/raw/Item.wz/Consume/0203.img",
+      "source_key": "gms",
+      "source_node": "02030021"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Item.wz",
+      "target_image": "Etc/0403.img",
+      "target_node": "04032835",
+      "source": "boss-mid/raw/Item.wz/Etc/0403.img",
+      "source_key": "gms",
+      "source_node": "04032835"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Item.wz",
+      "target_image": "Etc/0403.img",
+      "target_node": "04032860",
+      "source": "boss-mid/raw/Item.wz/Etc/0403.img",
+      "source_key": "gms",
+      "source_node": "04032860"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "String.wz",
+      "target_image": "Consume.img",
+      "target_node": "2030021",
+      "source": "boss-mid/raw/String.wz/Consume.img",
+      "source_key": "gms",
+      "source_node": "2030021"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "String.wz",
+      "target_image": "Etc.img",
+      "target_node": "Etc/4032835",
+      "source": "boss-mid/raw/String.wz/Etc.img",
+      "source_key": "gms",
+      "source_node": "Etc/4032835"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "String.wz",
+      "target_image": "Etc.img",
+      "target_node": "Etc/4032860",
+      "source": "boss-mid/raw/String.wz/Etc.img",
+      "source_key": "gms",
+      "source_node": "Etc/4032860"
+    },
+    {
+      "op": "import_image",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map0/000000065.img",
+      "source": "boss-progression/raw/Map.wz/Map/Map0/000000065.img",
+      "source_key": "gms"
+    },
+    {
+      "op": "import_image",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map0/000000066.img",
+      "source": "boss-progression/raw/Map.wz/Map/Map0/000000066.img",
+      "source_key": "gms"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Sound.wz",
+      "target_image": "BgmSpiderverse.img",
+      "target_node": "GwenStacy",
+      "source": "boss-progression/raw/Sound.wz/BgmSpiderverse.img",
+      "source_key": "gms",
+      "source_node": "GwenStacy",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Back/PL_NeoTokyo_Boss.img",
+      "target_node": "back/6",
+      "source": "boss-progression/raw/Map.wz/Back/PL_NeoTokyo_Boss.img",
+      "source_key": "gms",
+      "source_node": "back/6",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Back/PL_NeoTokyo_Boss.img",
+      "target_node": "back/7",
+      "source": "boss-progression/raw/Map.wz/Back/PL_NeoTokyo_Boss.img",
+      "source_key": "gms",
+      "source_node": "back/7",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Back/PL_NeoTokyo_Boss.img",
+      "target_node": "back/8",
+      "source": "boss-progression/raw/Map.wz/Back/PL_NeoTokyo_Boss.img",
+      "source_key": "gms",
+      "source_node": "back/8",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Back/orientalDemonGate.img",
+      "target_node": "back/6",
+      "source": "boss-progression/raw/Map.wz/Back/orientalDemonGate.img",
+      "source_key": "gms",
+      "source_node": "back/6",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Back/kain.img",
+      "target_node": "back/20",
+      "source": "boss-progression/raw/Map.wz/Back/kain.img",
+      "source_key": "gms",
+      "source_node": "back/20",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/cadena.img",
+      "target_node": "town/back/3",
+      "source": "boss-progression/raw/Map.wz/Obj/cadena.img",
+      "source_key": "gms",
+      "source_node": "town/back/3",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/ReverseCity.img",
+      "target_node": "mtower/obj/17",
+      "source": "boss-progression/raw/Map.wz/Obj/ReverseCity.img",
+      "source_key": "gms",
+      "source_node": "mtower/obj/17",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/19",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/19",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "city/building/2",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "city/building/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "base/acc/26",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "base/acc/26",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "base/acc/25",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "base/acc/25",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "base/acc/20",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "base/acc/20",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "looftop/acc/0",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "looftop/acc/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "looftop/acc/2",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "looftop/acc/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "city/building/4",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "city/building/4",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/13",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/13",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/1",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/9",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/9",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/orientalDemonGate.img",
+      "target_node": "orientalDemonGate/object/10",
+      "source": "boss-progression/raw/Map.wz/Obj/orientalDemonGate.img",
+      "source_key": "gms",
+      "source_node": "orientalDemonGate/object/10",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "looftop/acc/4",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "looftop/acc/4",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/orientalDemonGate.img",
+      "target_node": "orientalDemonGate/object/11",
+      "source": "boss-progression/raw/Map.wz/Obj/orientalDemonGate.img",
+      "source_key": "gms",
+      "source_node": "orientalDemonGate/object/11",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "base/acc/28",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "base/acc/28",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/Wz2_AnnualEvent.img",
+      "target_node": "DTMap/foothold/0",
+      "source": "boss-progression/raw/Map.wz/Obj/Wz2_AnnualEvent.img",
+      "source_key": "gms",
+      "source_node": "DTMap/foothold/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/dowonkyung.img",
+      "target_node": "darkMap/spring/4",
+      "source": "boss-progression/raw/Map.wz/Obj/dowonkyung.img",
+      "source_key": "gms",
+      "source_node": "darkMap/spring/4",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/orientalDemonGate.img",
+      "target_node": "orientalDemonGate/object/9",
+      "source": "boss-progression/raw/Map.wz/Obj/orientalDemonGate.img",
+      "source_key": "gms",
+      "source_node": "orientalDemonGate/object/9",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "city/acc/6",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "city/acc/6",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/2",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/3",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/3",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "object/graffiti/3",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "object/graffiti/3",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "object/etc/2",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "object/etc/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "object/etc/14",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "object/etc/14",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "object/etc/20",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "object/etc/20",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/orientalDemonGate.img",
+      "target_node": "orientalDemonGate/object/3",
+      "source": "boss-progression/raw/Map.wz/Obj/orientalDemonGate.img",
+      "source_key": "gms",
+      "source_node": "orientalDemonGate/object/3",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/orientalDemonGate.img",
+      "target_node": "orientalDemonGate/object/8",
+      "source": "boss-progression/raw/Map.wz/Obj/orientalDemonGate.img",
+      "source_key": "gms",
+      "source_node": "orientalDemonGate/object/8",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/orientalDemonGate.img",
+      "target_node": "orientalDemonGate/object/6",
+      "source": "boss-progression/raw/Map.wz/Obj/orientalDemonGate.img",
+      "source_key": "gms",
+      "source_node": "orientalDemonGate/object/6",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "city/building/10",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "city/building/10",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/orientalDemonGate.img",
+      "target_node": "orientalDemonGate/object/4",
+      "source": "boss-progression/raw/Map.wz/Obj/orientalDemonGate.img",
+      "source_key": "gms",
+      "source_node": "orientalDemonGate/object/4",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/orientalDemonGate.img",
+      "target_node": "orientalDemonGate/object/1",
+      "source": "boss-progression/raw/Map.wz/Obj/orientalDemonGate.img",
+      "source_key": "gms",
+      "source_node": "orientalDemonGate/object/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "looftop/acc/1",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "looftop/acc/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/dowonkyung.img",
+      "target_node": "darkMap/spring/5",
+      "source": "boss-progression/raw/Map.wz/Obj/dowonkyung.img",
+      "source_key": "gms",
+      "source_node": "darkMap/spring/5",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "city/acc/4",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "city/acc/4",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "city/acc/2",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "city/acc/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "city/acc/3",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "city/acc/3",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/4",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/4",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/19",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/19",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/17",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/17",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/18",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/18",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/dowonkyung.img",
+      "target_node": "darkMap/spring/6",
+      "source": "boss-progression/raw/Map.wz/Obj/dowonkyung.img",
+      "source_key": "gms",
+      "source_node": "darkMap/spring/6",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "object/graffiti/5",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "object/graffiti/5",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/esfera_boss.img",
+      "target_node": "will1/webs_B/0",
+      "source": "boss-progression/raw/Map.wz/Obj/esfera_boss.img",
+      "source_key": "gms",
+      "source_node": "will1/webs_B/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/esfera_boss.img",
+      "target_node": "will1/webs_B/2",
+      "source": "boss-progression/raw/Map.wz/Obj/esfera_boss.img",
+      "source_key": "gms",
+      "source_node": "will1/webs_B/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "inside/rope/1",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "inside/rope/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "object/graffiti/4",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "object/graffiti/4",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "object/graffiti/0",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "object/graffiti/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "object/graffiti/1",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "object/graffiti/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/madHouse.img",
+      "target_node": "object/etc/0",
+      "source": "boss-progression/raw/Map.wz/Obj/madHouse.img",
+      "source_key": "gms",
+      "source_node": "object/etc/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/14",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/14",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/12",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/12",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/cadena.img",
+      "target_node": "storage_gen/acc/1",
+      "source": "boss-progression/raw/Map.wz/Obj/cadena.img",
+      "source_key": "gms",
+      "source_node": "storage_gen/acc/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/xenonLab.img",
+      "target_node": "lab_object/pipe/0",
+      "source": "boss-progression/raw/Map.wz/Obj/xenonLab.img",
+      "source_key": "gms",
+      "source_node": "lab_object/pipe/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "looftop/foothold/1",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "looftop/foothold/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "looftop/foothold/3",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "looftop/foothold/3",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "looftop/foothold/0",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "looftop/foothold/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/kain.img",
+      "target_node": "looftop/foothold/2",
+      "source": "boss-progression/raw/Map.wz/Obj/kain.img",
+      "source_key": "gms",
+      "source_node": "looftop/foothold/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/cadena.img",
+      "target_node": "town/market_Entrance/0",
+      "source": "boss-progression/raw/Map.wz/Obj/cadena.img",
+      "source_key": "gms",
+      "source_node": "town/market_Entrance/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/cadena.img",
+      "target_node": "storage_gen/acc/2",
+      "source": "boss-progression/raw/Map.wz/Obj/cadena.img",
+      "source_key": "gms",
+      "source_node": "storage_gen/acc/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/morass.img",
+      "target_node": "dailyQuest/portal/0",
+      "source": "boss-progression/raw/Map.wz/Obj/morass.img",
+      "source_key": "gms",
+      "source_node": "dailyQuest/portal/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "import_image",
+      "target_wz": "Mob.wz",
+      "target_image": "8250023.img",
+      "source": "boss-progression/raw/Mob.wz/8250023.img",
+      "source_key": "gms",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "import_image",
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "source": "boss-progression/raw/Mob.wz/8250006.img",
+      "source_key": "gms",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Back/PL_NeoTokyo_3Sibuya.img",
+      "target_node": "back/3",
+      "source": "boss-progression/raw/Map.wz/Back/PL_NeoTokyo_3Sibuya.img",
+      "source_key": "gms",
+      "source_node": "back/3",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/21",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/21",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "inside/wallL/0",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "inside/wallL/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/5",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/5",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/2",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/ReverseCity.img",
+      "target_node": "subway/obj/10",
+      "source": "boss-progression/raw/Map.wz/Obj/ReverseCity.img",
+      "source_key": "gms",
+      "source_node": "subway/obj/10",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/11",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/11",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/8",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/8",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/4",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/4",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/far/0",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/far/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/far/1",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/far/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/far/2",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/far/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/ReverseCity.img",
+      "target_node": "subway/obj/4",
+      "source": "boss-progression/raw/Map.wz/Obj/ReverseCity.img",
+      "source_key": "gms",
+      "source_node": "subway/obj/4",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/10",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/10",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/15",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/15",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/6",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/6",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/near/16",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/near/16",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/far/6",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/far/6",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "brige/sign/2",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "brige/sign/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/far/7",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/far/7",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/0",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/1",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/17",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/17",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/6",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/6",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/TokyoJP.img",
+      "target_node": "obj/etc/7",
+      "source": "boss-progression/raw/Map.wz/Obj/TokyoJP.img",
+      "source_key": "gms",
+      "source_node": "obj/etc/7",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/ReverseCity.img",
+      "target_node": "subway/obj/0",
+      "source": "boss-progression/raw/Map.wz/Obj/ReverseCity.img",
+      "source_key": "gms",
+      "source_node": "subway/obj/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/foot/0",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/foot/0",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/foot/1",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/foot/1",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/PL_NeoTokyo.img",
+      "target_node": "Akiba/foot/2",
+      "source": "boss-progression/raw/Map.wz/Obj/PL_NeoTokyo.img",
+      "source_key": "gms",
+      "source_node": "Akiba/foot/2",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "import_image",
+      "target_wz": "Mob.wz",
+      "target_image": "8250000.img",
+      "source": "boss-progression/raw/Mob.wz/8250000.img",
+      "source_key": "gms",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "import_image",
+      "target_wz": "Mob.wz",
+      "target_image": "8250001.img",
+      "source": "boss-progression/raw/Mob.wz/8250001.img",
+      "source_key": "gms",
+      "reason": "Map65/66 actual art prerequisite"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250001.img",
+      "target_node": "stand/0",
+      "source": "boss-progression/raw/Mob.wz/8250001.img",
+      "source_key": "gms",
+      "source_node": "stand/0",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250001.img', 'attack1/9')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250001.img",
+      "target_node": "stand/1",
+      "source": "boss-progression/raw/Mob.wz/8250001.img",
+      "source_key": "gms",
+      "source_node": "stand/1",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250001.img', 'attack1/10')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250001.img",
+      "target_node": "stand/2",
+      "source": "boss-progression/raw/Mob.wz/8250001.img",
+      "source_key": "gms",
+      "source_node": "stand/2",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250001.img', 'attack1/11')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250001.img",
+      "target_node": "stand/3",
+      "source": "boss-progression/raw/Mob.wz/8250001.img",
+      "source_key": "gms",
+      "source_node": "stand/3",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250001.img', 'attack1/12')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250001.img",
+      "target_node": "stand/4",
+      "source": "boss-progression/raw/Mob.wz/8250001.img",
+      "source_key": "gms",
+      "source_node": "stand/4",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250001.img', 'attack1/13')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "target_node": "stand/0",
+      "source": "boss-progression/raw/Mob.wz/8250006.img",
+      "source_key": "gms",
+      "source_node": "stand/0",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250006.img', 'attack1/16')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "target_node": "stand/1",
+      "source": "boss-progression/raw/Mob.wz/8250006.img",
+      "source_key": "gms",
+      "source_node": "stand/1",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250006.img', 'attack1/17')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "target_node": "stand/2",
+      "source": "boss-progression/raw/Mob.wz/8250006.img",
+      "source_key": "gms",
+      "source_node": "stand/2",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250006.img', 'attack1/18')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "target_node": "stand/3",
+      "source": "boss-progression/raw/Mob.wz/8250006.img",
+      "source_key": "gms",
+      "source_node": "stand/3",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250006.img', 'attack1/19')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "target_node": "stand/4",
+      "source": "boss-progression/raw/Mob.wz/8250006.img",
+      "source_key": "gms",
+      "source_node": "stand/4",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250006.img', 'attack1/20')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "target_node": "stand/5",
+      "source": "boss-progression/raw/Mob.wz/8250006.img",
+      "source_key": "gms",
+      "source_node": "stand/5",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250006.img', 'attack1/21')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "target_node": "stand/6",
+      "source": "boss-progression/raw/Mob.wz/8250006.img",
+      "source_key": "gms",
+      "source_node": "stand/6",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250006.img', 'attack1/22')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "8250006.img",
+      "target_node": "stand/7",
+      "source": "boss-progression/raw/Mob.wz/8250006.img",
+      "source_key": "gms",
+      "source_node": "stand/7",
+      "reason": "Exact transitive alias for ('Mob.wz', '8250006.img', 'attack1/23')"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/211060400.img",
+      "target_node": "life/2",
+      "source": "boss-mid/raw/Map.wz/Map/Map2/211060400.img",
+      "source_key": "gms",
+      "source_node": "life/0",
+      "reason": "Restore genuine Murt2160000 source placement for3181/3182; preserve deployed2161004 and allotherlife"
+    },
+    {
+      "op": "set_subtree",
+      "target_wz": "Map.wz",
+      "target_image": "Map/Map2/211070000.img",
+      "target_node": "life/1",
+      "node": {
+        "name": "1",
+        "type": "property",
+        "children": [
+          {
+            "name": "type",
+            "type": "string",
+            "value": "n"
+          },
+          {
+            "name": "id",
+            "type": "string",
+            "value": "2161000"
+          },
+          {
+            "name": "x",
+            "type": "int",
+            "value": 2064
+          },
+          {
+            "name": "y",
+            "type": "int",
+            "value": -145
+          },
+          {
+            "name": "mobTime",
+            "type": "int",
+            "value": 0
+          },
+          {
+            "name": "f",
+            "type": "int",
+            "value": 0
+          },
+          {
+            "name": "hide",
+            "type": "int",
+            "value": 0
+          },
+          {
+            "name": "fh",
+            "type": "int",
+            "value": 4
+          },
+          {
+            "name": "cy",
+            "type": "int",
+            "value": -139
+          },
+          {
+            "name": "rx0",
+            "type": "int",
+            "value": 2014
+          },
+          {
+            "name": "rx1",
+            "type": "int",
+            "value": 2114
+          }
+        ]
+      },
+      "authorship": "Source registrar2161000 has no staticsourceplacement. Bind it to genuine VonLeonBattle recruitMap211070000 on existing sourcefh4 at x2064,100pxleftofsourcewaitingNPC2161005, y-145/cy-139; preserve hidden2161005 unchanged. No newmap/art invented."
+    }
+  ],
+  "requirements": [
+    {
+      "wz": "Quest.wz",
+      "image": "Check.img",
+      "node": "3168",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Check.img",
+      "node": "3169",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Check.img",
+      "node": "3170",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Check.img",
+      "node": "3171",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Act.img",
+      "node": "3168",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Act.img",
+      "node": "3169",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Act.img",
+      "node": "3170",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Act.img",
+      "node": "3171",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "QuestInfo.img",
+      "node": "3168",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "QuestInfo.img",
+      "node": "3169",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "QuestInfo.img",
+      "node": "3170",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "QuestInfo.img",
+      "node": "3171",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Say.img",
+      "node": "3168",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Say.img",
+      "node": "3169",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Say.img",
+      "node": "3170",
+      "type": "property"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Say.img",
+      "node": "3171",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/271000300.img",
+      "node": "portal/3/script",
+      "type": "string",
+      "value": "in_knights00"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/271000300.img",
+      "node": "portal/3/pt",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/271030010.img",
+      "node": "portal/2/script",
+      "type": "string",
+      "value": "in_knights01"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/271030010.img",
+      "node": "portal/2/pt",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/271030200.img",
+      "node": "portal/3/script",
+      "type": "string",
+      "value": "spirit00"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/271030200.img",
+      "node": "portal/3/pt",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/271030600.img",
+      "node": "portal/3/script",
+      "type": "string",
+      "value": "in_cygnusGarden"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/271030600.img",
+      "node": "portal/3/pt",
+      "type": "int",
+      "value": 7
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map1/103000000.img",
+      "node": "portal/38/pt",
+      "type": "int",
+      "value": 2
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map1/103000000.img",
+      "node": "portal/38/tm",
+      "type": "int",
+      "value": 65
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map1/103000000.img",
+      "node": "portal/38/tn",
+      "type": "string",
+      "value": "earth65"
+    },
+    {
+      "wz": "Quest.wz",
+      "image": "Check.img",
+      "node": "31124/1/infoex/0/value",
+      "type": "string",
+      "value": "1"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Consume/0203.img",
+      "node": "02030021",
+      "type": "property"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Etc/0403.img",
+      "node": "04032835",
+      "type": "property"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Etc/0403.img",
+      "node": "04032860",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "Consume.img",
+      "node": "2030021",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "Etc.img",
+      "node": "Etc/4032835",
+      "type": "property"
+    },
+    {
+      "wz": "String.wz",
+      "image": "Etc.img",
+      "node": "Etc/4032860",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map0/000000065.img",
+      "node": "portal",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map0/000000066.img",
+      "node": "portal",
+      "type": "property"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "BgmSpiderverse.img",
+      "node": "GwenStacy"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/PL_NeoTokyo_Boss.img",
+      "node": "back/6"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/PL_NeoTokyo_Boss.img",
+      "node": "back/7"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/PL_NeoTokyo_Boss.img",
+      "node": "back/8"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/orientalDemonGate.img",
+      "node": "back/6"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/kain.img",
+      "node": "back/20"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/cadena.img",
+      "node": "town/back/3"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ReverseCity.img",
+      "node": "mtower/obj/17"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/19"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "city/building/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "base/acc/26"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "base/acc/25"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "base/acc/20"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "looftop/acc/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "looftop/acc/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "city/building/4"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/13"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/9"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/orientalDemonGate.img",
+      "node": "orientalDemonGate/object/10"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "looftop/acc/4"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/orientalDemonGate.img",
+      "node": "orientalDemonGate/object/11"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "base/acc/28"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/Wz2_AnnualEvent.img",
+      "node": "DTMap/foothold/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/dowonkyung.img",
+      "node": "darkMap/spring/4"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/orientalDemonGate.img",
+      "node": "orientalDemonGate/object/9"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "city/acc/6"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/3"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "object/graffiti/3"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "object/etc/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "object/etc/14"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "object/etc/20"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/orientalDemonGate.img",
+      "node": "orientalDemonGate/object/3"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/orientalDemonGate.img",
+      "node": "orientalDemonGate/object/8"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/orientalDemonGate.img",
+      "node": "orientalDemonGate/object/6"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "city/building/10"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/orientalDemonGate.img",
+      "node": "orientalDemonGate/object/4"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/orientalDemonGate.img",
+      "node": "orientalDemonGate/object/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "looftop/acc/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/dowonkyung.img",
+      "node": "darkMap/spring/5"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "city/acc/4"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "city/acc/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "city/acc/3"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/4"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/19"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/17"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/18"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/dowonkyung.img",
+      "node": "darkMap/spring/6"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "object/graffiti/5"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/esfera_boss.img",
+      "node": "will1/webs_B/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/esfera_boss.img",
+      "node": "will1/webs_B/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "inside/rope/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "object/graffiti/4"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "object/graffiti/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "object/graffiti/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/madHouse.img",
+      "node": "object/etc/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/14"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/12"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/cadena.img",
+      "node": "storage_gen/acc/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/xenonLab.img",
+      "node": "lab_object/pipe/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "looftop/foothold/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "looftop/foothold/3"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "looftop/foothold/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/kain.img",
+      "node": "looftop/foothold/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/cadena.img",
+      "node": "town/market_Entrance/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/cadena.img",
+      "node": "storage_gen/acc/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/morass.img",
+      "node": "dailyQuest/portal/0"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250023.img",
+      "node": ""
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250006.img",
+      "node": ""
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/PL_NeoTokyo_3Sibuya.img",
+      "node": "back/3"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/21"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "inside/wallL/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/5"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ReverseCity.img",
+      "node": "subway/obj/10"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/11"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/8"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/4"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/far/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/far/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/far/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ReverseCity.img",
+      "node": "subway/obj/4"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/10"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/15"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/6"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/near/16"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/far/6"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "brige/sign/2"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/far/7"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/17"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/6"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/TokyoJP.img",
+      "node": "obj/etc/7"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ReverseCity.img",
+      "node": "subway/obj/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/foot/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/foot/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/PL_NeoTokyo.img",
+      "node": "Akiba/foot/2"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250000.img",
+      "node": ""
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250001.img",
+      "node": ""
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250001.img",
+      "node": "stand/0"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250001.img",
+      "node": "stand/1"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250001.img",
+      "node": "stand/2"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250001.img",
+      "node": "stand/3"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250001.img",
+      "node": "stand/4"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250006.img",
+      "node": "stand/0"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250006.img",
+      "node": "stand/1"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250006.img",
+      "node": "stand/2"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250006.img",
+      "node": "stand/3"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250006.img",
+      "node": "stand/4"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250006.img",
+      "node": "stand/5"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250006.img",
+      "node": "stand/6"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "8250006.img",
+      "node": "stand/7"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/211060400.img",
+      "node": "life/2/id",
+      "type": "string",
+      "value": "2160000"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Map/Map2/211070000.img",
+      "node": "life/1/id",
+      "type": "string",
+      "value": "2161000"
+    }
+  ],
+  "integration_deltas": [],
+  "adaptations": [
+    {
+      "quest": 31124,
+      "source_conflict": "endCheck requires4032922 obtainable only while successor31125 started, which requires31124 complete; source portal forceComplete bypassed Act1750000",
+      "repair": "Actual scouting portal records progress1; player returns to real Chief Alex and normal Quest.complete runs unchanged source Act exactly once. No emblem granted;31125 source drop remains quest-gated."
+    }
+  ],
+  "source_asset_gaps": []
+}

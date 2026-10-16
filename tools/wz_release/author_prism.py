@@ -32,26 +32,28 @@ def plate(no_well=False):
     d = ImageDraw.Draw(im)
     d.rounded_rectangle((0, 0, 300, 405), 9, fill='#eaf3f7', outline='#273d55', width=2)
     d.rounded_rectangle((3, 3, 297, 402), 7, fill='#fffdf5', outline='#94adc2')
-    d.rounded_rectangle((5, 5, 295, 29), 5, fill='#4379a2', outline='#c9e5f1')
+    d.rounded_rectangle((5, 5, 295, 22), 5, fill='#4379a2', outline='#c9e5f1')
     d.line((10, 7, 290, 7), fill='#a9d8e9')
-    d.text((14, 10), 'COLORING PRISM', font=font(11), fill='white', stroke_width=0)
-    d.rectangle((8, 57, 292, 100), fill='#edf5fc', outline='#b3c9df')
-    d.line((8, 103, 292, 103), fill='#dc967d', width=2)
-    d.rounded_rectangle((16, 111, 151, 283), 4, fill='#e0ebed', outline='#8b9fb0')
-    d.rectangle((19, 114, 148, 279), fill='#f7fbff')
-    # A real preview stage background, with a subtle floor, not an empty placeholder box.
-    for y in range(115, 264):
-        v = round(247 - (y - 115) * .08)
-        d.line((20, y, 147, y), fill=(v, min(255, v + 4), 255, 255))
-    d.line((20, 264, 147, 264), fill='#a8bbc9')
-    d.rectangle((20, 265, 147, 278), fill='#dfd3bb')
+    d.text((14, 8), 'COLORING PRISM', font=font(11), fill='white', stroke_width=0)
+    # Native controls draw five tabs in the clear y24..44 strip.
+    d.rectangle((8, 48, 293, 100), fill='#edf5fc', outline='#b3c9df')
+    d.line((8, 103, 293, 103), fill='#dc967d', width=2)
+    d.rounded_rectangle((18, 105, 283, 241), 4, fill='#e0ebed', outline='#8b9fb0')
+    d.rectangle((20, 107, 281, 239), fill='#f7fbff')
+    # Original full-width preview stage, underneath the runtime character/layers.
+    for y in range(107, 222):
+        v = round(247 - (y - 107) * .08)
+        d.line((20, y, 281, y), fill=(v, min(255, v + 4), 255, 255))
+    d.line((20, 222, 281, 222), fill='#a8bbc9')
+    d.rectangle((20, 223, 281, 239), fill='#dfd3bb')
     if not no_well:
-        d.rounded_rectangle((204, 139, 243, 178), 3, fill='#c3d5df', outline='#7f98ae')
-        d.rectangle((208, 143, 239, 174), fill='#fffdf5', outline='#e5edf0')
-    for y, label in ((300, 'HUE'), (328, 'CHROMA'), (356, 'VALUE')):
-        d.text((17, y - 1), label, font=font(9), fill='#2e5574')
-        d.rectangle((92, y - 2, 271, y + 9), fill='#afc2d1', outline='#8199ae')
-    d.line((8, 374, 292, 374), fill='#c9d6de')
+        d.rounded_rectangle((18, 56, 62, 98), 3, fill='#c3d5df', outline='#7f98ae')
+        d.rectangle((21, 59, 59, 95), fill='#fffdf5', outline='#e5edf0')
+    for y, label in ((260, 'HUE'), (295, 'CHROMA'), (330, 'VALUE')):
+        d.text((18, y - 1), label, font=font(9), fill='#2e5574')
+        d.rectangle((86, y - 2, 265, y + 9), fill='#afc2d1', outline='#8199ae')
+    # Toggle/restore labels and stock OK/Cancel controls are drawn by native code.
+    d.line((8, 370, 293, 370), fill='#c9d6de')
     return im
 
 
@@ -114,9 +116,10 @@ def build(output, icon_path):
         icon_source=str(icon_path), icon_sha256=hashlib.sha256(Path(icon_path).read_bytes()).hexdigest(),
         font='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
         font_sha256=hashlib.sha256(Path('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf').read_bytes()).hexdigest(),
-        layout=dict(window=[301,406], caption=[14,10], tabs_y=34, banner=[8,57,285,44],
-            preview=[20,115,128,164], item_well=[208,143,32,32], sliders_x=94,
-            sliders_y=[300,328,356], sliders_size=[176,8], buttons_y=380),
+        layout=dict(window=[301,406], caption=[14,8], tabs=[8,24,286,21], banner=[8,48,286,53],
+            preview=[20,107,262,133], item_well=[18,56,45,43], layer_badges=[[127,222],[149,222]],
+            sliders_x=88, sliders_y=[260,295,330], sliders_size=[176,8], toggle_y=242,
+            restore_y=353, buttons_y=374, native_control_owner='native-runtime-review.NativePrismPort'),
         semantic_hashes={n.name:semantic_hash(n) for n in (ui,item,string)})
     (output / 'authored-provenance.json').write_text(json.dumps(provenance, indent=2)+'\n')
     return provenance

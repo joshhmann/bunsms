@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "scope": "Ticket11 authored complete Prism UI/item metadata; Ticket3 exact native stock close compatibility subtree",
-  "provenance": "prism-authored/authored-provenance.json; features/prism-research/packed-inspection.json; real external icon response recorded in feature-contract remote_sources",
+  "provenance": "prism-authored-v2/authored-provenance.json; features/prism-research/packed-inspection.json; real external icon response recorded in feature-contract remote_sources",
   "operations": [
     {"ticket":3,"op":"copy_subtree","source_wz":"stock","source_archive":"UI.wz","source_image":"Basic.img","source_node":"BtClose","target_wz":"UI.wz","target_image":"UIWindow.img","target_node":"Bag/BtClose","reason":"Pinned v83 UIWindow has no Bag; copy actual12x12 stock Basic close tree to agreed DLL lookup without changing original"},
-    {"ticket":11,"op":"copy_subtree","source":"prism-authored/ColorPrism.img","source_node":"ColorPrism","target_wz":"UI.wz","target_image":"UIWindow.img","target_node":"ColorPrism"},
-    {"ticket":11,"op":"import_image","source":"prism-authored/0578.img","target_wz":"Item.wz","target_image":"Cash/0578.img"},
-    {"ticket":11,"op":"copy_subtree","source":"prism-authored/Cash.img","source_node":"5782000","target_wz":"String.wz","target_image":"Cash.img","target_node":"5782000"}
+    {"ticket":11,"op":"copy_subtree","source":"prism-authored-v2/ColorPrism.img","source_node":"ColorPrism","target_wz":"UI.wz","target_image":"UIWindow.img","target_node":"ColorPrism"},
+    {"ticket":11,"op":"import_image","source":"prism-authored-v2/0578.img","target_wz":"Item.wz","target_image":"Cash/0578.img"},
+    {"ticket":11,"op":"copy_subtree","source":"prism-authored-v2/Cash.img","source_node":"5782000","target_wz":"String.wz","target_image":"Cash.img","target_node":"5782000"}
   ],
   "requirements": [
     {"wz":"UI.wz","image":"UIWindow.img","node":"Bag/BtClose/normal/0","type":"canvas","dimensions":[12,12]},

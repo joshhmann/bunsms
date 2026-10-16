@@ -93,6 +93,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -1305,6 +1306,145 @@ public class MapleMap {
         return count;
     }
 
+    // MapleRoot's actual Cygnus knight waves and Magnus meteor thresholds.
+    // These fields belong to each instance-owned map, never a shared event script.
+    private int cygnusSpawnCounter;
+    private boolean spawningCygnus;
+    private int magnusHpThreshold;
+    private int orbMaxAmount = 40;
+
+    private synchronized boolean advanceExpeditionPhase(Character chr, Monster monster) {
+        if (!monster.isAlive()) {
+            return true;
+        }
+        int id = monster.getId();
+        double cygnusThreshold = switch (cygnusSpawnCounter) {
+            case 0 -> 0.85;
+            case 1 -> 0.70;
+            case 2 -> 0.55;
+            case 3 -> 0.40;
+            case 4 -> 0.25;
+            default -> 0;
+        };
+        if (id == 8850011 && cygnusSpawnCounter < 5 && !spawningCygnus
+                && (double) monster.getHp() / monster.getMaxHp() <= cygnusThreshold) {
+            spawningCygnus = true;
+            killMonster(monster, chr, false, 0, (short) 0);
+            spawnMonster(LifeFactory.getMonster(8850013));
+            spawnMonster(LifeFactory.getMonster(8850000 + cygnusSpawnCounter++));
+            return true;
+        }
+        if (id == 8880002) {
+            double ratio = (double) monster.getHp() / monster.getMaxHp();
+            if (magnusHpThreshold == 0 && ratio <= 0.60) {
+                orbMaxAmount += 30;
+                magnusHpThreshold++;
+            } else if (magnusHpThreshold == 1 && ratio <= 0.30) {
+                orbMaxAmount += 40;
+                magnusHpThreshold++;
+            } else if (magnusHpThreshold == 2 && ratio <= 0.10) {
+                orbMaxAmount += 50;
+                magnusHpThreshold++;
+            } else if (magnusHpThreshold == 3 && ratio <= 0.05) {
+                orbMaxAmount += 60;
+                magnusHpThreshold++;
+            }
+        }
+        return false;
+    }
+
+    private synchronized boolean finishExpeditionPhase(Character chr, Monster monster, short delay) {
+        int id = monster.getId();
+        if (id == 8840000) {
+            Point position = monster.getPosition();
+            killMonster(monster, chr, false, 0, delay);
+            Monster clearActor = LifeFactory.getMonster(8847777);
+            spawnExpeditionActor(clearActor, position);
+            // The source clear actor is immediately killed by the actual attacker,
+            // not a fought second phase and not a fabricated WZ revive.
+            damageMonster(chr, clearActor, clearActor.getMaxHp(), delay, false);
+            return true;
+        }
+        if (id >= 8850000 && id <= 8850004) {
+            killAllMonsters();
+            Monster cygnus = LifeFactory.getMonster(id == 8850004 ? 8850012 : 8850011);
+            spawnMonster(cygnus);
+            damageMonster(chr, cygnus, (long) (cygnus.getMaxHp() * (0.15 * cygnusSpawnCounter)),
+                    (short) 0, false);
+            spawningCygnus = false;
+            return true;
+        }
+        return false;
+    }
+
+    private void spawnExpeditionActor(Monster monster, Point position) {
+        monster.setPosition(position);
+        spawnMonster(monster);
+    }
+
+    public void teleportVonLeon(Monster monster) {
+        List<Character> players = getAllPlayers();
+        if (players.isEmpty() || !monster.isAlive()) {
+            return;
+        }
+        Character attacker = players.get(0);
+        long hp = monster.getHp();
+        killMonster(monster, attacker, false, 0, (short) 0);
+        Monster replacement = LifeFactory.getMonster(8840000);
+        spawnExpeditionActor(replacement, new Point(ThreadLocalRandom.current().nextInt(-1900, 1601), -181));
+        damageMonster(attacker, replacement, Math.max(0, replacement.getMaxHp() - hp), (short) 0, false);
+    }
+
+    public void spawnLotusActors(int type, int count) {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        for (int i = 0; i < count; i++) {
+            int id;
+            if (type == 0) {
+                int roll = random.nextInt(100);
+                id = roll < 60 ? random.nextInt(420, 424)
+                        : roll < 90 ? random.nextInt(424, 427) : random.nextInt(427, 430);
+            } else if (type == 1) {
+                id = random.nextInt(100) < 50 ? random.nextInt(430, 433) : random.nextInt(433, 436);
+            } else {
+                id = random.nextInt(433, 436);
+            }
+            Point position = type == 2 ? new Point(-447 + 200 * i, random.nextInt(-10000, -1199))
+                    : new Point(random.nextInt(-447, 921), random.nextInt(-300, -199));
+            spawnExpeditionActor(LifeFactory.getMonster(id), position);
+        }
+    }
+
+    public void spawnMagnusPillars() {
+        for (int i = 0; i < 3; i++) {
+            spawnExpeditionActor(LifeFactory.getMonster(8889014),
+                    new Point(ThreadLocalRandom.current().nextInt(500, 3078), -1350));
+        }
+    }
+
+    private synchronized void spawnMagnusOrbs() {
+        if (magnusHpThreshold == 0) {
+            orbMaxAmount = 0;
+        }
+        int count = orbMaxAmount - countMonsters();
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+        for (int i = 0; i < count; i++) {
+            int roll = random.nextInt(100);
+            int id;
+            if (magnusHpThreshold == 3) {
+                id = roll < 60 ? random.nextInt(8889011, 8889013)
+                        : roll < 80 ? random.nextInt(8889007, 8889010) : random.nextInt(8889004, 8889007);
+            } else if (magnusHpThreshold == 2) {
+                id = roll < 30 ? random.nextInt(8889011, 8889013)
+                        : roll < 70 ? random.nextInt(8889007, 8889010) : random.nextInt(8889004, 8889007);
+            } else {
+                id = roll < 60 ? random.nextInt(8889004, 8889007)
+                        : roll < 90 ? random.nextInt(8889007, 8889010) : random.nextInt(8889011, 8889013);
+            }
+            spawnExpeditionActor(LifeFactory.getMonster(id),
+                    new Point(random.nextInt(437, 3078), random.nextInt(-6000, -1999)));
+        }
+    }
+
     public boolean damageMonster(Character chr, Monster monster, long damage) {
         return damageMonster(chr, monster, damage, (short) 0, true);
     }
@@ -1337,6 +1477,10 @@ public class MapleMap {
         if (!monster.isAlive()) {
             return false;
         }
+        int expeditionMobId = monster.getId();
+        if ((expeditionMobId == 8850011 || expeditionMobId == 8880002) && advanceExpeditionPhase(chr, monster)) {
+            return true;
+        }
 
         // Long-HP cutover: the night scalar is long end-to-end (player-damage
         // scaling stays int in WeatherCombat.scaleDamageToPlayer/scaleExp).
@@ -1353,7 +1497,14 @@ public class MapleMap {
             }
         }
         if (killed) {
+            if ((expeditionMobId == 8840000 || (expeditionMobId >= 8850000 && expeditionMobId <= 8850004))
+                    && finishExpeditionPhase(chr, monster, delay)) {
+                return true;
+            }
             killMonster(monster, chr, true, delay);
+            if (expeditionMobId == 8880002 || expeditionMobId == 8240099) {
+                killAllMonsters();
+            }
         }
         return true;
     }
@@ -3411,6 +3562,15 @@ public class MapleMap {
 
     public void moveMonster(Monster monster, Point reportedPos) {
         monster.setPosition(reportedPos);
+        if (mapid == 401060100) {
+            spawnMagnusOrbs();
+        }
+        int mobId = monster.getId();
+        if ((mobId > 8889004 && mobId < 8889015 && reportedPos.y >= -1000)
+                || (mobId >= 420 && mobId <= 440 && reportedPos.y >= 500)) {
+            killMonster(monster, null, false, 0, (short) 0);
+            return;
+        }
         for (Character chr : getAllPlayers()) {
             updateMapObjectVisibility(chr, monster);
         }

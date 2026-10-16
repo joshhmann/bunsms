@@ -87,9 +87,8 @@ class EconomyIntegrationTest {
         Field channel = Client.class.getDeclaredField("ioChannel");
         channel.setAccessible(true);
         channel.set(client, new EmbeddedChannel());
-        Character player = Character.getDefault(client);
-        client.setPlayer(player);
         String name = "E" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+        int characterId;
         try (Connection connection = pool.getConnection(); Statement sql = connection.createStatement()) {
             sql.executeUpdate("INSERT INTO accounts(name,password) VALUES ('" + name + "','test')", Statement.RETURN_GENERATED_KEYS);
             int account;
@@ -97,12 +96,17 @@ class EconomyIntegrationTest {
                 assertTrue(keys.next());
                 account = keys.getInt(1);
             }
+            client.setAccID(account);
+            client.setAccountName(name);
             sql.executeUpdate("INSERT INTO characters(accountid,name,world) VALUES (" + account + ",'" + name + "',0)", Statement.RETURN_GENERATED_KEYS);
             try (ResultSet keys = sql.getGeneratedKeys()) {
                 assertTrue(keys.next());
-                player.setID(keys.getInt(1));
+                characterId = keys.getInt(1);
             }
         }
+        Character player = Character.getDefault(client);
+        client.setPlayer(player);
+        player.setID(characterId);
         player.setName(name);
         return player;
     }
@@ -111,6 +115,147 @@ class EconomyIntegrationTest {
         Shop shop = Shop.createFromDB(11000, true);
         assertNotNull(shop);
         return shop;
+    }
+
+    private static void replayShopSql(String path) throws Exception {
+        String script;
+        try (var input = EconomyIntegrationTest.class.getClassLoader().getResourceAsStream(path)) {
+            assertNotNull(input, "The replay must execute the actual shipped SQL resource");
+            script = new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        try (Connection connection = pool.getConnection(); Statement sql = connection.createStatement()) {
+            for (String statement : liquibase.util.StringUtil.processMultiLineSQL(script, false, true, null)) {
+                sql.execute(statement);
+            }
+        }
+    }
+
+    private static List<String> protectedShopRows() throws Exception {
+        List<String> rows = new java.util.ArrayList<>();
+        try (Connection connection = pool.getConnection(); Statement sql = connection.createStatement();
+             ResultSet result = sql.executeQuery("SELECT shopitemid,shopid,itemid,price,pitch,position FROM shopitems WHERE shopid IN (1337,9999001) ORDER BY shopitemid")) {
+            while (result.next()) {
+                rows.add(result.getInt(1) + ":" + result.getInt(2) + ":" + result.getInt(3)
+                        + ":" + result.getInt(4) + ":" + result.getInt(5) + ":" + result.getInt(6));
+            }
+        }
+        return rows;
+    }
+
+    private static void assertOnlyShopQuote(int shop, int item, int price, int position) throws Exception {
+        try (Connection connection = pool.getConnection(); Statement sql = connection.createStatement();
+             ResultSet result = sql.executeQuery("SELECT price,pitch,position FROM shopitems WHERE shopid=" + shop + " AND itemid=" + item)) {
+            assertTrue(result.next(), "A missing imported pair must be restored");
+            assertEquals(price, result.getInt("price"));
+            assertEquals(0, result.getInt("pitch"));
+            assertEquals(position, result.getInt("position"));
+            assertFalse(result.next(), "A replay must not expose a second purchasable quote for an existing item");
+        }
+    }
+
+    @Test
+    void replayingShopSeedsKeepsTheExistingQuoteAndPurchaseBehavior() throws Exception {
+        List<String> protectedBefore = protectedShopRows();
+        try {
+            try (Connection connection = pool.getConnection(); Statement sql = connection.createStatement()) {
+                sql.executeUpdate("UPDATE shopitems SET price=7,position=30000 WHERE shopid=2082014 AND itemid=2040004");
+            }
+            for (int attempt = 0; attempt < 2; attempt++) {
+                replayShopSql("db/data/172-mapleroot-shops-data.sql");
+                replayShopSql("db/data/173-mapleroot-shops-remainder-data.sql");
+                assertOnlyShopQuote(2082014, 2040004, 7, 30000);
+                assertEquals(protectedBefore, protectedShopRows(), "GM and casino rows must remain byte-for-field unchanged");
+            }
+            Character player = player();
+            player.gainMeso(100, false);
+            Shop importedShop = Shop.createFromDB(2082014, true);
+            assertNotNull(importedShop);
+            importedShop.sendShop(player.getClient());
+            importedShop.buy(player.getClient(), (short) 0, 2040004, (short) 1);
+            assertEquals(93, player.getMeso(), "A normal purchase must still use the preserved custom quote");
+            assertEquals(1, player.getInventory(InventoryType.USE).countById(2040004));
+        } finally {
+            try (Connection connection = pool.getConnection(); Statement sql = connection.createStatement()) {
+                sql.executeUpdate("UPDATE shopitems SET price=480000,position=1 WHERE shopid=2082014 AND itemid=2040004");
+            }
+        }
+    }
+
+    @Test
+    void incompleteShopImportsResumeAndKnownHistoricalChecksumsStillStart() throws Exception {
+        List<String> protectedBefore = protectedShopRows();
+        try (Connection connection = pool.getConnection(); Statement sql = connection.createStatement()) {
+            sql.executeUpdate("DELETE FROM shopitems WHERE (shopid=2082014 AND itemid=2040004)"
+                    + " OR (shopid=9110002 AND itemid=3010019)"
+                    + " OR (shopid=9201101 AND itemid=2022338)"
+                    + " OR (shopid=1338 AND itemid=2030100)");
+        }
+        replayShopSql("db/data/172-mapleroot-shops-data.sql");
+        replayShopSql("db/data/173-mapleroot-shops-remainder-data.sql");
+        assertOnlyShopQuote(2082014, 2040004, 480000, 1);
+        assertOnlyShopQuote(9110002, 3010019, 7700000, 92);
+        assertOnlyShopQuote(9201101, 2022338, 2100000, 100);
+        assertOnlyShopQuote(1338, 2030100, 450, 114);
+        assertEquals(protectedBefore, protectedShopRows());
+        try (Connection connection = pool.getConnection(); Statement sql = connection.createStatement()) {
+            sql.executeUpdate("UPDATE DATABASECHANGELOG SET MD5SUM='9:67f0d41280acd0ea092e7b295e069a63'"
+                    + " WHERE ID='172' AND AUTHOR='solobots' AND FILENAME='db/changelog-data.xml'");
+        }
+        DatabaseMigrations.runDatabaseMigrations();
+        assertOnlyShopQuote(2082014, 2040004, 480000, 1);
+        assertEquals(protectedBefore, protectedShopRows());
+    }
+
+    @Test
+    void completedChairQuestStillBuysThroughTheActualNpcConversation() throws Exception {
+        var gameServer = net.server.Server.getInstance();
+        Field ticksField = net.server.Server.class.getDeclaredField("currentTime");
+        ticksField.setAccessible(true);
+        var ticks = (java.util.concurrent.atomic.AtomicLong) ticksField.get(gameServer);
+        long oldTicks = ticks.get();
+        long oldPublishedTime = gameServer.getCurrentTime();
+        Field publishedTime = net.server.Server.class.getDeclaredField("serverCurrentTime");
+        publishedTime.setAccessible(true);
+        var factory = server.ShopFactory.getInstance();
+        Field shopsField = server.ShopFactory.class.getDeclaredField("shops");
+        shopsField.setAccessible(true);
+        var shops = (java.util.Map<Integer, Shop>) shopsField.get(factory);
+        Field npcShopsField = server.ShopFactory.class.getDeclaredField("npcShops");
+        npcShopsField.setAccessible(true);
+        var npcShops = (java.util.Map<Integer, Shop>) npcShopsField.get(factory);
+        boolean hadShop = shops.containsKey(9110002);
+        boolean hadNpcShop = npcShops.containsKey(9110002);
+        Shop oldShop = shops.remove(9110002);
+        Shop oldNpcShop = npcShops.remove(9110002);
+        try {
+            gameServer.forceUpdateCurrentTime();
+            for (var status : new client.QuestStatus.Status[]{client.QuestStatus.Status.NOT_STARTED, client.QuestStatus.Status.COMPLETED}) {
+                Character player = player();
+                player.getQuest(8074).setStatus(status);
+                player.gainMeso(20000000, false);
+                var scripts = scripting.npc.NPCScriptManager.getInstance();
+                assertTrue(scripts.start(player.getClient(), 9110002, (Character) null));
+                Shop opened = player.getShop();
+                assertNotNull(opened, "Both ordinary quest states must reach the actual stocked shop, not an active-CM reopen");
+                opened.buy(player.getClient(), (short) 0, 3010007, (short) 1);
+                assertEquals(10000000, player.getMeso());
+                assertEquals(1, player.getInventory(InventoryType.SETUP).countById(3010007));
+                assertEquals(status, player.getQuest(8074).getStatus(), "Opening/buying must not alter the quest");
+            }
+        } finally {
+            ticks.set(oldTicks);
+            publishedTime.setLong(gameServer, oldPublishedTime);
+            if (hadShop) {
+                shops.put(9110002, oldShop);
+            } else {
+                shops.remove(9110002);
+            }
+            if (hadNpcShop) {
+                npcShops.put(9110002, oldNpcShop);
+            } else {
+                npcShops.remove(9110002);
+            }
+        }
     }
 
     @Test
@@ -453,7 +598,7 @@ class EconomyIntegrationTest {
             assertEquals(10, player.getInventory(InventoryType.USE).getItem((short) 1).getQuantity());
             assertTrue(TransactionService.getLastTransactions(player.getId(), 20).isEmpty());
             script.invokeFunction("start");
-            script.invokeFunction("action", 1, 0, 5);
+            script.invokeFunction("action", 1, 0, 99);
             assertNotNull(player.getInventory(InventoryType.USE).getItem((short) 1));
             assertTrue(TransactionService.getLastTransactions(player.getId(), 20).isEmpty());
             script.invokeFunction("start");

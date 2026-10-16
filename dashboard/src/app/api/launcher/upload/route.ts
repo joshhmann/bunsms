@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AssetError, beginRelease, publishRelease, readManifest, stageFile } from "@/lib/assets";
+import { AssetError, beginRelease, publishRelease, releaseFileNames, stageFile } from "@/lib/assets";
 import { stageMultipart } from "@/lib/asset-multipart";
 import { isPrivateRequestAuthorized } from "@/lib/auth";
 
@@ -9,9 +9,8 @@ export async function POST(request: Request) {
     if (request.headers.get("content-type")?.includes("application/json")) {
       const body = await request.json();
       if (!Array.isArray(body.files) || !body.files.length) throw new AssetError("At least one source file is required");
-      const allowed = new Set(readManifest().manifest.files.map((file) => file.name));
-      allowed.add("server-wz.tar.gz"); allowed.add("server-wz-baseline.tar.gz");
       const releaseId = body.releaseId || beginRelease(body.baseReleaseId !== undefined ? { baseReleaseId: body.baseReleaseId } : {});
+      const allowed = releaseFileNames(releaseId);
       for (const file of body.files) {
         if (!file || !allowed.has(file.name) || typeof file.path !== "string") throw new AssetError("A tracked source name and path are required");
         await stageFile(releaseId, file.name, file.path);
@@ -26,9 +25,8 @@ export async function POST(request: Request) {
       const result = await publishRelease(upload.releaseId, upload.expected);
       return NextResponse.json({ success: true, releaseId: result.releaseId, assets: result.assets });
     }
-    const allowed = new Set(readManifest().manifest.files.map((file) => file.name));
-    allowed.add("server-wz.tar.gz"); allowed.add("server-wz-baseline.tar.gz");
-    if (upload.keys.some((key) => !allowed.has(key))) throw new AssetError("Only tracked launcher/server files may be staged here");
+    const allowed = releaseFileNames(upload.releaseId);
+    if (upload.keys.some((key) => !allowed.has(key))) throw new AssetError("Only files in the frozen release catalog may be staged here");
     return NextResponse.json({ releaseId: upload.releaseId, results: upload.keys.map((name) => ({ name, staged: true })) });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: error instanceof AssetError ? error.status : 500 });

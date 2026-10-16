@@ -84,24 +84,47 @@ class NX:
     def name(self, index):
         return self.string(self.record(index)[0]).decode('utf-8')
 
-    def children(self, index):
+    def child_entries(self, index, validate_sorted=True):
+        """Return every physical child, retaining equal-name source order."""
         _, first, count, _, _ = self.record(index)
-        result = {}
+        result = []
         previous = None
         for child in range(first, first + count):
             name = self.name(child)
             encoded = name.encode('utf-8')
-            if previous is not None and encoded <= previous:
-                raise NXError(f'{self.path}: ambiguous/unsorted siblings at node {index}: {name!r}')
+            if validate_sorted and previous is not None and encoded < previous:
+                raise NXError(f'{self.path}: unsorted siblings at node {index}: {name!r}')
             previous = encoded
+            result.append((name, child))
+        return result
+
+    def children(self, index):
+        """Unique-name view for callers that explicitly require dictionary keys."""
+        result = {}
+        for name, child in self.child_entries(index):
+            if name in result:
+                raise NXError(f'{self.path}: duplicate {name!r} cannot use a dictionary view at node {index}')
             result[name] = child
         return result
 
-    def resolve(self, path):
-        index = 0
+    def resolve(self, path, index=0):
+        """Match nlnx/node.cpp get_child's exact midpoint binary-search lookup."""
         for part in path.split('/') if path else ():
-            index = self.children(index).get(part)
-            if index is None:
+            key = part.encode('utf-8')
+            _, first, count, _, _ = self.record(index)
+            while count:
+                half = count >> 1
+                candidate = first + half
+                name = self.string(self.record(candidate)[0])
+                if name < key:
+                    first = candidate + 1
+                    count -= half + 1
+                elif name > key:
+                    count = half
+                else:
+                    index = candidate
+                    break
+            else:
                 return None
         return index
 
@@ -174,7 +197,7 @@ class NX:
             raise NXError(f'{self.path}: cyclic NX graph at {path}')
         yield path, index
         ancestors = ancestors | {index}
-        for name, child in self.children(index).items():
+        for name, child in self.child_entries(index):
             yield from self.walk(child, f'{path}/{name}'.lstrip('/'), ancestors)
 
     def semantic_hash(self, index):

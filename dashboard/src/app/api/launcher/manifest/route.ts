@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { AssetError, beginRelease, readManifest, readRelease, rollbackRelease } from "@/lib/assets";
-import { publishStagedWzRelease } from "@/lib/wz-to-nx";
+import { AssetError, beginRelease, readManifest, readReleaseView, releaseFileNames, rollbackRelease } from "@/lib/assets";
+import { prepareStagedWzRelease, publishSealedWzRelease, publishStagedWzRelease } from "@/lib/wz-to-nx";
 import { restartGameServer } from "@/lib/game-control";
 import type { Manifest, PublishResult } from "@/lib/assets";
 
@@ -14,10 +14,11 @@ export async function GET(request: NextRequest) {
     if (!PROFILES[profile]) throw new AssetError(`Unknown profile: ${profile}`);
     const retainedId = request.nextUrl.searchParams.get("releaseId");
     const current = readManifest();
-    const manifest = retainedId ? readRelease(retainedId) : current.manifest;
+    const manifest = retainedId ? readReleaseView(retainedId) : current.manifest;
     return NextResponse.json({
       version: manifest.version, updatedAt: manifest.updatedAt,
       downloadBase: manifest.downloadBase, releaseId: manifest.releaseId,
+      completeProfiles: manifest.completeProfiles, provenance: manifest.provenance,
       files: manifest.files.filter((file) => (file.profiles || ["stock"]).includes(profile)),
     }, { headers: {
       "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store",
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     if (body.stage === true) {
-      const releaseId = beginRelease(body.baseReleaseId !== undefined ? { baseReleaseId: body.baseReleaseId } : {});
+      const releaseId = beginRelease({ ...(body.baseReleaseId !== undefined ? { baseReleaseId: body.baseReleaseId } : {}), ...(body.catalog !== undefined ? { catalog: body.catalog } : {}), ...(body.certification !== undefined ? { certification: body.certification } : {}) });
       return NextResponse.json({ success: true, releaseId });
     }
     if (typeof body.rollback === "string") {
@@ -51,18 +52,30 @@ export async function POST(request: Request) {
       await applyChangedServer(previous, result);
       return NextResponse.json({ success: true, ...result });
     }
+    if (body.publish === true && typeof body.releaseId === "string") {
+      const previous = readManifest().manifest;
+      const result = await publishSealedWzRelease(body.releaseId);
+      publishedReleaseId = result.releaseId;
+      await applyChangedServer(previous, result);
+      return NextResponse.json({ success: true, version: result.manifest.version, ...result });
+    }
     if (typeof body.releaseId !== "string" || !Array.isArray(body.register) || !body.register.length) {
       throw new AssetError("Provide stage, a retained rollback id, or releaseId and expected register metadata");
     }
-    const allowed = new Set(readManifest().manifest.files.map((file) => file.name));
-    allowed.add("server-wz.tar.gz"); allowed.add("server-wz-baseline.tar.gz");
+    const allowed = releaseFileNames(body.releaseId);
     const expected = body.register.map((item: { name: string; hash: string; size: number }) => {
       if (!item || !allowed.has(item.name)) throw new AssetError("Every registered name must be in the complete launcher/server allowlist");
       return { key: item.name, hash: item.hash, size: item.size };
     });
     if (body.operations !== undefined && !Array.isArray(body.operations)) throw new AssetError("operations must be an array");
+    const target = body.target || "native";
+    if (target !== "native" && target !== "native-and-browser") throw new AssetError("Unknown publication target");
+    if (body.prepareOnly === true) {
+      const prepared = await prepareStagedWzRelease(body.releaseId, expected, body.operations || [], target);
+      return NextResponse.json({ success: true, published: false, sealed: true, nxBaseUrl: `/nx/r/${prepared.releaseId}`, ...prepared });
+    }
     const previous = readManifest().manifest;
-    const result = await publishStagedWzRelease(body.releaseId, expected, body.operations || []);
+    const result = await publishStagedWzRelease(body.releaseId, expected, body.operations || [], target);
     publishedReleaseId = result.releaseId;
     await applyChangedServer(previous, result);
     return NextResponse.json({ success: true, version: result.manifest.version, ...result });

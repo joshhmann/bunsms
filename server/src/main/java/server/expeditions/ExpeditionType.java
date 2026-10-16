@@ -42,26 +42,26 @@ public enum ExpeditionType {
     ARIANT2(2, 7, 20, 30, 5),
     PINKBEAN(6, 30, 120, 255, 5),
     CWKPQ(6, 30, 90, 255, 5),   // CWKPQ min-level 90, found thanks to Cato
-    // Wave 0 boss-pack (additive): EASYMAGNUS/NORMALMAGNUS/HARDMAGNUS + NORMALLOTUS/HARDLOTUS
-    // are dead-until-scripted (upstream ships only MagnusBattle/HardLotusBattle).
-    VONLEON(6, 30, 120, 255, 5),
-    CYGNUS(6, 30, 120, 255, 5),
-    WILLSPIDER(6, 30, 200, 255, 5),
-    VERUS(6, 30, 200, 255, 5),
-    DARKNELL(6, 30, 200, 255, 5),
-    KREXEL(6, 30, 120, 255, 5),
-    CASTELLAN(6, 30, 120, 255, 5),
-    LUCID(6, 30, 200, 255, 5),
+    // Genuine source events accept at most six; preserve the existing minimum,
+    // per-family quotas and the global solo override. Unshipped difficulty enums below remain inactive.
+    VONLEON(6, 6, 120, 255, 5),
+    CYGNUS(6, 6, 120, 255, 5),
+    WILLSPIDER(6, 6, 200, 255, 5),
+    VERUS(6, 6, 200, 255, 5),
+    DARKNELL(6, 6, 200, 255, 5),
+    KREXEL(6, 6, 120, 255, 5),
+    CASTELLAN(6, 6, 120, 255, 5),
+    LUCID(6, 6, 200, 255, 5),
     NORMALLOTUS(6, 30, 200, 255, 5),
-    HARDLOTUS(6, 30, 190, 255, 5),
+    HARDLOTUS(6, 6, 190, 255, 5),
     EASYMAGNUS(6, 30, 150, 255, 5),
     NORMALMAGNUS(6, 30, 170, 255, 5),
     HARDMAGNUS(6, 30, 200, 255, 5),
-    NWILLSPIDER(6, 30, 200, 255, 5),
-    NLUCID(6, 30, 200, 255, 5),
-    NVERUS(6, 30, 200, 255, 5),
-    NDARKNELL(6, 30, 200, 255, 5),
-    MAGNUS(6, 30, 200, 255, 5);
+    NWILLSPIDER(6, 6, 200, 255, 5),
+    NLUCID(6, 6, 200, 255, 5),
+    NVERUS(6, 6, 200, 255, 5),
+    NDARKNELL(6, 6, 200, 255, 5),
+    MAGNUS(6, 6, 200, 255, 5);
 
     private final int minSize;
     private final int maxSize;
