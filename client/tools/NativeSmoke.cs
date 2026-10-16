@@ -259,14 +259,16 @@ public static class NativeSmoke
             throw new InvalidOperationException("Native scrollbar gesture is obscured; no drag submitted");
         mouse_event(0x0002, 0, 0, 0, UIntPtr.Zero);
         try {
+            System.Threading.Thread.Sleep(150);
             for (int step = 1; step <= 8; step++) {
                 Point point = new Point { X = start.X + (end.X - start.X) * step / 8, Y = start.Y + (end.Y - start.Y) * step / 8 };
                 if (GetForegroundWindow() != hwnd || WindowFromPoint(point) != hwnd)
                     throw new InvalidOperationException("Native game lost ownership during normal scrollbar gesture");
                 if (!SetCursorPos(point.X, point.Y))
                     throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
-                System.Threading.Thread.Sleep(25);
+                System.Threading.Thread.Sleep(75);
             }
+            System.Threading.Thread.Sleep(200);
         } finally { mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero); }
         System.Threading.Thread.Sleep(100);
     }
