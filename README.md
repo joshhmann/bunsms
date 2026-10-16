@@ -533,6 +533,11 @@ presence; no table entry implies unexercised functionality works.
   retaining weak keys. Actual3188-background/eight-factory-bot runtime exercised
   640 map transitions/80 HP callbacks, correct400 hazard/zero safe-map damage.
   This is not bot expedition/combat proof; those actual controller paths remain open.
+- Shared XML DOM ownership now protects all child/parent wrappers with their
+  owning Document instead of unrelated wrapper monitors. A real red/green race
+  and3171-bot Linux run verified12800 correct name/document reads,512 cold names,
+  and zero NPE/CME; no cache warming, retries or disabled bots. Bot party6 still
+  registers expedition1 and is explicitly not accepted combat/clear coverage.
 - Maker's real public opcode/material/cost/natural-failure/relog gate passed.
   The provided sanitized pre-upgrade snapshot plus owned inventory/price rows
   passed real40→51 migrations, idempotence and exact pre-backup restoration.
@@ -544,10 +549,10 @@ presence; no table entry implies unexercised functionality works.
   data files before Java startup; source/URLs/full hashes are in the single
   coordination contract. No seal activates production. Frozen rc3/old artifacts
   remain preserved and unqualified; fresh native engine acceptance is mandatory.
-- Exact native controls isolate the pre-login failure to Consume/0238.img, not a
-  proved bad card. Full-context raw/reencoded no-card controls precede genuine
-  card groups; missing Book prerequisites and representation remain separate
-  hypotheses, with no accepted card cut/remap or fabricated definition.
+- Exact native controls isolate the old-reference Item failure to0238, not a
+  proved bad card. Failed full0/6 and0/0 controls stopped correctly. Current
+  reference-only ba6→95b isolates zero-add old-image encoding; all13 final cards
+  remain required, with no fabricated Book data or release fallback.
 - Fresh actual Windows MapleLib run38931713976 reads511 images/35375 BGRA
   canvases/4998 sounds. It retains95 failures:46 consumed gaps plus49 Sound
   aliases identical to official/working baselines; exact vector checks now run.
@@ -557,6 +562,10 @@ presence; no table entry implies unexercised functionality works.
   original1×1 art preserved; wrong manifest hashes fail before any output.
   Shared-encoder prism regeneration retains all three old raw image hashes.
   Final WZ/XML materialization/new pins/native combat-cue proof remain required.
+- Installed Electron news-security red/green receipts prove the plaintext-node
+  fix: literal markup, zero executable elements/exceptions; no fake backend or
+  privileged payload. This security gate is done, not native gameplay or final
+  full-profile installer acceptance. User-owned INI fields are section-scoped.
 - Upstream review remains pinned16ab7b7/selective GROUPA0874223/GROUPB60b869c,
   not unrelated-history parity or new AI/voting/Flux/Tripo3D scope. Evan review
   remains complete REVIEW ONLY, not playable-class scope.
