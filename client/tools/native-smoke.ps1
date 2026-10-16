@@ -75,8 +75,11 @@ function Save-NativeSnapshot([int[]]$Ids) {
         $target = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' }) | Select-Object -First 1
         if ($target) {
             $attempt = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); hwnd = $target.Handle; processId = $target.ProcessId
-                scope = 'One normal OS foreground request before screenshots; no mouse/key input, renderer, guard, or transport change' }
-            try { $attempt.activated = [NativeSmoke]::FocusClient($target) }
+                scope = 'Normal OS foreground request; if refused, one ordinary click only on a WindowFromPoint-verified exposed owned game footer; no login input, renderer, guard, or transport change' }
+            try {
+                $attempt.observation = [NativeSmoke]::FocusClient($target)
+                $attempt.activated = $attempt.observation.Activated
+            }
             catch { $attempt.error = $_.Exception.Message }
             $report.foregroundAttempt = [pscustomobject]$attempt
             $row.windows = @([NativeSmoke]::Windows($Ids))

@@ -163,10 +163,18 @@ public static class NativeSmoke
     [DllImport("user32.dll")] private static extern bool ClientToScreen(IntPtr hwnd, ref Point point);
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] private static extern IntPtr WindowFromPoint(Point point);
     [DllImport("user32.dll", SetLastError = true)] private static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] private static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
 
-    public static bool FocusClient(WindowInfo window)
+    public sealed class FocusObservation
+    {
+        public bool NormalRequestActivated, ExposedFooterClickSubmitted, Activated;
+        public int ScreenX, ScreenY;
+        public string ExposedWindow;
+    }
+
+    public static FocusObservation FocusClient(WindowInfo window)
     {
         IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
         uint owner; GetWindowThreadProcessId(hwnd, out owner);
@@ -174,7 +182,26 @@ public static class NativeSmoke
             throw new InvalidOperationException("Foreground target is not the observed native game window");
         SetForegroundWindow(hwnd);
         System.Threading.Thread.Sleep(100);
-        return GetForegroundWindow() == hwnd;
+        var result = new FocusObservation { NormalRequestActivated = GetForegroundWindow() == hwnd };
+        result.Activated = result.NormalRequestActivated;
+        if (result.Activated || window.ClientWidth <= 0 || window.ClientHeight < 100)
+            return result;
+        Point point = new Point { X = window.ClientWidth / 2, Y = window.ClientHeight - 50 };
+        if (!ClientToScreen(hwnd, ref point))
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        result.ScreenX = point.X; result.ScreenY = point.Y;
+        IntPtr exposed = WindowFromPoint(point);
+        result.ExposedWindow = "0x" + exposed.ToInt64().ToString("X");
+        if (exposed != hwnd) return result;
+        if (!SetCursorPos(point.X, point.Y))
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        if (WindowFromPoint(point) != hwnd) return result;
+        mouse_event(0x0002, 0, 0, 0, UIntPtr.Zero);
+        mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero);
+        result.ExposedFooterClickSubmitted = true;
+        System.Threading.Thread.Sleep(100);
+        result.Activated = GetForegroundWindow() == hwnd;
+        return result;
     }
 
     public static void ClickClient(WindowInfo window, int x, int y)
