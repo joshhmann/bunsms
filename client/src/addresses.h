@@ -28,6 +28,15 @@ inline constexpr uintptr_t kZAllocAnon      = 0x00BF0B00; // ZAllocAnonSelector 
 inline constexpr uintptr_t kZAllocStrChar   = 0x00BF0A90; // ZAllocStrSelector<char>
 inline constexpr uintptr_t kZAllocStrWChar  = 0x00BF0BA8; // ZAllocStrSelector<wchar_t>
 
+// --- Negotiation hooks (owned by caps.cpp; hooked EXACTLY ONCE each) --------
+// Both verified unhooked-by-Kaentake in actual sources (bypass.cpp calls
+// ClearSendReceiveCtx directly at :78 and SendPacket directly at :256/:362;
+// zero ATTACH_HOOK on either VA). No Kaentake fork, no Connect collision.
+// ClearCtx runs pre-connect (reset only, never send — no hello/IV race);
+// the SendPacket hook fires only when the engine itself sends (crypto up).
+inline constexpr uintptr_t kClientSocket_ClearSendReceiveCtx = 0x004969EE; // XREF
+inline constexpr uintptr_t kClientSocket_SendPacketFn = 0x0049637B; // == dailycheckin send site, shared Detour
+
 // --- Dispatcher (owned by dispatcher.cpp; hooked EXACTLY ONCE) -------------
 inline constexpr uintptr_t kClientSocket_ProcessPacket = 0x004965F1; // CClientSocket::ProcessPacket (SEH)
 

@@ -53,9 +53,10 @@ inline bool CapsAccepted(int bit) { return (CapsAcceptedMask() & bit) != 0; }
 // present AND enabled. Today: CHECKIN_WINDOW alone.
 int CapsOfferedMask();
 
-// Send the announce as the first packet on a new game socket.
-// Call AFTER the socket is connected and SendPacket works, BEFORE any
-// login/check-password packet. Resets the accepted mask first.
+// Manual announce send (diagnostic / fallback). The SendPacket-hook path
+// (caps.cpp) is primary: first genuine outgoing packet per connection
+// carries the announce ahead of it. This entry resets + sends immediately;
+// prefer the hook path (ordering + reentrancy guards built in).
 void CapsSendAnnounce();
 
 // Install entry: registers the 0x373B ack route with the dispatcher.

@@ -12,21 +12,55 @@
 namespace {
 
 // Single-word accepted mask for THIS connection. Written by the ack route
-// (receive thread), read by send gates. Reset on every announce send —
+// (receive thread), read by send gates. Reset on ClearSendReceiveCtx —
 // a new socket means a new negotiation (contract §3, no carryover).
 volatile int g_acceptedMask = 0;
+
+// Once-per-connection announce flag. Set when the announce goes out,
+// cleared by the ClearCtx hook on every (re)connect. Send-thread only.
+volatile bool g_announced = false;
+
+// Reentrancy guard: the announce itself goes through the ORIGINAL
+// SendPacket trampoline, which must not re-enter the hook.
+volatile bool g_sendingAnnounce = false;
+
+using ClearCtx_t = void(__thiscall*)(void*);
+ClearCtx_t g_ClearCtxOrig = reinterpret_cast<ClearCtx_t>(addr::kClientSocket_ClearSendReceiveCtx);
+
+using SendPacket_t = void(__thiscall*)(void*, const COutPacket&);
+SendPacket_t g_SendPacketOrig = reinterpret_cast<SendPacket_t>(addr::kClientSocket_SendPacketFn);
 
 void* ClientSocketInstance() {
     return *reinterpret_cast<void**>(addr::dailycheckin::kClientSocketInstance);
 }
 
-void SendPacket(const COutPacket& o) {
-    void* sock = ClientSocketInstance();
-    if (sock) {
-        auto send = reinterpret_cast<void(__thiscall*)(void*, const COutPacket&)>(
-            addr::dailycheckin::kClientSocketSendPrint);
-        send(sock, o);
+void __fastcall ClearCtx_hook(void* pThis, void* /*edx*/) {
+    // New connection starting: drop the old negotiation. The next outgoing
+    // packet re-announces (once-flag cleared here).
+    g_acceptedMask = 0;
+    g_announced = false;
+    g_ClearCtxOrig(pThis);
+}
+
+void SendAnnounceThroughOrig(void* sock) {
+    COutPacket o(caps::kAnnounceOpcode);
+    o.Encode4(static_cast<unsigned int>(CLIENT_DLL_VERSION));
+    o.Encode4(static_cast<unsigned int>(CapsOfferedMask()));
+    g_sendingAnnounce = true;
+    g_SendPacketOrig(sock, o);
+    g_sendingAnnounce = false;
+    g_announced = true;
+}
+
+void __fastcall SendPacket_hook(void* pThis, void* /*edx*/, const COutPacket& o) {
+    // First genuine outgoing packet on this connection carries the announce
+    // ahead of it through the ORIGINAL (same seq/crypto treatment, in order).
+    // Hook fires only when the engine itself sends, so crypto is already up —
+    // no hello/IV race. Reentrant announce send is guarded above.
+    if (!g_announced && !g_sendingAnnounce) {
+        SendAnnounceThroughOrig(pThis);
     }
+    g_SendPacketOrig(pThis, o);
 }
 
 // Ack route: server replies ONLY to an announce (never unsolicited, never
@@ -66,15 +100,17 @@ int CapsOfferedMask() {
 }
 
 void CapsSendAnnounce() {
-    // New socket => new negotiation. Reset BEFORE sending so a failed send
-    // can't leave a stale mask from the previous connection.
+    // Manual send (diagnostic / fallback). The hook path above is primary;
+    // this also resets first so a failed send can't leave a stale mask.
     g_acceptedMask = 0;
-    COutPacket o(caps::kAnnounceOpcode);
-    o.Encode4(static_cast<unsigned int>(CLIENT_DLL_VERSION));
-    o.Encode4(static_cast<unsigned int>(CapsOfferedMask()));
-    SendPacket(o);
+    g_announced = false;
+    void* sock = ClientSocketInstance();
+    if (sock)
+        SendAnnounceThroughOrig(sock);
 }
 
 void AttachCapsMod() {
     RegisterPacketRoute(caps::kAckOpcode, &CapsAck_Route);
+    ATTACH_HOOK(g_ClearCtxOrig, ClearCtx_hook);
+    ATTACH_HOOK(g_SendPacketOrig, SendPacket_hook);
 }
