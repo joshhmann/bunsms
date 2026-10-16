@@ -38,21 +38,25 @@ in the asset path. R2 objects are NOT deleted (rollback standby).
 - Tracker: Ticket 17 in `server/docs/ROADMAP-BACKLOG.md` (actually-exercised
   scope, not a blanket done-claim).
 
-## Operational cutover (executed)
+## Cutover proof (live, 2026-10-16)
 
-- `.164`: `/opt/buns/client-assets/` holds 19/19 objects + `server-wz.tar.gz`
-  (28.5 MB) + `server-wz.version`, all remote-sha256-verified 19/19.
-  `server.py` + `CLIENT_ASSETS_DIR` drop-in overlay restarted via systemd
-  (`buns-web.service`, backup `server.py.bak-pre-selfhost`); live
-  200/206/416/HEAD/traversal-400/missing-404 verified on real code.
-- `.70`: Caddy `buns.asslorde.com` gains `handle /client/*` (→ :8080),
-  `handle /api/launcher/manifest*|news*` + `/api/server` (→ :3001),
-  `handle` fallback (→ :8080). Backup
-  `public.Caddyfile.bak-pre-selfhost-*`; non-target routes byte-identical;
-  config validated; `caddy reload` active. Public `/client/List.wz` 200,
-  Range-206, `/api/admin/*` still 404 (not exposed).
-- Remaining: dashboard rebuild picks up new routes + unified manifest publish;
-  then soak (≥1 publish cycle) → retire R2.
+- Dashboard rebuilt on .164 (`docker compose build dashboard` + `up -d`,
+  volume mounts `./client-assets:/cosmic/client-assets` +
+  `./launcher-manifest.json:/cosmic/launcher-manifest.json:ro`,
+  `ASSET_BASE_URL`/`ASSET_DIR` env): LAN manifest = v1.0.5/19 files,
+  `?profile=kaentake` = 15 incl. triple, `?profile=stock` = 16 with zero
+  Kaentake mix.
+- Public manifest (`https://buns.asslorde.com/api/launcher/manifest`) = same
+  19-file set. Public `/client/List.wz` sha256 matches manifest;
+  Range-resume 206 verified publicly.
+- LAN `api/launcher/download/*` = 200 + 206 resume (internal spare path);
+  publicly 404 by design (only `/client/*` advertised, admin/ops unrouted).
+- Launcher-flow test (real `filterManifest` + Range-append resume):
+  stock subset + Kaentake triple resume + profile isolation PASS.
+
+## Remaining
+
+- Soak (≥1 publish cycle) → retire R2 + `publish_client.sh` + wrangler.
 
 ## Rollback
 
