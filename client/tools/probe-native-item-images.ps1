@@ -130,10 +130,10 @@ try {
         if ($receipt.status -eq 'native-startup-observed') { $step.outcome = 'startup-observed' }
         elseif (-not $receipt.nativeUiObserved -or -not $receipt.gameAliveAfterObservation -or $receipt.errorDialogObserved) { $step.outcome = 'startup-failed' }
         else { throw 'STOP: observer failure is not a comparable startup result' }
-        if ($fullSupport -and $variant.id -eq $authority.controlVariantId -and $step.outcome -ne 'startup-observed') {
-            throw 'STOP: full-support no-new-cards control failed; do not attribute card/group failures or continue unpaired node probes'
+        if ($variant.id -eq $authority.controlVariantId -and $step.outcome -ne 'startup-observed') {
+            throw 'STOP: unchanged-card-image prerequisite failed; do not run or interpret the re-encoding comparison'
         }
-        if ($fullSupport -and $variant.id -eq $authority.reencodingControlVariantId -and $step.outcome -ne 'startup-observed') {
+        if ($variant.id -eq $authority.reencodingControlVariantId -and $step.outcome -ne 'startup-observed') {
             throw 'STOP: semantically unchanged old-card re-encoding failed; investigate writer/representation compatibility before any card/schema/root attribution'
         }
     }

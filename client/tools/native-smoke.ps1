@@ -308,6 +308,28 @@ try {
             if ($control.status -ne 'native-startup-observed') {
                 throw 'Previously working reference51 control did not boot now: STOP asset attribution/bisection; reconsider environment/observer before any asset fix'
             }
+            if ($ItemImageVariantsUrl) {
+                $contextPath = Join-Path $OutputDirectory 'item-reference-context.json'
+                Invoke-WebRequest $ItemImageVariantsUrl -OutFile $contextPath -TimeoutSec 60
+                if ((Get-FileHash $contextPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $ItemImageVariantsSha256) {
+                    throw 'Diagnostic reference-context descriptor SHA256 mismatch'
+                }
+                $context = Get-Content $contextPath -Raw | ConvertFrom-Json
+                if ($context.supportCohort -eq 'reference') {
+                    Copy-Item (Join-Path $controlDirectory 'kernel-backend-ready.json') (Join-Path $OutputDirectory 'kernel-backend-ready.json')
+                    & (Join-Path $PSScriptRoot 'probe-native-item-images.ps1') -OutputDirectory $OutputDirectory -GameDirectory $game `
+                        -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
+                        -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
+                        -ObserveSeconds $ObserveSeconds -GameHost $GameHost -VariantsUrl $ItemImageVariantsUrl -VariantsSha256 $ItemImageVariantsSha256
+                    $report.itemImageProbes = Get-Content (Join-Path $OutputDirectory 'item-image-probes.json') -Raw | ConvertFrom-Json
+                    $report.inputKind = 'INTERNAL reference other50 plus pinned Item variants; no full-support game attempt, String override, or compiled runtime overlay'
+                    if ($report.itemImageProbes.status -ne 'image-variant-observations-complete') {
+                        throw 'Reference-only Item experiment stopped; inspect actual prerequisite and re-encoding observations'
+                    }
+                    $report.status = 'reference-image-observations-complete'
+                    return
+                }
+            }
             foreach ($delta in $deltas) {
                 Copy-Item (Join-Path $fullRoot $delta.name) (Join-Path $game $delta.name) -Force
                 if ((Get-Item (Join-Path $game $delta.name)).Length -ne $delta.fullSize -or
