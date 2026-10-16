@@ -70,9 +70,9 @@ its exact `native_baseline_sha256`, and `native_baseline_files_url` containing
 those pinned bytes. Ordinary push/PR builds do not download that baseline.
 The smoke job verifies every native file and canonical executable / renderer
 pins, overlays only the built Kaentake pair, Custom.wz and BunsMS.dll,
-then launches the real Kaentake path under Windows debug-event capture.
-It records child PIDs, module loads, native initialization/ACK messages,
-exceptions and exit codes, HWND/child text, actual client-area screenshots,
+then launches the real Kaentake path under passive process/module and DBWIN
+OutputDebugString capture, without attaching a debugger. It records child PIDs,
+native initialization/ACK messages, natural exit codes, HWND/child text, actual client-area screenshots,
 and explicitly labeled controller cleanup. A black window or DLL load alone
 is not a pass; an ACK absent before credentials is recorded as absent, not
 invented. The same runner makes read-only public TCP/greeting measurements

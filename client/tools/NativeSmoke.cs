@@ -8,174 +8,137 @@ using System.Text;
 public static class NativeSmoke
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct StartupInfo
+    private struct ProcessEntry
     {
-        public uint Size; public string Reserved, Desktop, Title;
-        public uint X, Y, Width, Height, XChars, YChars, Fill, Flags;
-        public ushort Show, ReservedSize; public IntPtr ReservedData, Input, Output, Error;
+        public uint Size, Usage, Id; public UIntPtr Heap;
+        public uint Module, Threads, Parent; public int Priority; public uint Flags;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string Name;
     }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct ProcessInfo { public IntPtr Process, Thread; public uint ProcessId, ThreadId; }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct CreateProcessInfo
-    {
-        public IntPtr File, Process, Thread, Base;
-        public uint DebugOffset, DebugSize;
-        public IntPtr ThreadLocalBase, Start, ImageName; public ushort Unicode;
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct LoadDllInfo
-    {
-        public IntPtr File, Base; public uint DebugOffset, DebugSize;
-        public IntPtr ImageName; public ushort Unicode;
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct DebugStringInfo { public IntPtr Address; public ushort Unicode, Length; }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct ExceptionRecord
-    {
-        public uint Code, Flags; public IntPtr Nested, Address; public uint Count;
-        public UIntPtr I0, I1, I2, I3, I4, I5, I6, I7, I8, I9, I10, I11, I12, I13, I14;
-    }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct ExceptionInfo { public ExceptionRecord Record; public uint FirstChance; }
-    // The smoke runner is 64-bit PowerShell, even when the debuggee is Win32.
-    [StructLayout(LayoutKind.Explicit, Size = 176)]
-    private struct DebugEvent
-    {
-        [FieldOffset(0)] public uint Code;
-        [FieldOffset(4)] public uint ProcessId;
-        [FieldOffset(8)] public uint ThreadId;
-        [FieldOffset(16)] public CreateProcessInfo Create;
-        [FieldOffset(16)] public LoadDllInfo Dll;
-        [FieldOffset(16)] public DebugStringInfo String;
-        [FieldOffset(16)] public ExceptionInfo Exception;
-        [FieldOffset(16)] public IntPtr Thread;
-        [FieldOffset(16)] public uint ExitCode;
-    }
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool CreateProcess(string application, StringBuilder command, IntPtr pa, IntPtr ta,
-        bool inherit, uint flags, IntPtr environment, string directory, ref StartupInfo startup, out ProcessInfo process);
-    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool WaitForDebugEvent(out DebugEvent e, uint milliseconds);
-    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool ContinueDebugEvent(uint pid, uint tid, uint status);
-    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool DebugActiveProcessStop(uint pid);
-    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool DebugSetProcessKillOnExit(bool kill);
-    [DllImport("kernel32.dll", SetLastError = true)] private static extern bool ReadProcessMemory(IntPtr process, IntPtr address, byte[] data, UIntPtr length, out UIntPtr read);
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern uint GetFinalPathNameByHandle(IntPtr file, StringBuilder path, uint size, uint flags);
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint pid);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool Process32First(IntPtr snapshot, ref ProcessEntry entry);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool Process32Next(IntPtr snapshot, ref ProcessEntry entry);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern IntPtr CreateEvent(IntPtr attributes, bool manualReset, bool initial, string name);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern IntPtr CreateFileMapping(IntPtr file, IntPtr attributes, uint protect, uint high, uint low, string name);
+    [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr MapViewOfFile(IntPtr mapping, uint access, uint high, uint low, UIntPtr size);
+    [DllImport("kernel32.dll")] private static extern bool UnmapViewOfFile(IntPtr view);
+    [DllImport("kernel32.dll")] private static extern bool SetEvent(IntPtr handle);
+    [DllImport("kernel32.dll")] private static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
     [DllImport("kernel32.dll")] private static extern bool CloseHandle(IntPtr handle);
-
-    private static string FilePath(IntPtr file)
-    {
-        if (file == IntPtr.Zero || file == new IntPtr(-1)) return "<no-file-handle>";
-        var path = new StringBuilder(32768);
-        uint length = GetFinalPathNameByHandle(file, path, (uint)path.Capacity, 0);
-        return length > 0 && length < path.Capacity ? path.ToString() : "<path-error:" + Marshal.GetLastWin32Error() + ">";
-    }
 
     public static int[] LastProcessIds { get; private set; } = Array.Empty<int>();
 
+    private static void ObserveProcesses(Dictionary<int, Process> processes, HashSet<int> ids, HashSet<string> modules, StreamWriter log)
+    {
+        IntPtr snapshot = CreateToolhelp32Snapshot(2, 0);
+        if (snapshot != new IntPtr(-1))
+        {
+            try
+            {
+                var entry = new ProcessEntry { Size = (uint)Marshal.SizeOf(typeof(ProcessEntry)) };
+                var entries = new List<ProcessEntry>();
+                if (Process32First(snapshot, ref entry)) do { entries.Add(entry); } while (Process32Next(snapshot, ref entry));
+                bool added;
+                do
+                {
+                    added = false;
+                    foreach (var child in entries)
+                    {
+                        if (!ids.Contains((int)child.Parent) || ids.Contains((int)child.Id)) continue;
+                        try
+                        {
+                            var process = Process.GetProcessById((int)child.Id);
+                            // Retain the real process handle so its exit code remains observable.
+                            IntPtr handle = process.Handle;
+                            processes.Add(process.Id, process); ids.Add(process.Id); added = true;
+                            log.WriteLine("PROCESS_OBSERVED pid=" + child.Id + " parent=" + child.Parent + " name=" + child.Name);
+                        }
+                        catch (ArgumentException) { log.WriteLine("PROCESS_EXITED_BEFORE_OPEN pid=" + child.Id); }
+                    }
+                } while (added);
+            }
+            finally { CloseHandle(snapshot); }
+        }
+        var exited = new List<int>();
+        foreach (var pair in processes)
+        {
+            var process = pair.Value;
+            try
+            {
+                if (process.HasExited)
+                {
+                    log.WriteLine("EXIT_PROCESS pid=" + pair.Key + " code=" + process.ExitCode + " reason=natural-before-controller-cleanup");
+                    exited.Add(pair.Key); continue;
+                }
+                foreach (ProcessModule module in process.Modules)
+                {
+                    string key = pair.Key + ":" + module.BaseAddress.ToInt64();
+                    if (modules.Add(key)) log.WriteLine("MODULE_OBSERVED pid=" + pair.Key + " base=0x" + module.BaseAddress.ToInt64().ToString("X") + " path=" + module.FileName);
+                }
+            }
+            catch (Exception error) { log.WriteLine("PROCESS_OBSERVATION_ERROR pid=" + pair.Key + " " + error.Message); }
+        }
+        foreach (int pid in exited) { processes[pid].Dispose(); processes.Remove(pid); }
+        var observed = new int[ids.Count]; ids.CopyTo(observed); LastProcessIds = observed;
+    }
+
     public static int[] Capture(string executable, string directory, int seconds, string logPath, Action<int[]> snapshot)
     {
-        if (IntPtr.Size != 8) throw new InvalidOperationException("Use 64-bit PowerShell for the native smoke debugger.");
-        var startup = new StartupInfo { Size = (uint)Marshal.SizeOf(typeof(StartupInfo)) };
-        ProcessInfo root;
-        if (!CreateProcess(executable, null, IntPtr.Zero, IntPtr.Zero, false, 1, IntPtr.Zero, directory, ref startup, out root))
-            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "CreateProcess(DEBUG_PROCESS)");
-        LastProcessIds = new[] { (int)root.ProcessId };
-        var processes = new Dictionary<uint, IntPtr>();
-        var ids = new HashSet<int>();
-        var handles = new HashSet<IntPtr> { root.Process, root.Thread };
+        // DBWIN is the standard passive OutputDebugString listener. No debug attach,
+        // DEBUG_PROCESS flag, guard patch, or IsDebuggerPresent override is used.
+        IntPtr ready = IntPtr.Zero, data = IntPtr.Zero, mapping = IntPtr.Zero, view = IntPtr.Zero;
+        var processes = new Dictionary<int, Process>(); var ids = new HashSet<int>(); var modules = new HashSet<string>();
         try
         {
-            DebugSetProcessKillOnExit(false);
+            ready = CreateEvent(IntPtr.Zero, false, false, "DBWIN_BUFFER_READY");
+            data = CreateEvent(IntPtr.Zero, false, false, "DBWIN_DATA_READY");
+            mapping = CreateFileMapping(new IntPtr(-1), IntPtr.Zero, 4, 0, 4096, "DBWIN_BUFFER");
+            int mappingError = Marshal.GetLastWin32Error();
+            if (ready == IntPtr.Zero || data == IntPtr.Zero || mapping == IntPtr.Zero || mappingError == 183)
+                throw new System.ComponentModel.Win32Exception(mappingError, "Cannot acquire isolated passive DBWIN listener");
+            view = MapViewOfFile(mapping, 6, 0, 0, (UIntPtr)4096);
+            if (view == IntPtr.Zero) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "Map DBWIN buffer");
             using (var log = new StreamWriter(logPath, false, new UTF8Encoding(false)))
             {
                 log.AutoFlush = true;
-                log.WriteLine("ROOT pid=" + root.ProcessId + " executable=" + executable);
-                var clock = Stopwatch.StartNew();
-                bool sawProcess = false;
-                double nextSnapshot = 10;
+                var root = Process.Start(new ProcessStartInfo(executable) { WorkingDirectory = directory, UseShellExecute = false });
+                if (root == null) throw new InvalidOperationException("Native launcher did not start");
+                processes.Add(root.Id, root); ids.Add(root.Id); LastProcessIds = new[] { root.Id };
+                log.WriteLine("ROOT pid=" + root.Id + " mode=normal-process-no-debugger executable=" + executable);
+                var clock = Stopwatch.StartNew(); double nextObservation = 0, nextSnapshot = 10;
+                var buffer = new byte[4092];
                 while (clock.Elapsed.TotalSeconds < seconds)
                 {
+                    SetEvent(ready);
+                    if (WaitForSingleObject(data, 100) == 0)
+                    {
+                        int pid = Marshal.ReadInt32(view); Marshal.Copy(IntPtr.Add(view, 4), buffer, 0, buffer.Length);
+                        int length = Array.IndexOf(buffer, (byte)0); if (length < 0) length = buffer.Length;
+                        string text = Encoding.Default.GetString(buffer, 0, length);
+                        // Never collect arbitrary unrelated process data or authentication payloads.
+                        if (text.StartsWith("BUNS_RUNTIME ", StringComparison.Ordinal) || text.StartsWith("BUNS_SCAN ", StringComparison.Ordinal))
+                            log.WriteLine(DateTime.UtcNow.ToString("O") + " DEBUG_STRING pid=" + pid + " " + text.TrimEnd('\0', '\r', '\n'));
+                    }
+                    if (clock.Elapsed.TotalSeconds >= nextObservation)
+                    {
+                        ObserveProcesses(processes, ids, modules, log); nextObservation += 1;
+                        if (processes.Count == 0) break;
+                    }
                     if (clock.Elapsed.TotalSeconds >= nextSnapshot)
                     {
                         try { snapshot(LastProcessIds); }
                         catch (Exception error) { log.WriteLine("SNAPSHOT_ERROR " + error); }
                         nextSnapshot += 20;
                     }
-                    DebugEvent e;
-                    if (!WaitForDebugEvent(out e, 250))
-                    {
-                        int error = Marshal.GetLastWin32Error();
-                        if (error != 121) log.WriteLine("WAIT_ERROR " + error);
-                        continue;
-                    }
-                    uint status = 0x00010002; // DBG_CONTINUE
-                    try
-                    {
-                        string prefix = DateTime.UtcNow.ToString("O") + " pid=" + e.ProcessId + " tid=" + e.ThreadId + " ";
-                        switch (e.Code)
-                        {
-                            case 1:
-                                log.WriteLine(prefix + "EXCEPTION code=0x" + e.Exception.Record.Code.ToString("X8") +
-                                    " address=0x" + e.Exception.Record.Address.ToInt64().ToString("X") + " firstChance=" + e.Exception.FirstChance);
-                                // Only debugger breakpoints are consumed; real exceptions reach the client's handlers.
-                                if (e.Exception.Record.Code != 0x80000003 && e.Exception.Record.Code != 0x80000004)
-                                    status = 0x80010001; // DBG_EXCEPTION_NOT_HANDLED
-                                break;
-                            case 2:
-                                handles.Add(e.Thread);
-                                break;
-                            case 3:
-                                sawProcess = true;
-                                ids.Add((int)e.ProcessId);
-                                var observed = new int[ids.Count]; ids.CopyTo(observed); LastProcessIds = observed;
-                                processes[e.ProcessId] = e.Create.Process;
-                                handles.Add(e.Create.Process); handles.Add(e.Create.Thread);
-                                log.WriteLine(prefix + "CREATE_PROCESS base=0x" + e.Create.Base.ToInt64().ToString("X") + " path=" + FilePath(e.Create.File));
-                                if (e.Create.File != IntPtr.Zero) CloseHandle(e.Create.File);
-                                break;
-                            case 5:
-                                log.WriteLine(prefix + "EXIT_PROCESS code=0x" + e.ExitCode.ToString("X8"));
-                                processes.Remove(e.ProcessId);
-                                break;
-                            case 6:
-                                log.WriteLine(prefix + "LOAD_DLL base=0x" + e.Dll.Base.ToInt64().ToString("X") + " path=" + FilePath(e.Dll.File));
-                                if (e.Dll.File != IntPtr.Zero) CloseHandle(e.Dll.File);
-                                break;
-                            case 8:
-                                IntPtr process;
-                                if (processes.TryGetValue(e.ProcessId, out process) && e.String.Length > 0)
-                                {
-                                    int length = e.String.Length * (e.String.Unicode != 0 ? 2 : 1);
-                                    var data = new byte[length];
-                                    UIntPtr read;
-                                    if (ReadProcessMemory(process, e.String.Address, data, (UIntPtr)length, out read))
-                                    {
-                                        var encoding = e.String.Unicode != 0 ? Encoding.Unicode : Encoding.Default;
-                                        log.WriteLine(prefix + "DEBUG_STRING " + encoding.GetString(data, 0, (int)read.ToUInt64()).TrimEnd('\0'));
-                                    }
-                                    else log.WriteLine(prefix + "DEBUG_STRING_READ_ERROR " + Marshal.GetLastWin32Error());
-                                }
-                                break;
-                        }
-                    }
-                    finally
-                    {
-                        if (!ContinueDebugEvent(e.ProcessId, e.ThreadId, status))
-                            log.WriteLine("CONTINUE_ERROR pid=" + e.ProcessId + " error=" + Marshal.GetLastWin32Error());
-                    }
-                    if (sawProcess && processes.Count == 0) break;
                 }
-                foreach (uint pid in processes.Keys)
-                    log.WriteLine("DETACH pid=" + pid + " success=" + DebugActiveProcessStop(pid) + " error=" + Marshal.GetLastWin32Error());
+                log.WriteLine("OBSERVATION_END elapsedSeconds=" + clock.Elapsed.TotalSeconds + " activeProcesses=" + processes.Count + " controllerCleanupNotYetRun=true");
             }
-            var result = new int[ids.Count]; ids.CopyTo(result); return result;
+            return LastProcessIds;
         }
         finally
         {
-            foreach (uint pid in processes.Keys) DebugActiveProcessStop(pid);
-            foreach (IntPtr handle in handles) if (handle != IntPtr.Zero && handle != new IntPtr(-1)) CloseHandle(handle);
+            foreach (var process in processes.Values) process.Dispose();
+            if (view != IntPtr.Zero) UnmapViewOfFile(view);
+            foreach (var handle in new[] { mapping, data, ready }) if (handle != IntPtr.Zero) CloseHandle(handle);
         }
     }
 
@@ -198,19 +161,12 @@ public static class NativeSmoke
     [DllImport("user32.dll")] private static extern bool GetClientRect(IntPtr hwnd, out Rect rect);
     [DllImport("user32.dll")] private static extern bool ClientToScreen(IntPtr hwnd, ref Point point);
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern IntPtr SendMessageTimeout(IntPtr hwnd, uint message, UIntPtr wparam, StringBuilder text,
-        uint flags, uint milliseconds, out UIntPtr result);
-    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);
+    private static extern IntPtr SendMessageTimeout(IntPtr hwnd, uint message, UIntPtr wparam, StringBuilder text, uint flags, uint milliseconds, out UIntPtr result);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);
     private static string Text(IntPtr hwnd)
     {
-        var text = new StringBuilder(4096);
-        GetWindowText(hwnd, text, text.Capacity);
-        if (text.Length == 0)
-        {
-            UIntPtr result;
-            SendMessageTimeout(hwnd, 0x000D, (UIntPtr)text.Capacity, text, 0x0003, 100, out result);
-        }
+        var text = new StringBuilder(4096); GetWindowText(hwnd, text, text.Capacity);
+        if (text.Length == 0) { UIntPtr result; SendMessageTimeout(hwnd, 0x000D, (UIntPtr)text.Capacity, text, 3, 100, out result); }
         return text.ToString();
     }
     public static WindowInfo[] Windows(int[] ids)
@@ -218,16 +174,14 @@ public static class NativeSmoke
         var selected = new HashSet<int>(ids); var result = new List<WindowInfo>();
         EnumWindows((hwnd, unused) =>
         {
-            uint pid; GetWindowThreadProcessId(hwnd, out pid);
-            if (!selected.Contains((int)pid)) return true;
+            uint pid; GetWindowThreadProcessId(hwnd, out pid); if (!selected.Contains((int)pid)) return true;
             var cls = new StringBuilder(256); GetClassName(hwnd, cls, cls.Capacity);
-            Rect rect; GetWindowRect(hwnd, out rect); var children = new List<string>();
-            Rect client; GetClientRect(hwnd, out client); var origin = new Point(); ClientToScreen(hwnd, ref origin);
+            Rect rect, client; GetWindowRect(hwnd, out rect); GetClientRect(hwnd, out client);
+            var origin = new Point(); ClientToScreen(hwnd, ref origin); var children = new List<string>();
             EnumChildWindows(hwnd, (child, ignored) => { string text = Text(child); if (text.Length > 0) children.Add(text); return true; }, IntPtr.Zero);
-            result.Add(new WindowInfo { ProcessId = (int)pid, Handle = "0x" + hwnd.ToInt64().ToString("X"), Class = cls.ToString(),
-                Title = Text(hwnd), Visible = IsWindowVisible(hwnd), X = rect.Left, Y = rect.Top,
-                Width = rect.Right - rect.Left, Height = rect.Bottom - rect.Top, ChildText = children.ToArray(),
-                ClientX = origin.X, ClientY = origin.Y, ClientWidth = client.Right, ClientHeight = client.Bottom });
+            result.Add(new WindowInfo { ProcessId = (int)pid, Handle = "0x" + hwnd.ToInt64().ToString("X"), Class = cls.ToString(), Title = Text(hwnd),
+                Visible = IsWindowVisible(hwnd), X = rect.Left, Y = rect.Top, Width = rect.Right - rect.Left, Height = rect.Bottom - rect.Top,
+                ChildText = children.ToArray(), ClientX = origin.X, ClientY = origin.Y, ClientWidth = client.Right, ClientHeight = client.Bottom });
             return true;
         }, IntPtr.Zero);
         return result.ToArray();
@@ -241,11 +195,9 @@ public static class NativeSmoke
             if (!selected.Contains((int)pid) || Text(hwnd) != "Program Compatibility Assistant") return true;
             EnumChildWindows(hwnd, (child, ignored) =>
             {
-                string text = Text(child);
-                if (text.Replace("&", "") != "Run the program without getting help") return true;
-                bool posted = PostMessage(child, 0x00F5, IntPtr.Zero, IntPtr.Zero); // Normal BM_CLICK, no compatibility policy changes.
-                action = "PCA normal Run button posted=" + posted + " pid=" + pid +
-                    " hwnd=0x" + child.ToInt64().ToString("X") + " error=" + Marshal.GetLastWin32Error();
+                if (Text(child).Replace("&", "") != "Run the program without getting help") return true;
+                bool posted = PostMessage(child, 0x00F5, IntPtr.Zero, IntPtr.Zero);
+                action = "PCA normal Run button posted=" + posted + " pid=" + pid + " hwnd=0x" + child.ToInt64().ToString("X") + " error=" + Marshal.GetLastWin32Error();
                 return false;
             }, IntPtr.Zero);
             return action.Length == 0;

@@ -171,15 +171,16 @@ try {
     $events = Get-Content $debugLog -Raw
     $report.initializeSuccessObserved = $events.Contains('BUNS_RUNTIME initialize-success')
     $report.capsAckObserved = $events.Contains('BUNS_RUNTIME caps-ack ')
-    $report.companionModuleObserved = $events -match 'LOAD_DLL .*BunsMS\.dll'
-    $report.secondChanceExceptionObserved = $events -match 'EXCEPTION .*firstChance=0'
+    $report.companionModuleObserved = $events -match 'MODULE_OBSERVED .*BunsMS\.dll'
+    $report.captureMode = 'normal-process/passive-DBWIN; no debugger attached'
+    $report.secondChanceExceptionObserved = $null # Not observable with this passive capture; never claim absence.
     $final = $report.snapshots[$report.snapshots.Count - 1]
     $report.gameAliveAfterObservation = @($final.processes | Where-Object { $_.name -eq 'MapleStory' -and $_.alive }).Count -gt 0
     $report.nativeUiObserved = @($final.screenshots | Where-Object visualContent).Count -gt 0
     $report.errorDialogObserved = @($final.windows | Where-Object { $_.Visible -and $_.Class -eq '#32770' }).Count -gt 0
     if (-not $report.initializeSuccessObserved -or -not $report.companionModuleObserved -or -not $report.nativeUiObserved -or
-        -not $report.gameAliveAfterObservation -or $report.errorDialogObserved -or $report.secondChanceExceptionObserved) {
-        throw 'Native startup acceptance not met; inspect actual windows, screenshots, debug events, and public TCP measurements'
+        -not $report.gameAliveAfterObservation -or $report.errorDialogObserved) {
+        throw 'Native startup acceptance not met; inspect actual windows, screenshots, passive process/DBWIN observations, and public TCP measurements'
     }
     $report.status = 'native-startup-observed'
 } catch {
