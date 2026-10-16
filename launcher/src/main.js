@@ -235,7 +235,14 @@ ipcMain.handle("game:setPath", (_, newPath) => {
   return setProfilePath("stock", newPath);
 });
 
-const DEFAULT_SERVER_HOST = "213.188.212.103";
+// Default server host (measured 2026-10-16): LAN baseline 192.168.0.164.
+// LAN 192.168.0.164:8484 + 7575-77 OPEN; public buns/maple open; /api/server
+// "running" is docker-internal health, NOT external reachability. Docs state
+// LAN-or-VPN-required; website/downloads being public does NOT mean native
+// TCP is public. Stored server:setHost always wins once set (explicit user
+// override preserved). Fixed port 8484; no NAT/L4 changes here. The legacy
+// Fly IP 213.188.212.103 is RETIRED as a default (kept nowhere).
+const DEFAULT_SERVER_HOST = "192.168.0.164";
 
 // Server host: written into config.ini ServerIP_Address so the HD DLL routes
 // the compiled client (fixed login port 8484) at the chosen host. The launcher

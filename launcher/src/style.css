@@ -365,6 +365,24 @@ input.path-display:focus {
   background: var(--bg-hover);
 }
 
+/* Client profile buttons: text buttons, not 42px browse squares. Active
+   profile renders selected via :disabled (set by refreshProfileUI). */
+.profile-btn {
+  width: auto;
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.profile-btn:disabled {
+  border-color: var(--gold);
+  color: var(--text-primary);
+  background: var(--bg-hover);
+  cursor: default;
+  opacity: 1;
+}
+
 /* HD Mode */
 .hd-section {
   margin-bottom: 12px;

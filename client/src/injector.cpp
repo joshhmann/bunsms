@@ -9,7 +9,6 @@
 
 #include "pch.h"
 #include "hook.h"
-#include "bootstrap.h"
 #include "addresses.h"
 #include "dispatcher.h"
 #include "tick.h"
@@ -24,9 +23,15 @@ ZALLOCEX(ZAllocStrSelector<wchar_t>, addr::kZAllocStrWChar)
 
 extern "C" __declspec(dllexport) BOOL __cdecl BunsMS_Initialize(void) {
     static volatile LONG s_done = 0;
-    // One-shot idempotent: first caller wins, later calls report success
-    // without re-attaching (Interlocked keeps it race-safe if ever invoked
-    // off the main thread by mistake — contract still says main thread).
+    // One-shot: first caller runs the attach; later calls report success
+    // without re-attaching. Set AFTER AttachSystemHooks returns (not before),
+    // so a repeat call after a completed init is the only TRUE-without-work
+    // path. NOTE (honest): AttachSystemHooks and friends return void — TRUE
+    // means "init reached/completed without exception", NOT per-hook verified
+    // success. The Kaentake side must treat TRUE as reached-init; per-site
+    // verification is the co-load smoke pass, not this return value.
+    // Contract still says main thread; the Interlocked only guards against
+    // accidental double-call, not a concurrency design.
     if (InterlockedCompareExchange(&s_done, 1, 0) != 0)
         return TRUE;
     AttachSystemHooks();
@@ -46,6 +51,8 @@ int GetClientDllVersion() {
 #endif
 }
 
+BOOL WINAPI DllMain(HINSTANCE hModule, DWORD fdwReason, LPVOID /*lpvReserved*/) {
+    switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
         // Load interface cutover (native-owner integrated): DllMain does
         // NOTHING but DisableThreadLibraryCalls. Kaentake calls
