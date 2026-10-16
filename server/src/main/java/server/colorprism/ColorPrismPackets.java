@@ -68,10 +68,11 @@ public final class ColorPrismPackets {
     }
 
     /**
-     * Sends every PRISM_SYNC-capable character on the map their own snapshot.
+     * Sends every PRISM_SYNC-capable character on the map their own snapshot,
+     * INCLUDING empty palettes (entry count 0): a restore-to-empty must clear
+     * remote clients' tint tables, or they retain the stale tint forever.
      * Contract v1: legacy sessions never receive 0x372F (unsolicited or
-     * otherwise). Characters with no tint entries are skipped: an empty
-     * snapshot carries no information and needs no packet.
+     * otherwise).
      */
     public static void broadcastMapTable(MapleMap map) {
         if (map == null) {
@@ -79,8 +80,7 @@ public final class ColorPrismPackets {
         }
         for (Character chr : new ArrayList<>(map.getCharacters())) {
             if (chr != null && chr.getClient() != null
-                    && chr.getClient().hasCaps(client.ClientCaps.PRISM_SYNC)
-                    && hasTintEntries(chr)) {
+                    && chr.getClient().hasCaps(client.ClientCaps.PRISM_SYNC)) {
                 chr.sendPacket(snapshot(chr));
             }
         }

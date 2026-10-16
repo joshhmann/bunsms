@@ -6124,13 +6124,13 @@ public class Character extends AbstractCharacterObject {
     }
 
     /**
-     * Pushes every tint this character owns to the client DLL (LP 0x372F).
-     * Contract v1: no-op unless this connection announced PRISM_SYNC, and no
-     * packet when there is nothing tinted to report.
+     * Pushes this character's tint table to capable clients (LP 0x372F),
+     * INCLUDING the empty palette after a full restore: remotes must clear
+     * the stale tint, and map broadcast carries each char's own snapshot.
+     * Contract v1: no-op unless this connection announced PRISM_SYNC.
      */
     public void syncWeaponTint() {
-        if (client != null && client.hasCaps(ClientCaps.PRISM_SYNC)
-                && server.colorprism.ColorPrismPackets.hasTintEntries(this)) {
+        if (client != null && client.hasCaps(ClientCaps.PRISM_SYNC)) {
             sendPacket(server.colorprism.ColorPrismPackets.snapshot(this));
             server.colorprism.ColorPrismPackets.broadcastMapTable(getMap());
         }
