@@ -53,9 +53,8 @@
 // called in injector.cpp -> DllMain
 bool AttachSystemHooks();
 
-// Feature attach entries, installed from system.cpp in spec §2.3 order.
-void AttachDailyCheckinMod();
-void AttachCapsMod();
+// Feature attach entries live in their OWNING headers (dailycheckin.h,
+// caps.h) — declared bool there. NOT duplicated here (C2556/C2371).
 
 
 template <typename T>
