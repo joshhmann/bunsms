@@ -70,6 +70,18 @@ function Save-NativeSnapshot([int[]]$Ids) {
                 modules = @($process.Modules | ForEach-Object { [pscustomobject]@{ name = $_.ModuleName; path = $_.FileName; base = ('0x{0:X}' -f $_.BaseAddress.ToInt64()) } }) }
         } catch { $row.processes += [pscustomobject]@{ id = $processId; observationError = $_.Exception.Message } }
     }
+    if (-not $report.foregroundAttempt -and (Test-Path $debugLog) -and
+        (Get-Content $debugLog -Raw).Contains('BUNS_RUNTIME initialize-success')) {
+        $target = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' }) | Select-Object -First 1
+        if ($target) {
+            $attempt = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); hwnd = $target.Handle; processId = $target.ProcessId
+                scope = 'One normal OS foreground request before screenshots; no mouse/key input, renderer, guard, or transport change' }
+            try { $attempt.activated = [NativeSmoke]::FocusClient($target) }
+            catch { $attempt.error = $_.Exception.Message }
+            $report.foregroundAttempt = [pscustomobject]$attempt
+            $row.windows = @([NativeSmoke]::Windows($Ids))
+        }
+    }
     try {
         $desktop = [Windows.Forms.SystemInformation]::VirtualScreen
         [void](Save-Screenshot $desktop.X $desktop.Y $desktop.Width $desktop.Height "$prefix-desktop.png")

@@ -166,6 +166,17 @@ public static class NativeSmoke
     [DllImport("user32.dll", SetLastError = true)] private static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] private static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
 
+    public static bool FocusClient(WindowInfo window)
+    {
+        IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
+        uint owner; GetWindowThreadProcessId(hwnd, out owner);
+        if (owner != window.ProcessId || !window.Visible || window.Class != "MapleStoryClass")
+            throw new InvalidOperationException("Foreground target is not the observed native game window");
+        SetForegroundWindow(hwnd);
+        System.Threading.Thread.Sleep(100);
+        return GetForegroundWindow() == hwnd;
+    }
+
     public static void ClickClient(WindowInfo window, int x, int y)
     {
         IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
