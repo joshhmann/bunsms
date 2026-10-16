@@ -29,6 +29,7 @@
 #include "debug.h"
 #include "addresses.h"
 #include "dispatcher.h"
+#include "caps.h"
 #include "dailycheckin.h"
 #include "wvs/packet.h"      // COutPacket + bounds-checked CInPacket surface
 #include "wvs/wnd.h"
@@ -85,6 +86,11 @@ static constexpr int kResp_Snapshot = 1;
 static constexpr int kDays          = 28;
 
 static void SendReq_Claim(int day) {
+    // Ack-gated (contract §4): no custom send before the server confirms the
+    // bit on THIS connection. Pre-ack clicks are ignored (caller plays the
+    // hover sound); the server would drop + log them anyway.
+    if (!CapsAccepted(caps::kCheckinWindow))
+        return;
     COutPacket o(kOpcode_Send);
     o.Encode1((unsigned char)kReq_Claim);
     o.Encode1((unsigned char)day);
@@ -559,6 +565,10 @@ static bool DailyCheckin_Route(unsigned short opcode, CInPacket* pPacket) {
         return true;
     if (respType != kResp_Snapshot)
         return true; // unknown subtype — consume, stay silent
+    // Ack-gated (contract §4, defense-in-depth): the server gates its push,
+    // but an unaccepted snapshot must never open UI or plant state here.
+    if (!CapsAccepted(caps::kCheckinWindow))
+        return true;
     HandleSnapshot(pPacket);
     return true;
 }

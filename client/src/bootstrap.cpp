@@ -2,6 +2,7 @@
 #include "bootstrap.h"
 #include "hook.h"
 #include <windows.h>
+#include <detours.h>
 
 namespace {
 
