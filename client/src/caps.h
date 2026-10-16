@@ -61,4 +61,4 @@ void CapsSendAnnounce();
 
 // Install entry: registers the 0x373B ack route with the dispatcher.
 // No Detours beyond the dispatcher route.
-void AttachCapsMod();
+bool AttachCapsMod();

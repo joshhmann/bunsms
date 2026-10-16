@@ -14,7 +14,7 @@
 
 // Install the single Redraw hook. Called from AttachSystemHooks(),
 // after InstallDispatcher().
-void InstallTick();
+bool InstallTick();
 
 // Per-frame work for the daily check-in window: invalidates the open window
 // so the claimable-blink animates (main thread; no packet work here).

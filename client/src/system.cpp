@@ -10,11 +10,18 @@
 #include "tick.h"
 #include "caps.h"
 
-void AttachSystemHooks() {
-    InstallDispatcher(); // 0x004965F1, once — before everything routing through it
-    InstallTick();       // RedrawInvalidatedWindows, once (both-profiles seam)
-    AttachCapsMod();       // 0x373B ack route (announce sent per-connection, see caps.h)
-    AttachDailyCheckinMod();
+// Fail-closed: false if ANY attach fails (later attaches skipped — no
+// half-hooked client pretends active).
+bool AttachSystemHooks() {
+    if (!InstallDispatcher()) // 0x004965F1, once — before everything routing through it
+        return false;
+    if (!InstallTick())       // RedrawInvalidatedWindows, once (both-profiles seam)
+        return false;
+    if (!AttachCapsMod())     // 0x373B ack route + per-connection hooks (see caps.h)
+        return false;
+    if (!AttachDailyCheckinMod())
+        return false;
+    return true;
     // Future slices (spec §2.3), in order:
     // AttachCashShopWndMod();
     // AttachColoringPrismMod() + AttachWeaponTintMod();

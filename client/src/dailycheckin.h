@@ -10,7 +10,7 @@
 
 // Install entry — registers the 0x17C route with the single dispatcher.
 // Call from AttachSystemHooks() (spec §2.3 order).
-void AttachDailyCheckinMod();
+bool AttachDailyCheckinMod();
 
 // Per-frame: invalidate the open window so the claimable-blink animates.
 // Main thread only.
