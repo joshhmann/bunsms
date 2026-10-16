@@ -175,7 +175,12 @@ public final class Channel {
             return;
         }
 
-        eventSM.cancel();
+        // Boot path: the constructor's EventScriptManager may have failed to
+        // initialize (a script that does not eval leaves eventSM null via the
+        // caught init error). Never NPE the online transition on it.
+        if (eventSM != null) {
+            eventSM.cancel();
+        }
         eventSM = null;
         eventSM = new EventScriptManager(this, getEvents());
     }
