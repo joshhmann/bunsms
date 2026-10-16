@@ -47,8 +47,8 @@ public static class NativeSmoke
                         try
                         {
                             var process = Process.GetProcessById((int)child.Id);
-                            // Retain the real process handle so its exit code remains observable.
-                            IntPtr handle = process.Handle;
+                            // Do not request Process.Handle (full access): native guards may deny it.
+                            // Ordinary exit/module observation below reports access failures separately.
                             processes.Add(process.Id, process); ids.Add(process.Id); added = true;
                             log.WriteLine("PROCESS_OBSERVED pid=" + child.Id + " parent=" + child.Parent + " name=" + child.Name);
                         }
