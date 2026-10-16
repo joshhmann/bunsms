@@ -44,6 +44,7 @@ import net.server.channel.handlers.CashShopWindowHandler;
 import net.server.channel.handlers.ChangeChannelHandler;
 import net.server.channel.handlers.ChangeMapHandler;
 import net.server.channel.handlers.ChangeMapSpecialHandler;
+import net.server.channel.handlers.ClientCapsHandler;
 import net.server.channel.handlers.CharInfoRequestHandler;
 import net.server.channel.handlers.ClickGuideHandler;
 import net.server.channel.handlers.CloseChalkboardHandler;
@@ -277,6 +278,9 @@ public final class PacketProcessor {
     private void registerCommonHandlers() {
         registerHandler(RecvOpcode.PONG, new KeepAliveHandler());
         registerHandler(RecvOpcode.CUSTOM_PACKET, new CustomPacketHandler());
+        // Capability negotiation (contract v1): common so login AND channel
+        // sockets both accept the first-packet announce.
+        registerHandler(RecvOpcode.CLIENT_CAPS_ANNOUNCE, new ClientCapsHandler());
     }
 
     private void registerLoginHandlers() {

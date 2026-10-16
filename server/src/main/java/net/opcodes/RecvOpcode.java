@@ -213,7 +213,10 @@ public enum RecvOpcode {
     USE_HYPERROCK(0xF1),
     DAILY_CHECKIN(0x11A),
     CASHSHOP_WINDOW_ACTION(0x3730),
-    COLORING_PRISM_ACTION(0x372E);
+    COLORING_PRISM_ACTION(0x372E),
+    // Capability negotiation (contract v1, server-owned): DLL-only C2S announce.
+    // Stock clients never send this; legacy C2S surface untouched.
+    CLIENT_CAPS_ANNOUNCE(0x373A);
 
     private int code = -2;
 
