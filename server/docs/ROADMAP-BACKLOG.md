@@ -133,11 +133,15 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   Proven: tsc clean, launcher profiles tests pass, 16-assertion staged-cycle
   proof (wrong-hash reject, atomic promote, rollback), live stock-default 16
   + kaentake 15, Map.wz full-SHA + tail-206, candidate-3/4 staged unpromoted.
-  Native reachability truth: LAN 192.168.0.164:8484 OPEN; public :8484 CLOSED
-  (Caddy HTTP-only, no TCP proxy) — external friends need LAN/VPN; `/api/server`
-  `running` = in-compose check only (documented in response + `gameHost`/
-  `gamePort` fields for launcher preference). Ticket 15 STAYS OPEN (content
-  pending); no 'all tickets complete' claim from cutover.
+  Native reachability truth (corrected — prior "public CLOSED" WITHDRAWN):
+  LAN 192.168.0.164:8484 OPEN (measured); public :8484 from a LAN vantage
+  proves nothing externally (hairpin/NAT-reflection may be disabled) — status
+  is UNVERIFIED until an independent non-LAN vantage probes it. Caddy is
+  HTTP-only (no TCP proxy) but that alone cannot rule out an OPNsense NAT
+  forward. `/api/server` `running` = in-compose check only (documented in
+  response + `gameHost`/`gamePort` fields for launcher preference). External
+  friends need LAN/VPN until external reachability is measured. Ticket 15
+  STAYS OPEN (content pending); no 'all tickets complete' claim from cutover.
 
 ## Dependency graph (summary)
 
