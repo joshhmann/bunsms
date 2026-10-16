@@ -417,6 +417,10 @@ public class MobSkill {
         return mpCon;
     }
 
+    public int getSpawnEffect() {
+        return spawnEffect;
+    }
+
     public int getHP() {
         return hp;
     }

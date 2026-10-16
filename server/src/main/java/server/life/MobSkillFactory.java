@@ -114,6 +114,7 @@ public class MobSkillFactory {
             MobSkill loadedMobSkill = new MobSkill.Builder(type, level)
                     .mpCon(mpCon)
                     .toSummon(toSummon)
+                    .spawnEffect(effect)
                     .cooltime(cooltime)
                     .duration(duration)
                     .hp(hp)
