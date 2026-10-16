@@ -34,7 +34,7 @@ from native_wz import Archive
 SOURCE_URL = 'https://github.com/ryantpayton/NoLifeWzToNx.git'
 SOURCE_COMMIT = '73bddde1214445795d0a5cd4c3d431fe15eb49eb'
 WORLD_ARCHIVES = ('Map', 'Mob', 'Npc', 'Item', 'Reactor', 'String', 'Sound', 'Morph', 'Quest')
-ARCHIVES = WORLD_ARCHIVES + ('Character',)
+ARCHIVES = WORLD_ARCHIVES + ('Base', 'Character', 'Skill', 'Etc', 'TamingMob')
 PATCH = Path(__file__).with_name('nx_converter.patch')
 
 
@@ -155,6 +155,9 @@ def select_images(native, contracts, allowed):
                     elif archive == 'Character':
                         width = len(posixpath.basename(image).removesuffix('.img'))
                         target = posixpath.join(posixpath.dirname(image), value.zfill(width) + '.img')
+                    elif archive == 'TamingMob':
+                        width = len(posixpath.basename(image).removesuffix('.img'))
+                        target = value.zfill(width) + '.img'
                     else:
                         continue
                     add(archive, target, f'{archive}/{path} -> {value}')

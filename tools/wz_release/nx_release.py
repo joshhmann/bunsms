@@ -32,7 +32,7 @@ from nx_format import HEADER, NODE, NX, NXError, U32, U64, file_identity
 
 WORLD_ARCHIVES = {'Map.nx', 'Mob.nx', 'Npc.nx', 'Item.nx', 'Morph.nx',
                   'Reactor.nx', 'Quest.nx', 'String.nx', 'Sound.nx', 'Skill.nx'}
-MUTABLE_ARCHIVES = WORLD_ARCHIVES | {'Character.nx'}
+MUTABLE_ARCHIVES = WORLD_ARCHIVES | {'Base.nx', 'Character.nx', 'Etc.nx', 'TamingMob.nx'}
 RUNTIME_ARCHIVES = WORLD_ARCHIVES | {'Base.nx', 'Character.nx', 'Effect.nx',
                                     'Etc.nx', 'TamingMob.nx', 'UI.nx'}
 TERMINAL = '$target'
@@ -57,7 +57,7 @@ def nx_name(value):
     if name.endswith('.wz'):
         name = name[:-3] + '.nx'
     if name not in MUTABLE_ARCHIVES:
-        raise NXError(f'Outside explicit world/Character asset scope: {name}')
+        raise NXError(f'Outside explicit browser-asset scope (UI/Effect remain native-gated): {name}')
     return name
 
 
@@ -349,59 +349,110 @@ def coverage(corpus, targets, requirements, world_ids):
             'browser_native_ui_parity': False}
 
 
+def child_entries(reader, index):
+    """Keep every physical child, including pre-existing duplicate legacy names."""
+    _, first, count, _, _ = reader.record(index)
+    return [(reader.name(i), i) for i in range(first, first + count)]
+
+
 def preserve_proof(before, after, trie):
-    """Compare every untargeted node/value/payload and forbid unrelated additions."""
+    """Prove immutable original pools plus every explicitly copied path branch.
+
+    Untargeted subtrees still reference their ORIGINAL node indices. Their whole
+    original record/media/string pools are byte-identical, so legacy duplicate
+    names and even their binary-search lookup behavior remain untouched.
+    """
+    def sha(reader, start, size):
+        return hashlib.sha256(memoryview(reader.data)[start:start + size]).hexdigest()
+    original_region = sha(before, HEADER.size, before.size - HEADER.size)
+    if original_region != sha(after, HEADER.size, before.size - HEADER.size):
+        raise NXError('Original NX payload/record/table region changed')
+    pool_size = (before.node_count - 1) * NODE.size
+    pool_hash = sha(before, before.node_offset + NODE.size, pool_size)
+    if pool_hash != sha(after, after.node_offset + NODE.size, pool_size):
+        raise NXError('Original non-root node-index pool changed')
+    tables = {}
+    for kind in ('string', 'bitmap', 'audio'):
+        count = getattr(before, kind + '_count')
+        if getattr(after, kind + '_count') < count:
+            raise NXError(f'Original {kind} index pool shrank')
+        size = count * 8
+        digest = sha(before, getattr(before, kind + '_offset'), size)
+        if digest != sha(after, getattr(after, kind + '_offset'), size):
+            raise NXError(f'Original {kind} offsets changed')
+        tables[kind] = digest
+    count = added_ancestors = retained_subtrees = 0
     digest = hashlib.sha256()
-    count = added_ancestors = 0
+
+    def groups(reader, index):
+        result = {}
+        for name, child in child_entries(reader, index) if index is not None else ():
+            result.setdefault(name, []).append(child)
+        return result
 
     def visit(left, right, branch, path):
-        nonlocal count, added_ancestors
+        nonlocal count, added_ancestors, retained_subtrees
         if TERMINAL in branch:
             return
         if left is None:
             if right is None:
                 return
             if not branch or after.record(right)[3] != 0:
-                raise NXError(f'Unauthorized new node/value: {path}')
+                raise NXError(f'Unauthorized new structural node: {path}')
             added_ancestors += 1
+        elif right is None or before.semantic_value(left) != after.semantic_value(right):
+            raise NXError(f'Untargeted ancestor value changed: {path}')
         else:
-            if right is None or before.semantic_value(left) != after.semantic_value(right):
-                raise NXError(f'Untargeted value/payload changed: {path}')
-            encoded = path.encode('utf-8')
-            digest.update(struct.pack('<I', len(encoded)))
-            digest.update(encoded)
-            digest.update(before.semantic_value(left))
+            digest.update(path.encode('utf-8') + b'\0' + before.semantic_value(left))
             count += 1
-        old = before.children(left) if left is not None else {}
-        new = after.children(right) if right is not None else {}
-        for name in sorted(old.keys() | new.keys(), key=lambda s: s.encode('utf-8')):
-            visit(old.get(name), new.get(name), branch.get(name, {}), (path + '/' + name).lstrip('/'))
-
+        old, new = groups(before, left), groups(after, right)
+        for name in old.keys() | new.keys():
+            previous, current = old.get(name, []), new.get(name, [])
+            child_branch = branch.get(name)
+            if child_branch is not None:
+                if len(previous) > 1 or len(current) > 1:
+                    raise NXError(f'Ambiguous exact target ancestor: {path}/{name}')
+                visit(previous[0] if previous else None, current[0] if current else None,
+                      child_branch, (path + '/' + name).lstrip('/'))
+            else:
+                if len(previous) != len(current):
+                    raise NXError(f'Untargeted physical child count changed: {path}/{name}')
+                for a, b in zip(previous, current):
+                    if before.record(a) != after.record(b):
+                        raise NXError(f'Untargeted subtree reference changed: {path}/{name}')
+                    retained_subtrees += 1
     if before.name(0) != after.name(0):
-        raise NXError('Untargeted root name changed')
+        raise NXError('Original root name changed')
     visit(0, 0, trie, '')
-    return {'all_untargeted_nodes_equal': True, 'nodes_compared': count,
-            'baseline_semantic_sha256': digest.hexdigest(), 'candidate_semantic_sha256': digest.hexdigest(),
+    return {'all_untargeted_nodes_equal': True,
+            'proof': 'Immutable full original region/index pools plus exact path-copy branch proof',
+            'original_region_sha256': original_region, 'original_node_pool_sha256': pool_hash,
+            'original_node_records_byte_identical': before.node_count - 1,
+            'original_offset_pool_sha256': tables, 'branch_nodes_semantically_compared': count,
+            'retained_original_subtree_references': retained_subtrees,
             'new_structural_ancestors': added_ancestors,
-            'payload_comparison': 'Exact original compressed bitmap/audio bytes + dimensions/length; string UTF-8 and scalar bits'}
+            'baseline_semantic_sha256': digest.hexdigest(), 'candidate_semantic_sha256': digest.hexdigest()}
 
 
 def merge_file(baseline, donor, trie, destination):
-    """Append immutable original media, then rebuild tables without recompression."""
-    baseline.validate_graph()
+    """Path-copy approved ancestors; retain the entire immutable original pool.
+
+    Rebuilding eight million baseline records through name-keyed dictionaries
+    would both waste work and collapse legacy duplicate names. Unaffected child
+    arrays instead keep their original indices, order, values and media bytes.
+    """
     donor.validate_graph()
     shutil.copyfile(baseline.path, destination)
     string_offsets = [baseline.table_offset('string', i) for i in range(baseline.string_count)]
     bitmap_offsets = [baseline.table_offset('bitmap', i) for i in range(baseline.bitmap_count)]
     audio_offsets = [baseline.table_offset('audio', i) for i in range(baseline.audio_count)]
-    strings, bitmaps, audios = {}, {}, {}
-    names = {}
-    queue = deque([(baseline, 0, trie, baseline.name(0))])
-    next_index = 1
-    node_count = 0
-
+    strings, bitmaps, audios, names = {}, {}, {}, {}
+    queue = deque([(0, baseline, 0, trie, baseline.name(0))])
+    next_index, processed = baseline.node_count, 0
     with Path(destination).open('r+b') as output, tempfile.TemporaryFile() as records:
         output.seek(0, 2)
+        records.write(memoryview(baseline.data)[baseline.node_offset:
+                      baseline.node_offset + baseline.node_count * NODE.size])
 
         def new_string(raw):
             if raw not in names:
@@ -409,8 +460,7 @@ def merge_file(baseline, donor, trie, destination):
                     raise NXError('NX UTF-8 string exceeds uint16 length')
                 names[raw] = len(string_offsets)
                 string_offsets.append(output.tell())
-                output.write(struct.pack('<H', len(raw)))
-                output.write(raw)
+                output.write(struct.pack('<H', len(raw)) + raw)
             return names[raw]
 
         def string_id(source, number):
@@ -421,36 +471,62 @@ def merge_file(baseline, donor, trie, destination):
             return strings[number]
 
         while queue:
-            source, index, branch, name = queue.popleft()
+            destination_index, source, index, branch, name = queue.popleft()
             if index is None:
                 if not branch:
                     raise NXError(f'Empty unapproved structural ancestor {name}')
-                name_id, kind, data = new_string(name.encode('utf-8')), 0, b'\0' * 8
-                children = {}
+                name_id, first, num, kind, data = new_string(name.encode()), 0, 0, 0, b'\0' * 8
+                entries = []
             else:
-                name_id, _, _, kind, data = source.record(index)
+                name_id, first, num, kind, data = source.record(index)
                 name_id = string_id(source, name_id)
-                children = {n: (source, i, {}, n) for n, i in source.children(index).items()}
-            for child_name, child_branch in branch.items():
-                if child_name == TERMINAL:
-                    raise NXError('Internal overlapping target branch')
-                terminal = child_branch.get(TERMINAL)
-                if terminal:
-                    donor_index = donor.resolve(terminal['path'])
-                    if terminal['action'] == 'remove':
-                        if donor_index is not None:
-                            raise NXError(f'Removed target still present in donor: {terminal["path"]}')
-                        children.pop(child_name, None)
-                    else:
+                entries = child_entries(source, index) if branch or source is donor else None
+            if entries is not None:
+                children = [(n, source, i, {}) for n, i in entries]
+                old_names = [n for n, _ in entries]
+                if source is donor and len(set(old_names)) != len(old_names):
+                    raise NXError(f'New donor has ambiguous duplicate children: {name}')
+                if branch and old_names != sorted(old_names, key=lambda n: n.encode()):
+                    raise NXError(f'Cannot mutate unsorted legacy child array: {name}')
+                for child_name, child_branch in branch.items():
+                    if child_name == TERMINAL:
+                        raise NXError('Internal overlapping target branch')
+                    positions = [i for i, entry in enumerate(children) if entry[0] == child_name]
+                    if len(positions) > 1:
+                        raise NXError(f'Ambiguous exact target child: {name}/{child_name}')
+                    position = positions[0] if positions else None
+                    terminal = child_branch.get(TERMINAL)
+                    if terminal:
+                        donor_index = donor.resolve(terminal['path'])
+                        if terminal['action'] == 'remove':
+                            if donor_index is not None:
+                                raise NXError(f'Removed target present in donor: {terminal["path"]}')
+                            if position is not None:
+                                children.pop(position)
+                            continue
                         if donor_index is None:
                             raise NXError(f'Missing genuine donor target: {terminal["path"]}')
-                        children[child_name] = (donor, donor_index, {}, child_name)
-                else:
-                    existing = children.get(child_name)
-                    children[child_name] = (existing[0], existing[1], child_branch, child_name) if existing else (baseline, None, child_branch, child_name)
-            ordered = [children[n] for n in sorted(children, key=lambda s: s.encode('utf-8'))]
-            if len(ordered) > 65535:
-                raise NXError('NX child count exceeds uint16')
+                        replacement = (child_name, donor, donor_index, {})
+                    elif position is not None:
+                        _, old_source, old_index, _ = children[position]
+                        replacement = (child_name, old_source, old_index, child_branch)
+                    else:
+                        replacement = (child_name, baseline, None, child_branch)
+                    if position is None:
+                        children.append(replacement)
+                    else:
+                        children[position] = replacement
+                new_names = [entry[0] for entry in children]
+                if len(set(old_names)) != len(old_names) and set(old_names) != set(new_names):
+                    raise NXError(f'Adding/removing keys would alter legacy duplicate lookup: {name}')
+                children.sort(key=lambda entry: entry[0].encode())
+                num = len(children)
+                if num > 65535:
+                    raise NXError('NX child count exceeds uint16')
+                first = next_index if num else 0
+                for ordinal, (child_name, child_source, child_index, child_branch) in enumerate(children):
+                    queue.append((next_index + ordinal, child_source, child_index, child_branch, child_name))
+                next_index += num
             if source is donor and index is not None:
                 number = U32.unpack_from(data)[0]
                 if kind == 3:
@@ -464,12 +540,11 @@ def merge_file(baseline, donor, trie, destination):
                         offsets.append(output.tell())
                         output.write(memoryview(source.data)[start:start + length])
                     data = U32.pack(remap[key]) + data[4:]
-            records.write(NODE.pack(name_id, next_index if ordered else 0, len(ordered), kind, data))
-            next_index += len(ordered)
-            queue.extend(ordered)
-            node_count += 1
-        if node_count != next_index or node_count > 0xFFFFFFFF:
-            raise NXError('Inconsistent NX tree/index count')
+            records.seek(destination_index * NODE.size)
+            records.write(NODE.pack(name_id, first, num, kind, data))
+            processed += 1
+        if records.seek(0, 2) != next_index * NODE.size or next_index > 0xFFFFFFFF:
+            raise NXError('Inconsistent appended NX index pool')
         output.write(b'\0' * (-output.tell() % 16))
         node_offset = output.tell()
         records.seek(0)
@@ -481,11 +556,12 @@ def merge_file(baseline, donor, trie, destination):
             for offset in table:
                 output.write(U64.pack(offset))
         output.seek(0)
-        output.write(HEADER.pack(0x34474B50, node_count, node_offset, len(string_offsets), offsets[0],
+        output.write(HEADER.pack(0x34474B50, next_index, node_offset, len(string_offsets), offsets[0],
                                  len(bitmap_offsets), offsets[1], len(audio_offsets), offsets[2]))
-    return {'nodes': node_count, 'donor_strings_added': len(names),
-            'donor_bitmaps_added': len(bitmaps), 'donor_audio_added': len(audios),
-            'baseline_original_payload_region_retained': True,
+    return {'nodes': next_index, 'path_copy_records_written': processed,
+            'original_node_pool_retained': baseline.node_count,
+            'donor_strings_added': len(names), 'donor_bitmaps_added': len(bitmaps),
+            'donor_audio_added': len(audios), 'baseline_original_payload_region_retained': True,
             'baseline_original_size': baseline.size}
 
 

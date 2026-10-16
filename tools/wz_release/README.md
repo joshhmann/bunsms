@@ -80,3 +80,8 @@ Generated dashboard Character content uses the **same** converter and merger wit
 
 Accepted world metadata comes from actual deployed server XML, not modern donor assumptions. `align_deployed_maps.py` permits critical metadata alignment only for maps absent in pinned native stock. `snapshot_xml.py` reads affected deployed XML over SSH; `merge_server_xml.py` preserves deployed custom siblings (full-image imports are additive), matching the actual Java provider's C0-control sanitation. `materialize_server_xml.py` creates a complete **isolated** server tree from a read-only full deployed snapshot plus the exact overlay, refusing snapshot drift and proving all other source files byte-identical.
 
+
+Generic browser publication additionally accepts **explicit** Base, Skill, Etc and TamingMob operations; the default world archive set is unchanged. UI/Effect changes remain native-gated, and List.wz has no NX counterpart. Unsupported operations fail before any publish rather than silently skipping changed archives.
+
+The measured deployed Map.nx contains 7,917,138 nodes, including duplicate legacy `???` child names in an untouched frame. The merger therefore path-copies only authorized ancestors and new donor subtrees while retaining the entire original record/media/string pools and original indices for all untouched subtrees. It proves those pools byte-identical and checks each copied ancestor branch. It does not rename, collapse, reorder, or repair unrelated legacy data.
+
