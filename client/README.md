@@ -100,13 +100,25 @@ not re-probe unchanged public ports or substitute a LAN/VPN default.
 Hardware/desktop/DX8 failures remain failed captures with their real
 artifacts; compilation is never substituted for UI or feature proof.
 
+The isolated QA helper starts only its owned Java/MySQL processes with normal
+Windows hidden-window startup, retaining stdout/stderr, PID identities and
+concurrent listener observations. This prevents their consoles from competing
+with ordinary game input; it does not hide, elevate or force-focus the game.
+Run `38979821934` reached the real native character chooser after normal
+login, Terms, gender and channel input. It remains an internal control, not
+full-content world/gameplay acceptance or a Windows backend deployment plan.
+
 ## Paired release (§5)
 
-Client and server ship together; an old DLL against a new server (or
-reverse) fails silently. `CLIENT_DLL_VERSION` (root CMakeLists) matches the
-server's `MIN_DLL_VERSION`; the DLL stamps its version into the handshake
-(handshake field pending — parent open question; until it lands the version
-is compiled in via `GetClientDllVersion()`, never silently downgraded).
+Client runtime and assets must be qualified against the matching server.
+Capability contract v1 uses C2S `0x373A` (DLL version and offered mask) and
+reply-only S2C `0x373B` (negotiation version and accepted mask). Each new
+connection starts legacy/zero; custom wire behavior requires the accepted
+intersection, never just a compiled version or successful DLL initialization.
+The client defers its offer until real hook/data prerequisites are ready without
+blocking ordinary stock packets. Full-feature qualification still requires the
+actual offer/ACK and feature paths; the published zero-mask control is not a
+release fallback.
 Claiming a new opcode = one commit touching registry + both enums + client
 table together. Rollback = revert manifest pin + server deploy together.
 

@@ -229,6 +229,23 @@ function Save-NativeSnapshot([int[]]$Ids) {
             }
         }
     }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.channelButtonAction.status -eq 'submitted-normal-channel-button-click' -and
+        -not $report.createButtonAction -and ([datetime]$row.utc) -gt ([datetime]$report.channelButtonAction.utc).AddSeconds(2)) {
+        $state = Read-QAAccountState
+        $report.accountBeforeCreateButton = $state
+        if ($state.status -eq 'observed' -and $state.account.tos -eq 1 -and
+            $state.account.gender -eq 0 -and $state.account.loggedin -eq 2 -and @($state.account.characters).Count -eq 0) {
+            $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+            if ($window) {
+                $report.createButtonAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                    scope = 'Normal Create a Character click on the observed empty character chooser; no database-created character or world-entry claim' }
+                try {
+                    [NativeSmoke]::ClickClient($window, 625, 205)
+                    $report.createButtonAction.status = 'submitted-normal-create-character-click'
+                } catch { $report.createButtonAction.status = 'failed'; $report.createButtonAction.error = $_.Exception.ToString(); throw }
+            }
+        }
+    }
 }
 
 try {
@@ -465,14 +482,14 @@ try {
                         $loginDirectory = Join-Path $OutputDirectory 'ordinary-login'
                         & $PSCommandPath -BaselineUrl $BaselineUrl -BaselineSha256 $BaselineSha256 -BaselineFilesBaseUrl $BaselineFilesBaseUrl `
                             -KaentakeArtifact $KaentakeArtifact -CompanionArtifact $CompanionArtifact -RuntimeArtifact $RuntimeArtifact `
-                            -OutputDirectory $loginDirectory -ObserveSeconds 180 -GameHost $GameHost `
+                            -OutputDirectory $loginDirectory -ObserveSeconds 300 -GameHost $GameHost `
                             -PreparedGameDirectory $game -PublishedRuntimeControl -ReferenceAssetControl `
                             -DiagnosticItemVariant $loginVariant -DiagnosticSupportFiles $loginSupport -ExerciseLogin
                         $login = Get-Content (Join-Path $loginDirectory 'result.json') -Raw | ConvertFrom-Json
                         $report.ordinaryLogin = [pscustomobject]@{ directory = $loginDirectory; status = $login.status; error = $login.error
                             input = $login.loginInput; foregroundAttempt = $login.foregroundAttempt
                             termsAction = $login.termsAction; genderAction = $login.genderAction; worldButtonAction = $login.worldButtonAction
-                            channelButtonAction = $login.channelButtonAction; accountAfterObservation = $login.accountAfterObservation
+                            channelButtonAction = $login.channelButtonAction; createButtonAction = $login.createButtonAction; accountAfterObservation = $login.accountAfterObservation
                             acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
                         if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
                             throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
@@ -615,6 +632,7 @@ try {
         if ($report.genderAction.status -eq 'failed') { throw 'Normal owned QA gender interaction failed; inspect actual UI and read-only account state' }
         if ($report.worldButtonAction.status -eq 'failed') { throw 'Normal owned QA world-button input failed; inspect actual native UI before any world acceptance claim' }
         if ($report.channelButtonAction.status -eq 'failed') { throw 'Normal owned QA channel-button input failed; inspect actual native UI before any character/world acceptance claim' }
+        if ($report.createButtonAction.status -eq 'failed') { throw 'Normal owned QA character-creation input failed; inspect actual native UI before any character/world acceptance claim' }
         if ($report.genderAction.status -eq 'submitted-normal-gender-confirm' -and
             $report.accountAfterObservation.status -eq 'observed' -and $report.accountAfterObservation.account.gender -eq 10) {
             throw 'Normal QA gender confirmation did not persist; inspect actual UI before advancing account acceptance'
