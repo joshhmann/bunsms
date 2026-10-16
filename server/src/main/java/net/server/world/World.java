@@ -192,7 +192,7 @@ public class World {
     private Lock timedMapObjectLock = new ReentrantLock(true);
 
     private final Map<Character, Integer> fishingAttempters = Collections.synchronizedMap(new WeakHashMap<>());
-    private Map<Character, Integer> playerHpDec = Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<Character, Integer> playerHpDec = Collections.synchronizedMap(new WeakHashMap<>());
 
     private ScheduledFuture<?> charactersSchedule;
     private ScheduledFuture<?> marriagesSchedule;
@@ -1806,8 +1806,11 @@ public class World {
     }
     
     public void runPlayerHpDecreaseSchedule() {
-        Map<Character, Integer> m = new HashMap<>();
-        m.putAll(playerHpDec);
+        Map<Character, Integer> m;
+        // SynchronizedMap iteration needs its monitor; release it before character callbacks.
+        synchronized (playerHpDec) {
+            m = new HashMap<>(playerHpDec);
+        }
         
         for (Entry<Character, Integer> e : m.entrySet()) {
             Character chr = e.getKey();

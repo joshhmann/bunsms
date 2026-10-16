@@ -49,7 +49,7 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   packet/exploit hunks, jedis/jackson, hardcoded Discord/admin SQL).
   Evidence: recovered real MySQL per-pair repair and actual NPC conversation/shop tests; parent accepted. Full item/native catalog qualification remains ticket15.
 
-- [ ] **Ticket 6 — MapleRoot wave 2: Maker extraction** — pure extraction integrated; actual public craft materials/cost/failure acceptance pending
+- [x] **Ticket 6 — MapleRoot wave 2: Maker extraction** — pure extraction integrated; real public opcode113 materials/cost/output/natural failure and ordinary disconnect/save/reload PASS on matching full-content Linux/MySQL fixture. Receipt: `/tmp/buns-full-content-private/linux-runtime-20261016-062756/maker-acceptance.json`; no RNG override or native-UI claim.
   Scope: Port `MakerService` + delegation delta; pure Java, no WZ/DB/client.
   Follows wave 1 in rank order; same never-bulk-port exclusions as ticket 5.
   Dependencies: None (ranked after ticket 5; unblocked server-only).

@@ -29,6 +29,7 @@ services:
       DB_HOST: db
       GAME_HOST: 192.168.0.164
       ASSET_BASE_URL: ${ASSET_BASE_URL:-https://buns.asslorde.com}
+      WZ_VERSION_URL: ${WZ_VERSION_URL:-}
       WZ_BASELINE_URL: ${WZ_BASELINE_URL:-}
       WZ_BASELINE_HASH: ${WZ_BASELINE_HASH:-}
       WZ_BASELINE_SIZE: ${WZ_BASELINE_SIZE:-}

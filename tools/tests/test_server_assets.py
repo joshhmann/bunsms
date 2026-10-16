@@ -72,7 +72,7 @@ class ServerOverlayTest(unittest.TestCase):
         self.origin = f"http://127.0.0.1:{self.http.server_port}"
         self.environment = {**os.environ, "GAME_ROOT": str(self.root), "ASSET_BASE_URL": self.origin,
                             "PATH": str(binaries) + os.pathsep + os.environ["PATH"]}
-        for name in ("GAME_HOST", "DB_PASS", "DISABLE_AUTO_REGISTER", "WZ_SEED_BASELINE_ONLY"):
+        for name in ("GAME_HOST", "DB_PASS", "DISABLE_AUTO_REGISTER", "WZ_SEED_BASELINE_ONLY", "WZ_VERSION_URL"):
             self.environment.pop(name, None)
 
     def tearDown(self):
@@ -110,6 +110,25 @@ class ServerOverlayTest(unittest.TestCase):
         self.run_entrypoint()
         self.assertEqual(len([path for path in self.requests if "/client/r/" in path]), before)
         self.assertEqual(self.starts(), 2)
+
+    def test_sealed_prefixed_descriptor_applies_without_following_active_authority(self):
+        prefix = "/rc-assets"
+        candidate = self.release("sealed-candidate", {"scripts/candidate.js": "sealed bytes"})
+        old_path = candidate["url"].removeprefix(self.origin)
+        self.bytes[prefix + old_path] = self.bytes.pop(old_path)
+        candidate["url"] = self.origin + prefix + old_path
+        descriptor_bytes = json.dumps(candidate).encode()
+        descriptor_hash = hashlib.sha256(descriptor_bytes).hexdigest()
+        descriptor_path = prefix + f"/client/r/{descriptor_hash}/server-wz.version"
+        self.bytes[descriptor_path] = descriptor_bytes
+        self.environment.update(ASSET_BASE_URL=self.origin + prefix,
+                                WZ_VERSION_URL=self.origin + descriptor_path)
+        self.descriptor = self.release("unrelated-active", {"scripts/active.js": "active bytes"})
+        self.run_entrypoint()
+        self.assertEqual(self.marker(), candidate)
+        self.assertEqual((self.root / "scripts/candidate.js").read_text(), "sealed bytes")
+        self.assertFalse((self.root / "scripts/active.js").exists())
+        self.assertNotIn("/client/server-wz.version", self.requests)
 
     def test_retained_rollback_removes_later_files_and_restores_installed_script(self):
         first = self.release("first", {"wz/Item.wz/old.img.xml": "old bytes"})

@@ -78,7 +78,7 @@ def apply(descriptor, baseline=False):
     if not re.fullmatch(r"[a-f0-9]{64}", digest) or not isinstance(size, int) or isinstance(size, bool) or size <= 0:
         raise RuntimeError("Invalid independently pinned WZ metadata")
     key = "server-wz-baseline.tar.gz" if baseline else "server-wz.tar.gz"
-    if parsed.path != f"/client/r/{digest}/{key}" or parsed.query or parsed.fragment:
+    if parsed.path != authority.path.rstrip("/") + f"/client/r/{digest}/{key}" or parsed.query or parsed.fragment:
         raise RuntimeError("WZ tar URL is not the exact immutable revision")
     with tempfile.TemporaryDirectory(prefix="wz-verified-", dir=root) as temp:
         archive = Path(temp) / "archive.tar.gz"
@@ -154,7 +154,7 @@ if any(not (root / "wz" / name).exists() for name in required):
     apply({"url": os.environ["WZ_BASELINE_URL"], "hash": os.environ["WZ_BASELINE_HASH"],
            "size": int(os.environ["WZ_BASELINE_SIZE"])}, baseline=True)
 if os.environ.get("WZ_SEED_BASELINE_ONLY") != "1":
-    with urlopen(base + "/client/server-wz.version", timeout=30) as source:
+    with urlopen(os.environ.get("WZ_VERSION_URL") or base + "/client/server-wz.version", timeout=30) as source:
         descriptor = json.load(source)
     if not isinstance(descriptor.get("releaseId"), str) or not descriptor["releaseId"]:
         raise RuntimeError("Server WZ descriptor has no release identity")
