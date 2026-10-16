@@ -93,6 +93,11 @@ jobs:
             $record | ConvertTo-Json -Depth 12 | Set-Content "$evidence/installer-result.json" -Encoding utf8NoBOM
           }
 
+      - name: Isolate official unpacked Electron UI
+        if: always()
+        shell: pwsh
+        run: node launcher/test/windows-ui.test.js "launcher/dist/win-unpacked/BunsMS Testing RC.exe" launcher-ui-evidence/unpacked unpacked
+
       - name: Upload actual installed launcher evidence
         if: always()
         uses: actions/upload-artifact@v4

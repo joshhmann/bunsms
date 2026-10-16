@@ -1,5 +1,5 @@
 "use strict";
-// Windows-only real installed Electron UI smoke. CDP controls the launcher UI;
+// Windows-only real installed or official unpacked Electron UI smoke.
 // it never attaches a debugger to MapleStory/Kaentake or bypasses native guards.
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -9,15 +9,16 @@ const { spawn } = require("node:child_process");
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function run() {
-  assert.equal(process.platform, "win32", "This smoke must exercise an actual Windows installation");
-  const [executable, output] = process.argv.slice(2);
-  assert.ok(executable && output, "Usage: node windows-ui.test.js <installed-exe> <evidence-dir>");
+  assert.equal(process.platform, "win32", "This smoke must exercise an actual Windows launcher");
+  const [executable, output, uiLayer = "installed"] = process.argv.slice(2);
+  assert.ok(executable && output, "Usage: node windows-ui.test.js <exe> <evidence-dir> [installed|unpacked]");
+  assert.ok(["installed", "unpacked"].includes(uiLayer), "Unknown launcher UI layer");
   fs.mkdirSync(output, { recursive: true });
   const listener = net.createServer();
   await new Promise((resolve) => listener.listen(0, "127.0.0.1", resolve));
   const port = listener.address().port;
   await new Promise((resolve) => listener.close(resolve));
-  const report = { startedUtc: new Date().toISOString(), executable, status: "not-completed", fullNativeGameplay: "PENDING; this check verifies installed launcher UI only" };
+  const report = { startedUtc: new Date().toISOString(), executable, uiLayer, status: "not-completed", fullNativeGameplay: `PENDING; this check verifies ${uiLayer} launcher UI only` };
   const child = spawn(executable, [`--remote-debugging-port=${port}`], { stdio: ["ignore", "pipe", "pipe"] });
   let processError, diagnostics = "", connection;
   child.on("error", (error) => { processError = error; });
@@ -71,11 +72,12 @@ async function run() {
     const title = await evaluate("document.title");
     assert.match(title, /Testing RC 1\.1\.0-rc\.1/);
     const body = await evaluate("document.body.innerText");
-    assert.match(body, /Not a production rollout/);
+    assert.match(body, /not a production rollout/i);
     const screenshot = await command("Page.captureScreenshot", { format: "png" });
-    fs.writeFileSync(path.join(output, "installed-launcher.png"), Buffer.from(screenshot.data, "base64"));
+    const screenshotName = `${uiLayer}-launcher.png`;
+    fs.writeFileSync(path.join(output, screenshotName), Buffer.from(screenshot.data, "base64"));
     assert.equal(exceptions.length, 0, "Installed renderer raised an uncaught exception");
-    Object.assign(report, { status: "installed-ui-observed", profile, host, title, rendererExceptions: exceptions, actualScreenshot: "installed-launcher.png" });
+    Object.assign(report, { status: `${uiLayer}-ui-observed`, profile, host, title, rendererExceptions: exceptions, actualScreenshot: screenshotName });
     await evaluate("window.buns.close()").catch(() => {});
   } catch (error) {
     report.status = "failed"; report.error = error.stack;
