@@ -9,7 +9,7 @@ with own pinned Detours/WzLib. Full report:
 
 Windows run: https://github.com/joshhmann/bunsms/actions/runs/38876760186
 — code build + pinned Kaentake build + opcode gate PASSED; full UI smoke
-FAILED, correctly (login-server-unreachable error UI, no TCP contact).
+FAILED, correctly (login-server-unreachable error UI, no successful server connection proved).
 Game PID 4848 emitted BUNS_RUNTIME initialize-enter + initialize-success;
 modules Kaentake `0x75450000`, stock GR2D `0x50400000`, BunsMS
 `0x74BF0000` observed. Staged artifacts: Kaentake.exe
@@ -25,8 +25,8 @@ public ports not re-probed. No production Java/DB/assets/Caddy changed.
 Wine (from `/tmp/linux-compat-plan.md` + native report §Wine):
 Wine 9.0~repack-4build3, isolated win32 prefix, Xvfb :99,
 LIBGL_ALWAYS_SOFTWARE=1; 32-bit notepad renders (screenshot on file).
-Stock exe: Win32 GDI window + START GAME button ONLY (not login/world/D3D).
-Kaentake: pre-graphics failure (pattern-scan context; live bytes at
-base+0x2E1B exact, scan-context/timing not bytes). Valid socket
-destination, login, move, chat NOT observed (isol8/9 traces invalid;
-+relay may miss raw syscalls — unobserved, not proof of zero).
+Stock GDI+ STARTGAME only. Early official-binary signature-failure cause
+was not established; a later verified stock-renderer run installed both
+hooks and Buns initialization; later frames were pre-graphics/ConnectLogin.
+Valid socket destination, login, move, and chat remain UNOBSERVED.
+isol8/9 are invalid; relay absence does not prove zero.
