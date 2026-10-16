@@ -4,15 +4,16 @@ const fs = require("fs");
 const crypto = require("crypto");
 const https = require("https");
 const http = require("http");
+const dns = require("dns").promises;
+const { isIP } = require("net");
+const { spawn } = require("child_process");
 const {
   PROFILES,
-  KAENTAKE_PORT,
-  filterManifest,
   stampStockIni,
   stampKaentakeIni,
   separationCheck,
-  missingStockDeps,
-  assertDownloadable,
+  requiredClientFiles,
+  isProfileConfig,
 } = require("./profiles");
 
 // API base: runtime override via the BUNSMS_API_BASE process env (NOT baked at
@@ -20,24 +21,26 @@ const {
 // (https://buns.asslorde.com); to reach the test dashboard, launch with
 // BUNSMS_API_BASE=http://192.168.0.164:3001 (plain http allowed for LAN).
 const API_BASE = process.env.BUNSMS_API_BASE || "https://buns.asslorde.com";
-const MANIFEST_URL = `${API_BASE}/api/launcher/manifest`;
+const MANIFEST_URL = process.env.BUNSMS_MANIFEST_URL || `${API_BASE}/api/launcher/manifest`;
 const NEWS_URL = `${API_BASE}/api/launcher/news`;
 const STATUS_URL = `${API_BASE}/api/server`;
 
 let mainWindow;
 let gamePath = ""; // cache of the ACTIVE profile's dir; see profileDir()/setProfilePath()
+const profileChecks = new Map();
 
-// ── Profiles (design §2): stock default, Kaentake opt-in, separate folders ──
+// Fresh installs use Kaentake; preserve explicit profiles and legacy stock paths.
 function readStore() {
   try {
     return JSON.parse(fs.readFileSync(path.join(app.getPath("userData"), "config.json"), "utf-8"));
   } catch { return {}; }
 }
 
-// First run with profile support: seed profiles from the legacy top-level gamePath.
+// Existing legacy gamePath is an intentional stock choice, not a new-install default.
 function activeProfileId() {
   const store = readStore();
-  return store.activeProfile === "kaentake" ? "kaentake" : "stock";
+  if (store.activeProfile === "stock" || store.activeProfile === "kaentake") return store.activeProfile;
+  return store.gamePath || store.profiles?.stock?.gamePath ? "stock" : "kaentake";
 }
 
 function profileDir(id) {
@@ -69,8 +72,6 @@ function setProfilePath(id, dir) {
   const profiles = { ...(store.profiles || {}), [id]: { gamePath: dir } };
   saveConfig({ profiles, ...(id === "stock" ? { gamePath: dir } : {}) });
   if (id === activeProfileId()) gamePath = dir;
-  const host = store.serverHost;
-  if (host && fs.existsSync(path.join(dir, "config.ini"))) stampHostIntoDir(id, dir, host);
   return { success: true, ...(sep.warning ? { warning: sep.warning } : {}) };
 }
 
@@ -79,7 +80,7 @@ function profileSummary(id) {
   const def = PROFILES[id];
   let present = [];
   try { if (dir) present = fs.readdirSync(dir); } catch {}
-  const exeFound = !!dir && present.includes(def.exe);
+  const exeFound = !!dir && present.some((name) => name.toLowerCase() === def.exe.toLowerCase());
   const otherDir = profileDir(id === "stock" ? "kaentake" : "stock");
   const kaentakeIniText = (() => {
     if (id !== "kaentake" || !dir) return "";
@@ -88,38 +89,29 @@ function profileSummary(id) {
   const sep = dir
     ? separationCheck({ dir, otherDir, profileId: id, present, kaentakeIniText })
     : { ok: false, reason: "No folder selected for this profile yet." };
-  const missing = id === "kaentake" && dir
-    ? missingStockDeps(present, def.requiredStockFiles)
-    : [];
+  const check = profileChecks.get(id);
+  const current = check?.dir === dir ? check : null;
   return {
     id, label: def.label, path: dir || "", exeFound,
-    depsOk: missing.length === 0, missing,
+    depsOk: !!current && !current.error && current.updates.length === 0,
+    missing: current ? current.updates.map((file) => file.name) : [],
+    depsError: current?.error,
     separation: sep.ok ? (sep.warning ? { ok: true, warning: sep.warning } : "ok") : { ok: false, reason: sep.reason },
   };
 }
 
-// Host writers, selected by profile configKind (never by sniffing file content).
-function stampHostIntoDir(id, dir, host) {
-  const iniPath = path.join(dir, "config.ini");
-  if (!fs.existsSync(iniPath)) return false;
-  try {
-    const ini = fs.readFileSync(iniPath, "utf-8");
-    const next = id === "kaentake" ? stampKaentakeIni(ini, host) : stampStockIni(ini, host);
-    fs.writeFileSync(iniPath, next);
-    return true;
-  } catch (err) {
-    console.error(`Failed to write host into ${iniPath}:`, err);
-    return false;
-  }
-}
-
-function stampHostIntoAllProfiles(host) {
-  const stamped = {};
-  for (const id of Object.keys(PROFILES)) {
-    const dir = profileDir(id);
-    stamped[id] = dir ? stampHostIntoDir(id, dir, host) : false;
-  }
-  return stamped;
+// Resolve only at launch, asynchronously. Stored/UI host text is never replaced
+// by its address; Ezorsia's numeric-only field gets IPv4, Kaentake keeps text.
+async function stampHostIntoDir(id, dir, host) {
+  const iniPath = await clientFilePath(dir, "config.ini");
+  const ini = await fs.promises.readFile(iniPath, "utf-8");
+  if (!isProfileConfig(id, ini))
+    throw new Error(`Invalid ${id} config.ini; repair the complete client before launching.`);
+  const endpoint = id === "stock" && isIP(host) !== 4
+    ? (await dns.lookup(host, { family: 4 })).address : host;
+  const next = id === "kaentake" ? stampKaentakeIni(ini, endpoint) : stampStockIni(ini, endpoint);
+  await fs.promises.writeFile(iniPath, next, "utf-8");
+  return endpoint;
 }
 
 // Kaentake's channel redirects are server-determined (WSPConnect hook rewrites only the
@@ -199,12 +191,13 @@ ipcMain.handle("profile:set", (_, id) => {
 
 ipcMain.handle("profile:setPath", (_, id, dir) => setProfilePath(id, dir));
 
-ipcMain.handle("profile:deps", (_, id) => {
-  if (!PROFILES[id]) return { missing: [], error: `Unknown profile: ${id}` };
-  const dir = profileDir(id);
-  let present = [];
-  try { if (dir) present = fs.readdirSync(dir); } catch {}
-  return { missing: id === "kaentake" ? missingStockDeps(present, PROFILES.kaentake.requiredStockFiles) : [] };
+ipcMain.handle("profile:deps", async (_, id) => {
+  try {
+    const result = await inspectProfile(id, profileDir(id));
+    return { missing: result.updates.map((file) => file.name), complete: result.updates.length === 0 };
+  } catch (error) {
+    return { missing: [], complete: false, error: error.message };
+  }
 });
 
 ipcMain.handle("game:findPath", () => {
@@ -235,21 +228,16 @@ ipcMain.handle("game:setPath", (_, newPath) => {
   return setProfilePath("stock", newPath);
 });
 
-// Default server host (measured 2026-10-16): LAN baseline 192.168.0.164.
-// LAN 192.168.0.164:8484 + 7575-77 OPEN; external reachability UNVERIFIED
-// (LAN-origin probes prove nothing either way); /api/server
-// "running" is docker-internal health, NOT external reachability. Docs state
-// LAN-or-VPN-required; website/downloads being public does NOT mean native
-// TCP is public. Stored server:setHost always wins once set (explicit user
-// override preserved). Fixed port 8484; no NAT/L4 changes here. The legacy
-// Fly IP 213.188.212.103 is RETIRED as a default (kept nowhere).
-const DEFAULT_SERVER_HOST = "192.168.0.164";
+// Canonical default; public native-port activation is intentionally deferred.
+// Explicit stored QA/user overrides remain authoritative; never fall back to LAN.
+const DEFAULT_SERVER_HOST = "buns.asslorde.com";
 
 // Server host: written into config.ini ServerIP_Address so the HD DLL routes
 // the compiled client (fixed login port 8484) at the chosen host. The launcher
 // owns this file after download (manifest ships a prod-default copy), so the
 // recipe is coherent: host here + host:8484 reachable + port-forward only if
 // the operator remaps 8484 elsewhere.
+ipcMain.handle("server:getHostStored", () => readStore().serverHost || null);
 ipcMain.handle("server:getHost", () => {
   const configPath = path.join(app.getPath("userData"), "config.json");
   try {
@@ -263,16 +251,9 @@ ipcMain.handle("server:setHost", (_, host) => {
   host = String(host || "").trim();
   if (!host) return { success: false, error: "Empty host" };
   saveConfig({ serverHost: host });
-  refreshGamePath();
-  const stamped = stampHostIntoAllProfiles(host);
-  return { success: true, host, stamped };
+  return { success: true, host };
 });
 
-function writeServerHostToIni(host) {
-  // Stock writer; delegates to the pure string transform (design §4).
-  refreshGamePath();
-  return stampHostIntoDir("stock", gamePath, host);
-}
 
 ipcMain.handle("game:selectFolder", async () => {
   const { dialog } = require("electron");
@@ -289,71 +270,28 @@ ipcMain.handle("game:selectFolder", async () => {
   return selected;
 });
 
-ipcMain.handle("game:launch", () => {
-  refreshGamePath();
+ipcMain.handle("game:launch", async () => {
   const id = activeProfileId();
-  const exeName = PROFILES[id].exe;
-  if (!gamePath) return { success: false, error: "Game path not set" };
-  const exePath = path.join(gamePath, exeName);
-  if (!fs.existsSync(exePath))
-    return { success: false, error: `${exeName} not found` };
-
-  // Kaentake: hard separation stop before anything else. Electron cannot
-  // elevate — Kaentake needs run-as-admin; surface guidance, no silent fallback.
-  if (id === "kaentake") {
-    let present = [];
-    try { present = fs.readdirSync(gamePath); } catch {}
-    let iniText = "";
-    try { iniText = fs.readFileSync(path.join(gamePath, "config.ini"), "utf-8"); } catch {}
-    const sep = separationCheck({
-      dir: gamePath, otherDir: profileDir("stock"), profileId: "kaentake",
-      present, kaentakeIniText: iniText,
-    });
-    if (!sep.ok) return { success: false, error: sep.reason };
-    // Ensure host/port stamped before launch.
-    const host = readStore().serverHost || DEFAULT_SERVER_HOST;
-    stampHostIntoDir("kaentake", gamePath, host);
-    const { execFile } = require("child_process");
-    execFile(exePath, { cwd: gamePath }, (err) => {
-      if (err) console.error("Launch error:", err);
-    });
-    return {
-      success: true,
-      ...(sep.warning ? { warning: sep.warning } : {}),
-      note: "If Kaentake fails to start, right-click Kaentake.exe → Run as administrator (the injector requires elevation; the launcher cannot elevate it).",
-    };
-  }
-  // Safety check: remove Ezorsia dinput8.dll if HD mode is off
-  // Windows auto-loads any dinput8.dll in the exe directory, causing crashes
-  let hdMode = false;
+  const dir = profileDir(id);
+  if (!dir) return { success: false, error: "Game path not set" };
   try {
-    const config = JSON.parse(fs.readFileSync(path.join(app.getPath("userData"), "config.json"), "utf-8"));
-    hdMode = config.hdMode || false;
-  } catch {}
-
-  if (!hdMode) {
-    const staleFiles = [];
-    for (const name of HD_FILES) {
-      const filePath = path.join(gamePath, name);
-      if (fs.existsSync(filePath)) {
-        try { fs.unlinkSync(filePath); }
-        catch { staleFiles.push(name); }
-      }
-    }
-    if (staleFiles.includes("dinput8.dll")) {
+    const { files, updates } = await inspectProfile(id, dir);
+    if (updates.length) {
       return {
         success: false,
-        error: "Cannot remove dinput8.dll from game folder (file may be locked). Close any running BunsMS processes and try again, or manually delete it from: " + gamePath,
+        error: `Complete client preflight failed: ${updates.length} required file(s) need repair.`,
+        missing: updates.map((file) => file.name),
       };
     }
+    const host = readStore().serverHost || DEFAULT_SERVER_HOST;
+    if (files.some((file) => file.name.toLowerCase() === "config.ini"))
+      await stampHostIntoDir(id, dir, host);
+    const exePath = await clientFilePath(dir, PROFILES[id].exe);
+    const process = await startNativeClient(id, exePath, dir);
+    return { success: true, state: "process-started", ...process };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
-
-  const { execFile } = require("child_process");
-  execFile(exePath, { cwd: gamePath }, (err) => {
-    if (err) console.error("Launch error:", err);
-  });
-
-  return { success: true };
 });
 
 ipcMain.handle("server:status", async () => {
@@ -362,6 +300,8 @@ ipcMain.handle("server:status", async () => {
     return {
       online: data?.status === "running",
       players: data?.players || 0,
+      gameHost: typeof data?.gameHost === "string" ? data.gameHost : undefined,
+      gamePort: data?.gamePort || 8484,
     };
   } catch {
     return { online: false, players: 0 };
@@ -491,211 +431,76 @@ ipcMain.handle("settings:setHDOptions", (_, { resolution, fullscreen, sleepTime 
 });
 
 ipcMain.handle("launcher:checkUpdates", async () => {
-  refreshGamePath();
   const id = activeProfileId();
-  if (!gamePath) return { status: "no_path" };
-
-  // Read HD mode setting
-  let hdMode = false;
+  const dir = profileDir(id);
+  if (!dir) return { status: "no_path" };
   try {
-    const config = JSON.parse(fs.readFileSync(path.join(app.getPath("userData"), "config.json"), "utf-8"));
-    hdMode = config.hdMode || false;
-  } catch {}
-
-  // Proactively clean up HD files when HD mode is off — stock profile only,
-  // so a Kaentake dir is never touched here. Prevents crashes
-  // if user manually placed files or launched the exe directly
-  if (id === "stock" && !hdMode) {
-    for (const name of HD_FILES) {
-      const filePath = path.join(gamePath, name);
-      try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch {}
-    }
-  }
-
-  // Kaentake separation gate also blocks update checks on a mixed dir.
-  if (id === "kaentake") {
-    let present = [];
-    try { present = fs.readdirSync(gamePath); } catch {}
-    let iniText = "";
-    try { iniText = fs.readFileSync(path.join(gamePath, "config.ini"), "utf-8"); } catch {}
-    const sep = separationCheck({
-      dir: gamePath, otherDir: profileDir("stock"), profileId: "kaentake",
-      present, kaentakeIniText: iniText,
-    });
-    if (!sep.ok) return { status: "error", error: sep.reason };
-  }
-
-  try {
-    // The dashboard serves per-profile filtering (?profile=); until that ships,
-    // filter client-side too so stock behavior is unchanged either way.
-    const manifest = await fetchJSON(`${MANIFEST_URL}?profile=${id}`);
-    if (!manifest || !manifest.files) return { status: "error", error: "Invalid manifest" };
-
-    const files = filterManifest(manifest.files, id, hdMode);
-    const updates = [];
-    log(`Checking ${files.length} files (manifest v${manifest.version}), profile=${id}, hdMode=${hdMode}`);
-    for (const file of files) {
-      // Fallback only: entries with no URL have nothing to fetch — verify a
-      // local copy if present, else report manual_copy_needed (never download).
-      if (!file.url) {
-        const localPath = path.join(gamePath, file.name);
-        if (!fs.existsSync(localPath)) {
-          log(`${file.name}: missing (manual copy needed)`);
-          updates.push({ ...file, reason: "manual_copy_needed" });
-          continue;
-        }
-        if (file.hash) {
-          const localHash = await hashFile(localPath);
-          if (localHash !== file.hash) {
-            log(`${file.name}: hash mismatch on local copy`);
-            updates.push({ ...file, reason: "manual_copy_mismatch" });
-          }
-        }
-        continue;
-      }
-
-      const localPath = path.join(gamePath, file.name);
-      if (!fs.existsSync(localPath)) {
-        log(`${file.name}: missing`);
-        updates.push({ ...file, reason: "missing" });
-        continue;
-      }
-
-      // Skip hash check for config.ini if it exists (user may have customized it)
-      if (file.name === "config.ini" && file.hd) continue;
-
-      // Check file size first (fast)
-      const stats = fs.statSync(localPath);
-      if (stats.size !== file.size) {
-        log(`${file.name}: size mismatch (local=${stats.size}, expected=${file.size})`);
-        updates.push({ ...file, reason: "size_mismatch" });
-        continue;
-      }
-
-      // Check hash if sizes match (slower but accurate)
-      if (file.hash) {
-        const localHash = await hashFile(localPath);
-        if (localHash !== file.hash) {
-          log(`${file.name}: hash mismatch (local=${localHash.slice(0,16)}..., expected=${file.hash.slice(0,16)}...)`);
-          updates.push({ ...file, reason: "hash_mismatch" });
-        }
-      }
-    }
-    log(`Update check: ${updates.length} files need updating: ${updates.map(u => u.name).join(", ") || "none"}`);
-
+    const { manifest, files, updates } = await inspectProfile(id, dir);
     return {
-      status: updates.length > 0 ? "updates_available" : "up_to_date",
+      status: updates.length ? "updates_available" : "up_to_date",
       version: manifest.version,
+      verifiedFiles: files.length - updates.length,
       updates,
-      totalSize: updates.reduce((s, f) => s + f.size, 0),
+      totalSize: updates.reduce((size, file) => size + file.size, 0),
     };
-  } catch (err) {
-    return { status: "error", error: err.message };
+  } catch (error) {
+    return { status: "error", error: error.message };
   }
 });
 
-ipcMain.handle("launcher:downloadUpdates", async (_, updates) => {
-  refreshGamePath();
-  if (!gamePath || !updates?.length) return { success: false };
-
-  // Pre-check: ensure target directory exists and is writable
+ipcMain.handle("launcher:downloadUpdates", async (_, requestedUpdates) => {
+  const id = activeProfileId();
+  const dir = profileDir(id);
+  if (!dir || !Array.isArray(requestedUpdates) || !requestedUpdates.length)
+    return { success: false, error: "Choose a client folder and check its complete manifest first." };
   try {
-    fs.mkdirSync(gamePath, { recursive: true });
-    const testFile = path.join(gamePath, ".buns-write-test");
-    fs.writeFileSync(testFile, "test");
-    fs.unlinkSync(testFile);
-  } catch (err) {
-    return {
-      success: false,
-      error: `Cannot write to game folder: ${gamePath}\n\n${err.message}\n\nTry choosing a different folder (e.g. C:\\BunsMS), or run the launcher as Administrator.`,
-    };
-  }
-
-  for (let i = 0; i < updates.length; i++) {
-    const file = updates[i];
-    // Fallback-only guard: URL-less entries have nothing to fetch and must
-    // never reach downloadFile; normally-hosted entries download as usual.
-    try { assertDownloadable(file); } catch (err) { return { success: false, error: err.message }; }
-    const destPath = path.join(gamePath, file.name);
-
-    const sendProgress = (percent, status) => {
-      mainWindow.webContents.send("download:progress", {
-        file: file.name,
-        index: i,
-        total: updates.length,
-        percent,
-        status,
+    const { manifest, files, updates } = await inspectProfile(id, dir);
+    const requested = new Set(requestedUpdates.map((file) => file.name));
+    if (updates.length !== requested.size || updates.some((file) => !requested.has(file.name)))
+      throw new Error("The required client files changed. Check the complete manifest again before installing.");
+    await fs.promises.mkdir(dir, { recursive: true });
+    const operation = crypto.randomUUID();
+    for (let index = 0; index < updates.length; index++) {
+      // Use publisher-authoritative entries, never renderer-supplied URLs/hashes.
+      const file = updates[index];
+      const destination = await clientFilePath(dir, file.name);
+      const partial = `${destination}.download-${operation}`;
+      const progress = (percent, status) => mainWindow.webContents.send("download:progress", {
+        profile: id, file: file.name, index, total: updates.length, percent, status,
       });
-    };
-
-    const MAX_RETRIES = 5;
-    let success = false;
-
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        log(`Download ${file.name} attempt ${attempt}/${MAX_RETRIES} from ${file.url}`);
-        sendProgress(0, attempt > 1 ? `Retry ${attempt}/${MAX_RETRIES}` : undefined);
-
-        await downloadFile(file.url, destPath, file.size, (percent) => sendProgress(percent));
-
-        // Verify file size
-        const stats = fs.statSync(destPath);
-        log(`${file.name}: downloaded ${stats.size} bytes, expected ${file.size}`);
-        if (file.size && stats.size !== file.size) {
-          throw new Error(`Size mismatch: got ${stats.size}, expected ${file.size}`);
-        }
-
-        // Verify hash
-        if (file.hash) {
-          sendProgress(100, "Verifying...");
-          const localHash = await hashFile(destPath);
-          log(`${file.name}: hash ${localHash === file.hash ? "OK" : "MISMATCH"} (local=${localHash.slice(0,16)}... expected=${file.hash.slice(0,16)}...)`);
-          if (localHash !== file.hash) {
-            // Hash failed — delete and retry from scratch
-            try { fs.unlinkSync(destPath); } catch {}
-            throw new Error(`Hash mismatch after download`);
+      const maxAttempts = 5; // Preserve the existing bounded resume policy.
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          progress(0, attempt > 1 ? `Retry ${attempt}/${maxAttempts}` : undefined);
+          await downloadFile(file.url, partial, file.size, (percent) => progress(percent));
+          const stats = await fs.promises.stat(partial);
+          if (stats.size !== file.size) throw new Error(`Size mismatch for ${file.name}`);
+          progress(100, "Verifying...");
+          if (await hashFile(partial) !== file.hash.toLowerCase()) {
+            await fs.promises.unlink(partial);
+            throw new Error(`Hash mismatch for ${file.name}`);
           }
+          // Replace only after verification; a failed transfer keeps the user's
+          // previous file intact and never follows a final-file symlink to write.
+          await fs.promises.rename(partial, destination);
+          break;
+        } catch (error) {
+          if (attempt === maxAttempts)
+            throw new Error(`Failed to install ${file.name}: ${error.message}`);
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
         }
-
-        log(`${file.name}: OK`);
-        success = true;
-        break;
-      } catch (err) {
-        log(`${file.name}: attempt ${attempt} failed: ${err.message}`);
-        if (attempt === MAX_RETRIES) {
-          let hint = "";
-          const msg = err.message || "";
-          if (msg.includes("EPROTO") || msg.includes("WRONG_VERSION_NUMBER") || msg.includes("SSL")) {
-            hint = "\n\nThis looks like a network/SSL issue. A firewall, proxy, or antivirus may be blocking the download. Try:\n• Disable VPN or proxy\n• Temporarily disable antivirus\n• Download files manually from: https://github.com/joshhmann/bunsms/releases/tag/client-v1.0.1";
-          } else if (msg.includes("timeout") || msg.includes("ETIMEDOUT") || msg.includes("ECONNRESET")) {
-            hint = "\n\nConnection issue. Check your internet and try again. You can also download files manually from: https://github.com/joshhmann/bunsms/releases/tag/client-v1.0.1";
-          }
-          return { success: false, error: `Failed to download ${file.name}: ${msg}${hint}` };
-        }
-        // Only delete partial file for non-resumable errors
-        // Resume-capable: keep the partial file so next attempt uses Range header
-        if (err.message && err.message.includes("Hash mismatch")) {
-          try { fs.unlinkSync(destPath); } catch {}
-        }
-        // Brief backoff before retry
-        await new Promise(r => setTimeout(r, 1000 * attempt));
       }
     }
-
-    // Defensive: if we somehow exit retries without success or early return
-    if (!success) {
-      return { success: false, error: `Failed to download ${file.name} after ${MAX_RETRIES} retries` };
-    }
+    const remaining = await inspectClientFiles(id, dir, files);
+    profileChecks.set(id, { dir, updates: remaining });
+    if (remaining.length)
+      throw new Error(`Complete client verification still needs ${remaining.length} file(s).`);
+    // Keep the stored host text untouched. Managed INI fields are stamped only
+    // when launching, after complete-file verification has succeeded.
+    return { success: true, version: manifest.version, verifiedFiles: files.length };
+  } catch (error) {
+    return { success: false, error: error.message };
   }
-
-  // After any download set completes, stamp the saved server host into
-  // config.ini (fresh downloads ship the prod-default copy from R2).
-  try {
-    const config = JSON.parse(fs.readFileSync(path.join(app.getPath("userData"), "config.json"), "utf-8"));
-    if (config.serverHost && gamePath) stampHostIntoDir(activeProfileId(), gamePath, config.serverHost);
-  } catch {}
-
-  return { success: true };
 });
 
 // ── Helpers ──
@@ -709,21 +514,30 @@ function saveConfig(config) {
   } catch {}
 }
 
-function fetchJSON(url) {
+function fetchBytes(url) {
   return new Promise((resolve, reject) => {
-    const mod = url.startsWith("https") ? https : http;
-    mod.get(url, { timeout: 10000 }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        return fetchJSON(res.headers.location).then(resolve).catch(reject);
+    const mod = url.startsWith("https:") ? https : http;
+    const request = mod.get(url, { timeout: 10000 }, (response) => {
+      if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+        response.resume();
+        return fetchBytes(new URL(response.headers.location, url).href).then(resolve, reject);
       }
-      let data = "";
-      res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => {
-        try { resolve(JSON.parse(data)); }
-        catch { reject(new Error("Invalid JSON")); }
-      });
-    }).on("error", reject);
+      if (response.statusCode !== 200) {
+        response.resume();
+        return reject(new Error(`Metadata request failed: HTTP ${response.statusCode}`));
+      }
+      const chunks = [];
+      response.on("data", (chunk) => chunks.push(chunk));
+      response.on("end", () => resolve(Buffer.concat(chunks)));
+      response.on("error", reject);
+    });
+    request.on("error", reject);
+    request.on("timeout", () => request.destroy(new Error("Metadata request timed out")));
   });
+}
+
+async function fetchJSON(url) {
+  return JSON.parse((await fetchBytes(url)).toString("utf-8"));
 }
 
 function hashFile(filePath) {
@@ -733,6 +547,190 @@ function hashFile(filePath) {
     stream.on("data", (d) => hash.update(d));
     stream.on("end", () => resolve(hash.digest("hex")));
     stream.on("error", reject);
+  });
+}
+
+// Resolve existing names case-insensitively, like the Windows loader, without
+// creating Linux case-colliding engine DLLs during repair.
+async function clientFilePath(dir, name, directories = new Map()) {
+  const parts = name.replace(/\\/g, "/").split("/");
+  let cursor = path.resolve(dir);
+  for (const part of parts) {
+    if (!directories.has(cursor)) {
+      try { directories.set(cursor, await fs.promises.readdir(cursor)); }
+      catch (error) {
+        if (error.code !== "ENOENT") throw error;
+        directories.set(cursor, []);
+      }
+    }
+    const matches = directories.get(cursor).filter((entry) => entry.toLowerCase() === part.toLowerCase());
+    if (matches.length > 1)
+      throw new Error(`Case-colliding client paths in ${cursor}: ${matches.join(", ")}`);
+    cursor = path.join(cursor, matches[0] || part);
+    if (matches.length) {
+      const stats = await fs.promises.lstat(cursor);
+      if (stats.isSymbolicLink())
+        throw new Error(`Client files must stay inside their isolated folder: ${cursor}`);
+    }
+  }
+  return cursor;
+}
+
+async function inspectClientFiles(id, dir, files) {
+  const directories = new Map();
+  const updates = [];
+  for (const file of files) {
+    const localPath = await clientFilePath(dir, file.name, directories);
+    try {
+      const stats = await fs.promises.stat(localPath);
+      if (!stats.isFile()) {
+        updates.push({ ...file, reason: "not_file" });
+      } else if (file.mutable) {
+        const text = await fs.promises.readFile(localPath, "utf-8");
+        if (!isProfileConfig(id, text)) updates.push({ ...file, reason: "invalid_config" });
+      } else if (stats.size !== file.size) {
+        updates.push({ ...file, reason: "size_mismatch" });
+      } else if (await hashFile(localPath) !== file.hash.toLowerCase()) {
+        updates.push({ ...file, reason: "hash_mismatch" });
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+      updates.push({ ...file, reason: "missing" });
+    }
+  }
+  return updates;
+}
+
+async function inspectProfile(id, dir) {
+  if (!PROFILES[id] || !dir) throw new Error("Choose a client profile and its isolated folder first.");
+  try {
+    const summary = profileSummary(id);
+    if (summary.separation !== "ok" && !summary.separation?.ok)
+      throw new Error(summary.separation.reason);
+    const hdMode = !!readStore().hdMode;
+    if (id === "stock" && !hdMode) {
+      let names = [];
+      try { names = await fs.promises.readdir(dir); }
+      catch (error) { if (error.code !== "ENOENT") throw error; }
+      if (names.some((name) => name.toLowerCase() === "dinput8.dll"))
+        throw new Error("HD mode is disabled but its dinput8.dll is still present. Use the HD setting to remove it or select an isolated rollback folder.");
+    }
+    const url = new URL(MANIFEST_URL);
+    url.searchParams.set("profile", id); // New launcher always names its profile.
+    const manifest = await fetchJSON(url.href);
+    const files = Object.freeze(requiredClientFiles(manifest, id, hdMode).map((file) => {
+      const address = new URL(file.url, `${API_BASE}/`);
+      if (address.protocol !== "https:" && address.protocol !== "http:")
+        throw new Error(`Unsupported client download URL for ${file.name}`);
+      return Object.freeze({ ...file, url: address.href });
+    }));
+    const provenance = manifest.provenance;
+    if (!provenance?.url || !/^[a-f\d]{64}$/i.test(provenance.sha256 || ""))
+      throw new Error("Complete client manifest has no pinned provenance authority.");
+    const bytes = await fetchBytes(new URL(provenance.url, url).href);
+    if (crypto.createHash("sha256").update(bytes).digest("hex") !== provenance.sha256.toLowerCase())
+      throw new Error("Complete client provenance hash does not match the published pin.");
+    const sourceFiles = JSON.parse(bytes.toString("utf-8")).files;
+    const key = (name) => String(name).replace(/\\/g, "/").toLowerCase();
+    const required = new Map(files.map((file) => [key(file.name), file]));
+    if (!Array.isArray(sourceFiles) || sourceFiles.length !== files.length)
+      throw new Error("Complete client manifest and provenance have different file sets.");
+    const seen = new Set();
+    for (const source of sourceFiles) {
+      const name = key(source.name);
+      const file = required.get(name);
+      if (seen.has(name) || !file || source.size !== file.size ||
+          String(source.sha256).toLowerCase() !== file.hash.toLowerCase())
+        throw new Error(`Complete client provenance disagrees on ${source.name || "<unnamed>"}.`);
+      seen.add(name);
+    }
+    const updates = await inspectClientFiles(id, dir, files);
+    profileChecks.set(id, { dir, updates });
+    return { manifest, files, updates };
+  } catch (error) {
+    profileChecks.set(id, { dir, updates: [], error: error.message });
+    throw error;
+  }
+}
+
+function launchStatus(message) {
+  if (mainWindow && !mainWindow.isDestroyed())
+    mainWindow.webContents.send("game:launchStatus", message);
+}
+
+function startNativeClient(id, executable, dir) {
+  return new Promise((resolve, reject) => {
+    const elevated = process.platform === "win32" && PROFILES[id].requiresElevation;
+    let command;
+    let args;
+    const environment = { ...process.env }; // Includes the user's WINEPREFIX/environment.
+    if (elevated) {
+      // Normal ShellExecute UAC flow required by the pinned Kaentake manifest.
+      // Report actual OS creation, then the real launcher exit; never claim login.
+      environment.BUNSMS_LAUNCH_EXE = executable;
+      environment.BUNSMS_LAUNCH_DIR = dir;
+      command = "powershell.exe";
+      args = ["-NoProfile", "-NonInteractive", "-Command", [
+        "$ErrorActionPreference='Stop'",
+        "[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false)",
+        "try {",
+        "$p=Start-Process -FilePath $env:BUNSMS_LAUNCH_EXE -WorkingDirectory $env:BUNSMS_LAUNCH_DIR -Verb RunAs -PassThru",
+        "[Console]::Out.WriteLine('BUNS_STARTED:'+$p.Id)",
+        "$p.WaitForExit(); exit $p.ExitCode",
+        "} catch { [Console]::Error.WriteLine($_.Exception.Message); exit 1 }",
+      ].join("; ")];
+    } else if (process.platform === "linux") {
+      command = "wine";
+      args = [executable];
+    } else if (process.platform === "win32") {
+      command = executable;
+      args = [];
+    } else {
+      return reject(new Error("Native client launch is supported on Windows and Linux with Wine."));
+    }
+    let child;
+    try {
+      child = spawn(command, args, { cwd: dir, env: environment, stdio: elevated ? ["ignore", "pipe", "pipe"] : "ignore" });
+    } catch (error) {
+      return reject(error);
+    }
+    let started = false;
+    let pid;
+    let output = "";
+    let startupError = "";
+    const startedProcess = (actualPid) => {
+      if (started) return;
+      started = true;
+      pid = actualPid;
+      const runner = process.platform === "linux" ? "wine" : "windows";
+      launchStatus({ profile: id, state: "process-started", pid, runner });
+      resolve({ pid, runner });
+    };
+    if (elevated) {
+      child.stdout.setEncoding("utf-8");
+      child.stdout.on("data", (chunk) => {
+        output += chunk;
+        const match = /(?:^|\r?\n)BUNS_STARTED:(\d+)(?:\r?\n)/.exec(output);
+        if (match) startedProcess(Number(match[1]));
+      });
+      child.stderr.setEncoding("utf-8");
+      child.stderr.on("data", (chunk) => {
+        if (startupError.length < 4096) startupError = (startupError + chunk).slice(0, 4096);
+      });
+    } else {
+      child.once("spawn", () => startedProcess(child.pid));
+    }
+    child.once("error", (error) => {
+      if (!started) reject(new Error(`Could not start ${command}: ${error.message}`));
+      else launchStatus({ profile: id, state: "error", pid, error: error.message });
+    });
+    child.once("close", (code, signal) => {
+      if (!started) {
+        reject(new Error(startupError.trim() || `Client did not start (${code ?? signal}).`));
+      } else {
+        launchStatus({ profile: id, state: "exited", pid, code, signal, error: startupError.trim() || undefined });
+      }
+    });
   });
 }
 
@@ -756,7 +754,7 @@ function downloadFile(url, dest, expectedSize, onProgress) {
     const req = mod.get(url, { headers, timeout: 30000 }, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
         res.resume(); // drain the response
-        return downloadFile(res.headers.location, dest, expectedSize, onProgress).then(resolve).catch(reject);
+        return downloadFile(new URL(res.headers.location, url).href, dest, expectedSize, onProgress).then(resolve).catch(reject);
       }
 
       const isResume = res.statusCode === 206;

@@ -102,9 +102,9 @@ int CapsAcceptedMask() {
 }
 
 int CapsOfferedMask() {
-    // ONLY bits whose modules are present. Today: the check-in window alone.
-    // Append bits here exactly when their module + server support both land.
-    return caps::kCheckinWindow;
+    // Windows baseline: no custom feature is advertised before its paired
+    // UI/assets/server behavior has passed actual runtime acceptance.
+    return 0;
 }
 
 void CapsSendAnnounce() {

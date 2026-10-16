@@ -12,9 +12,11 @@ contextBridge.exposeInMainWorld("buns", {
   findGamePath: () => ipcRenderer.invoke("game:findPath"),
   setGamePath: (p) => ipcRenderer.invoke("game:setPath", p),
   getServerHost: () => ipcRenderer.invoke("server:getHost"),
+  getServerHostStored: () => ipcRenderer.invoke("server:getHostStored"),
   setServerHost: (host) => ipcRenderer.invoke("server:setHost", host),
   selectFolder: () => ipcRenderer.invoke("game:selectFolder"),
   launch: () => ipcRenderer.invoke("game:launch"),
+  onLaunchStatus: (cb) => ipcRenderer.on("game:launchStatus", (_, data) => cb(data)),
 
   // Profiles (Kaentake opt-in; stock default)
   getProfile: () => ipcRenderer.invoke("profile:get"),

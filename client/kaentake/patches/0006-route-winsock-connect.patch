@@ -1,0 +1,187 @@
+--- a/src/system.cpp
++++ b/src/system.cpp
+@@ -8,3 +8,2 @@
+ #include <strsafe.h>
+-#include <ws2spi.h>
+ #include <ws2tcpip.h>
+@@ -41,2 +40,4 @@
+ 
++static void InstallRoutingHooks();
++
+ typedef decltype(&SetUnhandledExceptionFilter) SetUnhandledExceptionFilter_t;
+@@ -48,2 +49,3 @@
+     if (!clientHooksInstalled && reinterpret_cast<uintptr_t>(_ReturnAddress()) == 0x00796FDD) {
++        InstallRoutingHooks();
+         clientHooksInstalled = true;
+@@ -155,12 +157,64 @@
+ 
+-typedef decltype(&WSPStartup) WSPStartup_t;
+-static WSPStartup_t WSPStartup_orig = reinterpret_cast<WSPStartup_t>(GetAddress("MSWSOCK", "WSPStartup"));
+-static WSPPROC_TABLE g_ProcTable;
+-static ULONG g_uNexonAddress;
+-
+-constexpr const char* g_asOriginalAddress[] = {
+-    "63.251.217.2",
+-    "63.251.217.3",
+-    "63.251.217.4",
++// Own the actual Winsock API path. SPI provider startup is not a reliable
++// interception seam on every supported runtime (including Wine).
++static decltype(&connect) Connect_orig = &connect;
++static decltype(&getpeername) GetPeerName_orig = &getpeername;
++static decltype(&closesocket) CloseSocket_orig = &closesocket;
++
++struct RedirectedPeer {
++    SOCKET socket;
++    ULONG originalAddress;
++    RedirectedPeer* next;
+ };
++static SRWLOCK g_peerLock = SRWLOCK_INIT;
++static RedirectedPeer* g_redirectedPeers = nullptr;
++
++// POD process-lifetime state: hooks remain installed while other DLLs detach.
++// Allocate only when a newly redirected socket needs peer identity storage.
++static bool RememberRedirect(SOCKET socket, ULONG address) {
++    AcquireSRWLockExclusive(&g_peerLock);
++    for (auto* peer = g_redirectedPeers; peer; peer = peer->next) {
++        if (peer->socket == socket) {
++            peer->originalAddress = address;
++            ReleaseSRWLockExclusive(&g_peerLock);
++            return true;
++        }
++    }
++    auto* peer = static_cast<RedirectedPeer*>(HeapAlloc(GetProcessHeap(), 0, sizeof(RedirectedPeer)));
++    if (peer) {
++        *peer = {socket, address, g_redirectedPeers};
++        g_redirectedPeers = peer;
++    }
++    ReleaseSRWLockExclusive(&g_peerLock);
++    return peer != nullptr;
++}
++
++static void ForgetRedirect(SOCKET socket) {
++    AcquireSRWLockExclusive(&g_peerLock);
++    auto** position = &g_redirectedPeers;
++    while (*position) {
++        if ((*position)->socket == socket) {
++            auto* removed = *position;
++            *position = removed->next;
++            HeapFree(GetProcessHeap(), 0, removed);
++            break;
++        }
++        position = &(*position)->next;
++    }
++    ReleaseSRWLockExclusive(&g_peerLock);
++}
++
++static bool OriginalPeerAddress(SOCKET socket, ULONG& address) {
++    bool found = false;
++    AcquireSRWLockShared(&g_peerLock);
++    for (auto* peer = g_redirectedPeers; peer; peer = peer->next) {
++        if (peer->socket == socket) {
++            address = peer->originalAddress;
++            found = true;
++            break;
++        }
++    }
++    ReleaseSRWLockShared(&g_peerLock);
++    return found;
++}
+ 
+@@ -199,32 +253,26 @@
+ 
+-int WSPAPI WSPConnect_hook(SOCKET s, const struct sockaddr FAR* name, int namelen, LPWSABUF lpCallerData, LPWSABUF lpCalleeData, LPQOS lpSQOS, LPQOS lpGQOS, LPINT lpErrno) {
+-    if (!name || namelen < sizeof(sockaddr_in) || name->sa_family != AF_INET) {
+-        return g_ProcTable.lpWSPConnect(s, name, namelen, lpCallerData, lpCalleeData, lpSQOS, lpGQOS, lpErrno);
+-    }
+-    const auto* original = reinterpret_cast<const sockaddr_in*>(name);
+-    char sName[INET_ADDRSTRLEN];
+-    InetNtopA(AF_INET, &original->sin_addr, sName, INET_ADDRSTRLEN);
+-    for (auto sAddress : g_asOriginalAddress) {
+-        if (strcmp(sName, sAddress)) {
+-            continue;
+-        }
+-        const auto& server = ResolveServerAddress();
+-        if (server.error) {
+-            *lpErrno = server.error;
+-            return SOCKET_ERROR;
+-        }
+-        sockaddr_in redirected = *original;
+-        g_uNexonAddress = original->sin_addr.S_un.S_addr;
+-        redirected.sin_addr = server.address;
+-        if (g_nServerPort) {
+-            redirected.sin_port = htons(static_cast<u_short>(g_nServerPort));
+-        }
+-        return g_ProcTable.lpWSPConnect(s, reinterpret_cast<const sockaddr*>(&redirected), sizeof(redirected), lpCallerData, lpCalleeData, lpSQOS, lpGQOS, lpErrno);
+-    }
+-    return g_ProcTable.lpWSPConnect(s, name, namelen, lpCallerData, lpCalleeData, lpSQOS, lpGQOS, lpErrno);
+-}
+-
+-int WSPAPI WSPGetPeerName_hook(SOCKET s, struct sockaddr* name, LPINT namelen, LPINT lpErrNo) {
+-    int result = g_ProcTable.lpWSPGetPeerName(s, name, namelen, lpErrNo);
+-    ((sockaddr_in*)name)->sin_addr.S_un.S_addr = g_uNexonAddress;
++static int WSAAPI Connect_hook(SOCKET socket, const sockaddr* address, int length) {
++    if (!address || length < sizeof(sockaddr_in) || address->sa_family != AF_INET)
++        return Connect_orig(socket, address, length);
++    const auto* original = reinterpret_cast<const sockaddr_in*>(address);
++    const auto& bytes = original->sin_addr.S_un.S_un_b;
++    if (bytes.s_b1 != 63 || bytes.s_b2 != 251 || bytes.s_b3 != 217 || bytes.s_b4 < 2 || bytes.s_b4 > 4)
++        return Connect_orig(socket, address, length);
++    const auto& server = ResolveServerAddress();
++    if (server.error) {
++        WSASetLastError(server.error);
++        return SOCKET_ERROR;
++    }
++    if (!RememberRedirect(socket, original->sin_addr.S_un.S_addr)) {
++        WSASetLastError(WSAENOBUFS);
++        return SOCKET_ERROR;
++    }
++    sockaddr_in redirected = *original;
++    redirected.sin_addr = server.address;
++    if (g_nServerPort) redirected.sin_port = htons(static_cast<u_short>(g_nServerPort));
++    const int result = Connect_orig(socket, reinterpret_cast<const sockaddr*>(&redirected), sizeof(redirected));
++    const int error = WSAGetLastError();
++    if (result == SOCKET_ERROR && error != WSAEWOULDBLOCK && error != WSAEINPROGRESS && error != WSAEALREADY)
++        ForgetRedirect(socket);
++    WSASetLastError(error);
+     return result;
+@@ -232,8 +280,30 @@
+ 
+-int WSPAPI WSPStartup_hook(WORD wVersionRequested, LPWSPDATA lpWSPData, LPWSAPROTOCOL_INFOW lpProtocolInfo, WSPUPCALLTABLE UpcallTable, LPWSPPROC_TABLE lpProcTable) {
+-    int result = WSPStartup_orig(wVersionRequested, lpWSPData, lpProtocolInfo, UpcallTable, lpProcTable);
+-    g_ProcTable = *lpProcTable;
+-    lpProcTable->lpWSPConnect = &WSPConnect_hook;
+-    lpProcTable->lpWSPGetPeerName = &WSPGetPeerName_hook;
++static int WSAAPI GetPeerName_hook(SOCKET socket, sockaddr* address, int* length) {
++    const int result = GetPeerName_orig(socket, address, length);
++    const int error = WSAGetLastError();
++    if (result == 0 && address && length && *length >= sizeof(sockaddr_in) && address->sa_family == AF_INET) {
++        ULONG original;
++        if (OriginalPeerAddress(socket, original))
++            reinterpret_cast<sockaddr_in*>(address)->sin_addr.S_un.S_addr = original;
++    }
++    WSASetLastError(error);
+     return result;
++}
++
++static int WSAAPI CloseSocket_hook(SOCKET socket) {
++    const int result = CloseSocket_orig(socket);
++    const int error = WSAGetLastError();
++    if (result == 0) ForgetRedirect(socket);
++    WSASetLastError(error);
++    return result;
++}
++
++static void InstallRoutingHooks() {
++    if (!ATTACH_HOOK(Connect_orig, Connect_hook) ||
++        !ATTACH_HOOK(GetPeerName_orig, GetPeerName_hook) ||
++        !ATTACH_HOOK(CloseSocket_orig, CloseSocket_hook)) {
++        // Post-unpack/main-thread seam: never a modal or network work in DllMain.
++        ErrorMessage("Could not install required Winsock routing hooks.");
++        ExitProcess(ERROR_DLL_INIT_FAILED);
++    }
+ }
+@@ -246,3 +316,2 @@
+     ATTACH_HOOK(RegCreateKeyExA_orig, RegCreateKeyExA_hook);
+-    ATTACH_HOOK(WSPStartup_orig, WSPStartup_hook);
+ }
+\ No newline at end of file

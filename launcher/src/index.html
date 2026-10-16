@@ -48,12 +48,12 @@
 
     <!-- Right panel: actions -->
     <div class="panel-right">
-      <!-- Client profile: stock default, Kaentake opt-in (isolated folder) -->
+      <!-- Separate profiles; Kaentake acceptance precedes new-install promotion. -->
       <div class="path-section" id="profile-section">
         <div class="path-label">Client</div>
         <div class="path-row" id="profile-row">
-          <button class="btn-browse profile-btn" id="profile-stock" title="BunsMS — default client">BunsMS</button>
-          <button class="btn-browse profile-btn" id="profile-kaentake" title="Kaentake (experimental): unverified trial client; needs admin; AV may flag; separate folder required.">Kaentake <span class="hd-beta">EXPERIMENTAL</span></button>
+          <button class="btn-browse profile-btn" id="profile-stock" title="Stock rollback/testing client; keep its folder separate.">BunsMS</button>
+          <button class="btn-browse profile-btn" id="profile-kaentake" title="Kaentake primary-runtime acceptance is pending. Complete verified files and an isolated folder are required; Windows uses its normal UAC prompt.">Kaentake <span class="hd-beta">VALIDATING</span></button>
         </div>
         <div class="path-display" id="profile-status" style="display:none"></div>
       </div>
@@ -76,7 +76,7 @@
       <div class="path-section">
         <div class="path-label">Server Address</div>
         <div class="path-row">
-          <input class="path-display" id="server-host" value="192.168.0.164" spellcheck="false" />
+          <input class="path-display" id="server-host" value="buns.asslorde.com" spellcheck="false" />
           <button class="btn-browse" id="btn-server-default" title="Reset to default">&#x21BA;</button>
         </div>
       </div>

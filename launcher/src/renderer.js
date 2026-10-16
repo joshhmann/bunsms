@@ -76,6 +76,7 @@ function setupControls() {
     $("progress-text").textContent = `${data.file} (${data.percent}%)${statusSuffix}`;
     $("btn-play-text").textContent = `UPDATING ${Math.round(overall)}%`;
   });
+  window.buns.onLaunchStatus(renderLaunchStatus);
 }
 
 // ── Server Status ──
@@ -89,15 +90,15 @@ async function checkServerStatus() {
     if (status.online) {
       dot.className = "status-dot online";
       text.textContent = status.players > 0
-        ? `Online - ${status.players} player${status.players !== 1 ? "s" : ""}`
-        : "Online";
+        ? `Backend running - ${status.players} player${status.players !== 1 ? "s" : ""}`
+        : "Backend running (game connectivity not measured)";
     } else {
       dot.className = "status-dot offline";
-      text.textContent = "Offline";
+      text.textContent = "Backend unavailable";
     }
   } catch {
     dot.className = "status-dot offline";
-    text.textContent = "Cannot reach server";
+    text.textContent = "Cannot reach backend status";
   }
 
   // Also fetch rates from config (raw YAML structure: worlds[0].exp_rate etc.)
@@ -128,10 +129,20 @@ async function findGamePath() {
     $("path-display").textContent = "Not found - click browse to set";
     $("path-display").style.color = "var(--orange)";
   }
-  // Load saved server host into the field
+  // Preserve stored choices; otherwise prefer the API's explicit native host.
   try {
+    const stored = await window.buns.getServerHostStored();
+    if (stored) {
+      $("server-host").value = stored;
+    } else {
+      const status = await window.buns.getStatus();
+      const host = status && status.gameHost;
+      $("server-host").value = typeof host === "string" && host
+        ? host : await window.buns.getServerHost();
+    }
+  } catch {
     $("server-host").value = await window.buns.getServerHost();
-  } catch {}
+  }
 }
 
 // ── Profiles (stock default, Kaentake opt-in) ──
@@ -181,11 +192,11 @@ async function refreshProfileUI() {
   else if (me.separation && me.separation.warning) parts.push(me.separation.warning);
   if (kaentake) {
     parts.push(me.exeFound ? "Kaentake.exe found" : "Kaentake.exe missing");
-    if (me.missing && me.missing.length > 0) {
-      parts.push(`Copy from stock v83 folder: ${me.missing.join(", ")}`);
-    }
+    if (me.depsError) parts.push(me.depsError);
+    else if (me.missing?.length) parts.push(`Required files to install/repair: ${me.missing.length}`);
+    else if (!me.depsOk) parts.push("Complete client verification pending.");
     const note = $("kaentake-note-text");
-    if (note) note.textContent = parts.length > 0 ? parts.join(" • ") : "Kaentake folder looks good.";
+    if (note) note.textContent = parts.length ? parts.join(" • ") : "Complete client files verified; game acceptance is separate.";
     status.style.display = "none";
   } else {
     if (parts.length > 0) {
@@ -208,7 +219,7 @@ async function setupServerHost() {
     }
   });
   $("btn-server-default").onclick = async () => {
-    await window.buns.setServerHost("192.168.0.164");
+    await window.buns.setServerHost("buns.asslorde.com");
     field.value = await window.buns.getServerHost();
   };
 }
@@ -234,110 +245,107 @@ async function browseFolder() {
 
 // ── Updates ──
 async function checkForUpdates() {
+  const requestedProfile = activeProfile;
   const status = $("update-status");
   const text = $("update-text");
   const icon = $("update-icon") || status.querySelector(".update-icon");
-
+  currentUpdates = null;
+  $("btn-play").disabled = true;
+  $("btn-play-text").textContent = "CHECKING FILES...";
   status.className = "update-status";
   icon.textContent = "\uD83D\uDD0D";
-  text.textContent = "Checking for updates...";
-
+  text.textContent = "Verifying the complete client manifest and files...";
   const result = await window.buns.checkUpdates();
-
+  if (requestedProfile !== activeProfile) return;
   switch (result.status) {
     case "up_to_date":
       status.className = "update-status up-to-date";
       icon.textContent = "\u2705";
-      text.textContent = `Up to date (v${result.version || "1.0"})`;
+      text.textContent = `Complete client files verified (v${result.version || "1.0"}).`;
       enablePlay();
       break;
-
     case "updates_available": {
       status.className = "update-status needs-update";
       icon.textContent = "\u26A0\uFE0F";
-      const manual = (result.updates || []).filter((u) => u.reason === "manual_copy_needed" || u.reason === "manual_copy_mismatch" || u.manual);
-      const downloadable = (result.updates || []).filter((u) => !(u.reason === "manual_copy_needed" || u.reason === "manual_copy_mismatch" || u.manual));
-      if (manual.length > 0 && downloadable.length === 0) {
-        // Verify-only: nothing to download, show the copy instructions instead.
-        const names = manual.map((u) => u.name).join(", ");
-        const note = (manual[0] && manual[0].manualNote) || "Copy from the upstream iw2d/kaentake v3.4.1 release zip; the launcher will hash-verify.";
-        text.textContent = `Manual copy needed (${names}): ${note}`;
-        currentUpdates = null;
-        if (manual.every((u) => u.reason === "manual_copy_mismatch")) disablePlay();
-        else enablePlay();
-        break;
-      }
       const sizeMB = (result.totalSize / 1024 / 1024).toFixed(0);
-      text.textContent = `${result.updates.length} file${result.updates.length > 1 ? "s" : ""} to update (${sizeMB} MB)`;
-      currentUpdates = downloadable;
+      text.textContent = `${result.updates.length} required file(s) to install/repair (${sizeMB} MB)`;
+      currentUpdates = result.updates;
       enableUpdate();
       break;
     }
-
     case "no_path":
       status.className = "update-status error";
       icon.textContent = "\uD83D\uDCC1";
-      text.textContent = "Set game folder to check for updates";
-      disablePlay();
+      text.textContent = "Choose an isolated client folder.";
+      disablePlay("SELECT FOLDER");
       break;
-
-    case "error":
+    default:
       status.className = "update-status error";
       icon.textContent = "\u274C";
-      text.textContent = result.error || "Failed to check updates";
-      // Still allow play if game exists locally
-      enablePlay();
+      text.textContent = result.error || "Complete client verification failed.";
+      enableRecheck();
       break;
   }
+  await refreshProfileUI();
 }
 
 async function handlePlay() {
   if (isUpdating) return;
-
-  // If updates available, download first
-  if (currentUpdates && currentUpdates.length > 0) {
+  const selectedProfile = activeProfile;
+  if (currentUpdates?.length) {
     isUpdating = true;
     const btn = $("btn-play");
+    btn.disabled = true;
     btn.className = "btn-play updating";
-    $("btn-play-text").textContent = "UPDATING 0%";
+    $("btn-play-text").textContent = "INSTALLING 0%";
     $("progress-container").style.display = "block";
-
-    const result = await window.buns.downloadUpdates(currentUpdates);
-
+    let result;
+    try { result = await window.buns.downloadUpdates(currentUpdates); }
+    catch (error) { result = { success: false, error: error.message }; }
     $("progress-container").style.display = "none";
     isUpdating = false;
-
-    if (result.success) {
-      currentUpdates = null;
-      btn.className = "btn-play";
-      $("btn-play-text").textContent = "PLAY";
-      $("update-status").className = "update-status up-to-date";
-      $("update-text").textContent = "Updated successfully!";
-      // Launch after update
-      launchGame();
-    } else {
-      btn.className = "btn-play";
-      $("btn-play-text").textContent = "RETRY UPDATE";
-      $("update-text").textContent = result.error || "Update failed";
+    currentUpdates = null;
+    if (!result.success) {
+      $("update-text").textContent = result.error || "Complete client installation failed.";
       $("update-status").className = "update-status error";
+      enableRecheck();
+      return;
     }
-    return;
+    await refreshProfileUI();
+    if (selectedProfile !== activeProfile) return checkForUpdates();
+    $("update-text").textContent = `Complete client files verified (${result.verifiedFiles} files).`;
+    $("update-status").className = "update-status up-to-date";
   }
-
-  launchGame();
+  await launchGame();
 }
 
 async function launchGame() {
-  const result = await window.buns.launch();
+  $("btn-play").disabled = true;
+  $("btn-play-text").textContent = "VERIFYING / STARTING...";
+  let result;
+  try { result = await window.buns.launch(); }
+  catch (error) { result = { success: false, error: error.message }; }
   if (result.success) {
-    $("btn-play-text").textContent = "LAUNCHING...";
-    setTimeout(() => {
-      $("btn-play-text").textContent = "PLAY";
-    }, 3000);
+    // Actual process lifecycle events own the status text, not a fake timer.
+    enablePlay();
   } else {
-    $("btn-play-text").textContent = "PLAY";
-    $("update-text").textContent = result.error || "Failed to launch";
+    $("update-text").textContent = result.error || "Client process did not start.";
     $("update-status").className = "update-status error";
+    enableRecheck();
+  }
+}
+
+function renderLaunchStatus(data) {
+  const label = data.runner === "wine" ? "Wine host" : `${data.profile} launcher`;
+  if (data.state === "process-started") {
+    $("update-status").className = "update-status";
+    $("update-text").textContent = `${label} process started (PID ${data.pid}); login/world is not yet verified.`;
+  } else if (data.state === "error") {
+    $("update-status").className = "update-status error";
+    $("update-text").textContent = data.error;
+  } else if (data.state === "exited") {
+    $("update-status").className = data.code === 0 && !data.signal ? "update-status" : "update-status error";
+    $("update-text").textContent = `${data.profile} launcher process exited (${data.code ?? data.signal}).${data.error ? ` ${data.error}` : ""}`;
   }
 }
 
@@ -345,6 +353,7 @@ function enablePlay() {
   const btn = $("btn-play");
   btn.disabled = false;
   btn.className = "btn-play";
+  btn.onclick = handlePlay;
   $("btn-play-text").textContent = "PLAY";
 }
 
@@ -352,13 +361,22 @@ function enableUpdate() {
   const btn = $("btn-play");
   btn.disabled = false;
   btn.className = "btn-play updating";
+  btn.onclick = handlePlay;
   $("btn-play-text").textContent = "UPDATE & PLAY";
 }
 
-function disablePlay() {
+function disablePlay(label = "CLIENT NOT READY") {
   const btn = $("btn-play");
   btn.disabled = true;
-  $("btn-play-text").textContent = "SET GAME FOLDER";
+  $("btn-play-text").textContent = label;
+}
+
+function enableRecheck() {
+  const btn = $("btn-play");
+  btn.disabled = false;
+  btn.className = "btn-play";
+  btn.onclick = checkForUpdates;
+  $("btn-play-text").textContent = "CHECK FILES";
 }
 
 // ── News ──

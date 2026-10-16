@@ -1,14 +1,13 @@
-// ── Launcher client profiles (pure, Electron-free) ──
-// Stock path (BunsMS.exe, Ezorsia HD) is the default; Kaentake is opt-in and
-// lives in its own folder. The 3 Kaentake entries are normally hosted
-// (attribution to upstream iw2d/kaentake kept in the manifest as courtesy).
-// Entries with no URL stay verify-only as a fallback, never a policy gate.
+// Profile folders and complete-client manifest policy. Fresh installs use
+// Kaentake; explicit existing stock folders remain isolated rollback/testing
+// choices. A profile is never launchable from a partial patch manifest.
 "use strict";
+const { isIP } = require("node:net");
 
 const KAENTAKE_PORT = 8484;
 
 // Mirrors configKind selection in main.js; kept here so tests pin the sets.
-const KAENTAKE_EXCLUSIVE = ["Kaentake.exe", "Kaentake.dll", "Custom.wz"];
+const KAENTAKE_EXCLUSIVE = ["Kaentake.exe", "Kaentake.dll", "Custom.wz", "BunsMS.dll"];
 const KAENTAKE_BANNED = ["dinput8.dll", "EzorsiaV2_UI.wz"];
 
 const PROFILES = {
@@ -23,27 +22,9 @@ const PROFILES = {
     label: "Kaentake",
     exe: "Kaentake.exe",
     configKind: "kaentake", // [config] host/port
+    requiresElevation: true, // Pinned upstream executable manifest, not a generic troubleshooting suggestion.
     exclusiveFiles: KAENTAKE_EXCLUSIVE,
     bannedFiles: KAENTAKE_BANNED,
-    // Checked for guidance only (profile:deps); the launcher never downloads these.
-    requiredStockFiles: [
-      "MapleStory.exe",
-      "Canvas.dll",
-      "Gr2D_DX8.dll",
-      "ijl15.dll",
-      "bz32ex.dll",
-      "aossdk.dll",
-      "l3codeca.acm",
-      "ASPLnchr.exe",
-      "Base.wz",
-      "Character.wz",
-      "Effect.wz",
-      "Etc.wz",
-      "Item.wz",
-      "List.wz",
-      "Map.wz",
-      "Mob.wz",
-    ],
   },
 };
 
@@ -58,12 +39,54 @@ function filterManifest(files, activeProfile, hdMode) {
   });
 }
 
-// Stock writer, string-level twin of the existing writeServerHostToIni logic.
-function stampStockIni(iniText, host) {
-  if (/^ServerIP_Address=.*/m.test(iniText)) {
-    return iniText.replace(/^ServerIP_Address=.*/m, `ServerIP_Address=${host}`);
+// Every profile-matching file in a publisher-certified COMPLETE manifest is
+// required. A patch manifest is not a fresh-client dependency authority.
+function requiredClientFiles(manifest, profileId, hdMode) {
+  if (!PROFILES[profileId] || !Array.isArray(manifest?.files) ||
+      !Array.isArray(manifest.completeProfiles) || !manifest.completeProfiles.includes(profileId)) {
+    throw new Error(`A complete client manifest is not available for ${profileId}; this profile is not ready to install or launch.`);
   }
-  return iniText.replace(/^(\[general\])/m, `$1\nServerIP_Address=${host}`);
+  const files = filterManifest(manifest.files, profileId, hdMode);
+  const names = new Set();
+  for (const file of files) {
+    const name = String(file.name || "").replace(/\\/g, "/");
+    const invalidPart = name.split("/").some((part) => !part || part === "." || part === ".." ||
+      /[<>:"|?*\u0000-\u001f]|[. ]$/.test(part) ||
+      /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(part));
+    if (invalidPart || names.has(name.toLowerCase()) ||
+        !Number.isSafeInteger(file.size) || file.size <= 0 ||
+        !/^[a-f\d]{64}$/i.test(file.hash || "")) {
+      throw new Error(`Invalid or colliding file in complete client manifest: ${name || "<unnamed>"}`);
+    }
+    names.add(name.toLowerCase());
+    assertDownloadable(file);
+    const managedConfig = name.toLowerCase() === "config.ini" &&
+      file.configKind === PROFILES[profileId].configKind;
+    if ((file.mutable || file.configKind || name.toLowerCase() === "config.ini") && !managedConfig)
+      throw new Error(`Managed config ownership does not match ${profileId}: ${name}`);
+  }
+  const entryFiles = profileId === "kaentake"
+    ? ["MapleStory.exe", ...KAENTAKE_EXCLUSIVE, "config.ini"]
+    : [PROFILES[profileId].exe];
+  for (const name of entryFiles) {
+    if (!names.has(name.toLowerCase()))
+      throw new Error(`Complete ${profileId} manifest omits its required entry file: ${name}`);
+  }
+  return files.map((file) => ({
+    ...file,
+    mutable: file.configKind === PROFILES[profileId].configKind,
+  }));
+}
+
+// The IP-only Ezorsia field receives launch-time resolved IPv4, never host text.
+function stampStockIni(iniText, host) {
+  if (isIP(host) !== 4) throw new Error("Ezorsia requires a resolved IPv4 address.");
+  if (/^ServerIP_Address=.*/mi.test(iniText)) {
+    return iniText.replace(/^ServerIP_Address=.*/mi, `ServerIP_Address=${host}`);
+  }
+  if (/^\[general\]/mi.test(iniText))
+    return iniText.replace(/^(\[general\])/mi, `$1\nServerIP_Address=${host}`);
+  return `[general]\nServerIP_Address=${host}\n${iniText}`;
 }
 
 // Kaentake writer: [config] host/port, port pinned to KAENTAKE_PORT.
@@ -87,6 +110,12 @@ function stampKaentakeIni(iniText, host) {
   return `${ini}[config]\nhost=${host}\nport=${KAENTAKE_PORT}\n`;
 }
 
+function isProfileConfig(profileId, text) {
+  return profileId === "kaentake"
+    ? /^\[config\]\s*$/mi.test(text) && /^host=.+$/mi.test(text) && /^port=\d+\s*$/mi.test(text)
+    : /^\[general\]\s*$/mi.test(text) && /^ServerIP_Address=.+$/mi.test(text);
+}
+
 // Case-insensitive dir equality (Windows paths).
 function sameDir(a, b) {
   const norm = (s) => String(s || "").replace(/[\\/]+/g, "/").replace(/\/$/, "").toLowerCase();
@@ -100,41 +129,33 @@ function separationCheck({ dir, otherDir, profileId, present = [], kaentakeIniTe
     return { ok: false, reason: "Both profiles point at the same folder — Kaentake needs its own isolated folder." };
   }
   if (profileId === "kaentake") {
-    const banned = (present || []).filter((n) => KAENTAKE_BANNED.includes(n));
+    const banned = (present || []).filter((n) => KAENTAKE_BANNED.some((b) => b.toLowerCase() === n.toLowerCase()));
     if (banned.length > 0) {
       return {
         ok: false,
-        reason: `Kaentake folder must not contain: ${banned.join(", ")}. Use a clean folder with the stock v83 files + the 3 Kaentake assets only.`,
+        reason: `Kaentake folder must not contain: ${banned.join(", ")}. Select its isolated complete-client folder.`,
       };
     }
     if (/^\[general\]/m.test(kaentakeIniText || "")) {
       return {
-        ok: true,
-        warning: "config.ini looks like an Ezorsia config ([general]) — Kaentake reads [config] host/port and will ignore it.",
+        ok: false,
+        reason: "config.ini belongs to Ezorsia ([general]), not the isolated Kaentake profile.",
       };
     }
     return { ok: true };
   }
-  const stray = (present || []).filter((n) => KAENTAKE_EXCLUSIVE.includes(n));
+  const stray = (present || []).filter((n) => KAENTAKE_EXCLUSIVE.some((b) => b.toLowerCase() === n.toLowerCase()));
   if (stray.length > 0) {
-    return { ok: true, warning: `Stock folder contains Kaentake files (inert for BunsMS.exe): ${stray.join(", ")}.` };
+    return { ok: false, reason: `Stock rollback folder contains Kaentake runtime files: ${stray.join(", ")}. Keep the profiles in separate folders.` };
   }
   return { ok: true };
 }
 
-function missingStockDeps(present, required) {
-  const have = new Set(present || []);
-  return (required || []).filter((n) => !have.has(n));
-}
 
-// Downloader guard (fallback only): entries with no URL have nothing to fetch.
-// Normally-hosted entries pass through; missing-URL entries report the upstream
-// release zip as the copy source and the launcher hash-verifies the copy.
+// A complete install never substitutes manual-copy instructions for artifacts.
 function assertDownloadable(file) {
   if (!file.url) {
-    throw new Error(
-      `${file.name} has no download URL: copy it from the upstream iw2d/kaentake v3.4.1 release zip — the launcher will hash-verify it.`
-    );
+    throw new Error(`The complete client manifest has no download URL for ${file.name}.`);
   }
 }
 
@@ -148,6 +169,7 @@ module.exports = {
   stampKaentakeIni,
   sameDir,
   separationCheck,
-  missingStockDeps,
+  requiredClientFiles,
+  isProfileConfig,
   assertDownloadable,
 };

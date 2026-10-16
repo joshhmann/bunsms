@@ -64,6 +64,16 @@ jobs:
             client/build-kaentake/Release/Custom.wz
             client/build-kaentake/kaentake-build.json
 
+      - name: Collect genuine Microsoft app-local x86 CRT
+        shell: pwsh
+        run: ./client/tools/collect-msvc-runtime.ps1
+
+      - name: Publish required x86 runtime dependencies
+        uses: actions/upload-artifact@v4
+        with:
+          name: MSVC-x86-runtime
+          path: client/msvc-x86-runtime/*
+
       - name: Opcode drift gate
         run: python tools/check_opcodes.py
         working-directory: client
@@ -97,6 +107,10 @@ jobs:
         with:
           name: BunsMS-dll
           path: native-companion
+      - uses: actions/download-artifact@v4
+        with:
+          name: MSVC-x86-runtime
+          path: native-crt
       - name: Capture actual native Windows startup
         shell: pwsh
         env:
@@ -110,6 +124,7 @@ jobs:
             -BaselineFilesBaseUrl $env:NATIVE_BASELINE_FILES_URL `
             -KaentakeArtifact native-runtime `
             -CompanionArtifact native-companion `
+            -RuntimeArtifact native-crt `
             -OutputDirectory native-smoke-output
       - name: Publish actual native startup evidence
         if: always()

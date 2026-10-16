@@ -8,7 +8,8 @@ const {
   stampStockIni,
   stampKaentakeIni,
   separationCheck,
-  missingStockDeps,
+  requiredClientFiles,
+  isProfileConfig,
   KAENTAKE_PORT,
 } = require("../src/profiles.js");
 
@@ -115,27 +116,46 @@ const ezorsiaTemplate = fs.readFileSync(
     present: ["Kaentake.exe", "Kaentake.dll", "Custom.wz", "MapleStory.exe"],
   });
   assert.equal(r3.ok, true);
-  // Foreign Ezorsia ini in kaentake dir = warning, not error.
+  // Foreign Ezorsia ini in Kaentake dir is rejected, not silently replaced.
   const r4 = separationCheck({
     dir: "C:\\KaentakeMS", otherDir: "C:\\BunsMS", profileId: "kaentake",
     present: [], kaentakeIniText: "[general]\nServerIP_Address=1.2.3.4\n",
   });
-  assert.equal(r4.ok, true);
-  assert.ok(r4.warning);
-  // Stock dir with Kaentake files = soft warning only.
+  assert.equal(r4.ok, false);
+  assert.match(r4.reason, /Ezorsia/);
+  // Stock rollback dir must not mix Kaentake runtime files.
   const r5 = separationCheck({
     dir: "C:\\BunsMS", otherDir: "C:\\KaentakeMS", profileId: "stock",
     present: ["BunsMS.exe", "Kaentake.exe"],
   });
-  assert.equal(r5.ok, true);
-  assert.ok(r5.warning);
+  assert.equal(r5.ok, false);
+  assert.match(r5.reason, /Kaentake/);
 }
 
-// ── missingStockDeps ──
+// Complete manifests, not the historical patch list, authorize fresh installs.
 {
-  const required = ["MapleStory.exe", "Canvas.dll"];
-  assert.deepEqual(missingStockDeps(["MapleStory.exe", "Canvas.dll"], required), []);
-  assert.deepEqual(missingStockDeps(["MapleStory.exe"], required), ["Canvas.dll"]);
+  const file = (name, extra = {}) => ({
+    name, profiles: ["kaentake"], size: 123, hash: "a".repeat(64),
+    url: `https://example.test/${name}`, ...extra,
+  });
+  const complete = {
+    completeProfiles: ["kaentake"],
+    files: ["MapleStory.exe", "Kaentake.exe", "Kaentake.dll", "Custom.wz", "BunsMS.dll"]
+      .map((name) => file(name))
+      .concat(file("config.ini", { configKind: "kaentake" })),
+  };
+  assert.equal(requiredClientFiles(complete, "kaentake", false).length, 6);
+  assert.equal(requiredClientFiles(complete, "kaentake", false).at(-1).mutable, true);
+  assert.throws(() => requiredClientFiles(manifest, "kaentake", false), /complete client manifest/);
+  for (const name of ["../outside.dll", "/outside.dll", "C:/outside.dll", "NUL.dll", "dir./file.dll"]) {
+    assert.throws(() => requiredClientFiles({ ...complete, files: [...complete.files, file(name)] }, "kaentake", false), /Invalid or colliding/);
+  }
+  assert.throws(() => requiredClientFiles({ ...complete, files: [...complete.files, file("KAENTAKE.DLL")] }, "kaentake", false), /colliding/);
+  assert.throws(() => requiredClientFiles({ ...complete, files: complete.files.filter((entry) => entry.name !== "BunsMS.dll") }, "kaentake", false), /required entry/);
+  assert.throws(() => requiredClientFiles({ ...complete, files: [...complete.files, file("other.ini", { mutable: true })] }, "kaentake", false), /ownership/);
+  assert.equal(isProfileConfig("kaentake", "[config]\r\nhost=buns.asslorde.com\r\nport=8484\r\nwidth=1366\r\n"), true);
+  assert.equal(isProfileConfig("kaentake", "[general]\nServerIP_Address=127.0.0.1\n"), false);
+  assert.throws(() => stampStockIni(ezorsiaTemplate, "buns.asslorde.com"), /resolved IPv4/);
 }
 
 // ── downloader guard (fallback only): URL-less entries never reach downloadFile ──
