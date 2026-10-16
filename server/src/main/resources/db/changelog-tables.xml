@@ -125,4 +125,8 @@
         <sqlFile path="db/tables/030-buyback-tints.sql" splitStatements="true" stripComments="true"/>
     </changeSet>
 
+    <changeSet id="31" author="solobots">
+        <sqlFile path="db/tables/031-buyback-credit.sql" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
 </databaseChangeLog>

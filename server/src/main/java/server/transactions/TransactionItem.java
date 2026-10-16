@@ -12,6 +12,42 @@ public class TransactionItem {
     private int flag;
     private long expiration;
     private String giftFrom;
+    private int sn;
+    private short effTintHue;
+    private byte effTintChroma;
+    private byte effTintBright;
+
+    public int getSN() {
+        return sn;
+    }
+
+    public void setSN(int sn) {
+        this.sn = sn;
+    }
+
+    public short getEffTintHue() {
+        return effTintHue;
+    }
+
+    public void setEffTintHue(short hue) {
+        effTintHue = hue;
+    }
+
+    public byte getEffTintChroma() {
+        return effTintChroma;
+    }
+
+    public void setEffTintChroma(byte chroma) {
+        effTintChroma = chroma;
+    }
+
+    public byte getEffTintBright() {
+        return effTintBright;
+    }
+
+    public void setEffTintBright(byte bright) {
+        effTintBright = bright;
+    }
 
     public int getTransactionItemId() {
         return transactionItemId;

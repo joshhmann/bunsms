@@ -30,7 +30,6 @@ import constants.id.ItemId;
 import constants.inventory.ItemConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import soloMapling.Casino.CasinoChipConfig;
 import tools.DatabaseConnection;
 import tools.PacketCreator;
 
@@ -85,6 +84,12 @@ public class Shop {
     }
 
     public void buy(Client c, short slot, int itemId, short quantity) {
+        synchronized (c.getPlayer()) {
+            buyLocked(c, slot, itemId, quantity);
+        }
+    }
+
+    private void buyLocked(Client c, short slot, int itemId, short quantity) {
         ShopItem item = findBySlot(slot);
         if (item != null) {
             if (item.getItemId() != itemId) {
@@ -199,62 +204,47 @@ public class Shop {
             return;
         }
 
-        Item item = c.getPlayer().getInventory(type).getItem(slot);
-        if (canSell(item, quantity)) {
-            quantity = getSellingQuantity(item, quantity);
-            // Snapshot a sell-count copy for the buyback ledger BEFORE the removal mutates the live item.
-            Item ledgerCopy = item.copy();
-            if (!(ledgerCopy instanceof client.inventory.Equip)) {
-                ledgerCopy.setQuantity(quantity);
-            }
-            InventoryManipulator.removeFromSlot(c, type, (byte) slot, quantity, false);
-
-            int recvMesos;
-            // Casino chip override: sell price = buy price (lossless exchange)
-            if (CasinoChipConfig.isCasinoChip(item.getItemId())) {
-                recvMesos = CasinoChipConfig.getChipPrice(item.getItemId()) * quantity;
-            } else {
-                ItemInformationProvider ii = ItemInformationProvider.getInstance();
-                recvMesos = ii.getPrice(item.getItemId(), quantity);
-            }
-            if (recvMesos > 0) {
-                c.getPlayer().gainMeso(recvMesos, false);
-            }
-            c.sendPacket(PacketCreator.shopTransaction((byte) 0x8));
-            recordSellForBuyback(c, ledgerCopy);
-        } else {
+        if (type == null || slot < 1 || type == InventoryType.UNDEFINED || type == InventoryType.EQUIPPED || type == InventoryType.CANHOLD) {
             c.sendPacket(PacketCreator.shopTransaction((byte) 0x5));
-        }
-    }
-
-    /**
-     * Records one NPC sell as a buyback-eligible transaction. Self-contained:
-     * no-op when {@code MAXIMUM_TRANSACTIONS_FOR_BUYBACK} is 0 (default) or
-     * the ledger tables are not migrated yet.
-     *
-     * <p>Deliberately fail-open: a ledger failure never blocks or rolls back
-     * the sell itself (the player already received mesos and lost the item —
-     * failing the sale after the fact would be worse than a missing ledger
-     * row). The failure is LOUD (warn-level log with the exception) so a
-     * broken ledger is noticed, never silent.
-     */
-    private static void recordSellForBuyback(Client c, Item sold) {
-        if (config.YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK <= 0) {
             return;
         }
-        try {
-            int transactionId = server.transactions.TransactionService.createTransaction(c.getPlayer().getId());
-            if (transactionId < 0) {
-                return;
+        synchronized (c.getPlayer()) {
+            Item ledgerCopy;
+            Item originalItem;
+            client.inventory.Inventory inventory = c.getPlayer().getInventory(type);
+            inventory.lockInventory();
+            try {
+                Item item = inventory.getItem(slot);
+                if (!canSell(item, quantity)) {
+                    c.sendPacket(PacketCreator.shopTransaction((byte) 0x5));
+                    return;
+                }
+                quantity = getSellingQuantity(item, quantity);
+                originalItem = item;
+                ledgerCopy = item.copy();
+                ledgerCopy.setGiftFrom(item.getGiftFrom());
+                ledgerCopy.setSN(item.getSN());
+                if (ledgerCopy instanceof client.inventory.Equip equip && item instanceof client.inventory.Equip original) {
+                    equip.setRingId(original.getRingId());
+                }
+                ledgerCopy.setQuantity(quantity);
+            } finally {
+                inventory.unlockInventory();
             }
-            server.transactions.TransactionService.createTransactionItems(transactionId,
-                    server.transactions.TransactionService.convertItemsToTransactionItems(java.util.Collections.singletonList(sold)));
-        } catch (Exception e) {
-            log.warn("Buyback ledger record failed, sell still completed", e);
+            int credit = server.transactions.TransactionService.sellItems(c.getPlayer(), type,
+                    java.util.Collections.singletonList(ledgerCopy), java.util.Collections.singletonList(originalItem));
+            c.sendPacket(PacketCreator.shopTransaction(credit >= 0 ? (byte) 0x8 : (byte) 0x5));
         }
     }
 
+
     public void recharge(Client c, short slot) {
+        synchronized (c.getPlayer()) {
+            rechargeLocked(c, slot);
+        }
+    }
+
+    private void rechargeLocked(Client c, short slot) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         Item item = c.getPlayer().getInventory(InventoryType.USE).getItem(slot);
         if (item == null || !ItemConstants.isRechargeable(item.getItemId())) {
