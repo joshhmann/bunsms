@@ -1,0 +1,2 @@
+# Ordered native patches must match the LF-pinned FetchContent source on Windows.
+client/kaentake/patches/*.patch text eol=lf
