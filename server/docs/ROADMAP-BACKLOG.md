@@ -115,6 +115,23 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
   Parallel investigation, no build/deploy.
   Dependencies: None (parallel). Informs: ticket 14, tickets 11–13 estimates.
 
+- [x] **Ticket 17 — Self-hosted asset serving (R2 replacement)** — Owner: selfhost-assets-spec
+  Scope: IMPLEMENTED on branch `selfhost-assets` (2026-10-16, actually
+  exercised — not a status claim): single manifest authority (19 files,
+  `?profile=` server-side filter, atomic writes), Range/206/416/HEAD download
+  route + `/client/*` static on .164 (systemd `buns-web.service`,
+  `CLIENT_ASSETS_DIR=/opt/buns/client-assets`), public Caddy rules on .70
+  (`/client/*`, `/api/launcher/manifest|news`, `/api/server` only — admin/ops
+  stay LAN-only), all publish flows migrated off R2 (no Fly restart calls;
+  game-server restart is owner-manual on LXC), seed 19/19 hash-verified from
+  R2 bytes + local Kaentake triple, canonical `BunsMS.exe`/`config.ini`
+  object names (bytes preserved). R2 objects NOT deleted (rollback standby).
+  Proven: tsc clean, launcher profiles tests pass, 22-assertion asset smoke,
+  live 200/206/416/HEAD/traversal on real server.py, remote 19/19 sha256.
+  Remaining: dashboard rebuild + manifest-publish cutover on .164 (in
+  progress), then soak + retire. Ticket 15's "upload to R2" scope is
+  superseded by this ticket — NX/community packs stage to the asset dir.
+
 ## Dependency graph (summary)
 
 - 1 → 2 → (3 ship, 10 testing, 15).
@@ -123,3 +140,4 @@ Kaentake-style injector adopt-or-not gates ALL DLL-shaped client work
 - Step-0 injector decision → 3 window, 10 window, 11 → 12 → 13 (last).
 - 14 smoke → 11/12-client/13-client. 16 informs 14.
 - 15 after 2 + 4 + WZ story settled.
+- 17 (selfhost) done first: publish flows for 3/4/9/11-13 target the asset dir, not R2.
