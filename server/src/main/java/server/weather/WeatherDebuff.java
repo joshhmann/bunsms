@@ -118,7 +118,7 @@ public final class WeatherDebuff {
         if (chr == null || !chr.isLoggedinWorld() || !chr.isAlive()) {
             return;
         }
-        if (!slows(chr.getMapId())) {
+        if (!WeatherCombat.gameplayEnabled() || !slows(chr.getMapId())) {
             return;
         }
         try {
