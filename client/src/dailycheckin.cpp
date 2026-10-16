@@ -163,6 +163,10 @@ public:
     IWzFontPtr   m_pFontAccent;   // amber bold — tooltip meso line
     IWzFontPtr   m_pFontShadow;   // black bold — 1px text shadow
     int          m_hoverDay;      // day (1..28) currently hovered, or -1
+    // Tooltip line cache: split ONCE per hover entry / snapshot refresh into a
+    // reused member (no per-draw vector + string copies). m_tipDay tags content.
+    std::vector<std::string> m_tipLines;
+    int          m_tipDay;        // day m_tipLines was prepared for, or -1
 
     RECT m_rcClose;
 
@@ -293,24 +297,50 @@ public:
         } catch (...) {}
     }
 
+    // Split-once: refresh m_tipLines for `day` (reuses capacity after warmup).
+    void PrepareTipLines(int day) {
+        m_tipLines.clear();
+        m_tipDay = -1;
+        if (day < 1 || day > kDays) return;
+        const std::string& s = g_state.tip[day - 1];
+        if (s.empty()) return;
+        size_t st = 0;
+        while (st <= s.size()) {
+            size_t nl = s.find('\n', st);
+            if (nl == std::string::npos) { m_tipLines.push_back(s.substr(st)); break; }
+            m_tipLines.push_back(s.substr(st, nl - st));
+            st = nl + 1;
+        }
+        if (!m_tipLines.empty()) m_tipDay = day;
+    }
+
     // Per-day reward breakdown tooltip: dark navy panel, amber title bar, gold separator,
     // gold (shadowed) header + white/amber body lines. Clamped on-screen.
     void DrawTooltip(IWzCanvasPtr c, int day) {
         if (!c || day < 1 || day > kDays) return;
-        const std::string& s = g_state.tip[day - 1];
-        if (s.empty()) return;
+        // Fast path: hover-entry preparation already split these lines.
+        // Fallback splits inline (snapshot raced hover) — same pixels, one draw.
+        const std::vector<std::string>* pLines = nullptr;
+        std::vector<std::string> scratch;
+        if (m_tipDay == day && !m_tipLines.empty()) {
+            pLines = &m_tipLines;
+        } else {
+            const std::string& s = g_state.tip[day - 1];
+            if (s.empty()) return;
+            size_t st = 0;
+            while (st <= s.size()) {
+                size_t nl = s.find('\n', st);
+                if (nl == std::string::npos) { scratch.push_back(s.substr(st)); break; }
+                scratch.push_back(s.substr(st, nl - st));
+                st = nl + 1;
+            }
+            if (scratch.empty()) return;
+            pLines = &scratch;
+        }
+        const std::vector<std::string>& lines = *pLines;
         IWzFontPtr titleF = m_pFontTitle ? m_pFontTitle : m_pFont;
         IWzFontPtr bodyF  = m_pFontBody  ? m_pFontBody  : m_pFont;
         if (!titleF || !bodyF) return;
-
-        std::vector<std::string> lines;
-        size_t st = 0;
-        while (st <= s.size()) {
-            size_t nl = s.find('\n', st);
-            if (nl == std::string::npos) { lines.push_back(s.substr(st)); break; }
-            lines.push_back(s.substr(st, nl - st));
-            st = nl + 1;
-        }
         if (lines.empty()) return;
 
         const int charW = 7, lineH = 16, padX = 9, titleH = 18;
@@ -397,7 +427,7 @@ static CUIDailyCheckin* EnsureWindow() {
 
 CUIDailyCheckin::CUIDailyCheckin(int nLeft, int nTop)
     : m_screenX(nLeft), m_screenY(nTop), m_nCloseHover(0),
-      m_bDragging(0), m_nDragAnchorX(0), m_nDragAnchorY(0), m_hoverDay(-1) {
+      m_bDragging(0), m_nDragAnchorX(0), m_nDragAnchorY(0), m_hoverDay(-1), m_tipDay(-1) {
     m_rcClose = { kBtCloseX, kBtCloseY, kBtCloseX + kBtCloseW, kBtCloseY + kBtCloseH };
     ms_pInstance = this;
     LoadSprites();
@@ -494,13 +524,13 @@ int CUIDailyCheckin::OnMouseMove(int rx, int ry) {
     int hov = PtInRect(&m_rcClose, pt) ? 1 : 0;
     if (hov != m_nCloseHover) { m_nCloseHover = hov; InvalidateRect(nullptr); }
     int hd = HitDay(rx, ry);
-    if (hd != m_hoverDay) { m_hoverDay = hd; InvalidateRect(nullptr); }
+    if (hd != m_hoverDay) { m_hoverDay = hd; PrepareTipLines(hd); InvalidateRect(nullptr); }
     return 1;
 }
 
 void CUIDailyCheckin::OnMouseEnter(int bEnter) {
     CWnd::OnMouseEnter(bEnter);
-    if (!bEnter) { m_nCloseHover = 0; m_hoverDay = -1; InvalidateRect(nullptr); }
+    if (!bEnter) { m_nCloseHover = 0; m_hoverDay = -1; m_tipDay = -1; m_tipLines.clear(); InvalidateRect(nullptr); }
 }
 
 // Parse RESP_SNAPSHOT into g_state, open the window if needed, pop a confirmation on claim.
@@ -534,7 +564,7 @@ static void HandleSnapshot(CInPacket* pPacket) {
     g_state.ready = true;
 
     CUIDailyCheckin* w = EnsureWindow();
-    if (w) w->InvalidateRect(nullptr);
+    if (w) { w->m_tipDay = -1; w->PrepareTipLines(w->m_hoverDay); w->InvalidateRect(nullptr); }
 
     if (justClaimed >= 1 && justClaimed <= kDays) {
         play_ui_sound(L"BtMouseClick");
@@ -577,15 +607,31 @@ static bool DailyCheckin_Route(unsigned short opcode, CInPacket* pPacket) {
 
 // Install entry — registers the 0x17C route with the single dispatcher
 // (spec §3.0); no Detours beyond the dispatcher route.
-void AttachDailyCheckinMod() {
-    RegisterPacketRoute(DailyCheckin::kOpcode_Recv, &DailyCheckin::DailyCheckin_Route);
+bool AttachDailyCheckinMod() {
+    return RegisterPacketRoute(DailyCheckin::kOpcode_Recv, &DailyCheckin::DailyCheckin_Route);
 }
 
-// Per-frame: invalidate the open window so the claimable-blink animates.
-// Main thread only; never touches packet state beyond what the receive
-// thread already published (spec §3.0 thread split).
+// Per-frame: invalidate ONLY when the claimable-blink phase flipped and a
+// claimable day exists (28 int compares, zero alloc). No claimable day => the
+// grid is static and hover/mouse paths already invalidate on change —
+// invalidating every redraw would be pure overdraw. Blink correctness kept:
+// phase tracked across ticks, flip + claimable => redraw.
+// Main thread only; reads receive-published state, never touches packets.
 void DailyCheckin_Tick() {
     using namespace DailyCheckin;
-    if (CUIDailyCheckin::ms_pInstance)
-        CUIDailyCheckin::ms_pInstance->InvalidateRect(nullptr);
+    CUIDailyCheckin* w = CUIDailyCheckin::ms_pInstance;
+    if (!w)
+        return;
+    bool claimable = false;
+    for (int d = 1; d <= kDays; ++d) {
+        if (DayClaimable(d)) { claimable = true; break; }
+    }
+    if (!claimable)
+        return;
+    static DWORD s_lastPhase = 0;
+    DWORD phase = GetTickCount() / 400;
+    if (phase != s_lastPhase) {
+        s_lastPhase = phase;
+        w->InvalidateRect(nullptr);
+    }
 }

@@ -25,4 +25,4 @@ bool RegisterPacketRoute(unsigned short opcode, PacketRouteFn fn);
 
 // Install the single ProcessPacket hook. Called FIRST from
 // AttachSystemHooks(), before any feature attach.
-void InstallDispatcher();
+bool InstallDispatcher();

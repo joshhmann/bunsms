@@ -109,8 +109,10 @@ void CapsSendAnnounce() {
         SendAnnounceThroughOrig(sock);
 }
 
-void AttachCapsMod() {
-    RegisterPacketRoute(caps::kAckOpcode, &CapsAck_Route);
-    ATTACH_HOOK(g_ClearCtxOrig, ClearCtx_hook);
-    ATTACH_HOOK(g_SendPacketOrig, SendPacket_hook);
+bool AttachCapsMod() {
+    if (!RegisterPacketRoute(caps::kAckOpcode, &CapsAck_Route))
+        return false;
+    if (!ATTACH_HOOK(g_ClearCtxOrig, ClearCtx_hook))
+        return false;
+    return ATTACH_HOOK(g_SendPacketOrig, SendPacket_hook);
 }

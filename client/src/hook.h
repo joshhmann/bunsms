@@ -51,7 +51,7 @@
 
 
 // called in injector.cpp -> DllMain
-void AttachSystemHooks();
+bool AttachSystemHooks();
 
 // Feature attach entries, installed from system.cpp in spec §2.3 order.
 void AttachDailyCheckinMod();

@@ -18,6 +18,6 @@ void __cdecl Redraw_hook() {
 
 } // namespace
 
-void InstallTick() {
-    ATTACH_HOOK(g_RedrawOrig, Redraw_hook);
+bool InstallTick() {
+    return ATTACH_HOOK(g_RedrawOrig, Redraw_hook);
 }

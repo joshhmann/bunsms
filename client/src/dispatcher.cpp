@@ -62,6 +62,6 @@ bool RegisterPacketRoute(unsigned short opcode, PacketRouteFn fn) {
     return true;
 }
 
-void InstallDispatcher() {
-    ATTACH_HOOK(g_ProcessPacketOrig, ProcessPacket_hook);
+bool InstallDispatcher() {
+    return ATTACH_HOOK(g_ProcessPacketOrig, ProcessPacket_hook);
 }
