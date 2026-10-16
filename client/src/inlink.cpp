@@ -66,7 +66,16 @@ IUnknownPtr* __cdecl get_unknown_hook(IUnknownPtr* result, Ztl_variant_t& v) {
     return result;
 }
 
+// Co-load ownership rule: Kaentake hooks this same pair (its inlink does
+// everything this file does, plus the raw_Serialize half). If Kaentake.dll
+// is already loaded in-process, SKIP both hooks and ride its link
+// resolution — double-Detour would run HandleLinkProperty twice on the
+// same canvas. Stock-profile loads (no Kaentake) install ours.
 void AttachInlinkMod() {
+    if (GetModuleHandleA("Kaentake.dll") != nullptr) {
+        DEBUG_MESSAGE("inlink: Kaentake.dll present, deferring get_unknown pair");
+        return;
+    }
     ATTACH_HOOK(g_GetUnknownOrig, get_unknown_hook);
     ATTACH_HOOK(g_VariantGetUnknownOrig, VariantGetUnknown_hook);
 }
