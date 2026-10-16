@@ -22,28 +22,6 @@ $report = [ordered]@{
 }
 $script:snapshotIndex = 0
 
-function Measure-PublicPorts {
-    $measurements = foreach ($port in @(8484, 7575, 7576, 7577)) {
-        $row = [ordered]@{ host = 'buns.asslorde.com'; port = $port; connected = $false; greetingHex = ''; error = $null }
-        $client = [Net.Sockets.TcpClient]::new()
-        try {
-            $row.addresses = @([Net.Dns]::GetHostAddresses($row.host) | ForEach-Object IPAddressToString)
-            if (-not $client.ConnectAsync($row.host, $port).Wait(5000)) { throw 'TCP connect timed out after 5000ms' }
-            $row.connected = $client.Connected
-            $stream = $client.GetStream(); $stream.ReadTimeout = 2000
-            $buffer = [byte[]]::new(258)
-            try {
-                $count = $stream.Read($buffer, 0, $buffer.Length)
-                if ($count -gt 0) { $row.greetingHex = [Convert]::ToHexString($buffer, 0, $count) }
-                $row.greetingBytes = $count
-            } catch { $row.greetingReadError = $_.Exception.Message }
-        } catch { $row.error = $_.Exception.Message }
-        finally { $client.Dispose() }
-        [pscustomobject]$row
-    }
-    $measurements | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $OutputDirectory 'public-tcp.json')
-    return @($measurements)
-}
 
 function Save-Screenshot([int]$X, [int]$Y, [int]$Width, [int]$Height, [string]$Path) {
     if ($Width -le 0 -or $Height -le 0) { throw 'Window has no drawable client area' }
@@ -102,7 +80,7 @@ function Save-NativeSnapshot([int[]]$Ids) {
 }
 
 try {
-    $report.publicTcp = Measure-PublicPorts
+    $report.publicAccess = 'Activation deferred by user; unchanged public ports are not re-probed'
     if ($BaselineUrl.Scheme -ne 'https' -or $BaselineFilesBaseUrl.Scheme -ne 'https') {
         throw 'Native baseline provenance and bytes must use explicit SHA256-pinned HTTPS URLs'
     }

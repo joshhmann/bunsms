@@ -63,6 +63,13 @@ CI artifact contains only `Kaentake.exe`, `Kaentake.dll`, `Custom.wz`, and
 the source/patch provenance JSON. Renderer build side-outputs are not runtime
 replacements and must not overwrite the verified stock engine DLLs.
 
+The native default host is `buns.asslorde.com`. The existing Nexon-only
+provider redirect resolves a configured hostname to IPv4 once per game process,
+outside loader lock; explicit IPv4 QA overrides retain their precedence.
+Resolution failure returns a Winsock error rather than connecting to the
+original Nexon address or silently selecting a LAN host. Non-Nexon destinations
+and the upstream login-port/channel handling are unchanged.
+
 Actual Windows startup capture is an **explicit manual** `client.yml`
 dispatch with `native_smoke=true`, `native_baseline_url` pointing to an
 unpromoted complete native provenance JSON (`files`: `name`, `sha256`, `size`),
@@ -75,8 +82,8 @@ OutputDebugString capture, without attaching a debugger. It records child PIDs,
 native initialization/ACK messages, natural exit codes, HWND/child text, actual client-area screenshots,
 and explicitly labeled controller cleanup. A black window or DLL load alone
 is not a pass; an ACK absent before credentials is recorded as absent, not
-invented. The same runner makes read-only public TCP/greeting measurements
-for `buns.asslorde.com:8484,7575-7577` without credentials or port changes.
+invented. Public port activation is intentionally deferred; these captures do
+not re-probe unchanged public ports or substitute a LAN/VPN default.
 Hardware/desktop/DX8 failures remain failed captures with their real
 artifacts; compilation is never substituted for UI or feature proof.
 

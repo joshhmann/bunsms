@@ -97,7 +97,7 @@ jobs:
         with:
           name: BunsMS-dll
           path: native-companion
-      - name: Capture actual native Windows startup and public TCP vantage
+      - name: Capture actual native Windows startup
         shell: pwsh
         env:
           NATIVE_BASELINE_URL: ${{ inputs.native_baseline_url }}

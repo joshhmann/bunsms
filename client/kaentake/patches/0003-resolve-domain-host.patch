@@ -1,0 +1,81 @@
+--- a/src/constants.h
++++ b/src/constants.h
+@@ -6,7 +6,7 @@
+ 
+ #define CONSTANTS_CENTER_STATUSBAR FALSE
+ 
+-#define CONSTANTS_DEFAULT_HOST     "127.0.0.1"
++#define CONSTANTS_DEFAULT_HOST     "buns.asslorde.com"
+ #define CONSTANTS_USE_COMMAND_LINE TRUE
+ #define CONSTANTS_USE_CONFIG_FILE  TRUE
+ 
+--- a/src/system.cpp
++++ b/src/system.cpp
+@@ -134,19 +134,62 @@
+     "63.251.217.4",
+ };
+ 
++struct ServerAddress {
++    IN_ADDR address{};
++    int error = 0;
++};
++
++static const ServerAddress& ResolveServerAddress() {
++    // Configuration is fixed before hooks attach. Resolve once per process,
++    // outside DllMain; literal QA overrides do not allocate resolver results.
++    static const ServerAddress resolved = [] {
++        ServerAddress server;
++        const char* host = g_sServerHost ? g_sServerHost : CONSTANTS_DEFAULT_HOST;
++        if (InetPtonA(AF_INET, host, &server.address) == 1) {
++            return server;
++        }
++        ADDRINFOA hints{};
++        hints.ai_family = AF_INET;
++        hints.ai_socktype = SOCK_STREAM;
++        hints.ai_protocol = IPPROTO_TCP;
++        ADDRINFOA* results = nullptr;
++        server.error = getaddrinfo(host, nullptr, &hints, &results);
++        if (!server.error) {
++            if (results && results->ai_addrlen >= sizeof(sockaddr_in)) {
++                server.address = reinterpret_cast<const sockaddr_in*>(results->ai_addr)->sin_addr;
++            } else {
++                server.error = WSAHOST_NOT_FOUND;
++            }
++        }
++        if (results) freeaddrinfo(results);
++        return server;
++    }();
++    return resolved;
++}
++
+ int WSPAPI WSPConnect_hook(SOCKET s, const struct sockaddr FAR* name, int namelen, LPWSABUF lpCallerData, LPWSABUF lpCalleeData, LPQOS lpSQOS, LPQOS lpGQOS, LPINT lpErrno) {
++    if (!name || namelen < sizeof(sockaddr_in) || name->sa_family != AF_INET) {
++        return g_ProcTable.lpWSPConnect(s, name, namelen, lpCallerData, lpCalleeData, lpSQOS, lpGQOS, lpErrno);
++    }
++    const auto* original = reinterpret_cast<const sockaddr_in*>(name);
+     char sName[INET_ADDRSTRLEN];
+-    InetNtopA(AF_INET, &((sockaddr_in*)name)->sin_addr, sName, INET_ADDRSTRLEN);
++    InetNtopA(AF_INET, &original->sin_addr, sName, INET_ADDRSTRLEN);
+     for (auto sAddress : g_asOriginalAddress) {
+         if (strcmp(sName, sAddress)) {
+             continue;
+         }
+-        g_uNexonAddress = ((sockaddr_in*)name)->sin_addr.S_un.S_addr;
+-        InetPtonA(AF_INET, g_sServerHost ? g_sServerHost : CONSTANTS_DEFAULT_HOST, &((sockaddr_in*)name)->sin_addr.S_un.S_addr);
++        const auto& server = ResolveServerAddress();
++        if (server.error) {
++            *lpErrno = server.error;
++            return SOCKET_ERROR;
++        }
++        sockaddr_in redirected = *original;
++        g_uNexonAddress = original->sin_addr.S_un.S_addr;
++        redirected.sin_addr = server.address;
+         if (g_nServerPort) {
+-            ((sockaddr_in*)name)->sin_port = htons(static_cast<u_short>(g_nServerPort));
++            redirected.sin_port = htons(static_cast<u_short>(g_nServerPort));
+         }
+-        break;
++        return g_ProcTable.lpWSPConnect(s, reinterpret_cast<const sockaddr*>(&redirected), sizeof(redirected), lpCallerData, lpCalleeData, lpSQOS, lpGQOS, lpErrno);
+     }
+     return g_ProcTable.lpWSPConnect(s, name, namelen, lpCallerData, lpCalleeData, lpSQOS, lpGQOS, lpErrno);
+ }
