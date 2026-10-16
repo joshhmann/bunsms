@@ -1,0 +1,51 @@
+From f964844adbf1f35237f417787357a2c69b9e9430 Mon Sep 17 00:00:00 2001
+From: ie <ie@local>
+Date: Fri, 16 Oct 2026 03:29:23 -0700
+Subject: [PATCH] slot24
+
+---
+ src/client/Character/Inventory/Inventory.cpp | 6 +++---
+ src/client/IO/UITypes/UIItemInventory.cpp    | 4 ++--
+ 2 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/src/client/Character/Inventory/Inventory.cpp b/src/client/Character/Inventory/Inventory.cpp
+index c00243c..b2bf94b 100644
+--- a/src/client/Character/Inventory/Inventory.cpp
++++ b/src/client/Character/Inventory/Inventory.cpp
+@@ -287,15 +287,15 @@ namespace jrc
+ 
+     int16_t Inventory::find_free_slot(InventoryType::Id type) const
+     {
+-        int16_t counter = 1;
++        int32_t counter = 1;
+         for (auto& iter : inventories[type])
+         {
+             if (iter.first != counter)
+-                return counter;
++                return static_cast<int16_t>(counter);
+ 
+             counter++;
+         }
+-        return counter < slotmaxima[type] ? counter : 0;
++        return counter <= slotmaxima[type] ? static_cast<int16_t>(counter) : 0;
+     }
+ 
+     int16_t Inventory::find_item(InventoryType::Id type, int32_t itemid) const
+diff --git a/src/client/IO/UITypes/UIItemInventory.cpp b/src/client/IO/UITypes/UIItemInventory.cpp
+index 7cc7457..3f7825c 100644
+--- a/src/client/IO/UITypes/UIItemInventory.cpp
++++ b/src/client/IO/UITypes/UIItemInventory.cpp
+@@ -180,8 +180,8 @@ namespace jrc
+     {
+         icons.clear();
+ 
+-        uint8_t numslots = inventory.get_slotmax(tab);
+-        for (uint8_t i = 1; i < numslots; ++i)
++        int16_t numslots = inventory.get_slotmax(tab);
++        for (int16_t i = 1; i <= numslots; ++i)
+         {
+             update_slot(i);
+         }
+-- 
+2.43.0
+
