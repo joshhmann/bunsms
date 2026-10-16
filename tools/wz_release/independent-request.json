@@ -1359,7 +1359,7 @@
     },
     {
       "path": "Map.wz/Map/Map9/910000000.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/etc/910000000",
@@ -1367,7 +1367,7 @@
     },
     {
       "path": "Map.wz/Map/Map9/910000008.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/etc/910000008",
@@ -1375,7 +1375,7 @@
     },
     {
       "path": "Map.wz/Map/Map9/910000010.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/etc/910000010",
@@ -1383,7 +1383,7 @@
     },
     {
       "path": "Map.wz/Map/Map8/800040401.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/japan/800040401",
@@ -1391,7 +1391,7 @@
     },
     {
       "path": "Map.wz/Map/Map8/800040410.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/japan/800040410",
@@ -1399,7 +1399,7 @@
     },
     {
       "path": "Map.wz/Map/Map4/450001003.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/grandis/450001003",
@@ -1407,7 +1407,7 @@
     },
     {
       "path": "Map.wz/Map/Map2/270050000.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/ossyria/270050000",
@@ -1415,7 +1415,7 @@
     },
     {
       "path": "Map.wz/Map/Map9/910000009.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/etc/910000009",
@@ -1423,7 +1423,7 @@
     },
     {
       "path": "Map.wz/Map/Map2/271030000.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/ossyria/271030000",
@@ -1431,7 +1431,7 @@
     },
     {
       "path": "Map.wz/Map/Map2/271030010.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/ossyria/271030010",
@@ -1439,7 +1439,7 @@
     },
     {
       "path": "Map.wz/Map/Map2/271030410.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/ossyria/271030410",
@@ -1447,7 +1447,7 @@
     },
     {
       "path": "Map.wz/Map/Map5/541020800.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Map.img/ourMaps/541020800",
@@ -1455,7 +1455,7 @@
     },
     {
       "path": "Mob.wz/9400408.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Mob.img/9400408",
@@ -1463,7 +1463,7 @@
     },
     {
       "path": "Mob.wz/9400409.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Mob.img/9400409",
@@ -1471,7 +1471,7 @@
     },
     {
       "path": "Mob.wz/9420521.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Mob.img/9420521",
@@ -1479,7 +1479,7 @@
     },
     {
       "path": "Npc.wz/9111058.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Npc.img/9111058",
@@ -1487,11 +1487,11 @@
     },
     {
       "path": "Reactor.wz/5411001.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Reactor.wz/9212000.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Item.wz/Consume/0221.img/02210042",
@@ -2077,7 +2077,7 @@
     },
     {
       "path": "Npc.wz/9030000.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Npc.img/9030000",
@@ -2085,7 +2085,7 @@
     },
     {
       "path": "Npc.wz/9030100.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Npc.img/9030100",
@@ -2093,7 +2093,7 @@
     },
     {
       "path": "Npc.wz/9250025.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Npc.img/9250025",
@@ -2101,7 +2101,7 @@
     },
     {
       "path": "Npc.wz/9000069.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Npc.img/9000069",
@@ -3173,7 +3173,7 @@
     },
     {
       "path": "Npc.wz/2141001.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Npc.img/2141001",
@@ -3452,7 +3452,7 @@
     },
     {
       "path": "Mob.wz/8610022.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Mob.img/8610022",
@@ -3488,7 +3488,7 @@
     },
     {
       "path": "Npc.wz/2143001.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Npc.img/2143001",
@@ -3627,7 +3627,7 @@
     },
     {
       "path": "Mob.wz/9420522.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Mob.img/9420522",
@@ -3635,55 +3635,55 @@
     },
     {
       "path": "Morph.wz/0019.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0013.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0014.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0050.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0051.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0052.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0053.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0054.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0055.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0056.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0057.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Morph.wz/0058.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "Npc.wz/2142001.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Npc.img/2142001",
@@ -3706,7 +3706,7 @@
     },
     {
       "path": "Npc.wz/2020005.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Npc.img/2020005",
@@ -3782,7 +3782,7 @@
     },
     {
       "path": "Mob.wz/9300125.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Mob.img/9300125",
@@ -3794,7 +3794,7 @@
     },
     {
       "path": "Mob.wz/8150302.img",
-      "type": "property"
+      "type": "image"
     },
     {
       "path": "String.wz/Mob.img/8150302",

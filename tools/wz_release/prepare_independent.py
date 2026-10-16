@@ -17,7 +17,11 @@ def prepare(native,contracts,catalog,base_url,output):
             archives.add(op['target_wz'])
         for r in c.get('requirements',[]):
             q={'path':r['wz']+'/'+r['image']+('/'+r['node'] if r.get('node') else '')}
-            q.update({k:r[k] for k in ('dimensions','type') if k in r});requirements.append(q)
+            q.update({k:r[k] for k in ('dimensions','type','value') if k in r})
+            # Python's root property represents an IMG; MapleLib retains its
+            # separate lazy WzImage wrapper. Child properties stay SubProperty.
+            if not r.get('node') and q.get('type')=='property':q['type']='image'
+            requirements.append(q)
             archives.add(r['wz'])
         requirements.extend({'path':r['path'],'type':r['type']} for r in c.get('stock_requirements',[]))
     with Path(catalog).open(encoding='utf-8-sig',newline='') as f:
