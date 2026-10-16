@@ -103,11 +103,11 @@ public final class WeatherCombat {
      * term in exactly one method makes that mistake impossible rather than merely
      * documented.
      */
-    public static int scaleDamageToMonster(int damage) {
+    public static long scaleDamageToMonster(long damage) {
         if (damage <= 0 || !gameplayEnabled() || !isNight()) {
             return damage;
         }
-        return apply(damage, NIGHT_MOB_DEFENCE);
+        return applyLong(damage, NIGHT_MOB_DEFENCE);
     }
 
     /**
@@ -155,6 +155,15 @@ public final class WeatherCombat {
      * of the server reads as a MISS. That would turn the night defence bump into
      * "1 damage attacks stop registering", which is both wrong and very visible.
      */
+    private static long applyLong(long value, double factor) {
+        // Long-exact: value <= 2^53 and factor < 2, so value*factor fits long.
+        long scaled = Math.round(value * factor);
+        if (scaled < 1L) {
+            scaled = 1L;
+        }
+        return scaled;
+    }
+
     private static int apply(int value, double factor) {
         long scaled = Math.round(value * factor);
         if (scaled < 1L) {

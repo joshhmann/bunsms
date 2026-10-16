@@ -6855,7 +6855,9 @@ public class PacketCreator {
         p.writeByte(1); // direction ?
         p.writeInt(damage);
         p.writeInt(remainingHp);
-        p.writeInt(mob.getMaxHp());
+        // Legacy int form (delivery-audit agreed): explicit narrowing at the
+        // legacy protocol boundary; byte-identical for all int-range HP.
+        p.writeInt((int) Math.min(mob.getMaxHp(), Integer.MAX_VALUE));
         return p;
     }
 
@@ -6879,7 +6881,6 @@ public class PacketCreator {
         p.writeInt((int) mn);
         return p;
     }
-
     public static Packet shopErrorMessage(int error, int type) {
         final OutPacket p = OutPacket.create(SendOpcode.PLAYER_INTERACTION);
         p.writeByte(0x0A);

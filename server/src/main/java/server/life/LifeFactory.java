@@ -117,14 +117,14 @@ public class LifeFactory {
             attackInfos.addAll(linkStats.getRight());
         }
 
-        stats.setHp(DataTool.getIntConvert("maxHP", monsterInfoData));
+        stats.setHp(DataTool.getLongHp("maxHP", monsterInfoData));
         stats.setFriendly(DataTool.getIntConvert("damagedByMob", monsterInfoData, stats.isFriendly() ? 1 : 0) == 1);
         stats.setPADamage(DataTool.getIntConvert("PADamage", monsterInfoData));
         stats.setPDDamage(DataTool.getIntConvert("PDDamage", monsterInfoData));
         stats.setMADamage(DataTool.getIntConvert("MADamage", monsterInfoData));
         stats.setMDDamage(DataTool.getIntConvert("MDDamage", monsterInfoData));
         stats.setMp(DataTool.getIntConvert("maxMP", monsterInfoData, stats.getMp()));
-        stats.setExp(DataTool.getIntConvert("exp", monsterInfoData, stats.getExp()));
+        stats.setExp(DataTool.getIntConvert("exp", monsterInfoData, (int) Math.min(stats.getExp(), Integer.MAX_VALUE)));
         stats.setLevel(DataTool.getIntConvert("level", monsterInfoData));
         stats.setRemoveAfter(DataTool.getIntConvert("removeAfter", monsterInfoData, stats.removeAfter()));
         stats.setBoss(DataTool.getIntConvert("boss", monsterInfoData, stats.isBoss() ? 1 : 0) > 0);
