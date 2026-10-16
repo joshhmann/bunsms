@@ -21,6 +21,13 @@ See [current source, exact artifacts and evidence](server/docs/CURRENT-STATE.md)
 and [the accepted roadmap](server/docs/ROADMAP-BACKLOG.md); the Windows CI Java
 stack is temporary QA, not a Windows production backend/player dependency.
 
+Latest isolated server gameplay evidence includes a six-player ordinary HardLotus
+clear with matching personal/shared damage, duration and party logs, public
+leaderboards, and save/reload. Completion-only migration035 preserves the
+existing unlimited-attempt policy and custom history. This does **not** qualify
+the full native cohort or declare the Windows RC ready; exact receipts and
+remaining lifecycle, bot and native gates are in the current-state ledger above.
+
 ### Game Server
 - Cosmic v83 on the existing Linux LXC/Docker Compose `/opt/server` deployment
 - MySQL with shipped Liquibase migrations; isolated current RC proofs use8.0.36

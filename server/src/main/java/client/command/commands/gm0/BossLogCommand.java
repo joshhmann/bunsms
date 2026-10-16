@@ -24,8 +24,11 @@ public final class BossLogCommand extends Command {
         for (Map.Entry<ExpeditionBossLog.BossLogEntry, BossLogData> entry :
                 ExpeditionBossLog.getBossEntries(client.getPlayer().getId(), true, weekly).entrySet()) {
             BossLogData data = entry.getValue();
-            client.getPlayer().dropMessage(6, entry.getKey().name() + ": " + data.getAttempts() + "/"
-                    + entry.getKey().getEntries() + " attempts, " + data.getCompletions() + " completed.");
+            String attempts = entry.getKey().hasAttemptLimit()
+                    ? data.getAttempts() + "/" + entry.getKey().getEntries() + " attempts"
+                    : "unlimited attempts";
+            client.getPlayer().dropMessage(6, entry.getKey().name() + ": " + attempts
+                    + ", " + data.getCompletions() + " completed.");
         }
     }
 }

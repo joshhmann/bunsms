@@ -63,7 +63,9 @@ public class ExpeditionBossLog {
         NWILLSPIDER(15, 10, 12, 24, false),
         NVERUS(16, 10, 12, 24, false),
         NDARKNELL(17, 10, 12, 24, false),
-        MAGNUS(18, 10, 8, 24, false);
+        MAGNUS(18, 10, 8, 24, false),
+        // Source Hard Lotus has unlimited attempts; record completion/party results only.
+        HARDLOTUS(19);
 
         private final int entries;
         private final int ordinal;
@@ -72,6 +74,10 @@ public class ExpeditionBossLog {
         private final int maxChannel;
         private final boolean week;
         private final int index;
+
+        BossLogEntry(int index) {
+            this(index, 0, 0, 24, false);
+        }
 
         BossLogEntry(int index, int ordinal, int entries, int timeLength, boolean week) {
             this(index, ordinal, entries, 0, Integer.MAX_VALUE, timeLength, week);
@@ -89,6 +95,7 @@ public class ExpeditionBossLog {
 
         public int getIndex() { return this.index; }
         public int getEntries() { return this.entries; }
+        public boolean hasAttemptLimit() { return entries > 0; }
         public int getOrdinal() { return this.ordinal; }
         public boolean getIsWeekly() { return this.week; }
 
@@ -207,7 +214,7 @@ public class ExpeditionBossLog {
 
     public static boolean attemptBoss(int cid, int channel, Expedition exped, boolean log) {
         BossLogEntry boss = BossLogEntry.getBossEntryByName(exped.getType().name());
-        if (boss == null) {
+        if (boss == null || !boss.hasAttemptLimit()) {
             return true;
         }
 
@@ -271,7 +278,7 @@ public class ExpeditionBossLog {
                                          Map<Integer, AtomicLong> damage, long duration, String partyUuid) {
         BossLogEntry boss = BossLogEntry.getBossEntryByName(type.name());
         if (boss == null) {
-            return; // Source HARDLOTUS has no BossLog entry.
+            return;
         }
         String attempts = getBossLogTable(boss.week);
         try (Connection con = DatabaseConnection.getConnection()) {
