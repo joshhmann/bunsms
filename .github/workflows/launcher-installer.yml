@@ -1,15 +1,22 @@
-name: Launcher Installer (standalone)
-
 # Safe standalone installer build: npm ci + electron-builder on
 # windows-latest, upload the .exe as a workflow artifact. No release
 # deletion, no Fly deploys, no dashboard/server side effects.
-# BUNSMS_API_BASE is baked at build time (defaults to prod).
+# NOTE: BUNSMS_API_BASE is read at RUNTIME (main.js process.env, default
+# prod) — the build env does NOT bake it in. The api_base input is kept
+# for future build-time use; runtime override always wins.
 
 on:
+  push:
+    branches:
+      - dll-repair-green
+      - native-kaentake-compat
+    paths:
+      - "launcher/**"
+      - ".github/workflows/launcher-installer.yml"
   workflow_dispatch:
     inputs:
       api_base:
-        description: 'Dashboard API base baked into launcher'
+        description: 'Dashboard API base (reserved for future build-time use; runtime env wins today)'
         type: string
         default: 'https://buns.asslorde.com'
 
