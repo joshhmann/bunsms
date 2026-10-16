@@ -3,8 +3,9 @@
 const $ = (id) => document.getElementById(id);
 
 let currentUpdates = null;
+let currentInstallLease = null;
 let isUpdating = false;
-let activeProfile = "stock";
+let activeProfile = "kaentake";
 
 // ── Init ──
 async function init() {
@@ -145,7 +146,7 @@ async function findGamePath() {
   }
 }
 
-// ── Profiles (stock default, Kaentake opt-in) ──
+// ── Isolated client profiles ──
 function setupProfiles() {
   $("profile-stock").onclick = () => switchProfile("stock");
   $("profile-kaentake").onclick = () => switchProfile("kaentake");
@@ -250,6 +251,7 @@ async function checkForUpdates() {
   const text = $("update-text");
   const icon = $("update-icon") || status.querySelector(".update-icon");
   currentUpdates = null;
+  currentInstallLease = null;
   $("btn-play").disabled = true;
   $("btn-play-text").textContent = "CHECKING FILES...";
   status.className = "update-status";
@@ -270,6 +272,7 @@ async function checkForUpdates() {
       const sizeMB = (result.totalSize / 1024 / 1024).toFixed(0);
       text.textContent = `${result.updates.length} required file(s) to install/repair (${sizeMB} MB)`;
       currentUpdates = result.updates;
+      currentInstallLease = { profile: result.profile, leaseId: result.leaseId };
       enableUpdate();
       break;
     }
@@ -300,11 +303,12 @@ async function handlePlay() {
     $("btn-play-text").textContent = "INSTALLING 0%";
     $("progress-container").style.display = "block";
     let result;
-    try { result = await window.buns.downloadUpdates(currentUpdates); }
+    try { result = await window.buns.downloadUpdates({ ...currentInstallLease, updates: currentUpdates }); }
     catch (error) { result = { success: false, error: error.message }; }
     $("progress-container").style.display = "none";
     isUpdating = false;
     currentUpdates = null;
+    currentInstallLease = null;
     if (!result.success) {
       $("update-text").textContent = result.error || "Complete client installation failed.";
       $("update-status").className = "update-status error";

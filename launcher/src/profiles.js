@@ -89,8 +89,8 @@ function stampStockIni(iniText, host) {
   return `[general]\nServerIP_Address=${host}\n${iniText}`;
 }
 
-// Kaentake writer: [config] host/port, port pinned to KAENTAKE_PORT.
-// Preserves every other line; creates [config] when absent.
+// Kaentake writer: change only the explicitly managed host. Preserve an existing
+// user-selected test port; insert the canonical port only when absent.
 function stampKaentakeIni(iniText, host) {
   let ini = iniText || "";
   if (/^\[config\]/m.test(ini)) {
@@ -99,9 +99,7 @@ function stampKaentakeIni(iniText, host) {
     } else {
       ini = ini.replace(/^(\[config\]).*$/m, `$1\nhost=${host}`);
     }
-    if (/^port=.*/m.test(ini)) {
-      ini = ini.replace(/^port=.*/m, `port=${KAENTAKE_PORT}`);
-    } else {
+    if (!/^port=.*/m.test(ini)) {
       ini = ini.replace(/^host=.*$/m, `$&\nport=${KAENTAKE_PORT}`);
     }
     return ini;

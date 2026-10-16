@@ -7,6 +7,7 @@ const http = require("http");
 const dns = require("dns").promises;
 const { isIP } = require("net");
 const { spawn } = require("child_process");
+const release = require("./release-config.json");
 const {
   PROFILES,
   stampStockIni,
@@ -16,18 +17,17 @@ const {
   isProfileConfig,
 } = require("./profiles");
 
-// API base: runtime override via the BUNSMS_API_BASE process env (NOT baked at
-// build time — Electron reads process.env at launch). Default prod
-// (https://buns.asslorde.com); to reach the test dashboard, launch with
-// BUNSMS_API_BASE=http://192.168.0.164:3001 (plain http allowed for LAN).
-const API_BASE = process.env.BUNSMS_API_BASE || "https://buns.asslorde.com";
-const MANIFEST_URL = process.env.BUNSMS_MANIFEST_URL || `${API_BASE}/api/launcher/manifest`;
+// RC metadata is packaged, not an ephemeral build environment variable.
+// Explicit operator environment overrides are never renderer-controlled.
+const API_BASE = process.env.BUNSMS_API_BASE || release.apiBase;
+const MANIFEST_URL = process.env.BUNSMS_MANIFEST_URL || release.manifestUrl;
 const NEWS_URL = `${API_BASE}/api/launcher/news`;
 const STATUS_URL = `${API_BASE}/api/server`;
 
 let mainWindow;
 let gamePath = ""; // cache of the ACTIVE profile's dir; see profileDir()/setProfilePath()
 const profileChecks = new Map();
+const installLeases = new Map(); // At most one immutable checked snapshot per profile.
 
 // Fresh installs use Kaentake; preserve explicit profiles and legacy stock paths.
 function readStore() {
@@ -273,6 +273,7 @@ ipcMain.handle("game:selectFolder", async () => {
 ipcMain.handle("game:launch", async () => {
   const id = activeProfileId();
   const dir = profileDir(id);
+  const storedHost = readStore().serverHost; // Snapshot before asynchronous preflight.
   if (!dir) return { success: false, error: "Game path not set" };
   try {
     const { files, updates } = await inspectProfile(id, dir);
@@ -283,9 +284,12 @@ ipcMain.handle("game:launch", async () => {
         missing: updates.map((file) => file.name),
       };
     }
-    const host = readStore().serverHost || DEFAULT_SERVER_HOST;
-    if (files.some((file) => file.name.toLowerCase() === "config.ini"))
+    if (files.some((file) => file.name.toLowerCase() === "config.ini")) {
+      const iniPath = await clientFilePath(dir, "config.ini");
+      const ini = await fs.promises.readFile(iniPath, "utf-8");
+      const host = storedHost || ini.match(id === "kaentake" ? /^host=(.+)$/mi : /^ServerIP_Address=(.+)$/mi)?.[1].trim() || DEFAULT_SERVER_HOST;
       await stampHostIntoDir(id, dir, host);
+    }
     const exePath = await clientFilePath(dir, PROFILES[id].exe);
     const process = await startNativeClient(id, exePath, dir);
     return { success: true, state: "process-started", ...process };
@@ -436,9 +440,12 @@ ipcMain.handle("launcher:checkUpdates", async () => {
   if (!dir) return { status: "no_path" };
   try {
     const { manifest, files, updates } = await inspectProfile(id, dir);
+    const leaseId = crypto.randomUUID();
+    installLeases.set(id, Object.freeze({ leaseId, id, dir, manifest, files, updates }));
     return {
       status: updates.length ? "updates_available" : "up_to_date",
       version: manifest.version,
+      profile: id, leaseId,
       verifiedFiles: files.length - updates.length,
       updates,
       totalSize: updates.reduce((size, file) => size + file.size, 0),
@@ -448,16 +455,18 @@ ipcMain.handle("launcher:checkUpdates", async () => {
   }
 });
 
-ipcMain.handle("launcher:downloadUpdates", async (_, requestedUpdates) => {
-  const id = activeProfileId();
-  const dir = profileDir(id);
-  if (!dir || !Array.isArray(requestedUpdates) || !requestedUpdates.length)
-    return { success: false, error: "Choose a client folder and check its complete manifest first." };
+ipcMain.handle("launcher:downloadUpdates", async (_, request) => {
+  const lease = installLeases.get(request?.profile);
+  if (!lease || lease.leaseId !== request?.leaseId)
+    return { success: false, error: "Check this profile's complete manifest again before installing." };
+  const { id, dir, manifest, files, updates } = lease;
+  if (profileDir(id) !== dir)
+    return { success: false, error: "The checked client folder changed. Check its complete manifest again." };
+  installLeases.delete(id); // A lease can start only one install operation.
   try {
-    const { manifest, files, updates } = await inspectProfile(id, dir);
-    const requested = new Set(requestedUpdates.map((file) => file.name));
-    if (updates.length !== requested.size || updates.some((file) => !requested.has(file.name)))
-      throw new Error("The required client files changed. Check the complete manifest again before installing.");
+    const requested = new Set((request.updates || []).map((file) => file.name));
+    if (!requested.size || updates.length !== requested.size || updates.some((file) => !requested.has(file.name)))
+      throw new Error("The requested files do not match the checked complete manifest.");
     await fs.promises.mkdir(dir, { recursive: true });
     const operation = crypto.randomUUID();
     for (let index = 0; index < updates.length; index++) {
@@ -485,8 +494,10 @@ ipcMain.handle("launcher:downloadUpdates", async (_, requestedUpdates) => {
           await fs.promises.rename(partial, destination);
           break;
         } catch (error) {
-          if (attempt === maxAttempts)
+          if (attempt === maxAttempts) {
+            await fs.promises.rm(partial, { force: true });
             throw new Error(`Failed to install ${file.name}: ${error.message}`);
+          }
           await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
         }
       }

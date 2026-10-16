@@ -18,7 +18,7 @@ contextBridge.exposeInMainWorld("buns", {
   launch: () => ipcRenderer.invoke("game:launch"),
   onLaunchStatus: (cb) => ipcRenderer.on("game:launchStatus", (_, data) => cb(data)),
 
-  // Profiles (Kaentake opt-in; stock default)
+  // Isolated primary Kaentake and existing stock rollback profiles.
   getProfile: () => ipcRenderer.invoke("profile:get"),
   setProfile: (id) => ipcRenderer.invoke("profile:set", id),
   setProfilePath: (id, dir) => ipcRenderer.invoke("profile:setPath", id, dir),
@@ -36,6 +36,6 @@ contextBridge.exposeInMainWorld("buns", {
 
   // Updates
   checkUpdates: () => ipcRenderer.invoke("launcher:checkUpdates"),
-  downloadUpdates: (updates) => ipcRenderer.invoke("launcher:downloadUpdates", updates),
+  downloadUpdates: (request) => ipcRenderer.invoke("launcher:downloadUpdates", request),
   onDownloadProgress: (cb) => ipcRenderer.on("download:progress", (_, data) => cb(data)),
 });

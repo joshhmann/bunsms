@@ -1,9 +1,8 @@
 name: Launcher Installer (standalone)
 
-# Safe standalone installer build: npm ci + electron-builder on
-# windows-latest, upload the .exe as a workflow artifact. No release
-# deletion, no Fly deploys, no dashboard/server side effects.
-# BUNSMS_API_BASE is baked at build time (defaults to prod).
+# Build the explicitly labeled testing RC in its separate application identity.
+# The player installer contains only Electron; Java/MySQL remain on the existing
+# Linux server deployment and are never installer/runtime prerequisites.
 
 on:
   workflow_dispatch:
@@ -12,6 +11,10 @@ on:
         description: 'Dashboard API base baked into launcher'
         type: string
         default: 'https://buns.asslorde.com'
+      manifest_url:
+        description: 'Immutable testing RC complete-client manifest; never the production patch API'
+        type: string
+        default: 'https://buns.asslorde.com/client/candidates/full-content-rc1/launcher-manifest.json'
 
 jobs:
   build-installer:
@@ -21,7 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: launcher/package-lock.json
 
@@ -29,11 +32,46 @@ jobs:
         working-directory: launcher
         run: npm ci
 
+      - name: Verify launcher install policy and transfers
+        working-directory: launcher
+        run: npm test
+
+      - name: Package explicit testing channel authority
+        working-directory: launcher
+        shell: pwsh
+        env:
+          RC_API_BASE: ${{ inputs.api_base }}
+          RC_MANIFEST_URL: ${{ inputs.manifest_url }}
+        run: |
+          $release = Get-Content src/release-config.json -Raw | ConvertFrom-Json
+          foreach ($url in @($env:RC_API_BASE, $env:RC_MANIFEST_URL)) {
+            if (([uri]$url).Scheme -notin @('http', 'https')) { throw 'Invalid operator-selected RC authority' }
+          }
+          $release.apiBase = $env:RC_API_BASE
+          $release.manifestUrl = $env:RC_MANIFEST_URL
+          $release | ConvertTo-Json | Set-Content src/release-config.json -Encoding utf8NoBOM
+
       - name: Build Windows installer
         working-directory: launcher
         run: npx electron-builder --win --x64
-        env:
-          BUNSMS_API_BASE: ${{ inputs.api_base }}
+
+      - name: Exercise actual installed Windows launcher UI
+        shell: pwsh
+        run: |
+          $installer = @(Get-ChildItem launcher/dist -Filter '*.exe')
+          if ($installer.Count -ne 1) { throw 'Expected exactly one testing RC installer' }
+          $install = Join-Path $env:RUNNER_TEMP 'BunsRcInstalled'
+          $process = Start-Process $installer[0].FullName -ArgumentList @('/S', "/D=$install") -PassThru -Wait
+          if ($process.ExitCode -ne 0) { throw "RC installer failed: $($process.ExitCode)" }
+          node launcher/test/windows-ui.test.js "$install/BunsMS Testing RC.exe" launcher-ui-evidence
+
+      - name: Upload actual installed launcher evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bunsms-launcher-installed-ui
+          path: launcher-ui-evidence/*
+          if-no-files-found: warn
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4

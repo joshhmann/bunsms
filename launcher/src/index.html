@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BunsMS 🍑</title>
+  <title>BunsMS Testing RC 1.1.0-rc.1</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
   <div class="titlebar">
     <div class="titlebar-drag">
       <img src="../assets/logo.png" alt="" class="titlebar-logo" />
-      <span class="titlebar-text">BunsMS 🍑</span>
+      <span class="titlebar-text">BunsMS — TESTING RC 1.1.0-rc.1</span>
     </div>
     <div class="titlebar-controls">
       <button class="titlebar-btn" id="btn-minimize" title="Minimize">&#x2014;</button>
@@ -27,7 +27,7 @@
       <div class="hero">
         <div class="hero-glow"></div>
         <img src="../assets/logo.png" alt="BunsMS" class="hero-logo" />
-        <p class="hero-sub">MapleStory v83 &middot; Guided by AI</p>
+        <p class="hero-sub">Full-content Windows testing RC &middot; Not a production rollout</p>
         <div class="status-badge" id="status-badge">
           <span class="status-dot" id="status-dot"></span>
           <span id="status-text">Checking...</span>
@@ -48,12 +48,12 @@
 
     <!-- Right panel: actions -->
     <div class="panel-right">
-      <!-- Separate profiles; Kaentake acceptance precedes new-install promotion. -->
+      <!-- Isolated RC install; existing production profiles are never overwritten. -->
       <div class="path-section" id="profile-section">
         <div class="path-label">Client</div>
         <div class="path-row" id="profile-row">
           <button class="btn-browse profile-btn" id="profile-stock" title="Stock rollback/testing client; keep its folder separate.">BunsMS</button>
-          <button class="btn-browse profile-btn" id="profile-kaentake" title="Kaentake primary-runtime acceptance is pending. Complete verified files and an isolated folder are required; Windows uses its normal UAC prompt.">Kaentake <span class="hd-beta">VALIDATING</span></button>
+          <button class="btn-browse profile-btn" id="profile-kaentake" title="Full-content Windows testing runtime. Select an isolated folder; launch uses the game's normal UAC prompt.">Kaentake <span class="hd-beta">TESTING RC</span></button>
         </div>
         <div class="path-display" id="profile-status" style="display:none"></div>
       </div>

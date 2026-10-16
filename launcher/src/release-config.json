@@ -1,0 +1,6 @@
+{
+  "channel": "testing-rc",
+  "version": "1.1.0-rc.1",
+  "apiBase": "https://buns.asslorde.com",
+  "manifestUrl": "https://buns.asslorde.com/client/candidates/full-content-rc1/launcher-manifest.json"
+}

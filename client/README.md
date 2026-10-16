@@ -22,7 +22,7 @@ client/
 │   ├── dispatcher / tick (single ProcessPacket / redraw hooks)
 │   ├── addresses.h      # single address table — no raw VAs elsewhere
 │   ├── wvs/ + ztl/      # minimal engine layouts the features need
-│   └── dailycheckin.*   # §3.1 (more modules land per slice)
+│   └── dailycheckin / cashshop / prism / damagelong / weather / lamps
 ├── kaentake/            # pinned upstream runtime + ordered integration patches
 └── tools/
     └── check_opcodes.py # opcode drift gate (runs in client.yml)
@@ -30,12 +30,14 @@ client/
 
 ## Status (slices)
 
-- [x] Spine: dispatcher + tick + addresses + hook/debug/pch
-- [x] §3.1 daily check-in (dispatcher route, no private ProcessPacket hook)
-- [ ] §3.2 cash-shop window (from bundle)
-- [ ] §3.3 coloring prism + weapon tint (authored from INTEGRATION.md)
-- [ ] §3.4 damage-cap hooks (authored from IMPLEMENTATION.md)
-- [ ] §3.5 weather + lamps + wind (from bundle)
+- Source integration: check-in, cash shop, prism, long damage, weather and lamps
+  share the sole dispatcher/frame/reset owners. Kaentake retains inlink/UOL,
+  native window updates, item effects and its resolution hooks.
+- Windows run `38895009865`, source `ccbfed1`: check-in/cash/prism/long companion
+  `/W4 /WX`, paired Kaentake, exact companion/prism exports, CRT and opcode gates
+  passed. Weather was integrated last after that toolchain result.
+- Full UI/gameplay acceptance remains **pending**; these build/ABI observations
+  are not proof of login/world, purchases, tint, long combat, weather or reconnect.
 
 ## Build (Windows host + VS2022 + CMake)
 
@@ -130,6 +132,33 @@ module stays loaded for the process lifetime. Missing/failed companion
 initialization is an explicit launch failure, never a silent vanilla fallback.
 Ship the patched Kaentake DLL and compatible BunsMS DLL in the same pinned
 release; no dinput8 proxy is required for this path.
+
+### Full-content Windows testing launcher
+
+The `1.1.0-rc.1` Electron launcher uses a separate `com.bunsms.launcher.rc`
+application identity and is visibly labeled **TESTING**, not a production
+server/database rollout. Its packaged `release-config.json` pins the immutable
+RC complete-client manifest; workflow operator inputs are written into this
+packaged file, not incorrectly assumed to survive as build-time environment.
+The canonical game host remains `buns.asslorde.com`; approved explicit test
+overrides and existing valid INI host/port/resolution choices are preserved.
+
+A complete manifest plus its SHA256-pinned provenance must authorize every
+required managed game/engine/runtime file. Check results carry a one-use,
+profile/folder/manifest lease: changing profiles or install paths during a
+transfer cannot redirect that transfer. Renderer URLs/hashes are never download
+authority. Transfers and hashes stream; size and SHA256 are verified on a
+temporary file before atomic replacement, preserving old usable bytes on failure.
+The mutable profile-owned INI is verified by schema, not forcibly restored to
+publisher defaults. Windows launch reports actual OS creation/error through
+the game's ordinary UAC flow; no blanket launcher elevation or AV-disable advice.
+
+`npm test` in `launcher/` exercises manifest policy and real local HTTP/file
+transfer regressions. The standalone installer workflow additionally installs
+and captures the real Windows Electron UI. These are launcher checks, not native
+playability acceptance. Java/MySQL are used only by the isolated same-runner CI
+backend helper; players retain the existing Linux-hosted server deployment and
+never install a backend with the launcher.
 
 ## License notes
 

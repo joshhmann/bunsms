@@ -84,11 +84,11 @@ const ezorsiaTemplate = fs.readFileSync(
   assert.equal(KAENTAKE_PORT, 8484);
   // Creates [config] when absent.
   assert.equal(stampKaentakeIni("", "10.0.0.1"), "[config]\nhost=10.0.0.1\nport=8484\n");
-  // Replaces host, pins port, preserves comments/other keys.
+  // Replaces only host; preserves the user's explicit QA port and other keys.
   const ini = "[config]\n; comment\nhost=127.0.0.1\nport=1234\ncustom=yes\n";
   const out = stampKaentakeIni(ini, "10.0.0.1");
   assert.match(out, /^host=10\.0\.0\.1$/m);
-  assert.match(out, /^port=8484$/m);
+  assert.match(out, /^port=1234$/m);
   assert.match(out, /^; comment$/m);
   assert.match(out, /^custom=yes$/m);
   // Inserts host after [config] when missing.

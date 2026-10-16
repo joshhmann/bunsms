@@ -1,11 +1,12 @@
 {
   "name": "bunsms-launcher",
-  "version": "1.0.2",
-  "description": "BunsMS 🍑 - MapleStory v83 Launcher",
+  "version": "1.1.0-rc.1",
+  "description": "BunsMS full-content Windows TESTING release candidate",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
+    "test": "node test/profiles.test.js && node test/install.test.js",
     "build:win": "electron-builder --win --x64",
     "build:mac": "electron-builder --mac",
     "build:all": "electron-builder --win --mac"
@@ -17,8 +18,8 @@
     "electron-builder": "^25.0.0"
   },
   "build": {
-    "appId": "com.bunsms.launcher",
-    "productName": "BunsMS",
+    "appId": "com.bunsms.launcher.rc",
+    "productName": "BunsMS Testing RC",
     "directories": {
       "output": "dist"
     },
@@ -37,6 +38,7 @@
     "nsis": {
       "oneClick": true,
       "allowToChangeInstallationDirectory": false,
+      "runAfterFinish": false,
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "installerHeaderIcon": "assets/icon.ico"
