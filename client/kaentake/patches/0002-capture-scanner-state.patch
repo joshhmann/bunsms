@@ -1,0 +1,32 @@
+--- a/src/hook.cpp
++++ b/src/hook.cpp
+@@ -136,7 +136,29 @@
+         return nullptr;
+     }
+ 
++    if (_stricmp(sModuleName, "GR2D_DX8.DLL") == 0) {
++        char path[MAX_PATH] = {};
++        GetModuleFileNameA(hModule, path, MAX_PATH);
++        DebugMessage("BUNS_SCAN module=%s base=%p size=%lu length=%lu\n", path,
++                     mi.lpBaseOfDll, static_cast<unsigned long>(mi.SizeOfImage), static_cast<unsigned long>(uPatternSize));
++        for (size_t i = 0; i < uPatternSize; ++i) {
++            DebugMessage("BUNS_SCAN index=%lu pattern_masked=%02X mask=%02X\n", static_cast<unsigned long>(i),
++                         static_cast<unsigned>(abMask[i] ? abPattern[i] : 0), static_cast<unsigned>(abMask[i]));
++        }
++        unsigned char target[13] = {};
++        SIZE_T read = 0;
++        const void* address = reinterpret_cast<const void*>(reinterpret_cast<uintptr_t>(mi.lpBaseOfDll) + 0x2E1B);
++        BOOL readable = ReadProcessMemory(GetCurrentProcess(), address, target, sizeof(target), &read);
++        DebugMessage("BUNS_SCAN target=%p readable=%d read=%lu\n", address, readable, static_cast<unsigned long>(read));
++        if (readable && read == sizeof(target)) {
++            for (size_t i = 0; i < sizeof(target); ++i) {
++                DebugMessage("BUNS_SCAN target_index=%lu byte=%02X\n", static_cast<unsigned long>(i), static_cast<unsigned>(target[i]));
++            }
++        }
++    }
++
+     void* pAddress = FindPattern(pModuleBase, uModuleSize, abPattern, abMask, uPatternSize);
++    DebugMessage("BUNS_SCAN result=%p module=%s\n", pAddress, sModuleName);
+     if (!pAddress) {
+         ErrorMessage("Could not resolve address for pattern \"%s\" in module %s", sPattern, sModuleName);
+     }
