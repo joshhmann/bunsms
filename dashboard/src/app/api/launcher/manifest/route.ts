@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     if (body.stage === true) {
-      const releaseId = beginRelease({ ...(body.baseReleaseId !== undefined ? { baseReleaseId: body.baseReleaseId } : {}), ...(body.catalog !== undefined ? { catalog: body.catalog } : {}), ...(body.certification !== undefined ? { certification: body.certification } : {}) });
+      const releaseId = beginRelease({ ...(body.baseReleaseId !== undefined ? { baseReleaseId: body.baseReleaseId } : {}), ...(body.catalog !== undefined ? { catalog: body.catalog } : {}), ...(body.certification !== undefined ? { certification: body.certification } : {}), ...(body.version !== undefined ? { version: body.version } : {}) });
       return NextResponse.json({ success: true, releaseId });
     }
     if (typeof body.rollback === "string") {

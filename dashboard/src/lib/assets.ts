@@ -43,7 +43,7 @@ export interface PreparedRelease {
 }
 export interface PublishResult extends PreparedRelease { manifestPath: string }
 export interface ReleaseCertification { completeProfiles: string[]; provenance: AssetExpectation }
-export interface ReleaseOptions { baseReleaseId?: string | null; catalog?: CatalogFile[]; certification?: ReleaseCertification }
+export interface ReleaseOptions { baseReleaseId?: string | null; catalog?: CatalogFile[]; certification?: ReleaseCertification; version?: string }
 export interface NxConsumerProof {
   success: true; releaseId: string;
   files: Array<{ name: string; sha256: string; size: number }>;
@@ -55,6 +55,7 @@ interface ReleaseRecord {
   state: "open" | "prepared" | "sealed" | "committed" | "failed";
   prepared: Record<string, PublishedAsset>;
   catalog?: CatalogFile[];
+  version?: string;
   certification?: ReleaseCertification;
   requiresNxVerification?: boolean;
   nxVerification?: NxConsumerProof;
@@ -232,6 +233,9 @@ export function beginRelease(options: ReleaseOptions = {}): string {
   }
   const catalog = options.catalog === undefined ? undefined : freezeCatalog(options.catalog);
   if (catalog && !baseReleaseId) throw new AssetError("First bootstrap and retain the approved existing seed before replacing its catalog", 409);
+  if (options.version !== undefined && (typeof options.version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?$/.test(options.version))) {
+    throw new AssetError("Release version must be a semantic version");
+  }
   let certification: ReleaseCertification | undefined;
   if (options.certification) {
     if (!catalog || !Array.isArray(options.certification.completeProfiles) || !options.certification.completeProfiles.length
@@ -245,7 +249,7 @@ export function beginRelease(options: ReleaseOptions = {}): string {
   }
   const id = randomUUID();
   mkdirSync(releaseDir(id), { recursive: true });
-  writeJsonAtomic(releaseFile(id), { id, createdAt: new Date().toISOString(), baseReleaseId, baseToken: token(manifest), base: manifest, state: "open", prepared: {}, ...(catalog ? { catalog } : {}), ...(certification ? { certification } : {}) } satisfies ReleaseRecord);
+  writeJsonAtomic(releaseFile(id), { id, createdAt: new Date().toISOString(), baseReleaseId, baseToken: token(manifest), base: manifest, state: "open", prepared: {}, ...(options.version !== undefined ? { version: options.version } : {}), ...(catalog ? { catalog } : {}), ...(certification ? { certification } : {}) } satisfies ReleaseRecord);
   return id;
 }
 async function stage(id: string, key: string, write: (temporary: string) => Promise<void>): Promise<void> {
@@ -376,11 +380,12 @@ function candidate(record: ReleaseRecord): Manifest {
         })) throw new AssetError("Launcher provenance does not describe the exact complete catalog", 409);
     certification = { completeProfiles: record.certification.completeProfiles, provenance: { url: asset.url, sha256: asset.hash } };
   }
+  const version = record.version ?? (launcherChanged ? bumpPatch(record.base.version) : record.base.version);
   return {
     ...record.base, completeProfiles: undefined, provenance: undefined, ...certification,
     releaseId: record.id, previousReleaseId: record.baseReleaseId, nxReleaseId,
-    version: launcherChanged ? bumpPatch(record.base.version) : record.base.version,
-    updatedAt: launcherChanged ? record.createdAt : record.base.updatedAt,
+    version,
+    updatedAt: launcherChanged || version !== record.base.version ? record.createdAt : record.base.updatedAt,
     downloadBase: `${ASSET_BASE_URL}/client/`, files, assets,
   };
 }
