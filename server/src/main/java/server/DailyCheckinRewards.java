@@ -95,6 +95,11 @@ public final class DailyCheckinRewards {
         if (day < 1 || day > DAYS.length) {
             return false;
         }
+        // Null client/player must fail closed (no grant), never NPE the packet
+        // thread. The handler checks player != null first; this is defense in depth.
+        if (c == null || c.getPlayer() == null) {
+            return false;
+        }
         Reward r = DAYS[day - 1];
         if (r.mesos() > 0) {
             c.getPlayer().gainMeso(r.mesos(), true);
