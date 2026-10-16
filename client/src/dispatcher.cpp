@@ -3,6 +3,7 @@
 #include "hook.h"
 #include "addresses.h"
 #include "wvs/packet.h"
+#include "weather.h"
 
 namespace {
 
@@ -45,6 +46,8 @@ void __fastcall ProcessPacket_hook(void* pThis, void* edx, CInPacket* pPacket) {
                 }
             }
         }
+        // Observe, but never claim or advance the stock weather packet.
+        if (opcode == 0x008E) Weather_ObserveNativeWeather();
     }
     g_ProcessPacketOrig(pThis, edx, pPacket);
 }

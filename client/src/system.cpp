@@ -12,6 +12,8 @@
 #include "prismdispatch.h"
 #include "weapontint.h"
 #include "damagelong.h"
+#include "weather.h"
+#include "screen.h"
 
 // Fail-closed: false if ANY attach fails (later attaches skipped — no
 // half-hooked client pretends active).
@@ -29,6 +31,9 @@ bool AttachSystemHooks() {
     if (!AttachWeaponTintMod() || !AttachColoringPrismMod() || !AttachPrismDispatch())
         return false;
     if (!AttachDamageLongMod())
+        return false;
+    if (!BindWeatherViewport(GetModuleHandleW(L"Kaentake.dll")) ||
+        !AttachWeatherMod() || !AttachWeatherWindMod())
         return false;
     return true;
 }

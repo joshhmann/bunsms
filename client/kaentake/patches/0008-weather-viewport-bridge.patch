@@ -1,0 +1,19 @@
+--- a/src/resolution.cpp
++++ b/src/resolution.cpp
+@@ -42,6 +42,16 @@
+ int get_adjust_cy() {
+     return g_nAdjustCenterY;
+ }
+ 
++extern "C" __declspec(dllexport) int __cdecl KaentakeWeatherViewportWidth() {
++    return get_screen_width();
++}
++extern "C" __declspec(dllexport) int __cdecl KaentakeWeatherViewportHeight() {
++    return get_screen_height();
++}
++extern "C" __declspec(dllexport) int __cdecl KaentakeWeatherViewportAdjustY() {
++    return get_adjust_cy();
++}
++
+ void get_default_position(int nUIType, int* pnDefaultX, int* pnDefaultY) {
+     int nDefaultX;

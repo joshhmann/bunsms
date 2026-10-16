@@ -8,6 +8,7 @@
 #include "cashshopwnd.h"
 #include "weapontint.h"
 #include "damagelong.h"
+#include "weather.h"
 #include <atomic>
 
 #ifndef CLIENT_DLL_VERSION
@@ -45,6 +46,7 @@ void ResetFeatures() {
     CashShopWnd_Reset();
     WeaponTint_Reset();
     DamageLong_Reset();
+    Weather_Reset();
 }
 
 void __fastcall ClearCtx_hook(void* pThis, void* /*edx*/) {

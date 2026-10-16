@@ -6,6 +6,7 @@
 #include "cashshopwnd.h"
 #include "weapontint.h"
 #include "damagelong.h"
+#include "weather.h"
 
 namespace {
 
@@ -18,6 +19,7 @@ void __cdecl Redraw_hook() {
     CashShopWnd_Tick();
     WeaponTint_Tick();
     DamageLong_Frame();
+    Weather_Frame();
     g_RedrawOrig();
 }
 

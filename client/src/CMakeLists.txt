@@ -12,6 +12,17 @@ add_library(injector SHARED
     prismdispatch.cpp
     weapontint.cpp
     damagelong.cpp
+    weather.cpp
+    weatherfx.cpp
+    weathercanvas.cpp
+    weatherwind.cpp
+    weathersway.cpp
+    weatheraccum.cpp
+    weatherpuddle.cpp
+    weathersplash.cpp
+    weathermove.cpp
+    weathersound.cpp
+    lamps.cpp
     debug.cpp
     hook.cpp
 )

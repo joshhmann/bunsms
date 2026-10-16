@@ -38,7 +38,7 @@ on:
       backend_bundle_url:
         description: "Frozen QA server archive HTTPS URL"
         type: string
-        default: "https://buns.asslorde.com/client/candidates/full-content-bootstrap-20261016-0422/buns-full-content-bootstrap-20261016-0422.tar.gz"
+        default: "https://buns.asslorde.com/client/candidates/full-content-bootstrap-20261016-0422/buns-full-content-bootstrap-20261016-0422.tar.gz.bin"
       backend_bundle_sha256:
         description: "Exact frozen QA server archive SHA256"
         type: string
@@ -46,7 +46,7 @@ on:
       backend_xml_url:
         description: "Matching complete server XML archive HTTPS URL"
         type: string
-        default: "https://buns.asslorde.com/client/candidates/full-content-bootstrap-20261016-0422/buns-full-content-bootstrap-xml-20261016-0422.tar.gz"
+        default: "https://buns.asslorde.com/client/candidates/full-content-bootstrap-20261016-0422/buns-full-content-bootstrap-xml-20261016-0422.tar.gz.bin"
       backend_xml_sha256:
         description: "Exact matching complete server XML SHA256"
         type: string
@@ -81,7 +81,10 @@ jobs:
           if (-not $dumpbin) { throw 'MSVC dumpbin is unavailable' }
           foreach ($check in @(
             @{ path = 'client/build/Release/BunsMS.dll'; name = 'BunsMS_Initialize' },
-            @{ path = 'client/build-kaentake/Release/Kaentake.dll'; name = 'Kaentake_SetPrismItemEffBridge' }
+            @{ path = 'client/build-kaentake/Release/Kaentake.dll'; name = 'Kaentake_SetPrismItemEffBridge' },
+            @{ path = 'client/build-kaentake/Release/Kaentake.dll'; name = 'KaentakeWeatherViewportWidth' },
+            @{ path = 'client/build-kaentake/Release/Kaentake.dll'; name = 'KaentakeWeatherViewportHeight' },
+            @{ path = 'client/build-kaentake/Release/Kaentake.dll'; name = 'KaentakeWeatherViewportAdjustY' }
           )) {
             $exports = & $dumpbin /exports $check.path
             if ($LASTEXITCODE) { throw "Cannot read exports: $($check.path)" }

@@ -175,4 +175,30 @@ inline constexpr uintptr_t kNativeFtol = 0x00A62018;
 inline constexpr uintptr_t kVanillaLineCap = 0x00AFE8A0;
 }
 
+// --- Weather/lamp calls and sole native hook sites -------------------------
+namespace weather {
+inline constexpr uintptr_t CreateLayer = 0x00426C7E;
+inline constexpr uintptr_t LoadMap = 0x00639B3D;
+inline constexpr uintptr_t Update = 0x006399EF;
+inline constexpr uintptr_t RestoreTile = 0x0063A100;
+inline constexpr uintptr_t RestoreObj = 0x0063AA7E;
+inline constexpr uintptr_t RestoreBack = 0x0063CBBA;
+inline constexpr uintptr_t MakeBack = 0x0063CD4E;
+inline constexpr uintptr_t MakeObj = 0x0063AD16;
+inline constexpr uintptr_t OnNpcEnterField = 0x006D9993;
+inline constexpr uintptr_t CurrentFieldId = 0x00A1238B;
+inline constexpr uintptr_t UserLocal = 0x00BEBF98;
+inline constexpr uintptr_t PhysicalSpace = 0x00BEBFA0;
+inline constexpr uintptr_t GetFootholdUnderneath = 0x00A45585;
+inline constexpr uintptr_t CreateAnimLayer = 0x0043EA3E;
+inline constexpr uintptr_t BlowWeather = 0x00534A35;
+inline constexpr uintptr_t RemoveWeather = 0x00641AEB;
+inline constexpr uintptr_t PlaySE = 0x0043FB25;
+inline constexpr uintptr_t StopSE = 0x00773156;
+inline constexpr uintptr_t SoundMan = 0x00BEBF94;
+inline constexpr uintptr_t WindSite = 0x006406F3;
+inline constexpr uintptr_t FallDistanceImmediate = 0x006406FC;
+inline constexpr uintptr_t FieldRtti = 0x00BED758;
+}
+
 } // namespace addr
