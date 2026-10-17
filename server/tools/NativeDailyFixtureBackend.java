@@ -101,6 +101,8 @@ public final class NativeDailyFixtureBackend {
             var ready = new CompletableFuture<Client>();
             var accepted = new CompletableFuture<Channel>();
             var bytes = new ByteArrayOutputStream();
+            String orderedCharacters;
+            int targetIndex;
             Channel listener = null;
             try {
                 listener = new ServerBootstrap().group(acceptors, transports).channel(NioServerSocketChannel.class)
@@ -131,10 +133,25 @@ public final class NativeDailyFixtureBackend {
                     // This is offline fixture ownership, not a login or a session-state transition.
                     context.setAccID(account); context.setAccountName("fmbot"); context.setCharacterSlots((byte) slots);
                     require(context.getPlayer() == null && context.getCapsMask() == 0, "Factory context must not impersonate a logged-in player");
-                    int result;
-                    try { result = WarriorCreator.createCharacter(context, NAME, 20000, 30030, 0, gender, 0); }
-                    finally { context.setAccID(0); } // Detach fixture ownership before ordinary transport teardown.
-                    require(result == 0, "Existing validated Warrior factory refused the fixture: " + result);
+                    try {
+                        int result = WarriorCreator.createCharacter(context, NAME, 20000, 30030, 0, gender, 0);
+                        require(result == 0, "Existing validated Warrior factory refused the fixture: " + result);
+                        List<client.Character> chooser = context.loadCharacters(0);
+                        var ordered = new StringJoiner(",", "[", "]");
+                        targetIndex = -1;
+                        for (int i = 0; i < chooser.size(); i++) {
+                            var entry = chooser.get(i);
+                            ordered.add("{\"id\":" + entry.getId() + ",\"name\":" + json(entry.getName()) + "}");
+                            if (NAME.equals(entry.getName())) {
+                                require(targetIndex == -1, "Duplicate target in actual chooser view");
+                                targetIndex = i;
+                            }
+                        }
+                        require(targetIndex >= 0, "Actual chooser API does not contain the new normal character");
+                        orderedCharacters = ordered.toString();
+                    } finally {
+                        context.setAccID(0); // Detach fixture ownership before ordinary transport teardown.
+                    }
                     accepted.get(10, TimeUnit.SECONDS).eventLoop().submit(() -> {}).sync();
                     byte[] expected;
                     synchronized (bytes) { expected = bytes.toByteArray(); }
@@ -161,7 +178,7 @@ public final class NativeDailyFixtureBackend {
             require(password.find(), "Actual starter credential source is not identifiable");
             Files.createDirectories(credentials.getParent());
             Files.writeString(credentials, "{\"username\":\"fmbot\",\"password\":" + json(password.group(1)) + ",\"pic\":" + json(pic) + ",\"character\":\"" + NAME + "\"}\n", StandardOpenOption.CREATE_NEW);
-            Files.writeString(receipt, "{\"status\":\"PASS_GENUINE_WARRIOR_FACTORY_SETUP_NOT_NATIVE_AUTH_OR_FEATURE_ACCEPTANCE\",\"account\":{\"id\":" + account + ",\"name\":\"fmbot\",\"loggedinBefore\":0,\"loggedinAfter\":0,\"allOriginalFieldsUnchanged\":true},\"character\":{\"id\":" + character + ",\"name\":\"" + NAME + "\",\"world\":0,\"map\":102000000,\"level\":30,\"job\":100,\"gm\":0},\"cid2Unchanged\":true,\"mysqlUuid\":" + json(uuid) + ",\"schema\":\"buns_rc\",\"gameplaySourceCommit\":\"8b2110fff89b6d659b31aac360cb6881f5e4f3c2\",\"jarSha256\":\"" + JAR_SHA + "\",\"producerSourceSha256\":" + json(sha(source)) + ",\"realFactoryPacketBytes\":" + bytes.size() + ",\"normalServerRemainsRunning\":true,\"nativeAuthPicSelectionClaimRelogStillRequired\":true}\n", StandardOpenOption.CREATE_NEW);
+            Files.writeString(receipt, "{\"status\":\"PASS_GENUINE_WARRIOR_FACTORY_SETUP_NOT_NATIVE_AUTH_OR_FEATURE_ACCEPTANCE\",\"account\":{\"id\":" + account + ",\"name\":\"fmbot\",\"loggedinBefore\":0,\"loggedinAfter\":0,\"allOriginalFieldsUnchanged\":true},\"character\":{\"id\":" + character + ",\"name\":\"" + NAME + "\",\"world\":0,\"map\":102000000,\"level\":30,\"job\":100,\"gm\":0},\"orderedCharacters\":" + orderedCharacters + ",\"targetZeroBasedIndex\":" + targetIndex + ",\"chooserEvidence\":\"actual Client.loadCharacters(0), not an ID or SQL-order assumption\",\"cid2Unchanged\":true,\"mysqlUuid\":" + json(uuid) + ",\"schema\":\"buns_rc\",\"gameplaySourceCommit\":\"8b2110fff89b6d659b31aac360cb6881f5e4f3c2\",\"jarSha256\":\"" + JAR_SHA + "\",\"producerSourceSha256\":" + json(sha(source)) + ",\"realFactoryPacketBytes\":" + bytes.size() + ",\"normalServerRemainsRunning\":true,\"nativeAuthPicSelectionClaimRelogStillRequired\":true}\n", StandardOpenOption.CREATE_NEW);
             System.out.println("NATIVE_DAILY_FIXTURE_READY normal factory character WinDailyQa; native authentication/feature acceptance remain separate");
         } catch (Throwable failure) {
             failure.printStackTrace();
