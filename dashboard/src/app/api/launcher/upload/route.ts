@@ -1,48 +1,34 @@
 import { NextResponse } from "next/server";
-import { uploadToR2 } from "@/lib/r2";
+import { AssetError, beginRelease, publishRelease, releaseFileNames, stageFile } from "@/lib/assets";
+import { stageMultipart } from "@/lib/asset-multipart";
+import { isPrivateRequestAuthorized } from "@/lib/auth";
 
-// POST: Upload files to R2 (accepts multipart form data or JSON with file paths)
 export async function POST(request: Request) {
-  const contentType = request.headers.get("content-type") || "";
-
-  // JSON mode: accept file info for manifest-only updates
-  if (contentType.includes("application/json")) {
-    const body = await request.json();
-
-    if (!body.files || !Array.isArray(body.files)) {
-      return NextResponse.json({ error: "No files provided" }, { status: 400 });
-    }
-
-    // Files with paths = upload from server filesystem
-    const results = [];
-    const fs = await import("fs");
-    const path = await import("path");
-    for (const file of body.files) {
-      if (file.path && fs.existsSync(file.path)) {
-        const data = fs.readFileSync(file.path);
-        const result = await uploadToR2(file.name || path.basename(file.path), data);
-        results.push({ name: file.name, ...result });
-      }
-    }
-
-    return NextResponse.json({ results });
-  }
-
-  // Multipart mode: direct file upload
   try {
-    const formData = await request.formData();
-    const results = [];
-
-    for (const [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        const buffer = Buffer.from(await value.arrayBuffer());
-        const result = await uploadToR2(value.name || key, buffer);
-        results.push({ name: value.name || key, ...result });
+    if (!await isPrivateRequestAuthorized(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (request.headers.get("content-type")?.includes("application/json")) {
+      const body = await request.json();
+      if (!Array.isArray(body.files) || !body.files.length) throw new AssetError("At least one source file is required");
+      const releaseId = body.releaseId || beginRelease(body.baseReleaseId !== undefined ? { baseReleaseId: body.baseReleaseId } : {});
+      const allowed = releaseFileNames(releaseId);
+      for (const file of body.files) {
+        if (!file || !allowed.has(file.name) || typeof file.path !== "string") throw new AssetError("A tracked source name and path are required");
+        await stageFile(releaseId, file.name, file.path);
       }
+      return NextResponse.json({ releaseId, results: body.files.map((file: { name: string }) => ({ name: file.name, staged: true })) });
     }
-
-    return NextResponse.json({ results });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const upload = await stageMultipart(request);
+    if (upload.fields.mode === "art") {
+      if (!upload.expected.length || upload.keys.some((key) => !/^(custom-items|assets|reactors)\//.test(key))) {
+        throw new AssetError("Art upload requires expected metadata and a generated-art key");
+      }
+      const result = await publishRelease(upload.releaseId, upload.expected);
+      return NextResponse.json({ success: true, releaseId: result.releaseId, assets: result.assets });
+    }
+    const allowed = releaseFileNames(upload.releaseId);
+    if (upload.keys.some((key) => !allowed.has(key))) throw new AssetError("Only files in the frozen release catalog may be staged here");
+    return NextResponse.json({ releaseId: upload.releaseId, results: upload.keys.map((name) => ({ name, staged: true })) });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: error instanceof AssetError ? error.status : 500 });
   }
 }

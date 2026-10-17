@@ -1,7 +1,6 @@
 package net.server.channel.handlers;
 
-import net.opcodes.RecvOpcode;
-import net.opcodes.SendOpcode;
+import client.ClientCaps;
 import net.packet.InPacket;
 import net.packet.Packet;
 import org.junit.jupiter.api.Test;
@@ -45,13 +44,20 @@ class CashShopWindowHandlerTest extends HandlerTest {
     private void openField() {
         lenient().when(chr.getCashShop()).thenReturn(cashShop);
         lenient().when(cashShop.isOpened()).thenReturn(false);
+        lenient().when(client.hasCaps(ClientCaps.CASHSHOP_WINDOW)).thenReturn(true);
     }
 
     @Test
-    void opcodeValuesMatchRegistry() {
-        assertEquals(0x3730, RecvOpcode.CASHSHOP_WINDOW_ACTION.getValue());
-        assertEquals(0x3731, SendOpcode.CASHSHOP_WINDOW_SYNC.getValue());
+    void unflaggedSessionSendsNothing() {
+        lenient().when(chr.getCashShop()).thenReturn(cashShop);
+        lenient().when(cashShop.isOpened()).thenReturn(false);
+        lenient().when(client.hasCaps(ClientCaps.CASHSHOP_WINDOW)).thenReturn(false);
+
+        handler.handlePacket(Packets.buildInPacket(out -> out.writeByte(0)), client);
+
+        verify(client, never()).sendPacket(any());
     }
+
 
     @Test
     void nullPlayerSendsNothing() {

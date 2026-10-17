@@ -36,6 +36,9 @@ public final class DailyCheckinHandler extends AbstractPacketHandler {
         if (player == null) {
             return;
         }
+        if (!c.hasCaps(client.ClientCaps.CHECKIN_WINDOW)) {
+            return;
+        }
         int action = p.readByte();
 
         // Level gate (defense-in-depth; the window also isn't pushed to lower-level characters).
@@ -51,9 +54,7 @@ public final class DailyCheckinHandler extends AbstractPacketHandler {
             if (action == REQ_CLAIM) {
                 int day = p.readByte();
                 if (claimable >= 1 && day == claimable) {
-                    if (DailyCheckinRewards.grantDay(c, day)) {
-                        player.applyCheckinClaim(day);
-                        player.saveCharToDB();   // persist the claim + 24h timestamp immediately
+                    if (DailyCheckinRewards.claimDay(c, day)) {
                         justClaimed = day;
                         claimable = 0;           // now on cooldown until +24h
                         log.info("[DailyCheckin] {} claimed day {}", player.getName(), day);

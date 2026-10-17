@@ -344,27 +344,31 @@ public class ItemInformationProvider {
         return list;
     }
 
-    private static short getExtraSlotMaxFromPlayer(Client c, int itemId) {
+    private static short getExtraSlotMaxFromPlayer(Character player, int itemId) {
         short ret = 0;
 
         // thanks GMChuck for detecting player sensitive data being cached into getSlotMax
         if (ItemConstants.isThrowingStar(itemId)) {
-            if (c.getPlayer().getJob().isA(Job.NIGHTWALKER1)) {
-                ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(NightWalker.CLAW_MASTERY)) * 10;
+            if (player.getJob().isA(Job.NIGHTWALKER1)) {
+                ret += player.getSkillLevel(SkillFactory.getSkill(NightWalker.CLAW_MASTERY)) * 10;
             } else {
-                ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Assassin.CLAW_MASTERY)) * 10;
+                ret += player.getSkillLevel(SkillFactory.getSkill(Assassin.CLAW_MASTERY)) * 10;
             }
         } else if (ItemConstants.isBullet(itemId)) {
-            ret += c.getPlayer().getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 10;
+            ret += player.getSkillLevel(SkillFactory.getSkill(Gunslinger.GUN_MASTERY)) * 10;
         }
 
         return ret;
     }
 
     public short getSlotMax(Client c, int itemId) {
+        return getSlotMaxForCharacter(c == null ? null : c.getPlayer(), itemId);
+    }
+
+    public short getSlotMaxForCharacter(Character player, int itemId) {
         Short slotMax = slotMaxCache.get(itemId);
         if (slotMax != null) {
-            return (short) (slotMax + getExtraSlotMaxFromPlayer(c, itemId));
+            return (short) (slotMax + getExtraSlotMaxFromPlayer(player, itemId));
         }
         short ret = 0;
         Data item = getItemData(itemId);
@@ -382,7 +386,7 @@ public class ItemInformationProvider {
         }
 
         slotMaxCache.put(itemId, ret);
-        return (short) (ret + getExtraSlotMaxFromPlayer(c, itemId));
+        return (short) (ret + getExtraSlotMaxFromPlayer(player, itemId));
     }
 
     public int getMeso(int itemId) {

@@ -3,15 +3,16 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getGeneratedItem, updateGeneration } from "@/lib/gm/generated-items";
 import { query } from "@/lib/db";
+import { requireItemId, resolveArtPath } from "@/lib/art";
+import { ASSET_DIR } from "@/lib/assets";
 
 export const dynamic = "force-dynamic";
-// The publish job (WZ patch + R2 uploads + server restart) takes 2–5 minutes.
-// Default Fly dashboard limit is 300s; 600 gives a comfortable cap.
+// Verified WZ/NX publication and private game-server apply run in the background.
 export const maxDuration = 600;
 
 const PUBLISH_POLL_INTERVAL_MS = 3000;
 const PUBLISH_POLL_TIMEOUT_MS = 8 * 60_000;
-const STATUS_FILE = join(process.env.COSMIC_ROOT || "/cosmic", "publish-status.json");
+const STATUS_FILE = join(ASSET_DIR, "jobs", "publish-status.json");
 
 interface PublishStatus {
   id?: string;
@@ -25,12 +26,8 @@ interface PublishStatus {
 }
 
 /**
- * Poll the publish job by reading `/cosmic/publish-status.json` directly from
- * the shared volume. Earlier versions fetched the publish route over HTTP,
- * but a single ECONNRESET (the route is long-lived and self-fetches can race
- * with the game-server restart triggered mid-publish) would kill the loop and
- * leave `gm_generated_items.status` stuck on `ready` even after the job
- * finished. Filesystem reads can't ECONNRESET.
+ * Poll durable shared publication status; game-server application does not
+ * require a self-fetch through an origin that may be restarting.
  *
  * `jobId` is matched against `status.id` so a stale `done` file from the
  * previous publish can't short-circuit the wait for the *current* run.
@@ -61,7 +58,10 @@ interface Params {
 
 export async function GET(_request: NextRequest, { params }: Params) {
   const { id } = await params;
-  const item = await getGeneratedItem(parseInt(id));
+  let generationId: number;
+  try { generationId = requireItemId(id); }
+  catch { return NextResponse.json({ error: "Invalid generation id" }, { status: 400 }); }
+  const item = await getGeneratedItem(generationId);
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   let iconUrl: string | null = null;
@@ -85,16 +85,26 @@ export async function GET(_request: NextRequest, { params }: Params) {
       origins = wf?.origins ?? null;
     }
   }
+  try {
+    if (item.concept_image_url) resolveArtPath(item.concept_image_url);
+    if (item.glb_url) resolveArtPath(item.glb_url);
+    if (iconUrl) resolveArtPath(iconUrl);
+    for (const urls of Object.values(frames || {})) for (const url of urls) resolveArtPath(url);
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : String(err), migrationRequired: true }, { status: 409 });
+  }
 
   return NextResponse.json({ item, assets: { iconUrl, frames, origins } });
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   const { id } = await params;
-  const genId = parseInt(id);
+  let genId: number;
+  try { genId = requireItemId(id); }
+  catch { return NextResponse.json({ error: "Invalid generation id" }, { status: 400 }); }
   const body = await request.json();
   const action = body.action as "publish" | "reject" | undefined;
-  if (!action) {
+  if (action !== "publish" && action !== "reject") {
     return NextResponse.json({ error: "action required ('publish' or 'reject')" }, { status: 400 });
   }
 
@@ -132,7 +142,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     await updateGeneration(genId, { error: `publish kickoff failed: ${text}` });
     return NextResponse.json({ error: `Publish failed to start: ${text}` }, { status: 502 });
   }
-  const { id: jobId } = (await pub.json()) as { id: string };
+  const kickoff: unknown = await pub.json();
+  if (!kickoff || typeof kickoff !== "object" || !("id" in kickoff) || typeof kickoff.id !== "string") {
+    return NextResponse.json({ error: "Publication did not return a job identity" }, { status: 502 });
+  }
+  const jobId = kickoff.id;
 
   // The publish route is fire-and-forget — poll publish-status.json until the
   // background job actually completes, so callers (esp. the GM tool) get a

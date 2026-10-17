@@ -335,6 +335,7 @@ public class Character extends AbstractCharacterObject {
     private final Lock chrLock = new ReentrantLock(true);
     private final Lock evtLock = new ReentrantLock(true);
     private final Lock petLock = new ReentrantLock(true);
+    private final Lock mesoLock = new ReentrantLock(true);
     private final Lock prtLock = new ReentrantLock();
     private final Lock cpnLock = new ReentrantLock();
     private final Map<Integer, Set<Integer>> excluded = new LinkedHashMap<>();
@@ -602,7 +603,7 @@ public class Character extends AbstractCharacterObject {
      * 24h cooldown. Resets the cycle (clears day + mask) when the streak lapsed (>48h) or day 28 was
      * already claimed. Mutates in-memory state only (persisted on a claim).
      */
-    public int refreshCheckin() {
+    public synchronized int refreshCheckin() {
         final int cycle = server.DailyCheckinRewards.CYCLE_DAYS;
         if (checkinLastClaim <= 0) {           // never claimed -> fresh cycle, day 1 ready
             checkinDay = 0; checkinClaimed = 0;
@@ -615,12 +616,12 @@ public class Character extends AbstractCharacterObject {
         return checkinDay + 1;                  // consecutive day available
     }
 
-    /** Record a successful claim of day d: mark it, advance the streak, stamp the clock. */
-    public void applyCheckinClaim(int d) {
+    /** Publish the successful claim using the exact timestamp already committed with its reward. */
+    public synchronized void applyCheckinClaim(int d, long claimedAt) {
         if (d < 1 || d > server.DailyCheckinRewards.CYCLE_DAYS) return;
         checkinDay = d;
         checkinClaimed |= (1 << (d - 1));
-        checkinLastClaim = System.currentTimeMillis();
+        checkinLastClaim = claimedAt;
     }
 
     /** Seconds remaining on the 24h cooldown, or 0 if a claim is available now. */
@@ -3302,6 +3303,14 @@ public class Character extends AbstractCharacterObject {
         return nextMeso <= Integer.MAX_VALUE;
     }
 
+    public void lockMeso() {
+        mesoLock.lock();
+    }
+
+    public void unlockMeso() {
+        mesoLock.unlock();
+    }
+
     public void gainMeso(int gain) {
         gainMeso(gain, true, false, true);
     }
@@ -3312,7 +3321,7 @@ public class Character extends AbstractCharacterObject {
 
     public void gainMeso(int gain, boolean show, boolean enableActions, boolean inChat) {
         long nextMeso;
-        petLock.lock();
+        mesoLock.lock();
         try {
             nextMeso = (long) meso.get() + gain;  // thanks Thora for pointing integer overflow here
             if (nextMeso > Integer.MAX_VALUE) {
@@ -3322,7 +3331,7 @@ public class Character extends AbstractCharacterObject {
             }
             nextMeso = meso.addAndGet(gain);
         } finally {
-            petLock.unlock();
+            mesoLock.unlock();
         }
 
         if (gain != 0) {
@@ -6114,12 +6123,12 @@ public class Character extends AbstractCharacterObject {
         return Math.floorMod(hue, 360);
     }
 
-    /** Pushes every tint this character owns to the client DLL (LP 0x372F). */
+    /**
+     * Updates capable observers with this owner's palette, including restore-to-empty.
+     * A legacy owner can wear persisted tints without receiving native-only bytes.
+     */
     public void syncWeaponTint() {
-        if (client != null) {
-            sendPacket(server.colorprism.ColorPrismPackets.snapshot(this));
-            server.colorprism.ColorPrismPackets.broadcastMapTable(getMap());
-        }
+        server.colorprism.ColorPrismPackets.broadcastSnapshot(this);
     }
 
 
@@ -9061,6 +9070,19 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    public boolean clearEventInstance(EventInstanceManager owner) {
+        evtLock.lock();
+        try {
+            if (eventInstance != owner) {
+                return false;
+            }
+            eventInstance = null;
+            return true;
+        } finally {
+            evtLock.unlock();
+        }
+    }
+
     public void setExp(int amount) {
         this.exp.set(amount);
     }
@@ -9493,84 +9515,171 @@ public class Character extends AbstractCharacterObject {
         }
     }
 
+    private static final int QUICKSELL_LAST_SLOT = 96;
+
+    private static final class SaleSnapshot extends java.util.AbstractList<Item> {
+        private final Character owner;
+        private final InventoryType type;
+        private final int startSlot;
+        private final int endSlot;
+        private final List<Item> originals;
+        private final List<Item> items;
+
+        private SaleSnapshot(Character owner, InventoryType type, int startSlot, int endSlot) {
+            this.owner = owner;
+            this.type = type;
+            this.startSlot = startSlot;
+            this.endSlot = endSlot;
+            this.originals = new ArrayList<>(endSlot - startSlot + 1);
+            this.items = new ArrayList<>(endSlot - startSlot + 1);
+        }
+
+        @Override
+        public Item get(int index) {
+            return items.get(index);
+        }
+
+        @Override
+        public int size() {
+            return items.size();
+        }
+    }
+
+    private static boolean isQuicksellInventory(InventoryType type) {
+        return type == InventoryType.EQUIP || type == InventoryType.USE
+                || type == InventoryType.SETUP || type == InventoryType.ETC;
+    }
+
+    private static boolean isQuicksellRange(int startSlot, int endSlot) {
+        return startSlot > 0 && startSlot <= QUICKSELL_LAST_SLOT && startSlot <= endSlot;
+    }
+
+    /**
+     * Captures the actual displayed items, including empty-slot boundaries. The
+     * retained live references also distinguish otherwise identical replacements.
+     */
+    public List<Item> snapshotItemsForSale(InventoryType type, int startSlot, int endSlot) {
+        synchronized (this) {
+            if (!isQuicksellInventory(type) || !isQuicksellRange(startSlot, endSlot)) {
+                return Collections.emptyList();
+            }
+            endSlot = Math.min(endSlot, QUICKSELL_LAST_SLOT);
+            Inventory inv = getInventory(type);
+            inv.lockInventory();
+            try {
+                SaleSnapshot snapshot = new SaleSnapshot(this, type, startSlot, endSlot);
+                int lastSlot = Math.min(endSlot, inv.getSlotLimit());
+                for (int slot = startSlot; slot <= lastSlot; slot++) {
+                    Item item = inv.getItem((short) slot);
+                    if (item != null) {
+                        Item copy = item.copy();
+                        copy.setGiftFrom(item.getGiftFrom());
+                        copy.setSN(item.getSN());
+                        if (item instanceof Equip original && copy instanceof Equip equipCopy) {
+                            equipCopy.setRingId(original.getRingId());
+                            equipCopy.setEffTint(item.getEffTintHue(), item.getEffTintChroma(), item.getEffTintBright());
+                        }
+                        snapshot.originals.add(item);
+                        snapshot.items.add(copy);
+                    }
+                }
+                return snapshot;
+            } finally {
+                inv.unlockInventory();
+            }
+        }
+    }
+
     public int sellAllItemsFromName(byte invTypeId, String name) {
-        //player decides from which inventory items should be sold.
-        InventoryType type = InventoryType.getByType(invTypeId);
-
-        Inventory inv = getInventory(type);
-        inv.lockInventory();
-        try {
-            Item it = inv.findByName(name);
-            if (it == null) {
-                return (-1);
+        synchronized (this) {
+            InventoryType type = InventoryType.getByType(invTypeId);
+            if (!isQuicksellInventory(type) || name == null) {
+                return -1;
             }
-
-            ItemInformationProvider ii = ItemInformationProvider.getInstance();
-            return (sellAllItemsFromPosition(ii, type, it.getPosition()));
-        } finally {
-            inv.unlockInventory();
+            Inventory inv = getInventory(type);
+            List<Item> snapshot;
+            int startSlot;
+            inv.lockInventory();
+            try {
+                Item item = inv.findByName(name);
+                if (item == null || !isQuicksellRange(item.getPosition(), QUICKSELL_LAST_SLOT)) {
+                    return -1;
+                }
+                startSlot = item.getPosition();
+                snapshot = snapshotItemsForSale(type, startSlot, QUICKSELL_LAST_SLOT);
+            } finally {
+                inv.unlockInventory();
+            }
+            return sellAllItemsFromPosition(ItemInformationProvider.getInstance(), type,
+                    startSlot, QUICKSELL_LAST_SLOT, snapshot);
         }
     }
 
-    public int sellAllItemsFromPosition(ItemInformationProvider ii, InventoryType type, short pos) {
-        int mesoGain = 0;
-
-        Inventory inv = getInventory(type);
-        inv.lockInventory();
-        try {
-            for (short i = pos; i <= inv.getSlotLimit(); i++) {
-                if (inv.getItem(i) == null) {
-                    continue;
-                }
-                mesoGain += standaloneSell(getClient(), ii, type, i, inv.getItem(i).getQuantity());
-            }
-        } finally {
-            inv.unlockInventory();
+    public int sellAllItemsFromPosition(ItemInformationProvider ii, InventoryType type,
+                                       int startSlot, int endSlot) {
+        synchronized (this) {
+            List<Item> snapshot = snapshotItemsForSale(type, startSlot, endSlot);
+            return sellAllItemsFromPosition(ii, type, startSlot, endSlot, snapshot);
         }
-
-        return (mesoGain);
     }
 
-    private int standaloneSell(Client c, ItemInformationProvider ii, InventoryType type, short slot, short quantity) {
-        if (quantity == 0xFFFF || quantity == 0) {
-            quantity = 1;
-        }
-
-        Inventory inv = getInventory(type);
-        inv.lockInventory();
-        try {
-            Item item = inv.getItem(slot);
-            if (item == null) { //Basic check
-                return (0);
+    /**
+     * Sells only unchanged items from the displayed snapshot within the selected
+     * range. New items in previously empty slots are never included.
+     */
+    public int sellAllItemsFromPosition(ItemInformationProvider ii, InventoryType type,
+                                       int startSlot, int endSlot, List<Item> displayedSnapshot) {
+        synchronized (this) {
+            if (ii == null || !isQuicksellInventory(type) || !isQuicksellRange(startSlot, endSlot)
+                    || !(displayedSnapshot instanceof SaleSnapshot)) {
+                return -1;
+            }
+            endSlot = Math.min(endSlot, QUICKSELL_LAST_SLOT);
+            SaleSnapshot snapshot = (SaleSnapshot) displayedSnapshot;
+            if (snapshot.owner != this || snapshot.type != type || startSlot < snapshot.startSlot
+                    || endSlot > snapshot.endSlot) {
+                return -1;
             }
 
-            int itemid = item.getItemId();
-            if (ItemConstants.isRechargeable(itemid)) {
-                quantity = item.getQuantity();
-            } else if (ItemId.isWeddingToken(itemid) || ItemId.isWeddingRing(itemid)) {
-                return (0);
-            }
-
-            if (quantity < 0) {
-                return (0);
-            }
-            short iQuant = item.getQuantity();
-            if (iQuant == 0xFFFF) {
-                iQuant = 1;
-            }
-
-            if (quantity <= iQuant && iQuant > 0) {
-                InventoryManipulator.removeFromSlot(c, type, (byte) slot, quantity, false);
-                int recvMesos = ii.getPrice(itemid, quantity);
-                if (recvMesos > 0) {
-                    gainMeso(recvMesos, false);
-                    return (recvMesos);
+            Inventory inv = getInventory(type);
+            List<Item> soldItems = new ArrayList<>(snapshot.size());
+            List<Item> soldOriginals = new ArrayList<>(snapshot.size());
+            boolean selectedStart = false;
+            inv.lockInventory();
+            try {
+                for (int i = 0; i < snapshot.size(); i++) {
+                    Item expected = snapshot.get(i);
+                    short slot = expected.getPosition();
+                    if (slot < startSlot || slot > endSlot) {
+                        continue;
+                    }
+                    selectedStart |= slot == startSlot;
+                    Item live = inv.getItem(slot);
+                    if (live != snapshot.originals.get(i)
+                            || !server.transactions.TransactionService.sameItem(live, expected, true)) {
+                        return -1;
+                    }
+                    int itemId = expected.getItemId();
+                    if (expected.getQuantity() <= 0 || ii.isCash(itemId) || ItemConstants.isPet(itemId)
+                            || expected.getPetId() >= 0 || ii.isQuestItem(itemId)
+                            || ItemId.isWeddingToken(itemId) || ItemId.isWeddingRing(itemId)
+                            || server.transactions.TransactionService.getSalePrice(expected) <= 0) {
+                        continue;
+                    }
+                    soldItems.add(expected);
+                    soldOriginals.add(snapshot.originals.get(i));
                 }
+            } finally {
+                inv.unlockInventory();
             }
-
-            return (0);
-        } finally {
-            inv.unlockInventory();
+            if (!selectedStart) {
+                return -1;
+            }
+            if (soldItems.isEmpty()) {
+                return 0;
+            }
+            // The service acquires all inventory locks in enum order itself.
+            return server.transactions.TransactionService.sellItems(this, type, soldItems, soldOriginals);
         }
     }
 

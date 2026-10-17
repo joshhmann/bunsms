@@ -51,6 +51,7 @@
 
         <!-- Maven plugins -->
         <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version> <!-- For running unit tests -->
+        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
         <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version> <!-- Disabled. (for building thin jar) -->
         <maven-assembly-plugin.version>3.7.1
         </maven-assembly-plugin.version> <!-- For packaging the executable fat jar -->
@@ -226,6 +227,37 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${maven-resources-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>bot-runtime-data</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/bot-runtime-data/src/main/java/soloMapling</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/java/soloMapling</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>**/*.yaml</include>
+                                        <include>**/*.yml</include>
+                                        <include>**/*.txt</include>
+                                        <include>**/*.csv</include>
+                                        <include>**/*.bin</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Explicitly disable default jar which includes no dependencies -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

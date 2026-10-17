@@ -51,6 +51,8 @@ import server.maps.MapleMap;
 import server.partyquest.PartyQuest;
 import server.partyquest.Pyramid;
 import server.quest.Quest;
+import soloMapling.ArtificialPlayer.BotMessagingSystem.CharacterStorage;
+import soloMapling.ArtificialPlayer.BotTypes.FollowerBot;
 import tools.PacketCreator;
 import tools.Pair;
 
@@ -1081,6 +1083,9 @@ public class AbstractPlayerInteraction {
 
     public int createExpedition(ExpeditionType type, boolean silent, int minPlayers, int maxPlayers) {
         Character player = getPlayer();
+        if (type.allowsFollowerRegistration() && !type.meetsRegistrationRequirements(player)) {
+            return -1;
+        }
         Expedition exped = new Expedition(player, type, silent, minPlayers, maxPlayers);
 
         int channel = player.getMap().getChannelServer().getId();
@@ -1089,10 +1094,45 @@ public class AbstractPlayerInteraction {
         }
 
         if (exped.addChannelExpedition(player.getClient().getChannelServer())) {
+            registerExpeditionFollowers(exped);
             return 0;
         } else {
             return -1;
         }
+    }
+
+    public int registerExpeditionFollowers(Expedition exped) {
+        Character leader = getPlayer();
+        Party party = leader.getParty();
+        if (exped == null || !exped.getType().allowsFollowerRegistration()
+                || !exped.isLeader(leader) || !exped.isRegistering()
+                || party == null || party.getLeader().getId() != leader.getId()) {
+            return 0;
+        }
+        int registered = 0;
+        for (PartyCharacter member : party.getMembers()) {
+            if (!(CharacterStorage.getBotById(member.getId()) instanceof FollowerBot follower)) {
+                continue;
+            }
+            Character bot = follower.getChr();
+            if (!follower.isFollowingLeader(leader.getId()) || bot.getParty() != party
+                    || bot.getMap() != leader.getMap() || !bot.isAlive() || bot.getEventInstance() != null
+                    || exped.contains(bot)) {
+                continue;
+            }
+            exped.addMember(bot);
+            if (CharacterStorage.getBotById(bot.getId()) != follower
+                    || !follower.isFollowingLeader(leader.getId()) || bot.getParty() != party) {
+                if (exped.contains(bot)) {
+                    exped.removeMember(bot);
+                }
+                continue;
+            }
+            if (exped.contains(bot)) {
+                registered++;
+            }
+        }
+        return registered;
     }
 
     public void endExpedition(Expedition exped) {

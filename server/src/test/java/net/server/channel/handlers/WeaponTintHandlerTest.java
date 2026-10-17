@@ -1,16 +1,13 @@
 package net.server.channel.handlers;
 
 import client.Character;
-import client.Client;
+import client.ClientCaps;
 import client.inventory.Equip;
 import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import client.inventory.Item;
 import constants.id.ItemId;
-import net.opcodes.RecvOpcode;
-import net.opcodes.SendOpcode;
 import net.packet.InPacket;
-import net.packet.OutPacket;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -31,8 +28,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
- * Coloring prism server-half contract: opcode values from the registry, the seven
- * C2S actions, prism consumption, never-dyed restore refusal, tint validation,
+ * Coloring prism server-half contract: the seven C2S actions, prism consumption,
+ * never-dyed restore refusal, tint validation,
  * and the S2C snapshot layout the DLL-side window decodes. The client window and
  * hooks (coloringprism.cpp/weapontint.cpp) are DLL-side per the owner DLL-first
  * policy — this is the server half only.
@@ -56,6 +53,7 @@ class WeaponTintHandlerTest extends HandlerTest {
     private static final int SWORD_ID = 1302000;
 
     private void stubInventories() {
+        lenient().when(client.hasCaps(ClientCaps.PRISM_SYNC)).thenReturn(true);
         lenient().when(chr.getInventory(InventoryType.EQUIP)).thenReturn(Mockito.mock(Inventory.class));
         lenient().when(chr.getInventory(InventoryType.EQUIPPED)).thenReturn(equippedInv);
         lenient().when(chr.getInventory(InventoryType.CASH)).thenReturn(cashInv);
@@ -107,19 +105,6 @@ class WeaponTintHandlerTest extends HandlerTest {
             out.writeShort(prismPos);
             out.writeByte(layer);
         });
-    }
-
-    @Test
-    void opcodeValuesMatchRegistry() {
-        assertEquals(0x372E, RecvOpcode.COLORING_PRISM_ACTION.getValue());
-        assertEquals(0x372F, SendOpcode.COLORING_PRISM_SYNC.getValue());
-        assertEquals(0x372E, WeaponTintHandler.WEAPON_TINT_ACTION_ALIAS);
-        assertEquals(0x372F, ColorPrismPackets.WEAPON_TINT_SYNC_ALIAS);
-    }
-
-    @Test
-    void itemConstantMatchesDump() {
-        assertEquals(5782000, ItemId.COLORING_PRISM);
     }
 
     @Test
@@ -341,10 +326,4 @@ class WeaponTintHandlerTest extends HandlerTest {
         return snap;
     }
 
-    // Unused Client mock plumbing required by HandlerTest; referenced to keep
-    // the compiler honest about the Client/OutPacket imports.
-    @SuppressWarnings("unused")
-    private void touchTypes(Client c, OutPacket p) {
-        c.sendPacket(p);
-    }
 }

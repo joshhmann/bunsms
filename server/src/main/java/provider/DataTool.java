@@ -101,6 +101,32 @@ public class DataTool {
         }
     }
 
+    // Long-HP WZ accessor (ticket #12 core): reads maxHP-scale values above
+    // int range from <string>/<double>/<float> nodes, or Number.longValue()
+    // for numeric nodes (XMLDomMapleData narrows <int> upstream — see plan).
+    // Saturates at Monster.MAX_MONSTER_HP (2^53); minimum 1.
+    public static long getLongHp(String path, Data data) {
+        Data d = data.getChildByPath(path);
+        if (d == null || d.getData() == null) {
+            return 1;
+        }
+        long v;
+        try {
+            if (d.getType() == DataType.STRING) {
+                v = Long.parseLong(getString(d).trim());
+            } else if (d.getData() instanceof Number n) {
+                v = n.longValue();
+            } else {
+                return 1;
+            }
+        } catch (NumberFormatException nfe) {
+            return 1;
+        }
+        if (v < 1) {
+            return 1;
+        }
+        return Math.min(v, server.life.Monster.MAX_MONSTER_HP);
+    }
     public static int getInt(Data data, int def) {
         if (data == null || data.getData() == null) {
             return def;

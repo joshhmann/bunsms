@@ -1,0 +1,53 @@
+name: Native WZ independent reader
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [wz-roadmap-release]
+    paths:
+      - '.github/workflows/wz-validate.yml'
+      - 'tools/wz_release/IndependentReader/**'
+      - 'tools/wz_release/independent-request.json'
+
+permissions:
+  contents: read
+
+jobs:
+  established-reader:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: lastbattle/MapleLib
+          ref: 93099ab42c3225272432c3da8942024153a5ffab
+          path: reader-src
+      - uses: microsoft/setup-msbuild@v2
+      - uses: NuGet/setup-nuget@v2
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore the unmodified pinned established reader
+        run: nuget restore reader-src/MapleLib.sln -NonInteractive
+      - name: Build the unmodified pinned established reader
+        run: msbuild reader-src/MapleLib.sln /p:Configuration=Release '/p:Platform=Any CPU' /m
+      - name: Build the independent lazy-image and bitmap verifier
+        shell: pwsh
+        run: |
+          dotnet build tools/wz_release/IndependentReader/IndependentReader.csproj -c Release "-p:MapleLibRoot=$env:GITHUB_WORKSPACE/reader-src"
+          Copy-Item reader-src/MapleLib/bin/Release/*.dll tools/wz_release/IndependentReader/bin/Release/net48/ -Force
+      - name: Download exact candidate hashes and independently decode real assets
+        shell: pwsh
+        run: |
+          & tools/wz_release/IndependentReader/bin/Release/net48/IndependentReader.exe tools/wz_release/independent-request.json "$env:RUNNER_TEMP/wz-candidate" independent-reader-report.json
+          exit $LASTEXITCODE
+      - name: Publish independent evidence even when validation fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-wz-independent-evidence
+          path: |
+            independent-reader-report.json
+            tools/wz_release/independent-request.json
+          if-no-files-found: error

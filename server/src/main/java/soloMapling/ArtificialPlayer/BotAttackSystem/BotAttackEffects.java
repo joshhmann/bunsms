@@ -40,8 +40,23 @@ import java.util.Map;
  */
 public final class BotAttackEffects {
 
-    private BotAttackEffects() {}
-
+    /**
+     * Real magnitude of a bot damage line. Crit lines carry the legacy v83
+     * negative-int encoding widened to long: encodeCritLine(raw) =
+     * -INT_MAX + raw - 1, so decode is v + INT_MAX + 1 (a 1000-crit decodes
+     * to exactly 1000, never 999). Plain lines pass through. Matches
+     * decodeLegacyLine's magnitude half on the player path.
+     */
+    static long decodeBotLine(Long line) {
+        if (line == null) {
+            return 0L;
+        }
+        long v = line;
+        if (v < 0 && v >= (long) Integer.MIN_VALUE) {
+            return v + (long) Integer.MAX_VALUE + 1L;
+        }
+        return Math.abs(v);
+    }
     /*
      * Credits to NutNNut for Packet IDs
      * Land a melee hit on one or more mobs: broadcast the swing carrying each mob's damage
@@ -120,13 +135,16 @@ public final class BotAttackEffects {
         GCMovement.markAlerted(bot); // hold the 5s ALERT pose so the bot's own idle/move broadcasts don't cancel it
         boolean anyKilled = false;
         for (Map.Entry<Monster, List<Long>> hit : hits.entrySet()) {
-            // Ticket #12: lines are long (negative == crit); mob HP is still
-            // int, so the applied sum clamps at the int boundary.
+            // Ticket #12 (contract v1): bot crit lines use the legacy v83
+            // negative-int encoding widened to long (encodeCritLine); decode
+            // with the same rule as the player path, never abs() the raw
+            // value (that inflates a 1k crit to ~2.1B). Mob HP is still int,
+            // so the applied sum clamps at the int boundary.
             long total = 0;
             for (Long line : hit.getValue()) {
-                total += line == null ? 0L : Math.abs(line); // crit lines arrive negative-encoded
+                total = net.server.channel.handlers.AbstractDealDamageHandler.saturatedAdd(total, decodeBotLine(line));
             }
-            if (applyDamageAndLoot(bot, hit.getKey(), (int) Math.min(total, Integer.MAX_VALUE), hitDelay)) {
+            if (applyDamageAndLoot(bot, hit.getKey(), total, hitDelay)) {
                 anyKilled = true;
             }
         }
@@ -134,7 +152,7 @@ public final class BotAttackEffects {
     }
 
     /* Apply HP damage; on death, credit EXP + the death broadcast (no vanilla drops) and spawn our own loot. */
-    private static boolean applyDamageAndLoot(Character bot, Monster target, int damage, short hitDelay) {
+    private static boolean applyDamageAndLoot(Character bot, Monster target, long damage, short hitDelay) {
         MapleMap map = bot.getMap();
 
         boolean killed = target.damage(bot, damage, false); // register damage; false = allow death

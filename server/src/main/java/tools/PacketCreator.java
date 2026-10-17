@@ -2344,18 +2344,37 @@ public class PacketCreator {
     public static Packet closeRangeAttack(Character chr, int skill, int skilllevel, int stance,
                                           int numAttackedAndDamage, Map<Integer, AttackTarget> targets, int speed,
                                           int direction, int display) {
+        return closeRangeAttack(chr, skill, skilllevel, stance, numAttackedAndDamage, targets, speed, direction,
+                display, false);
+    }
+
+    /**
+     * Contract v1 per-recipient encode: legacy sessions get byte-exact v83
+     * (int32 lines only); only LONG_DAMAGE_LINES sessions get int+long lines.
+     */
+    public static Packet closeRangeAttack(Character chr, int skill, int skilllevel, int stance,
+                                          int numAttackedAndDamage, Map<Integer, AttackTarget> targets, int speed,
+                                          int direction, int display, boolean longLines) {
         final OutPacket p = OutPacket.create(SendOpcode.CLOSE_RANGE_ATTACK);
         addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, 0, targets, speed, direction,
-                display);
+                display, longLines);
         return p;
     }
 
     public static Packet rangedAttack(Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage,
                                       int projectile, Map<Integer, AttackTarget> targets, int speed, int direction,
                                       int display) {
+        return rangedAttack(chr, skill, skilllevel, stance, numAttackedAndDamage, projectile, targets, speed,
+                direction, display, false);
+    }
+
+    /** Contract v1 per-recipient encode; see {@link #closeRangeAttack(Character, int, int, int, int, Map, int, int, int, boolean)}. */
+    public static Packet rangedAttack(Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage,
+                                      int projectile, Map<Integer, AttackTarget> targets, int speed, int direction,
+                                      int display, boolean longLines) {
         final OutPacket p = OutPacket.create(SendOpcode.RANGED_ATTACK);
         addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, projectile, targets, speed, direction,
-                display);
+                display, longLines);
         p.writeInt(0);
         return p;
     }
@@ -2363,9 +2382,17 @@ public class PacketCreator {
     public static Packet magicAttack(Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage,
                                      Map<Integer, AttackTarget> targets, int charge, int speed, int direction,
                                      int display) {
+        return magicAttack(chr, skill, skilllevel, stance, numAttackedAndDamage, targets, charge, speed, direction,
+                display, false);
+    }
+
+    /** Contract v1 per-recipient encode; see {@link #closeRangeAttack(Character, int, int, int, int, Map, int, int, int, boolean)}. */
+    public static Packet magicAttack(Character chr, int skill, int skilllevel, int stance, int numAttackedAndDamage,
+                                     Map<Integer, AttackTarget> targets, int charge, int speed, int direction,
+                                     int display, boolean longLines) {
         final OutPacket p = OutPacket.create(SendOpcode.MAGIC_ATTACK);
         addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, 0, targets, speed, direction,
-                display);
+                display, longLines);
         if (charge != -1) {
             p.writeInt(charge);
         }
@@ -2387,6 +2414,13 @@ public class PacketCreator {
     private static void addAttackBody(OutPacket p, Character chr, int skill, int skilllevel, int stance,
                                       int numAttackedAndDamage, int projectile, Map<Integer, AttackTarget> targets,
                                       int speed, int direction, int display) {
+        addAttackBody(p, chr, skill, skilllevel, stance, numAttackedAndDamage, projectile, targets, speed,
+                direction, display, false);
+    }
+
+    private static void addAttackBody(OutPacket p, Character chr, int skill, int skilllevel, int stance,
+                                      int numAttackedAndDamage, int projectile, Map<Integer, AttackTarget> targets,
+                                      int speed, int direction, int display, boolean longLines) {
         p.writeInt(chr.getId());
         p.writeByte(numAttackedAndDamage);
         p.writeByte(0x5B);//?
@@ -2409,15 +2443,11 @@ public class PacketCreator {
                     p.writeByte(value.damageLines().size());
                 }
                 for (Long damageLine : value.damageLines()) {
-                    // Ticket #12, S2C half (paired release with the DLL client
-                    // hook): the vanilla damage int stays first on the vanilla
-                    // opcodes so legacy/spectator clients keep decoding it; the
-                    // real 64-bit magnitude follows (little-endian writeLong).
-                    // Overflow lines keep the INT_MAX sentinel in the int slot;
-                    // crits keep the sign bit on the int slot only, with the
-                    // positive magnitude in the long slot. Vanilla clients read
-                    // just the int and skip/display the clamped value; the DLL
-                    // hook reads int+long per line.
+                    // Contract v1: legacy default is byte-exact v83 int32 lines.
+                    // The 8-byte real is appended ONLY for LONG_DAMAGE_LINES
+                    // recipients. Overflow lines keep the INT_MAX sentinel in
+                    // the int slot; crits keep the sign bit there, with the
+                    // positive magnitude in the long slot.
                     long line = damageLine != null ? damageLine : 0L;
                     boolean crit = line < 0;
                     long mag = Math.abs(line);
@@ -2426,7 +2456,9 @@ public class PacketCreator {
                         n |= Integer.MIN_VALUE; // spectator crit flag
                     }
                     p.writeInt(n);
-                    p.writeLong(mag);
+                    if (longLines) {
+                        p.writeLong(mag);
+                    }
                 }
             }
         }
@@ -3714,6 +3746,17 @@ public class PacketCreator {
         return p;
     }
 
+    /**
+     * Long-HP boss bar (damagecap-server cutover): legacy int-exact layout is
+     * preserved; values above the int range are ratio-normalized (max scales to
+     * INT_MAX, cur keeps the ratio, floored at 1 when cur &gt; 0) so the bar
+     * renders the true fraction on any legacy decoder.
+     */
+    public static Packet showBossHPLong(int oid, long currHP, long maxHP, byte tagColor, byte tagBgColor) {
+        Pair<Integer, Integer> norm = normalizedCustomMaxHP(currHP, maxHP);
+        return showBossHP(oid, norm.getLeft(), norm.getRight(), tagColor, tagBgColor);
+    }
+
     private static Pair<Integer, Integer> normalizedCustomMaxHP(long currHP, long maxHP) {
         int sendHP, sendMaxHP;
 
@@ -3724,6 +3767,10 @@ public class PacketCreator {
             float f = ((float) currHP) / maxHP;
 
             sendHP = (int) (Integer.MAX_VALUE * f);
+            // A living boss must never render an empty bar from truncation.
+            if (currHP > 0 && sendHP < 1) {
+                sendHP = 1;
+            }
             sendMaxHP = Integer.MAX_VALUE;
         }
 
@@ -4129,6 +4176,26 @@ public class PacketCreator {
         p.writeInt(curhp);
         p.writeInt(maxhp);
         return p;
+    }
+
+    /**
+     * Long-HP damage/heal numbers (damagecap-server cutover): same legacy
+     * layout; damage/cur/max above int range are ratio-normalized (see
+     * {@link #showBossHPLong}). Damage keeps the INT_MAX overflow sentinel
+     * semantics of the attack-line path.
+     */
+    public static Packet damageMonsterLong(int oid, long damage, long curhp, long maxhp) {
+        long cn = curhp, mn = maxhp;
+        if (mn > Integer.MAX_VALUE) {
+            double f = (double) cn / (double) mn;
+            mn = Integer.MAX_VALUE;
+            cn = Math.max(cn > 0 ? 1L : 0L, Math.round(Integer.MAX_VALUE * f));
+        }
+        return damageMonster(oid, (int) Math.min(damage, Integer.MAX_VALUE), (int) cn, (int) mn);
+    }
+
+    public static Packet healMonsterLong(int oid, long heal, long curhp, long maxhp) {
+        return damageMonsterLong(oid, -heal, curhp, maxhp);
     }
 
     public static Packet updateBuddylist(Collection<BuddylistEntry> buddylist) {
@@ -6788,10 +6855,32 @@ public class PacketCreator {
         p.writeByte(1); // direction ?
         p.writeInt(damage);
         p.writeInt(remainingHp);
-        p.writeInt(mob.getMaxHp());
+        // Legacy int form (delivery-audit agreed): explicit narrowing at the
+        // legacy protocol boundary; byte-identical for all int-range HP.
+        p.writeInt((int) Math.min(mob.getMaxHp(), Integer.MAX_VALUE));
         return p;
     }
 
+    /**
+     * Long-HP friendly damage (damagecap-server cutover): same legacy layout;
+     * damage/remaining/max above int range are ratio-normalized (see
+     * {@link #showBossHPLong}).
+     */
+    public static Packet MobDamageMobFriendlyLong(Monster mob, long damage, long remainingHp, long maxHp) {
+        long cn = remainingHp, mn = maxHp;
+        if (mn > Integer.MAX_VALUE) {
+            double f = (double) cn / (double) mn;
+            mn = Integer.MAX_VALUE;
+            cn = Math.max(cn > 0 ? 1L : 0L, Math.round(Integer.MAX_VALUE * f));
+        }
+        final OutPacket p = OutPacket.create(SendOpcode.DAMAGE_MONSTER);
+        p.writeInt(mob.getObjectId());
+        p.writeByte(1); // direction ?
+        p.writeInt((int) Math.min(damage, Integer.MAX_VALUE));
+        p.writeInt((int) cn);
+        p.writeInt((int) mn);
+        return p;
+    }
     public static Packet shopErrorMessage(int error, int type) {
         final OutPacket p = OutPacket.create(SendOpcode.PLAYER_INTERACTION);
         p.writeByte(0x0A);

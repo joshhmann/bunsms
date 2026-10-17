@@ -1,154 +1,90 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-import crypto from "crypto";
+import type { NextRequest } from "next/server";
+import { AssetError, beginRelease, readManifest, readReleaseView, releaseFileNames, rollbackRelease } from "@/lib/assets";
+import { prepareStagedWzRelease, publishSealedWzRelease, publishStagedWzRelease } from "@/lib/wz-to-nx";
+import { restartGameServer } from "@/lib/game-control";
+import type { Manifest, PublishResult } from "@/lib/assets";
 
-// Read: check volume first (dynamic updates), then bundled copy
-// Write: always write to volume so updates persist across deploys
-const VOLUME_MANIFEST = "/cosmic/launcher-manifest.json";
-const BUNDLED_MANIFEST = path.join(process.cwd(), "launcher-manifest.json");
-const WRITE_PATH = VOLUME_MANIFEST; // always write to volume
+export const dynamic = "force-dynamic";
+const PROFILES: Record<string, true> = { stock: true, kaentake: true };
 
-// Check dynamically on every read — the volume file may be created after startup
-function getReadPath() {
-  return fs.existsSync(VOLUME_MANIFEST) ? VOLUME_MANIFEST : BUNDLED_MANIFEST;
-}
-
-// Files the launcher tracks for updates
-const TRACKED_FILES = [
-  "BunsMS.exe",
-  "Character.wz",
-  "Etc.wz",
-  "Item.wz",
-  "List.wz",
-  "Map.wz",
-  "Mob.wz",
-  "Npc.wz",
-  "Quest.wz",
-  "Reactor.wz",
-  "Skill.wz",
-  "String.wz",
-  "UI.wz",
-];
-
-interface ManifestFile {
-  name: string;
-  hash: string;
-  size: number;
-  url: string;
-}
-
-interface Manifest {
-  version: string;
-  updatedAt: string;
-  files: ManifestFile[];
-  downloadBase: string;
-}
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Try to read existing manifest
-    if (fs.existsSync(getReadPath())) {
-      const manifest = JSON.parse(fs.readFileSync(getReadPath(), "utf-8"));
-      return NextResponse.json(manifest, {
-        headers: { "Access-Control-Allow-Origin": "*" },
-      });
-    }
-
-    // No manifest exists yet — return a default
-    return NextResponse.json(
-      {
-        version: "1.0.0",
-        updatedAt: new Date().toISOString(),
-        files: [],
-        downloadBase: "",
-        message: "No manifest configured. Use POST to create one.",
-      },
-      { headers: { "Access-Control-Allow-Origin": "*" } }
-    );
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const profile = request.nextUrl.searchParams.get("profile") || "stock";
+    if (!PROFILES[profile]) throw new AssetError(`Unknown profile: ${profile}`);
+    const retainedId = request.nextUrl.searchParams.get("releaseId");
+    const current = readManifest();
+    const manifest = retainedId ? readReleaseView(retainedId) : current.manifest;
+    return NextResponse.json({
+      version: manifest.version, updatedAt: manifest.updatedAt,
+      downloadBase: manifest.downloadBase, releaseId: manifest.releaseId,
+      completeProfiles: manifest.completeProfiles, provenance: manifest.provenance,
+      files: manifest.files.filter((file) => (file.profiles || ["stock"]).includes(profile)),
+    }, { headers: {
+      "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store",
+      "X-Manifest-Authority": `${current.manifest.releaseId ? "volume" : "bundled-bootstrap-seed"}:${current.path}`,
+    } });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: error instanceof AssetError ? error.status : 500 });
   }
 }
 
-// POST: Update the manifest (called by GM AI or admin)
+async function applyChangedServer(previous: Manifest, result: PublishResult): Promise<void> {
+  const next = result.manifest.assets?.["server-wz.tar.gz"];
+  if (!previous.releaseId || !next || previous.assets?.["server-wz.tar.gz"]?.hash === next.hash) return;
+  const applied = await restartGameServer();
+  if (!applied.success) throw new AssetError(applied.error || "Release committed, but game-server apply failed", 502);
+}
+
+// Private session/GM-secret-authenticated mutations; Caddy never forwards public writes.
 export async function POST(request: Request) {
+  let publishedReleaseId: string | undefined;
   try {
     const body = await request.json();
-
-    // Option 1: Full manifest replacement
-    if (body.manifest) {
-      fs.writeFileSync(WRITE_PATH, JSON.stringify(body.manifest, null, 2));
-      return NextResponse.json({ success: true, manifest: body.manifest });
+    if (body.stage === true) {
+      const releaseId = beginRelease({ ...(body.baseReleaseId !== undefined ? { baseReleaseId: body.baseReleaseId } : {}), ...(body.catalog !== undefined ? { catalog: body.catalog } : {}), ...(body.certification !== undefined ? { certification: body.certification } : {}), ...(body.version !== undefined ? { version: body.version } : {}) });
+      return NextResponse.json({ success: true, releaseId });
     }
-
-    // Option 2: Generate manifest from a local directory of client files
-    if (body.generateFrom) {
-      const clientDir = body.generateFrom;
-      if (!fs.existsSync(clientDir)) {
-        return NextResponse.json({ error: "Directory not found" }, { status: 400 });
-      }
-
-      const files: ManifestFile[] = [];
-      for (const name of TRACKED_FILES) {
-        const filePath = path.join(clientDir, name);
-        if (fs.existsSync(filePath)) {
-          const stat = fs.statSync(filePath);
-          const hash = crypto
-            .createHash("sha256")
-            .update(fs.readFileSync(filePath))
-            .digest("hex");
-          files.push({
-            name,
-            hash,
-            size: stat.size,
-            url: body.downloadBase ? `${body.downloadBase}/${name}` : "",
-          });
-        }
-      }
-
-      const manifest: Manifest = {
-        version: body.version || "1.0.0",
-        updatedAt: new Date().toISOString(),
-        files,
-        downloadBase: body.downloadBase || "",
-      };
-
-      fs.writeFileSync(WRITE_PATH, JSON.stringify(manifest, null, 2));
-      return NextResponse.json({ success: true, manifest });
+    if (typeof body.rollback === "string") {
+      const previous = readManifest().manifest;
+      const result = await rollbackRelease(body.rollback);
+      publishedReleaseId = result.releaseId;
+      await applyChangedServer(previous, result);
+      return NextResponse.json({ success: true, ...result });
     }
-
-    // Option 3: Update download URLs only (e.g., new Mega links)
-    if (body.urls) {
-      if (!fs.existsSync(getReadPath())) {
-        return NextResponse.json({ error: "No manifest exists" }, { status: 400 });
-      }
-      const manifest = JSON.parse(fs.readFileSync(getReadPath(), "utf-8"));
-      for (const file of manifest.files) {
-        if (body.urls[file.name]) {
-          file.url = body.urls[file.name];
-        }
-      }
-      manifest.updatedAt = new Date().toISOString();
-      if (body.version) manifest.version = body.version;
-      fs.writeFileSync(WRITE_PATH, JSON.stringify(manifest, null, 2));
-      return NextResponse.json({ success: true, manifest });
+    if (body.publish === true && typeof body.releaseId === "string") {
+      const previous = readManifest().manifest;
+      const result = await publishSealedWzRelease(body.releaseId);
+      publishedReleaseId = result.releaseId;
+      await applyChangedServer(previous, result);
+      return NextResponse.json({ success: true, version: result.manifest.version, ...result });
     }
-
-    return NextResponse.json({ error: "Provide manifest, generateFrom, or urls" }, { status: 400 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    if (typeof body.releaseId !== "string" || !Array.isArray(body.register) || !body.register.length) {
+      throw new AssetError("Provide stage, a retained rollback id, or releaseId and expected register metadata");
+    }
+    const allowed = releaseFileNames(body.releaseId);
+    const expected = body.register.map((item: { name: string; hash: string; size: number }) => {
+      if (!item || !allowed.has(item.name)) throw new AssetError("Every registered name must be in the complete launcher/server allowlist");
+      return { key: item.name, hash: item.hash, size: item.size };
+    });
+    if (body.operations !== undefined && !Array.isArray(body.operations)) throw new AssetError("operations must be an array");
+    const target = body.target || "native";
+    if (target !== "native" && target !== "native-and-browser") throw new AssetError("Unknown publication target");
+    if (body.prepareOnly === true) {
+      const prepared = await prepareStagedWzRelease(body.releaseId, expected, body.operations || [], target);
+      return NextResponse.json({ success: true, published: false, sealed: true, nxBaseUrl: `/nx/r/${prepared.releaseId}`, ...prepared });
+    }
+    const previous = readManifest().manifest;
+    const result = await publishStagedWzRelease(body.releaseId, expected, body.operations || [], target);
+    publishedReleaseId = result.releaseId;
+    await applyChangedServer(previous, result);
+    return NextResponse.json({ success: true, version: result.manifest.version, ...result });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error), ...(publishedReleaseId ? { releaseId: publishedReleaseId, published: true } : {}) }, { status: error instanceof AssetError ? error.status : 500 });
   }
 }
-
-// CORS preflight
 export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    },
-  });
+  return new NextResponse(null, { status: 204, headers: {
+    "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+  } });
 }

@@ -52,11 +52,12 @@ function action(mode, type, selection) {
         }
 
         if (status == 0) {
-            if (cm.isQuestCompleted(8074)) {
-                cm.openNpc(9110002);
-            } else {
-                cm.sendOk("Musssshhhhroooom Shrine~~~");
-            }
+            // MapleRoot wave 1 (ticket #5): chair shop 9110002 is stocked by
+            // migration 172. Both branches open the shop: self re-open via
+            // openNpc is refused while a conversation is active
+            // (AbstractPlayerInteraction returns while c.getCM() != null),
+            // so quest completers would otherwise get no shop at all.
+            cm.openShopNPC(9110002);
 
             cm.dispose();
         }

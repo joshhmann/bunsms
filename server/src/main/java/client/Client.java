@@ -149,6 +149,34 @@ public class Client extends ChannelInboundHandlerAdapter {
     private long lastNpcClick;
     private long lastPacket = System.currentTimeMillis();
     private int lang = 0;
+    /**
+     * Negotiated capability mask for this connection (see {@link ClientCaps}).
+     * Default 0 = legacy/stock client: byte-exact v83 bytes everywhere. Set once
+     * by ClientCapsHandler on announce; never carried across connections.
+     */
+    private volatile int capsMask = 0;
+    /** DLL version from the announce packet (0 = never announced). */
+    private volatile int capsDllVersion = 0;
+    /** Negotiated caps for this connection; 0 = legacy. */
+    public int getCapsMask() {
+        return capsMask;
+    }
+
+    /** True when this connection announced the given capability bit. */
+    public boolean hasCaps(int bit) {
+        return ClientCaps.has(capsMask, bit);
+    }
+
+    /** Set by ClientCapsHandler only, from the announce packet. */
+    public void setCaps(int dllVersion, int acceptedMask) {
+        this.capsDllVersion = dllVersion;
+        this.capsMask = acceptedMask;
+    }
+
+    /** DLL version from announce (0 = never announced = stock/legacy). */
+    public int getCapsDllVersion() {
+        return capsDllVersion;
+    }
 
     public enum Type {
         LOGIN,

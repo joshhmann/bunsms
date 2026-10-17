@@ -23,10 +23,9 @@
 	Quicksell NPC, ported from MapleRoot Full Repack's
 	Server/scripts/npc/quicksell.js (Ronan Lana, then PumpkinPie).
 
-	Adaptation note: our Character backend has no sellAllPosLast
-	 ranged sell, so this sells from the chosen start slot through
-	 the end of the tab via sellAllItemsFromPosition instead of a
-	 start..end range. No other backend calls were needed.
+	Only displayed snapshots in slots 1..96 can be sold. The backend
+	 validates their identity and quantity before one guarded batch sale;
+	 protected and nonpositive-price items are skipped.
 */
 
 var InventoryType = Java.type('client.inventory.InventoryType');
@@ -48,12 +47,13 @@ var options = [InventoryTypeOptions.Equip, InventoryTypeOptions.Use, InventoryTy
 
 var status;
 var inventoryType;
-var inventory;
-var firstItemSlot;
+var displayedSnapshot;
 var lastItemSlot = 96;
 
 function start() {
     status = -1;
+    inventoryType = null;
+    displayedSnapshot = null;
     action(1, 0, 0);
 }
 
@@ -75,53 +75,76 @@ function action(mode, type, selection) {
 }
 
 function handleInitialStatus() {
-    var selectionOptionsString = "Hello, I am the #bDonation Box#k! I can clear your inventory of junk or glitched items by selling them all. ";
+    var selectionOptionsString = "Hello, I am the #bDonation Box#k! I can sell eligible items in slots 1 through 96 of your inventory. ";
     for (var i = 0; i < options.length; i++) {
         var inventoryOption = options[i];
         selectionOptionsString += "\r\n#L" + inventoryOption + "# " + InventoryTypeOptions.StringMap[inventoryOption] + "#l";
     }
+    selectionOptionsString += "\r\n#L5#Search monster drops or item sources.#l";
     cm.sendSimple(selectionOptionsString);
 }
 
 function handleInventoryStartSelectionStatus(selection) {
+    if (selection === 5) {
+        cm.dispose();
+        cm.openNpc(9000041, 'search');
+        return;
+    }
+    if (selection !== Math.floor(selection) || options.indexOf(selection) === -1) {
+        cm.dispose();
+        return;
+    }
     inventoryType = InventoryType.getByType(selection);
-    inventory = cm.getPlayer().getInventory(inventoryType);
-    var selectionString = createInventoryItemsString(inventory, 0, lastItemSlot, "Which slot in your inventory do you want to start selling from? Everything from that slot to the end of the tab will be sold.\r\n");
+    displayedSnapshot = cm.getPlayer().snapshotItemsForSale(inventoryType, 1, lastItemSlot);
+    if (displayedSnapshot.size() === 0) {
+        cm.sendOk("There are no items in slots 1 through " + lastItemSlot + " of that inventory.");
+        cm.dispose();
+        return;
+    }
+    var selectionString = createInventoryItemsString(displayedSnapshot,
+        "Which displayed slot do you want to start selling from? Only eligible displayed items from that slot through slot " + lastItemSlot + " will be sold.\r\n"
+        + "Cash items, pets, quest items, wedding items and items without a positive sale price will be skipped.\r\n");
     cm.sendSimple(selectionString);
 }
 
 function handleTransactionStatus(selection) {
-    firstItemSlot = selection;
+    if (displayedSnapshot === null || selection !== Math.floor(selection)
+            || selection < 1 || selection > lastItemSlot || !isDisplayedSlot(selection)) {
+        cm.dispose();
+        return;
+    }
     var ii = ItemInformationProvider.getInstance();
-    var transactionResult = cm.getPlayer().sellAllItemsFromPosition(ii, inventoryType, firstItemSlot);
+    var transactionResult = cm.getPlayer().sellAllItemsFromPosition(
+        ii, inventoryType, selection, lastItemSlot, displayedSnapshot);
     var transactionMessage;
     if (transactionResult > 0) {
         transactionMessage = "Transaction complete! You received #r" + cm.numberWithCommas(transactionResult) + " mesos#k from this action.";
+    } else if (transactionResult === 0) {
+        transactionMessage = "No mesos were credited. Protected items and items without a positive sale price were skipped.";
     } else {
-        transactionMessage = "There was nothing to sell from that slot onward, please try again.";
+        transactionMessage = "Nothing was sold. The displayed items changed or the sale could not be completed. Please try again.";
     }
     cm.sendOk(transactionMessage);
     cm.dispose();
 }
 
-function createInventoryItemsString(inventory, startSlot, endSlot, initialMessage) {
-    var selectionString = initialMessage;
-    var formatCounter = 0;
-    for (var itemSlot = startSlot; itemSlot <= endSlot; itemSlot++) {
-        var result = appendItemString(inventory, itemSlot, selectionString, formatCounter);
-        selectionString = result.selectionString;
-        formatCounter = result.formatCounter;
+function isDisplayedSlot(slot) {
+    for (var i = 0; i < displayedSnapshot.size(); i++) {
+        if (displayedSnapshot.get(i).getPosition() === slot) {
+            return true;
+        }
     }
-    return selectionString;
+    return false;
 }
 
-function appendItemString(inventory, itemSlot, selectionString, formatCounter) {
-    if (inventory.getItem(itemSlot) !== null) {
-        selectionString += "#L" + itemSlot + "##i" + inventory.getItem(itemSlot).getItemId() + "#   ";
-        formatCounter++;
-        if (formatCounter % 4 === 0) {
+function createInventoryItemsString(snapshot, initialMessage) {
+    var selectionString = initialMessage;
+    for (var i = 0; i < snapshot.size(); i++) {
+        var item = snapshot.get(i);
+        selectionString += "#L" + item.getPosition() + "##i" + item.getItemId() + "# x" + item.getQuantity() + "#l   ";
+        if ((i + 1) % 4 === 0) {
             selectionString += "\r\n";
         }
     }
-    return { selectionString: selectionString, formatCounter: formatCounter };
+    return selectionString;
 }

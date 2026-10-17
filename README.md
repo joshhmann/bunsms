@@ -6,21 +6,36 @@ A MapleStory v83 private server powered by an AI Game Master. Built on [Cosmic](
 
 ```
 bunsms/
-  server/       # Java game server (Cosmic v83, Docker, Fly.io)
-  dashboard/    # Next.js 15 admin panel + APIs (App Router, Fly.io)
+  server/       # Java game server (Cosmic v83, Docker on the measured LXC host)
+  dashboard/    # Next.js 15 private admin panel + APIs (App Router)
   launcher/     # Electron desktop launcher (auto-update, Windows)
   client/       # Patched MapleStory v83 client + custom WZ files
   mcp-server/   # Standalone MCP tools server (external integrations)
 ```
 
+Current release boundary: the accepted full-content Windows TESTING RC and its
+matching Linux test server are required together. Production .164 Java/DB and
+the existing browser/NX world stay unchanged until verified acceptance/rollout.
+Browser and Linux/Wine work are parked, not new-world compatibility claims.
+See [current source, exact artifacts and evidence](server/docs/CURRENT-STATE.md)
+and [the accepted roadmap](server/docs/ROADMAP-BACKLOG.md); the Windows CI Java
+stack is temporary QA, not a Windows production backend/player dependency.
+
+Latest isolated server gameplay evidence includes a six-player ordinary HardLotus
+clear with matching personal/shared damage, duration and party logs, public
+leaderboards, and save/reload. Completion-only migration035 preserves the
+existing unlimited-attempt policy and custom history. This does **not** qualify
+the full native cohort or declare the Windows RC ready; exact receipts and
+remaining lifecycle, bot and native gates are in the current-state ledger above.
+
 ### Game Server
-- Cosmic v83 MapleStory emulator running on Fly.io (IAD region)
-- MySQL 8.4 database with Liquibase migrations
-- Login server (port 8484) + 3 channel servers (7575-7577)
-- Config patched at runtime via environment variables
+- Cosmic v83 on the existing Linux LXC/Docker Compose `/opt/server` deployment
+- MySQL with shipped Liquibase migrations; isolated current RC proofs use8.0.36
+- Login8484 and channels7575–7577; private QA cohorts do not change public NAT
+- Runtime environment/config plus genuine authored bot data, not a Java source-tree copy
 
 ### Dashboard
-- Next.js 15 with App Router, deployed on Fly.io
+- Next.js 15 with App Router, on the private LAN Docker stack
 - 24+ API endpoints: maps, mobs, items, characters, drops, config, server control, scripts, accounts
 - Admin authentication with Cloudflare Turnstile
 - Real-time server status and player management
@@ -44,19 +59,28 @@ bunsms/
   fixed login port **8484** — point at a host with 8484 reachable; test
   needs 8484, not the 9494 docker alias)
 * Server status display, news feed from GM activity
-* Client files hosted on R2 (`pub-34b8b332208f464a9e74fa14104be3e2.r2.dev`)
+* Client/native art/server/NX files use verified immutable selfhost releases;
+  see [publication and rollback](server/docs/SELFHOST-ASSETS.md).
 
 ## Deployment
 
-All deployments are automated via GitHub Actions on push to `main`:
-- **Dashboard**: Builds and deploys to Fly.io (`buns-ms`)
-- **Game Server**: Builds and deploys to Fly.io (`buns-ms-game`)
-- **Launcher**: Builds Windows installer and publishes to GitHub Releases
+Source deployments use the measured LXC `.164` application host and `.70`
+Caddy edge. The public edge exposes browser/WSS, asset reads and the three
+launcher/server read APIs, not private mutation/control endpoints.
 
-### Infrastructure
-- **Fly.io**: Game server (2GB RAM, 2 CPU), dashboard (512MB), MySQL database
-- **Cloudflare**: DNS + CDN for bunsms.com (dashboard)
-- **GitHub Releases**: Client file hosting for launcher downloads
+- **Dashboard/assets:** writable shared manifest directory and immutable object
+  storage; authenticated private-LAN publisher and Unix-only control worker.
+- **Game server:** verified selfhost baseline/overlay, server-only private apply;
+  DB/schema and content activation retain their owner gates.
+- **CI:** provisioned private SSH/known-host credentials and an actually reachable
+  runner are required; absent credentials fail closed. No public write tunnel.
+- **Launcher:** standalone Windows installer workflow/artifact.
+
+Use the [selfhost operating contract](server/docs/SELFHOST-ASSETS.md) and
+`deployment/` configuration, not the superseded Fly/R2 deployment instructions.
+Canonical advertised production native host is `buns.asslorde.com`; explicit
+LAN/loopback overrides remain supported. **Public native activation deferred by
+owner**; this source does not claim public TCP connectivity or change ports/NAT.
 
 ## Local Development
 
@@ -79,7 +103,8 @@ Manifest-driven (no manual WZ hunting):
    every file from `:3001/api/launcher/manifest` (or prod manifest by default).
 3. Set Server Address to your login host — the compiled client dials fixed
    port **8484**, so that host must have 8484 reachable (test: `192.168.0.164`
-   with the `8484:8484` mapping; prod host default `213.188.212.103`).
+   with the existing `8484:8484` mapping; future public host `buns.asslorde.com`,
+   whose native activation is deferred by owner, not proven by this change).
 4. For test-stack use, launch with
    `$env:BUNSMS_API_BASE='http://192.168.0.164:3001'` (runtime env, see notes).
 5. Press Play. HD Mode (Ezorsia `dinput8.dll` + `config.ini`) is optional.
@@ -505,6 +530,59 @@ prefetch are outside this desktop iteration. Candidate/browser acceptance,
 including synthetic versus live paths, is recorded separately from source
 presence; no table entry implies unexercised functionality works.
 
+
+## Testing RC checkpoint — 2026-10-16 (not production rollout)
+
+- Full accepted hard/normal/Magnus source, progression, drops/cards and native
+  intake are integrated; missing-asset/native-engine/family acceptance is still
+  held. No accepted family is silently deferred or replaced by a stock release.
+- Server checkpoint `1f93de5` fixes the real weak-map HP scheduling race while
+  retaining weak keys. Actual3188-background/eight-factory-bot runtime exercised
+  640 map transitions/80 HP callbacks, correct400 hazard/zero safe-map damage.
+  This is not bot expedition/combat proof; those actual controller paths remain open.
+- Shared XML DOM ownership now protects all child/parent wrappers with their
+  owning Document instead of unrelated wrapper monitors. A real red/green race
+  and3171-bot Linux run verified12800 correct name/document reads,512 cold names,
+  and zero NPE/CME; no cache warming, retries or disabled bots. Bot party6 still
+  registers expedition1 and is explicitly not accepted combat/clear coverage.
+- Maker's real public opcode/material/cost/natural-failure/relog gate passed.
+  The provided sanitized pre-upgrade snapshot plus owned inventory/price rows
+  passed real40→51 migrations, idempotence and exact pre-backup restoration.
+- Public quicksell/buyback actual NPC/command/MySQL/relog acceptance passed:
+  protected items/slot97, exact stats/tints/flags, real SQL rollback, immutable
+  single claims and three casino chips charging only100 actual credited mesos.
+  Search option5 exercised existing real drop handlers and unchanged Purin
+  boat cancel/exit/relog. Both gates are DONE server-side, not native UI.
+- Deployment checkpoint `6d6e264` cleanly uses installed curl for immutable HTTP
+  transport. Actual canonical-HTTPS full4fe81 download/hash/extraction installed
+  54658 exact XML payload files and started plain matched Java/GMS83 listeners in
+  an isolated Linux Compose cohort, not a mock or a native/LAN qualification.
+- HP-fixed backend seal `87179f72` contains exact JAR3745211c and all932 authored
+  data files before Java startup; source/URLs/full hashes are in the single
+  coordination contract. No seal activates production. Frozen rc3/old artifacts
+  remain preserved and unqualified; fresh native engine acceptance is mandatory.
+- Corrected reference-only ba6/zero-add95b controls both booted/alive/ACK:
+  old0238 reencoding is not intrinsically failing. Current healthy-reference
+  String-only frontier is diagnostic; all13 final cards remain required.
+  All13 complete factual Buns Book definitions are now encoded with old343
+  entries/other raw images preserved. Matched full WZ/XML, fresh reader and
+  actual native Book UI/map/reward proof remain pending; no startup-root claim.
+- Fresh actual Windows MapleLib run38931713976 reads511 images/35375 BGRA
+  canvases/4998 sounds. It retains95 failures:46 consumed gaps plus49 Sound
+  aliases identical to official/working baselines; exact vector checks now run.
+  This is diagnostic coverage, never native-engine or release qualification.
+- 144 genuine source JSON snapshots/33 lossless PNGs now feed the existing
+  pinned offline boss intake, producing two repeatable raw IMG donors with
+  original1×1 art preserved; wrong manifest hashes fail before any output.
+  Shared-encoder prism regeneration retains all three old raw image hashes.
+  Final WZ/XML materialization/new pins/native combat-cue proof remain required.
+- Installed Electron news-security red/green receipts prove the plaintext-node
+  fix: literal markup, zero executable elements/exceptions; no fake backend or
+  privileged payload. This security gate is done, not native gameplay or final
+  full-profile installer acceptance. User-owned INI fields are section-scoped.
+- Upstream review remains pinned16ab7b7/selective GROUPA0874223/GROUPB60b869c,
+  not unrelated-history parity or new AI/voting/Flux/Tripo3D scope. Evan review
+  remains complete REVIEW ONLY, not playable-class scope.
 
 ## Patch Notes — 2026-10-14 (solobots `9b56e04`)
 

@@ -1,4 +1,4 @@
-# Local dev build — uses mounted WZ files instead of downloading from R2
+# Local dev build uses mounted server WZ and verified selfhost overlays.
 FROM maven:3.9-amazoncorretto-21-al2023 AS jar
 WORKDIR /opt/cosmic
 COPY pom.xml ./pom.xml
@@ -6,15 +6,15 @@ COPY src ./src
 RUN mvn -f ./pom.xml clean package -Dmaven.test.skip -T 1C
 
 FROM amazoncorretto:21-al2023
-RUN yum install -y tar gzip && yum clean all
+RUN yum install -y tar gzip python3 && yum clean all
 WORKDIR /opt/server
 # WZ files mounted via docker-compose volume (not baked in)
 COPY --from=jar /opt/cosmic/target/Cosmic.jar ./Server.jar
 COPY scripts ./scripts/
-# SoloMapling bots load data files (yaml/txt/csv) via relative
-# src/main/java/soloMapling/... paths at runtime (cwd /opt/server).
-# Ship the tree (sources included, harmless) so cold-boot waves work.
-COPY src/main/java/soloMapling ./src/main/java/soloMapling/
+COPY cashshop ./cashshop/
+# Existing bot loaders consume authored YAML/TXT/CSV/binary data at these paths,
+# not Java sources. Maven creates the same data-only input for images and QA packs.
+COPY --from=jar /opt/cosmic/target/bot-runtime-data/ ./
 COPY config.yaml ./
 COPY entrypoint.sh ./
 RUN chmod +x entrypoint.sh

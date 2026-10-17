@@ -61,7 +61,7 @@ export async function PUT(
       `UPDATE custom_reactors SET
         name = ?, event_type = ?, hits_to_break = ?, animation_style = ?,
         script_template = ?, hit_delay = ?, break_delay = ?,
-        trigger_item_id = ?, trigger_item_qty = ?, timeout_ms = ?
+        trigger_item_id = ?, trigger_item_qty = ?, timeout_ms = ?, published = 0
        WHERE reactor_id = ?`,
       [
         name,
@@ -93,83 +93,11 @@ export async function PUT(
       }
     }
 
-    // Re-generate server XML and script
-    const { generateReactorXml, generateReactorScript } = await import(
-      "@/lib/wz/reactor-builder"
-    );
-    const { generateReactorFrames } = await import(
-      "@/lib/wz/reactor-animator"
-    );
-    const { existsSync, readFileSync, writeFileSync, mkdirSync } = await import("fs");
-    const { join } = await import("path");
+    // Server XML/scripts are rebuilt by the common verified publication job.
 
-    // Rebuild server files
-    const serverRoot = getServerRoot();
-    const scriptsRoot = getScriptsRoot();
-
-    // Server XML — need idle PNG for dimensions
-    const outputDir = join("/tmp", "reactor-sprites");
-    const localPngPath = join(outputDir, `reactor-${reactorId}-idle.png`);
-    if (existsSync(localPngPath)) {
-      const idlePngBuf = readFileSync(localPngPath);
-      const frames = generateReactorFrames(
-        idlePngBuf,
-        (animation_style ?? "breakable") as any
-      );
-      const def = {
-        reactorId,
-        name,
-        eventType: event_type ?? 0,
-        hitsToBreak: hits_to_break ?? 3,
-        idlePng: frames.idle,
-        hitFrames: frames.hit,
-        breakFrames: frames.break,
-        hitDelay: hit_delay ?? 120,
-        breakDelay: break_delay ?? 150,
-        triggerItemId: trigger_item_id ?? undefined,
-        triggerItemQty: trigger_item_qty ?? 1,
-        timeout: timeout_ms ?? undefined,
-      };
-      const xml = generateReactorXml(def);
-      const xmlDir = join(serverRoot, "Reactor.wz");
-      mkdirSync(xmlDir, { recursive: true });
-      writeFileSync(
-        join(xmlDir, `${String(reactorId).padStart(7, "0")}.img.xml`),
-        xml,
-        "utf-8"
-      );
-    }
-
-    // Script
-    const script = generateReactorScript(
-      (script_template ?? "drop_items") as any
-    );
-    const scriptDir = join(scriptsRoot, "reactor");
-    mkdirSync(scriptDir, { recursive: true });
-    writeFileSync(join(scriptDir, `${reactorId}.js`), script, "utf-8");
-
-    return NextResponse.json({ success: true, reactorId });
+    return NextResponse.json({ success: true, reactorId, published: false });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-function getServerRoot(): string {
-  const { existsSync } = require("fs");
-  const { join } = require("path");
-  if (process.env.WZ_ROOT) return process.env.WZ_ROOT;
-  const localServer = join(process.cwd(), "..", "server");
-  if (existsSync(join(localServer, "wz"))) return join(localServer, "wz");
-  return "/cosmic/wz";
-}
-
-function getScriptsRoot(): string {
-  const { existsSync } = require("fs");
-  const { join } = require("path");
-  if (process.env.WZ_ROOT)
-    return process.env.WZ_ROOT.replace("/wz", "/scripts");
-  const localServer = join(process.cwd(), "..", "server");
-  if (existsSync(join(localServer, "scripts")))
-    return join(localServer, "scripts");
-  return "/cosmic/scripts";
-}

@@ -79,9 +79,12 @@ public final class LampPackets {
         return p;
     }
 
-    /** Place a preview lamp at the character's current position. */
+    /**
+     * Place a preview lamp at the character's current position. Contract v1:
+     * only to LAMP_PREVIEW sessions; legacy clients never receive 0x373F.
+     */
     public static void sendTo(Character chr, int lampId, int mapId, int x, int y) {
-        if (chr == null || chr.getClient() == null) {
+        if (chr == null || chr.getClient() == null || !chr.getClient().hasCaps(client.ClientCaps.LAMP_PREVIEW)) {
             return;
         }
         chr.sendPacket(lampPreview(MODE_PLACE, lampId, mapId, x, y));
@@ -95,7 +98,7 @@ public final class LampPackets {
      * another player in the same map never saw them in the first place.
      */
     public static void clear(Character chr) {
-        if (chr == null || chr.getClient() == null) {
+        if (chr == null || chr.getClient() == null || !chr.getClient().hasCaps(client.ClientCaps.LAMP_PREVIEW)) {
             return;
         }
         chr.sendPacket(lampPreview(MODE_CLEAR, 0, chr.getMapId(), 0, 0));

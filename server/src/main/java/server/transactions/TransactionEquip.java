@@ -20,6 +20,12 @@ public class TransactionEquip extends TransactionItem {
     private short jump;
     private int locked;
     private int vicious;
+    private short tintHue;
+    private byte tintChroma;
+    private byte tintBright;
+    private short tintFxHue;
+    private byte tintFxChroma;
+    private byte tintFxBright;
     private byte itemLevel;
     private int itemExp;
     private int ringId;
@@ -174,6 +180,54 @@ public class TransactionEquip extends TransactionItem {
 
     public void setVicious(int vicious) {
         this.vicious = vicious;
+    }
+
+    public short getTintHue() {
+        return tintHue;
+    }
+
+    public void setTintHue(short tintHue) {
+        this.tintHue = tintHue;
+    }
+
+    public byte getTintChroma() {
+        return tintChroma;
+    }
+
+    public void setTintChroma(byte tintChroma) {
+        this.tintChroma = tintChroma;
+    }
+
+    public byte getTintBright() {
+        return tintBright;
+    }
+
+    public void setTintBright(byte tintBright) {
+        this.tintBright = tintBright;
+    }
+
+    public short getTintFxHue() {
+        return tintFxHue;
+    }
+
+    public void setTintFxHue(short tintFxHue) {
+        this.tintFxHue = tintFxHue;
+    }
+
+    public byte getTintFxChroma() {
+        return tintFxChroma;
+    }
+
+    public void setTintFxChroma(byte tintFxChroma) {
+        this.tintFxChroma = tintFxChroma;
+    }
+
+    public byte getTintFxBright() {
+        return tintFxBright;
+    }
+
+    public void setTintFxBright(byte tintFxBright) {
+        this.tintFxBright = tintFxBright;
     }
 
     public byte getItemLevel() {

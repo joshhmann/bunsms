@@ -14,6 +14,8 @@ this file plus the reservation comments in the enums are the reservation mechani
 | `0x373C` / `0x373E` | Recv (request twins) | Weather/lamp system, unused request side | RESERVED |
 | `0x373D` | Send | Weather sync (`WEATHER_SYNC` / `LP_WeatherSync`) | CLAIMED in SendOpcode (ticket #13) |
 | `0x373F` | Send | Lamp preview (`LAMP_PREVIEW` / `LP_LampPreview`) | CLAIMED in SendOpcode (ticket #13) |
+| `0x373A` | Recv | Capability announce (`CLIENT_CAPS_ANNOUNCE`: int dllVersion + int featureMask; DLL-only sender, stock never emits) | CLAIMED in RecvOpcode (contract v1, release-integration) |
+| `0x373B` | Send | Capability ack (`CLIENT_CAPS_ACK`: int serverVersion=1 + int acceptedMask; reply-only, never unsolicited/broadcast) | CLAIMED in SendOpcode (contract v1, release-integration) |
 | rest of `0x372E-0x373F` | — | Unassigned | FREE — claim here before use |
 
 ## Direction-split claims (outside the block)

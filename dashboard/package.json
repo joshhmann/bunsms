@@ -5,13 +5,18 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:assets": "bun test test/assets.test.ts && bun test test/game-control.test.ts && bun test test/server-strings.test.ts",
+    "test:assets:integration": "bun test test/assets.integration.test.ts"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.3",
+    "@noble/hashes": "^2.4.0",
     "@tybys/wz": "^1.7.1",
     "@uiw/react-codemirror": "^4.23.10",
+    "@xmldom/xmldom": "^0.9.12",
     "bcryptjs": "^3.0.3",
+    "busboy": "^1.6.0",
     "canvas": "^2.11.2",
     "dotenv": "^17.4.2",
     "jose": "^6.2.1",
@@ -31,6 +36,8 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.8",
     "@types/bcryptjs": "^2.4.6",
+    "@types/bun": "^1.4.3",
+    "@types/busboy": "^1.5.5",
     "@types/node": "^22.15.0",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.1.0",

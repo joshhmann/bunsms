@@ -686,6 +686,38 @@
             });
         }
 
+        async function pinNxCohort(config) {
+            if (!config.NxBaseUrl) return;
+            const base = new URL(config.NxBaseUrl, window.location.href);
+            if (!['http:', 'https:'].includes(base.protocol) || base.search || base.hash) {
+                throw new Error('Invalid NX HTTP base');
+            }
+            const path = base.pathname.replace(/\/$/, '');
+            const pinned = path.match(/^(.*\/nx)\/r\/([A-Za-z0-9][A-Za-z0-9_-]{7,95})$/);
+            if (!pinned && !path.endsWith('/nx')) throw new Error('NX base must identify a cohort or NX manifest endpoint');
+            const projection = new URL((pinned ? pinned[1] : path) + '/manifest.json', base.origin);
+            if (pinned) projection.searchParams.set('releaseId', pinned[2]);
+            const response = await fetch(projection, { cache: 'no-store' });
+            if (!response.ok) throw new Error('NX cohort unavailable: HTTP ' + response.status);
+            const view = await response.json();
+            const expected = new Set(ALL_NX_FILES);
+            if (!/^[A-Za-z0-9][A-Za-z0-9_-]{7,95}$/.test(view.releaseId) ||
+                (pinned && view.releaseId !== pinned[2]) ||
+                view.baseUrl !== '/nx/r/' + view.releaseId ||
+                !Array.isArray(view.files) || view.files.length !== expected.size) {
+                throw new Error('Invalid NX cohort projection');
+            }
+            for (const file of view.files) {
+                if (!expected.delete(file.name) || !/^[a-f0-9]{64}$/.test(file.sha256) ||
+                    !Number.isSafeInteger(file.size) || file.size <= 0) {
+                    throw new Error('NX cohort is not a verified complete16 projection');
+                }
+            }
+            if (expected.size) throw new Error('Incomplete NX cohort');
+            // Explicit retained prefixes survive byte-for-byte; mutable bases resolve once.
+            if (!pinned) config.NxBaseUrl = base.origin + view.baseUrl;
+        }
+
         async function boot() {
             setStatus('Connecting…');
             setProgress(2);
@@ -706,6 +738,9 @@
                 ProxyPort: Number(window.location.port || (secure ? 443 : 80)),
                 AssetsServerProtocol: secure ? 'wss' : 'ws',
             });
+
+            // Resolve before exposing any LazyFS configuration or issuing prefetch reads.
+            await pinNxCohort(config);
 
             const lazyConfigKeys = [
                 'AssetsServerIP', 'AssetsServerPort',
@@ -760,7 +795,11 @@
             document.body.appendChild(script);
         }
 
-        boot();
+        boot().catch(error => {
+            console.error('[boot] refused:', error);
+            setStatus('Asset cohort unavailable — client not started');
+            setDetail(error.message || '');
+        });
     </script>
 </body>
 

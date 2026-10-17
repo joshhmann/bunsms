@@ -45,6 +45,8 @@ import java.util.List;
 
 public class XMLDomMapleData implements Data {
     private final Node node;
+    // Xerces mutates lazy traversal caches even for reads; every wrapper shares this owner.
+    private final Document document;
     private Path imageDataDir;
 
     public XMLDomMapleData(FileInputStream fis, Path imageDataDir) {
@@ -53,7 +55,7 @@ public class XMLDomMapleData implements Data {
             DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
             String rawXml = new String(fis.readAllBytes(), "UTF-8");
             String sanitizedXml = rawXml.replaceAll("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F]", "");
-            Document document = documentBuilder.parse(new InputSource(new StringReader(sanitizedXml)));
+            this.document = documentBuilder.parse(new InputSource(new StringReader(sanitizedXml)));
             this.node = document.getFirstChild();
         } catch (ParserConfigurationException e) {
             throw new RuntimeException(e);
@@ -65,150 +67,157 @@ public class XMLDomMapleData implements Data {
         this.imageDataDir = imageDataDir;
     }
 
-    private XMLDomMapleData(Node node) {
+    private XMLDomMapleData(Node node, Document document) {
         this.node = node;
+        this.document = document;
     }
 
     @Override
-    public synchronized Data getChildByPath(String path) {  // the whole XML reading system seems susceptible to give nulls on strenuous read scenarios
-        String[] segments = path.split("/");
-        if (segments[0].equals("..")) {
-            return ((Data) getParent()).getChildByPath(path.substring(path.indexOf("/") + 1));
-        }
+    public Data getChildByPath(String path) {
+        synchronized (document) {
+            String[] segments = path.split("/");
+            if (segments[0].equals("..")) {
+                return ((Data) getParent()).getChildByPath(path.substring(path.indexOf("/") + 1));
+            }
 
-        Node myNode;
-        myNode = node;
-        for (String s : segments) {
-            NodeList childNodes = myNode.getChildNodes();
-            boolean foundChild = false;
+            Node myNode = node;
+            for (String s : segments) {
+                NodeList childNodes = myNode.getChildNodes();
+                boolean foundChild = false;
+                for (int i = 0; i < childNodes.getLength(); i++) {
+                    Node childNode = childNodes.item(i);
+                    if (childNode.getNodeType() == Node.ELEMENT_NODE
+                            && childNode.getAttributes().getNamedItem("name").getNodeValue().equals(s)) {
+                        myNode = childNode;
+                        foundChild = true;
+                        break;
+                    }
+                }
+                if (!foundChild) {
+                    return null;
+                }
+            }
+
+            XMLDomMapleData ret = new XMLDomMapleData(myNode, document);
+            ret.imageDataDir = imageDataDir.resolve(getName().trim()).resolve(path).getParent();
+            return ret;
+        }
+    }
+
+    @Override
+    public List<Data> getChildren() {
+        synchronized (document) {
+            List<Data> ret = new ArrayList<>();
+            NodeList childNodes = node.getChildNodes();
             for (int i = 0; i < childNodes.getLength(); i++) {
                 Node childNode = childNodes.item(i);
-                if (childNode.getNodeType() == Node.ELEMENT_NODE
-                        && childNode.getAttributes().getNamedItem("name").getNodeValue().equals(s)) {
-                    myNode = childNode;
-                    foundChild = true;
-                    break;
+                if (childNode.getNodeType() == Node.ELEMENT_NODE) {
+                    XMLDomMapleData child = new XMLDomMapleData(childNode, document);
+                    child.imageDataDir = imageDataDir.resolve(getName().trim());
+                    ret.add(child);
                 }
             }
-            if (!foundChild) {
-                return null;
-            }
+            return ret;
         }
-
-        XMLDomMapleData ret = new XMLDomMapleData(myNode);
-        ret.imageDataDir = imageDataDir.resolve(getName().trim()).resolve(path).getParent();
-        return ret;
     }
 
     @Override
-    public synchronized List<Data> getChildren() {
-        List<Data> ret = new ArrayList<>();
+    public Object getData() {
+        synchronized (document) {
+            NamedNodeMap attributes = node.getAttributes();
+            DataType type = getType();
+            switch (type) {
+                case DOUBLE:
+                case FLOAT:
+                case INT:
+                case SHORT: {
+                    String value = attributes.getNamedItem("value").getNodeValue();
+                    Number nval = GameConstants.parseNumber(value);
 
-        NodeList childNodes = node.getChildNodes();
-        for (int i = 0; i < childNodes.getLength(); i++) {
-            Node childNode = childNodes.item(i);
-            if (childNode.getNodeType() == Node.ELEMENT_NODE) {
-                XMLDomMapleData child = new XMLDomMapleData(childNode);
-                child.imageDataDir = imageDataDir.resolve(getName().trim());
-                ret.add(child);
-            }
-        }
-
-        return ret;
-    }
-
-    @Override
-    public synchronized Object getData() {
-        NamedNodeMap attributes = node.getAttributes();
-        DataType type = getType();
-        switch (type) {
-            case DOUBLE:
-            case FLOAT:
-            case INT:
-            case SHORT: {
-                String value = attributes.getNamedItem("value").getNodeValue();
-                Number nval = GameConstants.parseNumber(value);
-
-                switch (type) {
-                    case DOUBLE:
-                        return nval.doubleValue();
-                    case FLOAT:
-                        return nval.floatValue();
-                    case INT:
-                        return nval.intValue();
-                    case SHORT:
-                        return nval.shortValue();
-                    default:
-                        return null;
+                    switch (type) {
+                        case DOUBLE:
+                            return nval.doubleValue();
+                        case FLOAT:
+                            return nval.floatValue();
+                        case INT:
+                            return nval.intValue();
+                        case SHORT:
+                            return nval.shortValue();
+                        default:
+                            return null;
+                    }
                 }
+                case STRING:
+                case UOL: {
+                    return attributes.getNamedItem("value").getNodeValue();
+                }
+                case VECTOR: {
+                    String x = attributes.getNamedItem("x").getNodeValue();
+                    String y = attributes.getNamedItem("y").getNodeValue();
+                    return new Point(Integer.parseInt(x), Integer.parseInt(y));
+                }
+                default:
+                    return null;
             }
-            case STRING:
-            case UOL: {
-                String value = attributes.getNamedItem("value").getNodeValue();
-                return value;
-            }
-            case VECTOR: {
-                String x = attributes.getNamedItem("x").getNodeValue();
-                String y = attributes.getNamedItem("y").getNodeValue();
-                return new Point(Integer.parseInt(x), Integer.parseInt(y));
-            }
-            default:
-                return null;
         }
     }
 
     @Override
-    public synchronized DataType getType() {
-        String nodeName = node.getNodeName();
-
-        switch (nodeName) {
-            case "imgdir":
-                return DataType.PROPERTY;
-            case "canvas":
-                return DataType.CANVAS;
-            case "convex":
-                return DataType.CONVEX;
-            case "sound":
-                return DataType.SOUND;
-            case "uol":
-                return DataType.UOL;
-            case "double":
-                return DataType.DOUBLE;
-            case "float":
-                return DataType.FLOAT;
-            case "int":
-                return DataType.INT;
-            case "short":
-                return DataType.SHORT;
-            case "string":
-                return DataType.STRING;
-            case "vector":
-                return DataType.VECTOR;
-            case "null":
-                return DataType.IMG_0x00;
-        }
-        return null;
-    }
-
-    @Override
-    public synchronized DataEntity getParent() {
-        Node parentNode;
-        parentNode = node.getParentNode();
-        if (parentNode.getNodeType() == Node.DOCUMENT_NODE) {
+    public DataType getType() {
+        synchronized (document) {
+            String nodeName = node.getNodeName();
+            switch (nodeName) {
+                case "imgdir":
+                    return DataType.PROPERTY;
+                case "canvas":
+                    return DataType.CANVAS;
+                case "convex":
+                    return DataType.CONVEX;
+                case "sound":
+                    return DataType.SOUND;
+                case "uol":
+                    return DataType.UOL;
+                case "double":
+                    return DataType.DOUBLE;
+                case "float":
+                    return DataType.FLOAT;
+                case "int":
+                    return DataType.INT;
+                case "short":
+                    return DataType.SHORT;
+                case "string":
+                    return DataType.STRING;
+                case "vector":
+                    return DataType.VECTOR;
+                case "null":
+                    return DataType.IMG_0x00;
+            }
             return null;
         }
-        XMLDomMapleData parentData = new XMLDomMapleData(parentNode);
-        parentData.imageDataDir = imageDataDir.getParent();
-        return parentData;
     }
 
     @Override
-    public synchronized String getName() {
-        return node.getAttributes().getNamedItem("name").getNodeValue();
+    public DataEntity getParent() {
+        synchronized (document) {
+            Node parentNode = node.getParentNode();
+            if (parentNode.getNodeType() == Node.DOCUMENT_NODE) {
+                return null;
+            }
+            XMLDomMapleData parentData = new XMLDomMapleData(parentNode, document);
+            parentData.imageDataDir = imageDataDir.getParent();
+            return parentData;
+        }
     }
 
     @Override
-    public synchronized Iterator<Data> iterator() {
+    public String getName() {
+        synchronized (document) {
+            return node.getAttributes().getNamedItem("name").getNodeValue();
+        }
+    }
+
+    @Override
+    public Iterator<Data> iterator() {
         return getChildren().iterator();
     }
 }

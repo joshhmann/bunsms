@@ -1,0 +1,26 @@
+[Unit]
+Description=Buns browser assets, WSS and private Unix game operations
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+# Host-only worker needs permission to start the restricted game-apply unit.
+User=root
+# Match dashboard nextjs/nodejs GID from dashboard/Dockerfile for socket access.
+Group=1001
+UMask=0007
+WorkingDirectory=/opt/buns/web-client
+EnvironmentFile=/etc/buns/assets.env
+RuntimeDirectory=buns-control
+RuntimeDirectoryMode=0770
+ExecStart=/usr/bin/python3 /opt/buns/web-client/server.py
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/buns/client-assets /run/buns-control
+
+[Install]
+WantedBy=multi-user.target

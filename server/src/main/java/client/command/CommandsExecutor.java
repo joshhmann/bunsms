@@ -25,6 +25,8 @@ package client.command;
 
 import client.Client;
 import client.command.commands.gm0.BuyBackCommand;
+import client.command.commands.gm0.BossLogCommand;
+import client.command.commands.gm0.ExpeditionLeaderboardCommand;
 import client.command.commands.gm0.ChangeLanguageCommand;
 import client.command.commands.gm0.CheckinCommand;
 import client.command.commands.gm0.DisposeCommand;
@@ -393,6 +395,8 @@ public class CommandsExecutor {
         addCommand("fm", FmCommand.class);
         addCommand(new String[]{"checkin", "daily"}, CheckinCommand.class);
         addCommand(new String[]{"bb", "buyback"}, BuyBackCommand.class);
+        addCommand("bosslog", BossLogCommand.class);
+        addCommand("expeditionleaderboard", ExpeditionLeaderboardCommand.class);
 
         commandsNameDesc.add(levelCommandsCursor);
     }

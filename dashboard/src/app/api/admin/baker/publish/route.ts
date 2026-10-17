@@ -1,60 +1,43 @@
 import { NextResponse } from "next/server";
-import { uploadFileToR2, isR2Configured } from "@/lib/r2";
-import { dispatchWzToNx } from "@/lib/wz-to-nx";
+import { hashFileStream, readManifest, resolveAssetPath } from "@/lib/assets";
+import { publishWzFiles } from "@/lib/wz-to-nx";
+import { restartGameServer } from "@/lib/game-control";
+import { upsertServerStrings } from "@/lib/wz/server-strings";
+import { execFileSync } from "child_process";
 import { parseWzFile, saveWzFile, addNpcToStringWz } from "@/lib/wz/patcher";
 import { addNpcToWz, generateNpcXml, processNpcSprite } from "@/lib/wz/npc-builder";
-import { restartGameServer } from "@/lib/fly-restart";
 import { execute, query } from "@/lib/db";
-import { Readable } from "stream";
-import { createWriteStream } from "fs";
-import { pipeline } from "stream/promises";
-import { writeFileSync, readFileSync, mkdirSync, existsSync } from "fs";
+import { copyFileSync, writeFileSync, readFileSync, mkdirSync, existsSync, rmSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
-
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
+import { randomUUID } from "crypto";
 
 const NPC_ID = 9900200;
 const NPC_NAME = "The Baker";
 
-async function streamDownload(url: string, outputPath: string): Promise<void> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Download failed: ${url} (${res.status})`);
-  const body = res.body;
-  if (!body) throw new Error(`No response body: ${url}`);
-  const readable = Readable.fromWeb(body as any);
-  await pipeline(readable, createWriteStream(outputPath));
+async function copyFromAssets(fileKey: string, outputPath: string): Promise<void> {
+  copyFileSync(resolveAssetPath(fileKey), outputPath);
 }
 
 export async function POST() {
-  if (!isR2Configured()) {
-    return NextResponse.json({ error: "R2 not configured" }, { status: 500 });
-  }
-
   const actions: string[] = [];
+  let releaseId: string | undefined;
+  const tmpDir = join(tmpdir(), `baker-publish-${randomUUID()}`);
 
   try {
+    const baseReleaseId = readManifest().manifest.releaseId ?? null;
     // 1. Load the sprite PNG
-    const spritePath = join("/tmp", "baker-sprite.png");
-    if (!existsSync(spritePath)) {
-      return NextResponse.json(
-        { error: "Baker sprite not found at /tmp/baker-sprite.png. Upload it first." },
-        { status: 400 },
-      );
-    }
+    const spritePath = resolveAssetPath("assets/npc/baker-sprite.png");
     const rawPng = readFileSync(spritePath);
     const processedPng = processNpcSprite(rawPng, 80);
     actions.push("Processed sprite PNG");
 
     // 2. Patch Npc.wz
-    const tmpDir = join(tmpdir(), `baker-publish-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
 
     const npcWzPath = join(tmpDir, "Npc.wz");
-    await streamDownload(`${R2_PUBLIC_URL}/Npc.wz`, npcWzPath);
-    actions.push("Downloaded Npc.wz from R2");
+    await copyFromAssets("Npc.wz", npcWzPath);
+    actions.push("Loaded Npc.wz from asset dir");
 
     const npcWz = parseWzFile(npcWzPath);
     addNpcToWz(npcWz, NPC_ID, processedPng);
@@ -62,14 +45,11 @@ export async function POST() {
     saveWzFile(npcWz, patchedNpcPath);
     actions.push("Patched Npc.wz with Baker sprite");
 
-    const npcUpload = await uploadFileToR2("Npc.wz", patchedNpcPath);
-    if (!npcUpload.success) throw new Error(`Npc.wz upload failed: ${npcUpload.error}`);
-    actions.push("Uploaded patched Npc.wz to R2");
 
     // 3. Patch String.wz (add NPC name)
     const stringWzPath = join(tmpDir, "String.wz");
-    await streamDownload(`${R2_PUBLIC_URL}/String.wz`, stringWzPath);
-    actions.push("Downloaded String.wz from R2");
+    await copyFromAssets("String.wz", stringWzPath);
+    actions.push("Loaded String.wz from asset dir");
 
     const stringWz = parseWzFile(stringWzPath);
     addNpcToStringWz(stringWz, NPC_ID, NPC_NAME, "I sense great potential in you...");
@@ -77,59 +57,35 @@ export async function POST() {
     saveWzFile(stringWz, patchedStringPath);
     actions.push("Patched String.wz with Baker name");
 
-    const stringUpload = await uploadFileToR2("String.wz", patchedStringPath);
-    if (!stringUpload.success) throw new Error(`String.wz upload failed: ${stringUpload.error}`);
-    actions.push("Uploaded patched String.wz to R2");
-
-    // 3.5. Trigger WZ→NX conversion for the browser client
-    dispatchWzToNx(["Npc.wz", "String.wz"]).catch(() => {});
-    actions.push("Dispatched wz-to-nx for Npc.wz, String.wz");
-
-    // 4. Write server XML
-    const serverRoot = process.env.WZ_ROOT || "/cosmic/wz";
-    const npcXmlDir = join(serverRoot, "Npc.wz");
+    // Server XML is patched only in the candidate tar, never in the live tree.
+    const tarPath = join(tmpDir, "server-wz.tar.gz");
+    await copyFromAssets("server-wz.tar.gz", tarPath);
+    execFileSync("tar", ["xzf", tarPath, "-C", tmpDir], { timeout: 300000 });
+    const npcXmlDir = join(tmpDir, "wz", "Npc.wz");
     mkdirSync(npcXmlDir, { recursive: true });
     const xml = generateNpcXml(NPC_ID, NPC_NAME, processedPng);
     writeFileSync(join(npcXmlDir, `${String(NPC_ID).padStart(7, "0")}.img.xml`), xml, "utf-8");
-    actions.push("Wrote server NPC XML");
-
-    // 5. Bump launcher manifest
-    try {
-      const manifestPath = join(process.env.COSMIC_ROOT || "/cosmic", "launcher-manifest.json");
-      if (existsSync(manifestPath)) {
-        const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
-
-        // Update Npc.wz entry
-        if (npcUpload.hash && npcUpload.size) {
-          const npcFile = manifest.files?.find((f: any) => f.name === "Npc.wz");
-          if (npcFile) {
-            npcFile.hash = npcUpload.hash;
-            npcFile.size = npcUpload.size;
-          }
-        }
-        // Update String.wz entry
-        if (stringUpload.hash && stringUpload.size) {
-          const strFile = manifest.files?.find((f: any) => f.name === "String.wz");
-          if (strFile) {
-            strFile.hash = stringUpload.hash;
-            strFile.size = stringUpload.size;
-          }
-        }
-
-        manifest.version = (manifest.version || 0) + 1;
-        manifest.updatedAt = new Date().toISOString();
-        writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), "utf-8");
-
-        const { uploadToR2 } = await import("@/lib/r2");
-        await uploadToR2("launcher-manifest.json", Buffer.from(JSON.stringify(manifest, null, 2)));
-        actions.push(`Bumped manifest to v${manifest.version}`);
-      }
-    } catch (e: any) {
-      actions.push(`Manifest bump failed: ${e.message}`);
-    }
+    upsertServerStrings(join(tmpDir, "wz", "String.wz", "Npc.img.xml"), "Npc.img", [{
+      section: [], id: String(NPC_ID),
+      fields: [{ name: "name", value: NPC_NAME }, { name: "n0", value: "I sense great potential in you..." }],
+    }]);
+    const newTarPath = join(tmpDir, "server-wz-new.tar.gz");
+    const packDirs = ["wz"];
+    if (existsSync(join(tmpDir, "scripts"))) packDirs.push("scripts");
+    execFileSync("tar", ["czf", newTarPath, "-C", tmpDir, ...packDirs], { timeout: 300000 });
+    const released = await publishWzFiles([
+      { key: "Npc.wz", path: patchedNpcPath, ...await hashFileStream(patchedNpcPath) },
+      { key: "String.wz", path: patchedStringPath, ...await hashFileStream(patchedStringPath) },
+      { key: "server-wz.tar.gz", path: newTarPath, ...await hashFileStream(newTarPath) },
+    ], [
+      { op: "import_image", target_wz: "Npc.wz", target_image: `${NPC_ID}.img` },
+      { op: "set_subtree", target_wz: "String.wz", target_image: "Npc.img", target_node: String(NPC_ID) },
+    ], { baseReleaseId });
+    releaseId = released.releaseId;
+    actions.push(`Committed release ${releaseId}`);
 
     // 6. Spawn NPC on Henesys if not already there
-    try {
+    {
       const existing = await query(
         "SELECT id FROM plife WHERE life = ? AND type = 'n' AND map = 100000000",
         [NPC_ID],
@@ -144,21 +100,18 @@ export async function POST() {
       } else {
         actions.push("Baker already spawned on Henesys");
       }
-    } catch (e: any) {
-      actions.push(`plife insert failed: ${e.message}`);
     }
 
-    // 7. Restart game server
-    try {
-      await restartGameServer();
-      actions.push("Restarted game server");
-    } catch (e: any) {
-      actions.push(`Server restart failed: ${e.message}`);
-    }
-
-    return NextResponse.json({ success: true, actions });
-  } catch (err: any) {
+    const applied = await restartGameServer();
+    if (!applied.success) throw new Error(applied.error || "Server apply failed");
+    actions.push(`Applied server release ${releaseId}`);
+    return NextResponse.json({ success: true, releaseId, actions });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error("Baker publish error:", err);
-    return NextResponse.json({ error: err.message, actions }, { status: 500 });
+    return NextResponse.json({ error: message, releaseId, actions }, { status: 500 });
+  }
+  finally {
+    rmSync(tmpDir, { recursive: true, force: true });
   }
 }

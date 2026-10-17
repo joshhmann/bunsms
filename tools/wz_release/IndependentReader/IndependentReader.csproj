@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <MapleLibRoot Condition="'$(MapleLibRoot)' == ''">../../../../reader-src</MapleLibRoot>
+    <AppConfig>$(MapleLibRoot)/MapleLib/app.config</AppConfig>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="MapleLib"><HintPath>$(MapleLibRoot)/MapleLib/bin/Release/MapleLib.dll</HintPath></Reference>
+    <Reference Include="Newtonsoft.Json"><HintPath>$(MapleLibRoot)/packages/Newtonsoft.Json.13.0.2/lib/net45/Newtonsoft.Json.dll</HintPath></Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+</Project>

@@ -139,9 +139,18 @@ public final class Channel {
             this.channelServer = initServer(port, world, channel);
             expedType.addAll(Arrays.asList(ExpeditionType.values()));
 
+            // Event init is REQUIRED, not optional: a script that does not eval
+            // must fail the boot loudly (throw), never leave eventSM null for a
+            // later null-guard to skip silently. The 0_EXAMPLE fallback below
+            // covers only the pre-online fast path by design. Probe a REAL
+            // event entry (getEventManager falls back to 0_EXAMPLE for unknown
+            // names, so a null here means even the fallback failed to eval).
             if (Server.getInstance().isOnline()) {  // postpone event loading to improve boot time... thanks Riizade, daronhudson for noticing slow startup times
                 eventSM = new EventScriptManager(this, getEvents());
                 eventSM.init();
+                if (eventSM.getEventManager("DKBONUS1") == null) {
+                    throw new IllegalStateException("EventScriptManager failed to initialize event entries");
+                }
             } else {
                 String[] ev = {"0_EXAMPLE"};
                 eventSM = new EventScriptManager(this, ev);
@@ -175,7 +184,12 @@ public final class Channel {
             return;
         }
 
-        eventSM.cancel();
+        // Boot path: the constructor's EventScriptManager may have failed to
+        // initialize (a script that does not eval leaves eventSM null via the
+        // caught init error). Never NPE the online transition on it.
+        if (eventSM != null) {
+            eventSM.cancel();
+        }
         eventSM = null;
         eventSM = new EventScriptManager(this, getEvents());
     }
@@ -416,12 +430,14 @@ public final class Channel {
 
     public void removeExpedition(Expedition exped) {
         synchronized (expeditions) {
-            expeditions.remove(exped.getType());
+            expeditions.remove(exped.getType(), exped);
         }
     }
 
     public Expedition getExpedition(ExpeditionType type) {
-        return expeditions.get(type);
+        synchronized (expeditions) {
+            return expeditions.get(type);
+        }
     }
 
     public List<Expedition> getExpeditions() {

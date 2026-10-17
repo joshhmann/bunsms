@@ -167,6 +167,24 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         return (int) value;
     }
 
+    /** Saturating long add: overflow pins at Long.MAX_VALUE, never wraps. */
+    public static long saturatedAdd(long a, long b) {
+        long r = a + b;
+        if (((a ^ r) & (b ^ r)) < 0) {
+            return Long.MAX_VALUE;
+        }
+        return r;
+    }
+    /**
+     * Contract v1 per-recipient attack broadcast. Delegates to
+     * {@link server.maps.MapleMap#broadcastSelective}, which iterates the live
+     * character view under chrRLock (concurrent join/leave safe) with the real
+     * ranged policy. Legacy sessions never see long bytes.
+     */
+    protected static void broadcastAttack(Character source, boolean repeatToSource, boolean ranged, java.util.function.Function<Boolean, net.packet.Packet> builder) {
+        source.getMap().broadcastSelective(source, repeatToSource, ranged, builder);
+    }
+
     // Ticket #12, C2S half (paired release with the DLL client hook): a
     // long-capable client appends the real 64-bit line (little-endian, positive
     // magnitude) after each vanilla damage int, so each line is 12 bytes
@@ -188,11 +206,12 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
     }
 
     // Legacy v83 crit encoding: crit lines are stored negative
-    // (-INT_MAX + raw - 1); the sign means "crit", never "heal".
+    // (-INT_MAX + raw - 1); the sign means "crit", never "heal". Decode is
+    // raw + INT_MAX + 1 (a 1000-crit decodes to exactly -1000, never -999).
     private static long decodeLegacyLine(int raw) {
         long damage = raw;
         if (damage < 0) {
-            damage += Integer.MAX_VALUE;
+            damage += (long) Integer.MAX_VALUE + 1L;
         }
         return raw < 0 ? -damage : damage;
     }
@@ -328,10 +347,10 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     // HP applies the positive magnitude.
                     for (Long eachd : onedList) {
                         long trackedDamage = eachd == null ? 0L : Math.abs(eachd);
-                        totDamageToOneMonster += trackedDamage;
+                        totDamageToOneMonster = saturatedAdd(totDamageToOneMonster, trackedDamage);
                     }
-                    totDamage += totDamageToOneMonster;
-                    monster.aggroMonsterDamage(player, clampToInt(totDamageToOneMonster));
+                    totDamage = saturatedAdd(totDamage, totDamageToOneMonster);
+                    monster.aggroMonsterDamage(player, totDamageToOneMonster);
                     if (player.getBuffedValue(BuffStat.PICKPOCKET) != null && (attack.skill == 0 || attack.skill == Rogue.DOUBLE_STAB || attack.skill == Bandit.SAVAGE_BLOW || attack.skill == ChiefBandit.ASSAULTER || attack.skill == ChiefBandit.BAND_OF_THIEVES || attack.skill == Shadower.ASSASSINATE || attack.skill == Shadower.TAUNT || attack.skill == Shadower.BOOMERANG_STEP)) {
                         Skill pickpocket = SkillFactory.getSkill(ChiefBandit.PICKPOCKET);
                         int picklv = (player.isGM()) ? pickpocket.getMaxLevel() : player.getSkillLevel(pickpocket);
@@ -351,7 +370,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             }
                         }
                     } else if (attack.skill == Marauder.ENERGY_DRAIN || attack.skill == ThunderBreaker.ENERGY_DRAIN || attack.skill == NightWalker.VAMPIRE || attack.skill == Assassin.DRAIN) {
-                        player.addHP(Math.min(monster.getMaxHp(), Math.min(clampToInt(totDamage * SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100L), player.getCurrentMaxHp() / 2)));
+                        player.addHP((int) Math.min((long) player.getCurrentMaxHp() / 2, Math.min(monster.getMaxHp(), totDamage * SkillFactory.getSkill(attack.skill).getEffect(player.getSkillLevel(SkillFactory.getSkill(attack.skill))).getX() / 100L)));
                     } else if (attack.skill == Bandit.STEAL) {
                         Skill steal = SkillFactory.getSkill(Bandit.STEAL);
                         if (monster.getStolen().size() < 1) { // One steal per mob <3
@@ -461,7 +480,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         Skill skill;
                         if (player.getBuffedValue(BuffStat.COMBO_DRAIN) != null) {
                             skill = SkillFactory.getSkill(21100005);
-                            player.addHP(clampToInt((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 100));
+                            player.addHP((int) Math.min((totDamage * skill.getEffect(player.getSkillLevel(skill)).getX()) / 100, player.getCurrentMaxHp()));
                         }
                     } else if (job == 412 || job == 422 || job == 1411) {
                         Skill type = SkillFactory.getSkill(player.getJob().getId() == 412 ? 4120005 : (player.getJob().getId() == 1411 ? 14110004 : 4220005));
@@ -489,9 +508,9 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                             int skillLevel = player.getSkillLevel(mortalBlow);
                             if (skillLevel > 0) {
                                 StatEffect mortal = mortalBlow.getEffect(skillLevel);
-                                if (monster.getHp() <= (monster.getStats().getHp() * mortal.getX()) / 100) {
+                                if (monster.getHp() <= (monster.getMaxHp() * mortal.getX()) / 100) {
                                     if (Randomizer.rand(1, 100) <= mortal.getY()) {
-                                        map.damageMonster(player, monster, Integer.MAX_VALUE, target.getValue().delay());  // thanks Conrad for noticing reduced EXP gain from skill kill
+                                        map.damageMonster(player, monster, monster.getHp(), target.getValue().delay());  // thanks Conrad for noticing reduced EXP gain from skill kill
                                     }
                                 }
                             }
@@ -558,13 +577,10 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                         }
                     } else {
                         if (attack.skill == Aran.BODY_PRESSURE) {
-                            map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), clampToInt(totDamageToOneMonster)));
+                            map.broadcastMessage(PacketCreator.damageMonsterLong(monster.getObjectId(), totDamageToOneMonster, monster.getHp() - Math.min(totDamageToOneMonster, monster.getHp()), monster.getMaxHp()));
                         }
 
-                        // Mob HP is int (AtomicInteger) in this codebase, so the
-                        // applied damage clamps here; the long half lives in the
-                        // parsed/broadcast totals until the mob-HP-long project.
-                        map.damageMonster(player, monster, clampToInt(totDamageToOneMonster), target.getValue().delay());
+                        map.damageMonster(player, monster, totDamageToOneMonster, target.getValue().delay());
                     }
                     if (monster.isBuffed(MonsterStatus.WEAPON_REFLECT) && !attack.magic) {
                         for (MobSkillId msId : monster.getSkills()) {
@@ -592,7 +608,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
     }
 
     private static void damageMonsterWithSkill(final Character attacker, final MapleMap map, final Monster monster,
-                                               final int damage, int skillid, int fixedTime) {
+                                               final long damage, int skillid, int fixedTime) {
         damageMonsterWithSkill(attacker, map, monster, damage, skillid, fixedTime, true);
     }
 
@@ -601,7 +617,7 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
      *                      rather than from the attacker's.
      */
     private static void damageMonsterWithSkill(final Character attacker, final MapleMap map, final Monster monster,
-                                               final int damage, int skillid, int fixedTime,
+                                               final long damage, int skillid, int fixedTime,
                                                final boolean weatherScaled) {
         int animationTime;
 
@@ -612,13 +628,13 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
         }
 
         if (animationTime > 0) { // be sure to only use LIMITED ATTACKS with animation time here
-            final int shown = damage;
+            final long shown = damage;
             TimerManager.getInstance().schedule(() -> {
-                map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), shown), monster.getPosition());
+                map.broadcastMessage(PacketCreator.damageMonsterLong(monster.getObjectId(), shown, monster.getHp() - Math.min(shown, monster.getHp()), monster.getMaxHp()), monster.getPosition());
                 map.damageMonster(attacker, monster, damage, (short) 0, weatherScaled);
             }, animationTime);
         } else {
-            map.broadcastMessage(PacketCreator.damageMonster(monster.getObjectId(), damage), monster.getPosition());
+            map.broadcastMessage(PacketCreator.damageMonsterLong(monster.getObjectId(), damage, monster.getHp() - Math.min(damage, monster.getHp()), monster.getMaxHp()), monster.getPosition());
             map.damageMonster(attacker, monster, damage, (short) 0, weatherScaled);
         }
     }
@@ -810,20 +826,27 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                 calcDmgMax = fixed;
             }
         }
-        // Ticket #12: the per-line long is negotiated once per packet from its
-        // exact remaining length. A long-capable client widens every damage
-        // line from 4 to 12 bytes (vanilla int + real long); everything else in
-        // the target block is fixed-size (oid 4 + skip 4 + two positions 4+4 +
-        // delay 2 + trailer 4, plus the Poison Bomb tail when present).
+        // Ticket #12 (contract v1): the per-line long is negotiated per-session, not
+        // per-packet. Only a sender whose connection announced LONG_DAMAGE_LINES may
+        // send 12-byte lines; everyone else is legacy-exact. A flagged packet that
+        // matches neither form is REJECTED (null), never reinterpreted.
         // Legacy/vanilla int32 packets (including spectator/browser traffic)
         // match the 4-byte form and are NEVER reinterpreted; anything that
-        // matches neither form falls back to legacy so the stream is never
-        // over-read.
+        // matches neither form is dropped so a forged/truncated packet cannot
+        // inject phantom lines by reinterpretation.
         int totalLines = ret.numAttacked * ret.numDamage;
         int perTargetOverhead = 4 + 4 + 4 + 4 + 2 + 4;
         int tailBytes = ret.skill == NightWalker.POISON_BOMB ? 8 : 0;
         long longFormBytes = (long) perTargetOverhead * ret.numAttacked + 12L * totalLines + tailBytes;
-        boolean longLines = totalLines > 0 && p.available() == longFormBytes;
+        long legacyFormBytes = (long) perTargetOverhead * ret.numAttacked + 4L * totalLines + tailBytes;
+        boolean flagged = client.ClientCaps.has(chr.getClient().getCapsMask(), client.ClientCaps.LONG_DAMAGE_LINES);
+        boolean longLines = totalLines > 0 && flagged && p.available() == longFormBytes;
+        if (totalLines > 0 && p.available() != (longLines ? longFormBytes : legacyFormBytes)) {
+            // Mismatch (including an unflagged sender whose bytes happen to
+            // equal the long form, or a flagged sender with a truncated
+            // packet): reject, never reinterpret as the other form.
+            return null;
+        }
         for (int i = 0; i < ret.numAttacked; i++) {
             int oid = p.readInt();
             p.skip(4);
@@ -930,12 +953,31 @@ public abstract class AbstractDealDamageHandler extends AbstractPacketHandler {
                     maxWithCrit *= 2;
                 }
 
-                // Ticket #12: magnitude DAMAGE_HACK checks are removed. The
-                // Cosmic MaxDMG guess cannot model uncapped lines, so every
-                // legit overflow hit logged "DMG: ... MaxDMG: ..." spam. Only
-                // the "too many lines" check below stays.
+                // Ticket #12 (contract v1): long-aware magnitude guard. Legacy lines
+                // keep the stock 1.5x-warn / 5x-point bounds against the MaxDMG
+                // guess; negotiated long lines are uncapped by the int wire range
+                // by design, so the ONLY bounds are the negotiated magnitude
+                // limit (2^53, Monster.MAX_MONSTER_HP) and an absurdity bound
+                // (100x the guess) that cannot false-positive on valid overflow
+                // hits. No int-range condition on the long contract: every valid
+                // negotiated line above 2^31 is legitimate traffic.
+                // Overflow-safe: the guess is long, bounds use division, never
+                // maxWithCrit * N.
                 long magnitude = Math.abs(damage);
-
+                if (!longLines) {
+                    if (magnitude > maxWithCrit + maxWithCrit / 2) {
+                        AutobanFactory.DAMAGE_HACK.alert(chr, "DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                    }
+                    if (maxWithCrit > 0 && magnitude / maxWithCrit >= 5) {
+                        AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                    }
+                } else {
+                    if (magnitude > Monster.MAX_MONSTER_HP) {
+                        AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Long-line DMG exceeds negotiated limit: " + magnitude + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                    } else if (maxWithCrit > 0 && magnitude / Math.max(maxWithCrit, 1L) >= 100) {
+                        AutobanFactory.DAMAGE_HACK.addPoint(chr.getAutobanManager(), "Long-line DMG: " + magnitude + " MaxDMG: " + maxWithCrit + " SID: " + ret.skill + " MobID: " + (monster != null ? monster.getId() : "null") + " Map: " + chr.getMap().getMapName() + " (" + chr.getMapId() + ")");
+                    }
+                }
                 // Keep the crit display encoding on the stored line (negative ==
                 // crit). Long lines already carry the sign from readDamageLine;
                 // legacy int32 lines encode crits that beat the single-hit max.

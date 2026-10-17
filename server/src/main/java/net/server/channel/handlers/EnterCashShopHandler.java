@@ -65,7 +65,10 @@ public class EnterCashShopHandler extends AbstractPacketHandler {
             // no buff teardown — the player stays exactly where they are and a window opens
             // over the field. enableActions() is mandatory: the client latches itself on the
             // cash-shop request and stays input-locked until something releases it.
-            if (YamlConfig.config.server.USE_CASHSHOP_WINDOW) {
+            // Contract v1: window branch requires the negotiated CASHSHOP_WINDOW
+            // cap; unflagged sessions fall through to the legacy stage path so a
+            // config flip can never strand legacy clients on custom bytes.
+            if (YamlConfig.config.server.USE_CASHSHOP_WINDOW && c.hasCaps(client.ClientCaps.CASHSHOP_WINDOW)) {
                 c.sendPacket(PacketCreator.enableActions());
                 c.sendPacket(CashShopWindowPackets.open(mc));
                 CashShopWindowHandler.sendCatalog(c, mc);

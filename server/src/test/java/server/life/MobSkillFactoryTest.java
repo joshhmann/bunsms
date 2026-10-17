@@ -1,9 +1,9 @@
 package server.life;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,12 +19,22 @@ class MobSkillFactoryTest {
 
     @TempDir
     private Path wzPath;
+    private String previousWzPath;
 
     @BeforeEach
     void setWzPath() {
-        MockitoAnnotations.openMocks(this);
+        previousWzPath = System.getProperty("wz-path");
         writeTestFileToTempDir();
         System.setProperty("wz-path", "%s/wz".formatted(wzPath.toString()));
+    }
+
+    @AfterEach
+    void restoreWzPath() {
+        if (previousWzPath == null) {
+            System.clearProperty("wz-path");
+        } else {
+            System.setProperty("wz-path", previousWzPath);
+        }
     }
 
     private void writeTestFileToTempDir() {
@@ -65,9 +75,10 @@ class MobSkillFactoryTest {
         );
     }
 
+
     @Test
     void shouldThrowExceptionOnNonExisting() {
-        assertThrows(IllegalArgumentException.class, () -> MobSkillFactory.getMobSkillOrThrow(MobSkillType.DEFENSE_UP, 1));
+        assertThrows(IllegalArgumentException.class, () -> MobSkillFactory.getMobSkillOrThrow(MobSkillType.DEFENSE_UP, Integer.MAX_VALUE));
     }
 
 }

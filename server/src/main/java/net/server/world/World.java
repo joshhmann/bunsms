@@ -192,7 +192,7 @@ public class World {
     private Lock timedMapObjectLock = new ReentrantLock(true);
 
     private final Map<Character, Integer> fishingAttempters = Collections.synchronizedMap(new WeakHashMap<>());
-    private Map<Character, Integer> playerHpDec = Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<Character, Integer> playerHpDec = Collections.synchronizedMap(new WeakHashMap<>());
 
     private ScheduledFuture<?> charactersSchedule;
     private ScheduledFuture<?> marriagesSchedule;
@@ -1806,8 +1806,11 @@ public class World {
     }
     
     public void runPlayerHpDecreaseSchedule() {
-        Map<Character, Integer> m = new HashMap<>();
-        m.putAll(playerHpDec);
+        Map<Character, Integer> m;
+        // SynchronizedMap iteration needs its monitor; release it before character callbacks.
+        synchronized (playerHpDec) {
+            m = new HashMap<>(playerHpDec);
+        }
         
         for (Entry<Character, Integer> e : m.entrySet()) {
             Character chr = e.getKey();
@@ -2176,7 +2179,13 @@ public class World {
     }
 
     public void addUnclaimed(server.expeditions.ExpeditionBossLog.BossLogEntry boss, int cid) {
-        unclaimedRewards.compute(cid, (k, chrUnclaimed) -> chrUnclaimed);
+        unclaimedRewards.compute(cid, (k, chrUnclaimed) -> {
+            if (chrUnclaimed == null) {
+                chrUnclaimed = new java.util.HashMap<>();
+            }
+            chrUnclaimed.put(boss, (short) (chrUnclaimed.getOrDefault(boss, (short) 0) + 1));
+            return chrUnclaimed;
+        });
     }
 
     public void removeUnclaimed(server.expeditions.ExpeditionBossLog.BossLogEntry boss, int cid) {
@@ -2184,7 +2193,14 @@ public class World {
         if (chrUnclaimed != null) {
             Short unclaimedAmount = chrUnclaimed.get(boss);
             if (unclaimedAmount != null) {
-                chrUnclaimed.put(boss, unclaimedAmount);
+                if (unclaimedAmount <= 1) {
+                    chrUnclaimed.remove(boss);
+                } else {
+                    chrUnclaimed.put(boss, (short) (unclaimedAmount - 1));
+                }
+            }
+            if (chrUnclaimed.isEmpty()) {
+                unclaimedRewards.remove(cid);
             }
         }
     }

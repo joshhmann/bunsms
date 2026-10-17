@@ -82,10 +82,24 @@ public class InventoryManipulator {
         }
     }
 
+    public static boolean addByIdForCharacter(Character chr, int itemId, short quantity) {
+        InventoryType type = ItemConstants.getInventoryType(itemId);
+        Inventory inventory = chr.getInventory(type);
+        inventory.lockInventory();
+        try {
+            if (!checkSpaceForCharacter(chr, itemId, quantity, "")) {
+                return false;
+            }
+            return addByIdInternal(chr.getClient(), chr, type, inventory, itemId, quantity, "", -1, (short) 0, -1);
+        } finally {
+            inventory.unlockInventory();
+        }
+    }
+
     private static boolean addByIdInternal(Client c, Character chr, InventoryType type, Inventory inv, int itemId, short quantity, String owner, int petid, short flag, long expiration) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         if (!type.equals(InventoryType.EQUIP)) {
-            short slotMax = ii.getSlotMax(c, itemId);
+            short slotMax = ii.getSlotMaxForCharacter(chr, itemId);
             List<Item> existing = inv.listById(itemId);
             if (!ItemConstants.isRechargeable(itemId) && petid == -1) {
                 if (existing.size() > 0) { // first update all existing slots to slotMax
@@ -292,9 +306,12 @@ public class InventoryManipulator {
     }
 
     public static boolean checkSpace(Client c, int itemid, int quantity, String owner) {
+        return checkSpaceForCharacter(c.getPlayer(), itemid, quantity, owner);
+    }
+
+    private static boolean checkSpaceForCharacter(Character chr, int itemid, int quantity, String owner) {
         ItemInformationProvider ii = ItemInformationProvider.getInstance();
         InventoryType type = ItemConstants.getInventoryType(itemid);
-        Character chr = c.getPlayer();
         Inventory inv = chr.getInventory(type);
 
         if (ii.isPickupRestricted(itemid)) {
@@ -306,7 +323,7 @@ public class InventoryManipulator {
         }
 
         if (!type.equals(InventoryType.EQUIP)) {
-            short slotMax = ii.getSlotMax(c, itemid);
+            short slotMax = ii.getSlotMaxForCharacter(chr, itemid);
             List<Item> existing = inv.listById(itemid);
 
             final int numSlotsNeeded;

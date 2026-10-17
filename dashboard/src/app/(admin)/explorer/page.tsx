@@ -328,7 +328,7 @@ function ExplorerInner() {
             }}
             className="rounded border border-border bg-bg-secondary px-2 py-1 text-sm text-text-primary"
           >
-            <optgroup label="Client WZ (R2 binary)">
+            <optgroup label="Client WZ (self-hosted binary)">
               {files.map((f) => (
                 <option key={`client:${f.name}`} value={`client:${f.name}`}>
                   {f.name} ({formatSize(f.size)})

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateImage } from "@/lib/openrouter/image";
 import { renderWeaponFromConcept } from "@/lib/wz/sprite-2d";
-import { uploadToR2, isR2Configured } from "@/lib/r2";
 import { WEAPON_TYPES } from "@/lib/wz";
 import {
   recordGeneration,
@@ -9,15 +8,7 @@ import {
   countGeneratedToday,
 } from "@/lib/gm/generated-items";
 import { query } from "@/lib/db";
-import { writeFileSync, mkdirSync } from "fs";
-import { join } from "path";
-
-export const dynamic = "force-dynamic";
-export const maxDuration = 600;
-
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
+import { publishRenderedArt, requireItemId } from "@/lib/art";
 
 const DAILY_GENERATION_CAP = parseInt(process.env.GM_ITEM_GEN_DAILY_CAP || "8");
 const DEFAULT_ATTACK_SPEED = 6;
@@ -190,20 +181,7 @@ export async function POST(request: NextRequest) {
       prompt: buildConceptPrompt(description, weapon_type),
     });
 
-    let conceptUrl: string | null = null;
-    if (isR2Configured()) {
-      const up = await uploadToR2(`custom-items/generated/${generationId}/concept.png`, conceptPng);
-      if (!up.success) throw new Error(`concept upload failed: ${up.error}`);
-      conceptUrl = up.url;
-    } else {
-      const dir = join("/tmp", "generated-items", String(generationId));
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(join(dir, "concept.png"), conceptPng);
-    }
-    await updateGeneration(generationId, {
-      ...(conceptUrl ? { concept_image_url: conceptUrl } : {}),
-      status: "rendering",
-    });
+    await updateGeneration(generationId, { status: "rendering" });
 
     // 2. Allocate next item ID
     const nextIdRes = await fetchInternal(
@@ -212,24 +190,21 @@ export async function POST(request: NextRequest) {
     );
     if (!nextIdRes.ok) throw new Error(`next-id failed: ${await nextIdRes.text()}`);
     const nextIdData = await nextIdRes.json();
-    const itemId = nextIdData.suggested?.[0];
-    if (!itemId) throw new Error("No free item ID available for this weapon type");
+    const itemId = requireItemId(nextIdData.suggested?.[0]);
 
     // 3. 2D sprite rendering: rotate bg-removed concept for each animation angle
     const rendered = await renderWeaponFromConcept({ conceptPng });
 
-    // 5. Upload frames + icon to R2
-    const renderRes = await fetchInternal(request, "/api/admin/items/render-weapon", {
-      method: "POST",
-      body: JSON.stringify({
-        itemId,
-        icon: rendered.iconDataUrl,
-        origins: rendered.origins,
-        frames: rendered.frames,
-      }),
+    // Publish concept, icon, origins and every frame as one committed release.
+    const renderData = await publishRenderedArt({
+      itemId,
+      icon: rendered.iconDataUrl,
+      origins: rendered.origins,
+      frames: rendered.frames,
+      concept: { key: `custom-items/generated/${generationId}/concept.png`, data: conceptPng },
     });
-    if (!renderRes.ok) throw new Error(`render-weapon failed: ${await renderRes.text()}`);
-    const renderData = await renderRes.json();
+    const conceptUrl = renderData.conceptUrl!;
+    await updateGeneration(generationId, { concept_image_url: conceptUrl });
 
     // 6. DB insert + WZ XML generation
     const finalName = name?.trim() || `Generated ${WEAPON_TYPES[weapon_type].label}`;
@@ -259,15 +234,27 @@ export async function POST(request: NextRequest) {
 
     // 7. Optional publish
     let published = false;
+    let publishJobId: string | undefined;
+    let publishStatus = "not_requested";
     let publishMessage = "Item is ready. Call publish_generated_item to push it live.";
     if (autoPublish) {
       const pub = await fetchInternal(request, "/api/admin/items/publish", { method: "POST" });
-      if (pub.ok) {
+      const publication = await pub.json();
+      const jobStatus = publication.started === true ? "started" : publication.status;
+      if (!pub.ok || publication.error || !["started", "done"].includes(jobStatus)) {
+        return NextResponse.json({
+          generationId, itemId, status: "ready", published: false,
+          error: publication.error || "Publication did not start",
+        }, { status: 502 });
+      }
+      publishJobId = publication.id;
+      publishStatus = jobStatus;
+      if (jobStatus === "done") {
         await updateGeneration(generationId, { status: "published" });
         published = true;
-        publishMessage = "Published — server is restarting.";
+        publishMessage = "Published — release committed and apply completed.";
       } else {
-        publishMessage = `Publish failed (still in ready state): ${await pub.text()}`;
+        publishMessage = `Publish job ${publication.id || ""} started; not yet published. Check its status before treating this item as live.`;
       }
     }
 
@@ -282,6 +269,8 @@ export async function POST(request: NextRequest) {
       iconUrl: renderData.iconUrl,
       frameCount: Object.values(rendered.frames).flat().length,
       message: publishMessage,
+      publishStatus,
+      publishJobId,
     });
   } catch (err) {
     return fail(err, "orchestrate");

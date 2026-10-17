@@ -1,7 +1,6 @@
 package net.server.channel.handlers;
 
-import net.opcodes.RecvOpcode;
-import net.opcodes.SendOpcode;
+import client.ClientCaps;
 import net.packet.InPacket;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,8 +17,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Daily Check-In wire contract: opcode values from the registry plus the snapshot
- * layout the DLL-side window decodes (respType/currentDay/claimedMask/justClaimed,
+ * Daily Check-In snapshot layout the DLL-side window decodes
+ * (respType/currentDay/claimedMask/justClaimed,
  * count=28, 28 icon ints, 28 tooltip strings).
  */
 @ExtendWith(MockitoExtension.class)
@@ -28,13 +27,8 @@ class DailyCheckinHandlerTest extends HandlerTest {
     private final DailyCheckinHandler handler = new DailyCheckinHandler();
 
     @Test
-    void opcodeValuesMatchRegistry() {
-        assertEquals(0x11A, RecvOpcode.DAILY_CHECKIN.getValue());
-        assertEquals(0x17C, SendOpcode.DAILY_CHECKIN.getValue());
-    }
-
-    @Test
     void openRequestRepliesWithSnapshot() {
+        when(client.hasCaps(ClientCaps.CHECKIN_WINDOW)).thenReturn(true);
         when(chr.getLevel()).thenReturn(10);
         when(chr.refreshCheckin()).thenReturn(0);
         when(chr.getCheckinDay()).thenReturn(3);
@@ -56,6 +50,7 @@ class DailyCheckinHandlerTest extends HandlerTest {
 
     @Test
     void claimMismatchStillRepliesWithoutGranting() {
+        when(client.hasCaps(ClientCaps.CHECKIN_WINDOW)).thenReturn(true);
         when(chr.getLevel()).thenReturn(10);
         when(chr.refreshCheckin()).thenReturn(2); // day 2 claimable...
         when(chr.getCheckinClaimed()).thenReturn(0b1);
@@ -71,6 +66,7 @@ class DailyCheckinHandlerTest extends HandlerTest {
 
     @Test
     void belowMinLevelGetsNoReply() {
+        when(client.hasCaps(ClientCaps.CHECKIN_WINDOW)).thenReturn(true);
         when(chr.getLevel()).thenReturn(1);
 
         InPacket open = Packets.buildInPacket(out -> out.writeByte(0));

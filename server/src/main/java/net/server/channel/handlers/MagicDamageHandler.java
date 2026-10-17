@@ -51,6 +51,9 @@ public final class MagicDamageHandler extends AbstractDealDamageHandler {
 		chr.getAutobanManager().spam(8);*/
 
         AttackInfo attack = parseDamage(p, chr, false, true);
+        if (attack == null) {
+            return;
+        }
 
         if (chr.getBuffEffect(BuffStat.MORPH) != null) {
             if (chr.getBuffEffect(BuffStat.MORPH).isMorphWithoutAttack()) {
@@ -66,10 +69,9 @@ public final class MagicDamageHandler extends AbstractDealDamageHandler {
         }
 
         int charge = (attack.skill == Evan.FIRE_BREATH || attack.skill == Evan.ICE_BREATH || attack.skill == FPArchMage.BIG_BANG || attack.skill == ILArchMage.BIG_BANG || attack.skill == Bishop.BIG_BANG) ? attack.charge : -1;
-        Packet packet = PacketCreator.magicAttack(chr, attack.skill, attack.skilllevel, attack.stance,
-                attack.numAttackedAndDamage, attack.targets, charge, attack.speed, attack.direction, attack.display);
-
-        chr.getMap().broadcastMessage(chr, packet, false, true);
+        broadcastAttack(chr, false, true, longLines -> PacketCreator.magicAttack(chr, attack.skill, attack.skilllevel,
+                attack.stance, attack.numAttackedAndDamage, attack.targets, charge, attack.speed, attack.direction,
+                attack.display, longLines));
         StatEffect effect = attack.getAttackEffect(chr, null);
         Skill skill = SkillFactory.getSkill(attack.skill);
         StatEffect effect_ = skill.getEffect(chr.getSkillLevel(skill));

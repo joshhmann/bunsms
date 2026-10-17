@@ -4,6 +4,8 @@ import client.Character;
 import net.server.world.Party;
 import net.server.world.PartyCharacter;
 import soloMapling.ArtificialPlayer.BotDialogueHandler;
+import soloMapling.ArtificialPlayer.BotGeneration;
+import soloMapling.ArtificialPlayer.BotAttackSystem.BotAttackDriver;
 import soloMapling.ArtificialPlayer.BotOptionMenu;
 import soloMapling.ArtificialPlayer.BotSM;
 import soloMapling.ArtificialPlayer.BotTypeManager;
@@ -57,6 +59,10 @@ public class FollowerBot extends BotSM {
         super(character);
         botType = "FollowerBot";
         dialoguePath = "FollowerBotDialogue.yaml";
+    }
+
+    public boolean isFollowingLeader(int playerId) {
+        return leaderId == playerId;
     }
 
     // Pinned cadence, observed or not: supervision (re-arm/relog/party checks) must never sleep 9-12s.
@@ -171,6 +177,11 @@ public class FollowerBot extends BotSM {
             // Initial arm, post-trade re-arm, and relog re-attach (a dead session cleared itself;
             // the freshly resolved leader Character makes the new session current).
             GCMovement.follow(chr, leader);
+        }
+        var event = chr.getEventInstance();
+        if (event != null && event.isFollowerExpeditionParticipant(chr) && event == leader.getEventInstance()
+                && chr.getMap() == leader.getMap() && !event.isEventCleared()) {
+            BotAttackDriver.botAttack(chr);
         }
     }
 
@@ -288,8 +299,10 @@ public class FollowerBot extends BotSM {
 
     @Override
     public synchronized void stopScheduledTask() {
+        leaderId = -1;
         Character chr = getChr();
         if (chr != null) {
+            BotGeneration.leaveFollowerExpedition(this, false);
             BotRecruitManager.clearArmed(chr.getId()); // pending station/leader handoffs survive on purpose
             GCMovement.disable(chr); // ends the follow session + releases the shared movement lock
         }

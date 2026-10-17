@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import server.TimerManager;
 import server.life.Monster;
 import server.maps.MapleMap;
+import soloMapling.ArtificialPlayer.BotMessagingSystem.CharacterStorage;
 import tools.PacketCreator;
 
 import java.text.SimpleDateFormat;
@@ -90,6 +91,11 @@ public class Expedition {
             MobId.TARGA,
             MobId.ANGRY_TARGA,
             MobId.FURIOUS_TARGA,
+            // Genuine imported expedition phases/finals; exclude scripted hazards and fake Cygnus.
+            9420521, 9420522, 9400408, 9400409,
+            8840000, 8847777, 8850011, 8850012,
+            8880344, 8880301, 8880302, 8645009, 8880150, 8880415,
+            8240099, 9990301, 9990150, 9990415, 9995009, 8880002,
     };
 
     private final Character leader;
@@ -193,7 +199,7 @@ public class Expedition {
         registering = false;
     }
 
-    public void start() {
+    public synchronized void start() {
         finishRegistration();
         registerExpeditionAttempt();
         broadcastExped(PacketCreator.removeClock());
@@ -204,12 +210,15 @@ public class Expedition {
         Server.getInstance().broadcastGMMessage(startMap.getWorld(), PacketCreator.serverNotice(6, "[Expedition] " + type.toString() + " Expedition started with leader: " + leader.getName()));
     }
 
-    public String addMember(Character player) {
+    public synchronized String addMember(Character player) {
         if (!registering) {
             return "Sorry, this expedition is already underway. Registration is closed!";
         }
         if (banned.contains(player.getId())) {
             return "Sorry, you've been banned from this expedition by #b" + leader.getName() + "#k.";
+        }
+        if (type.allowsFollowerRegistration() && !type.meetsRegistrationRequirements(player)) {
+            return "Sorry, you do not meet this expedition's level or quest requirements.";
         }
         if (members.size() >= this.getMaxSize()) { //Would be a miracle if anybody ever saw this
             return "Sorry, this expedition is full!";
@@ -228,7 +237,7 @@ public class Expedition {
         return "You have registered for the expedition successfully!";
     }
 
-    public int addMemberInt(Character player) {
+    public synchronized int addMemberInt(Character player) {
         if (!registering) {
             return 1; //"Sorry, this expedition is already underway. Registration is closed!";
         }
@@ -331,11 +340,13 @@ public class Expedition {
 
     public List<Character> getActiveMembers() {    // thanks MedicOP for figuring out an issue with broadcasting packets to offline members
         PlayerStorage ps = startMap.getWorldServer().getPlayerStorage();
+        boolean allowFollowers = type.allowsFollowerRegistration();
 
         List<Character> activeMembers = new LinkedList<>();
         for (Integer chrid : getMembers().keySet()) {
             Character chr = ps.getCharacterById(chrid);
-            if (chr != null && chr.isLoggedinWorld()) {
+            if (chr != null && (chr.isLoggedinWorld()
+                    || (allowFollowers && CharacterStorage.isRegisteredBot(chr)))) {
                 activeMembers.add(chr);
             }
         }

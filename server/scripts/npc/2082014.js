@@ -43,7 +43,11 @@ function action(mode, type, selection) {
             if (cm.isQuestStarted(3749)) {
                 cm.sendOk("We've already located the enemy's ultimate weapon! Follow along the ship's bow area ahead and you will find my sister #b#p2082013##k. Report to her for futher instructions on the mission.");
             } else {
-                cm.sendDefault();
+                // MapleRoot wave 1 (ticket #5): scroll shop 2082014 is stocked by
+                // migration 172; open it in the non-quest branch. Quest dialogue
+                // above is preserved; sendDefault (generic WZ text, never a shop)
+                // no longer shadows the stocked shop.
+                cm.openShopNPC(2082014);
             }
 
             cm.dispose();

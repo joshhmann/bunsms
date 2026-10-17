@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { uploadToR2, uploadFileToR2, isR2Configured } from "@/lib/r2";
-import { dispatchWzToNx } from "@/lib/wz-to-nx";
-import { restartGameServer } from "@/lib/fly-restart";
+import { ASSET_DIR, AssetError, hashFileStream, lockPublicationJob, readManifest, resolveAssetPath, writePublicationStatus } from "@/lib/assets";
+import type { SourceAsset } from "@/lib/assets";
+import { publishWzFiles } from "@/lib/wz-to-nx";
+import { restartGameServer } from "@/lib/game-control";
+import { upsertServerStrings } from "@/lib/wz/server-strings";
+import { resolveArtPath } from "@/lib/art";
 import {
   parseWzFile,
   saveWzFile,
@@ -14,11 +17,9 @@ import {
 } from "@/lib/wz";
 import type { WeaponData, WeaponFrame } from "@/lib/wz";
 import { execSync } from "child_process";
-import { createHash, randomUUID } from "crypto";
-import { Readable } from "stream";
-import { pipeline } from "stream/promises";
+import { randomUUID } from "crypto";
 import {
-  createWriteStream,
+  copyFileSync,
   writeFileSync,
   readFileSync,
   mkdirSync,
@@ -29,12 +30,7 @@ import {
 import { join } from "path";
 import { tmpdir } from "os";
 
-const R2_PUBLIC_URL =
-  process.env.R2_PUBLIC_URL ||
-  "https://pub-34b8b332208f464a9e74fa14104be3e2.r2.dev";
-
-const STATUS_DIR = process.env.COSMIC_ROOT || "/cosmic";
-const STATUS_FILE = join(STATUS_DIR, "publish-status.json");
+const STATUS_FILE = join(ASSET_DIR, "jobs", "publish-status.json");
 
 // --- Status helpers ---
 
@@ -48,12 +44,11 @@ interface PublishStatus {
   finishedAt?: string;
   items_published?: number;
   version?: string;
+  releaseId?: string;
 }
 
 function writeStatus(s: PublishStatus) {
-  try {
-    writeFileSync(STATUS_FILE, JSON.stringify(s), "utf-8");
-  } catch {}
+  writePublicationStatus("publish-status.json", s);
 }
 
 function readStatus(): PublishStatus | null {
@@ -66,15 +61,6 @@ function readStatus(): PublishStatus | null {
 }
 
 // --- Helpers ---
-
-async function streamDownload(url: string, outputPath: string): Promise<void> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Download failed: ${url} (${res.status})`);
-  const body = res.body;
-  if (!body) throw new Error(`No response body: ${url}`);
-  const readable = Readable.fromWeb(body as any);
-  await pipeline(readable, createWriteStream(outputPath));
-}
 
 // --- WZ XML generation ---
 
@@ -137,13 +123,6 @@ function padItemId(id: number): string {
   return String(id).padStart(8, "0");
 }
 
-function escapeXml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
 
 function generateEquipXml(item: {
   item_id: number;
@@ -244,54 +223,6 @@ function writeEquipXml(
   return filePath;
 }
 
-function addToStringWz(
-  wzRoot: string,
-  itemId: number,
-  name: string,
-  desc: string,
-  subCategory: string
-): { success: boolean; error?: string } {
-  try {
-    const stringPath = join(wzRoot, "String.wz", "Eqp.img.xml");
-    if (!existsSync(stringPath))
-      return { success: false, error: "String.wz/Eqp.img.xml not found" };
-
-    let content = readFileSync(stringPath, "utf-8");
-
-    if (content.includes(`<imgdir name="${itemId}">`)) {
-      return { success: true };
-    }
-
-    const sectionName = STRING_SECTIONS[subCategory] || "Accessory";
-    const entry = `      <imgdir name="${itemId}">\n        <string name="name" value="${escapeXml(name)}"/>\n        <string name="desc" value="${escapeXml(desc)}"/>\n      </imgdir>`;
-
-    const sectionOpen = content.indexOf(`<imgdir name="${sectionName}">`);
-    if (sectionOpen === -1) {
-      return {
-        success: false,
-        error: `Section "${sectionName}" not found in Eqp.img.xml`,
-      };
-    }
-
-    const sectionCloseRegex = /\n    <\/imgdir>/g;
-    sectionCloseRegex.lastIndex = sectionOpen;
-    const closeMatch = sectionCloseRegex.exec(content);
-    if (!closeMatch) {
-      return {
-        success: false,
-        error: `Could not find closing tag for ${sectionName} section`,
-      };
-    }
-
-    const insertPos = closeMatch.index;
-    content =
-      content.slice(0, insertPos) + "\n" + entry + content.slice(insertPos);
-    writeFileSync(stringPath, content, "utf-8");
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
-  }
-}
 
 // --- Background publish job ---
 
@@ -312,6 +243,8 @@ async function runPublishJob(jobId: string) {
   }
 
   try {
+    const baseReleaseId = readManifest().manifest.releaseId ?? null;
+    const files: SourceAsset[] = [];
     // 1. Fetch custom equip items from DB
     update("Fetching custom items from database...");
     const rows = await query(
@@ -342,23 +275,14 @@ async function runPublishJob(jobId: string) {
     }
     update("Fetched items", `Found ${items.length} custom equip item(s)`);
 
-    // 2. Download server-wz.tar.gz from R2
-    update("Downloading server WZ files...");
+    // Read the committed server baseline; all edits remain in this candidate.
+    update("Loading server WZ files...");
     mkdirSync(workDir, { recursive: true });
     const tarPath = join(workDir, "server-wz.tar.gz");
-    const wzUrl = `${R2_PUBLIC_URL}/server-wz.tar.gz`;
-
-    const downloadRes = await fetch(wzUrl);
-    if (!downloadRes.ok) {
-      throw new Error(
-        `Failed to download server-wz.tar.gz: ${downloadRes.status}`
-      );
-    }
-    const tarBuffer = Buffer.from(await downloadRes.arrayBuffer());
-    writeFileSync(tarPath, tarBuffer);
+    copyFileSync(resolveAssetPath("server-wz.tar.gz"), tarPath);
     update(
-      "Downloaded server WZ",
-      `Downloaded server-wz.tar.gz (${(tarBuffer.length / 1024 / 1024).toFixed(1)}MB)`
+      "Loaded server WZ",
+      `Loaded server-wz.tar.gz (${(statSync(tarPath).size / 1024 / 1024).toFixed(1)}MB)`
     );
 
     // 3. Extract
@@ -383,65 +307,36 @@ async function runPublishJob(jobId: string) {
 
     // 5. Update String.wz/Eqp.img.xml with names
     update("Updating item names...");
-    for (const item of items) {
-      const result = addToStringWz(
-        wzRoot,
-        item.item_id,
-        item.name,
-        item.description,
-        item.sub_category
-      );
-      if (!result.success) {
-        update(
-          "String.wz warning",
-          `Warning: String.wz update failed for ${item.name}: ${result.error}`
-        );
-      }
-    }
+    upsertServerStrings(join(wzRoot, "String.wz", "Eqp.img.xml"), "Eqp.img", items.map((item) => ({
+      section: ["Eqp", STRING_SECTIONS[item.sub_category] || "Accessory"],
+      id: String(item.item_id),
+      fields: [{ name: "name", value: item.name }, { name: "desc", value: item.description }],
+    })));
     update("Updated names", "Updated String.wz/Eqp.img.xml with item names");
 
     // 6. Repack tar
     update("Repacking server WZ...");
     const newTarPath = join(workDir, "server-wz-new.tar.gz");
+    const packDirs = existsSync(join(workDir, "scripts")) ? "wz/ scripts/" : "wz/";
     execSync(
-      `cd "${workDir}" && COPYFILE_DISABLE=1 tar czf "${newTarPath}" --exclude='.DS_Store' --exclude='._*' wz/`,
+      `cd "${workDir}" && COPYFILE_DISABLE=1 tar czf "${newTarPath}" --exclude='.DS_Store' --exclude='._*' ${packDirs}`,
       { timeout: 300000 }
     );
-    const newTarBuffer = readFileSync(newTarPath);
+    const tarExpectation = await hashFileStream(newTarPath);
     update(
       "Repacked",
-      `Repacked server-wz.tar.gz (${(newTarBuffer.length / 1024 / 1024).toFixed(1)}MB)`
+      `Repacked server-wz.tar.gz (${(tarExpectation.size / 1024 / 1024).toFixed(1)}MB)`
     );
 
-    // 7. Upload new tar to R2
-    update("Uploading server WZ to R2...");
-    const uploadResult = await uploadToR2("server-wz.tar.gz", newTarBuffer);
-    if (!uploadResult.success) {
-      throw new Error(`R2 upload failed: ${uploadResult.error}`);
-    }
-    update("Uploaded server WZ", "Uploaded server-wz.tar.gz to R2");
-
-    // 8. Upload version marker
-    const version = new Date().toISOString();
-    const versionResult = await uploadToR2(
-      "server-wz.version",
-      Buffer.from(version)
-    );
-    if (versionResult.success) {
-      update("Version marker", `Uploaded version marker: ${version}`);
-    }
-
-    // 9. Patch client WZ files
-    const manifestUpdates: Record<string, { hash: string; size: number }> = {};
-    try {
-      // 9a. Download and patch Character.wz
-      update("Downloading Character.wz (~200MB)...");
+    files.push({ key: "server-wz.tar.gz", path: newTarPath, ...tarExpectation });
+    // Build every native candidate before asking the common transaction to
+    // prepare NX and commit the complete release.
+      update("Loading Character.wz (~200MB)...");
       const charWzPath = join(workDir, "Character.wz");
-      const charWzUrl = `${R2_PUBLIC_URL}/Character.wz`;
-      await streamDownload(charWzUrl, charWzPath);
+      copyFileSync(resolveAssetPath("Character.wz"), charWzPath);
       update(
-        "Downloaded Character.wz",
-        `Downloaded Character.wz (${(statSync(charWzPath).size / 1024 / 1024).toFixed(0)}MB)`
+        "Loaded Character.wz",
+        `Loaded Character.wz (${(statSync(charWzPath).size / 1024 / 1024).toFixed(0)}MB)`
       );
 
       update("Patching Character.wz...");
@@ -449,15 +344,7 @@ async function runPublishJob(jobId: string) {
       for (const item of items) {
         let iconPng: Buffer | undefined;
         if (item.icon_url) {
-          try {
-            const iconRes = await fetch(item.icon_url);
-            if (iconRes.ok) {
-              iconPng = Buffer.from(await iconRes.arrayBuffer());
-              update(`Icon for ${item.name}`, `Downloaded icon for ${item.name}`);
-            }
-          } catch {
-            update("Icon warning", `Warning: failed to download icon for ${item.name}`);
-          }
+          iconPng = readFileSync(resolveArtPath(item.icon_url));
         }
 
         if (item.sub_category === "Weapon" && item.stats._weaponFrames) {
@@ -475,9 +362,7 @@ async function runPublishJob(jobId: string) {
               animations[animName] = [];
               for (let fi = 0; fi < frameUrls.length; fi++) {
                 try {
-                  const frameRes = await fetch(frameUrls[fi]);
-                  if (!frameRes.ok) continue;
-                  const pngBuf = Buffer.from(await frameRes.arrayBuffer());
+                  const pngBuf = readFileSync(resolveArtPath(frameUrls[fi]));
                   const orig = originList[fi] || { gripX: 0, gripY: 0 };
                   const gripX = orig.gripX ?? orig.x ?? 0;
                   const gripY = orig.gripY ?? orig.y ?? 0;
@@ -491,8 +376,8 @@ async function runPublishJob(jobId: string) {
                     attachType: isAttack ? "navel" : "hand",
                     z: isAttack ? "weaponBelowBody" : "weapon",
                   });
-                } catch {
-                  update("Frame warning", `Warning: failed to download frame ${animName}/${fi} for ${item.name}`);
+                } catch (err) {
+                  throw err;
                 }
               }
             }
@@ -515,15 +400,7 @@ async function runPublishJob(jobId: string) {
               `Added weapon ${item.name} with ${Object.values(animations).flat().length} frames`
             );
           } catch (err: any) {
-            update("Weapon warning", `Warning: weapon frame processing failed for ${item.name}: ${err.message}`);
-            addEquipToCharacterWz(charWz, {
-              itemId: item.item_id,
-              subCategory: item.sub_category,
-              stats: item.stats,
-              requirements: item.requirements,
-              flags: item.flags,
-              iconPng,
-            });
+            throw err;
           }
         } else {
           addEquipToCharacterWz(charWz, {
@@ -542,23 +419,12 @@ async function runPublishJob(jobId: string) {
       saveWzFile(charWz, charWzOut);
       update("Patched", "Patched Character.wz with custom items");
 
-      update("Uploading Character.wz to R2 (streaming)...");
-      const charUpload = await uploadFileToR2("Character.wz", charWzOut);
-      if (charUpload.success) {
-        manifestUpdates["Character.wz"] = {
-          hash: charUpload.hash,
-          size: charUpload.size,
-        };
-        update("Uploaded Character.wz", "Uploaded patched Character.wz to R2");
-      } else {
-        update("Upload warning", `Warning: Character.wz upload failed: ${charUpload.error}`);
-      }
+      files.push({ key: "Character.wz", path: charWzOut, ...await hashFileStream(charWzOut) });
 
-      // 9b. Download and patch String.wz
-      update("Downloading String.wz...");
+      // 9b. Copy and patch String.wz from the asset dir
+      update("Loading String.wz...");
       const strWzPath = join(workDir, "String.wz");
-      const strWzUrl = `${R2_PUBLIC_URL}/String.wz`;
-      await streamDownload(strWzUrl, strWzPath);
+      copyFileSync(resolveAssetPath("String.wz"), strWzPath);
 
       const strWz = parseWzFile(strWzPath);
       addStringsToStringWz(
@@ -574,72 +440,26 @@ async function runPublishJob(jobId: string) {
       saveWzFile(strWz, strWzOut);
       update("Patched String.wz", "Patched String.wz with item names");
 
-      update("Uploading String.wz to R2 (streaming)...");
-      const strUpload = await uploadFileToR2("String.wz", strWzOut);
-      if (strUpload.success) {
-        manifestUpdates["String.wz"] = {
-          hash: strUpload.hash,
-          size: strUpload.size,
-        };
-        update("Uploaded String.wz", "Uploaded patched String.wz to R2");
-      } else {
-        update("Upload warning", `Warning: String.wz upload failed: ${strUpload.error}`);
-      }
-
-      // 9b.5. Trigger WZ→NX conversion for the browser client at play.buns.asslorde.com.
-      // Fire-and-forget; the workflow coalesces rapid successive dispatches.
-      const changedWz = Object.keys(manifestUpdates).filter((n) => n.endsWith(".wz"));
-      if (changedWz.length > 0) {
-        update("Triggering WZ→NX conversion", `Dispatching wz-to-nx for: ${changedWz.join(", ")}`);
-        dispatchWzToNx(changedWz).catch(() => {});
-      }
-
-      // 9c. Update launcher manifest (write directly to volume, no self-fetch)
-      if (Object.keys(manifestUpdates).length > 0) {
-        update("Updating launcher manifest...");
-        try {
-          const VOLUME_MANIFEST = join(process.env.COSMIC_ROOT || "/cosmic", "launcher-manifest.json");
-          const BUNDLED_MANIFEST = join(process.cwd(), "launcher-manifest.json");
-          const manifestPath = existsSync(VOLUME_MANIFEST) ? VOLUME_MANIFEST : BUNDLED_MANIFEST;
-          const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
-
-          for (const file of manifest.files || []) {
-            const upd = manifestUpdates[file.name];
-            if (upd) {
-              file.hash = upd.hash;
-              file.size = upd.size;
-            }
-          }
-
-          const parts = (manifest.version || "1.0.0").split(".");
-          parts[2] = String(parseInt(parts[2] || "0") + 1);
-          manifest.version = parts.join(".");
-          manifest.updatedAt = new Date().toISOString();
-
-          writeFileSync(VOLUME_MANIFEST, JSON.stringify(manifest, null, 2));
-          update("Manifest updated", `Updated launcher manifest to v${manifest.version}`);
-        } catch (err: any) {
-          update("Manifest warning", `Warning: manifest update failed: ${err.message}`);
-        }
-      }
-    } catch (err: any) {
-      update(
-        "Client WZ warning",
-        `Warning: client WZ patching failed: ${err.message}. Server-side publish still succeeded.`
-      );
-    }
-
-    // 10. Restart game server
-    update("Restarting game server...");
-    try {
-      const machineId = await restartGameServer();
-      update("Server restarted", `Restarted game server (machine: ${machineId})`);
-    } catch (err: any) {
-      update(
-        "Restart warning",
-        `Warning: server restart failed: ${err.message}. Restart manually.`
-      );
-    }
+      files.push({ key: "String.wz", path: strWzOut, ...await hashFileStream(strWzOut) });
+    const released = await publishWzFiles(files, items.flatMap((item) => [
+      {
+        op: "import_image" as const,
+        target_wz: "Character.wz",
+        target_image: `${(SUB_CATEGORY_DIRS[item.sub_category] || SUB_CATEGORY_DIRS.Ring).replace("Character.wz/", "")}/${padItemId(item.item_id)}.img`,
+      },
+      {
+        op: "set_subtree" as const,
+        target_wz: "String.wz",
+        target_image: "Eqp.img",
+        target_node: `Eqp/${getSectionName(item.sub_category)}/${item.item_id}`,
+      },
+    ]), { baseReleaseId });
+    status.releaseId = released.releaseId;
+    status.version = released.manifest.version;
+    update("Applying server release", `Committed release ${released.releaseId}; applying server WZ`);
+    const applied = await restartGameServer();
+    if (!applied.success) throw new Error(applied.error || "Server apply failed");
+    update("Server applied", `Applied release ${released.releaseId}`);
 
     // 11. Cleanup
     try {
@@ -650,7 +470,7 @@ async function runPublishJob(jobId: string) {
     status.step = "Complete";
     status.finishedAt = new Date().toISOString();
     status.items_published = items.length;
-    status.version = version;
+    status.version = released.manifest.version;
     writeStatus(status);
   } catch (err: any) {
     try {
@@ -668,32 +488,20 @@ async function runPublishJob(jobId: string) {
 
 // POST: Start a publish job (returns immediately)
 export async function POST() {
-  if (!isR2Configured()) {
-    return NextResponse.json(
-      { error: "R2 credentials not configured" },
-      { status: 500 }
-    );
-  }
-
-  // Check if a job is already running
-  const current = readStatus();
-  if (current?.status === "running") {
-    const elapsed = Date.now() - new Date(current.startedAt).getTime();
-    // Allow restart if stuck for more than 10 minutes
-    if (elapsed < 10 * 60 * 1000) {
-      return NextResponse.json(
-        { error: "A publish job is already running", status: current },
-        { status: 409 }
-      );
-    }
-  }
-
   const jobId = randomUUID().slice(0, 8);
+  let unlock: (() => void) | undefined;
+  try {
+    unlock = await lockPublicationJob("publish-status.json");
+    writeStatus({ id: jobId, status: "running", step: "Starting...", actions: [], startedAt: new Date().toISOString() });
+  } catch (error) {
+    unlock?.();
+    return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: error instanceof AssetError ? error.status : 500 });
+  }
 
   // Fire and forget — don't await
   runPublishJob(jobId).catch((err) => {
     console.error("Publish job crashed:", err);
-  });
+  }).finally(unlock);
 
   return NextResponse.json({ started: true, id: jobId });
 }

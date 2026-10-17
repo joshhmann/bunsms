@@ -119,20 +119,22 @@ class WeatherServiceTest {
     }
 
     @Test
-    void combatScalarsAreSilentByDay() {
-        // By day (or whenever not night) scaling is identity for non-positive input
-        // regardless of clock: zero and negative damage never become positive.
+    void combatScalarsOffByDefaultRegardlessOfClock() {
+        // USE_WEATHER_GAMEPLAY_EFFECTS defaults false: all scalars are identity
+        // at any clock. Zero/negative inputs never become positive either way.
         assertEquals(0, WeatherCombat.scaleDamageToMonster(0));
         assertEquals(-5, WeatherCombat.scaleDamageToMonster(-5));
         assertEquals(0, WeatherCombat.scaleDamageToPlayer(0));
-        assertEquals(100, WeatherCombat.scaleDamageToPlayer(100) == 100
-                || WeatherCombat.scaleDamageToPlayer(100) > 100 ? WeatherCombat.scaleDamageToPlayer(100) : -1);
+        assertEquals(100, WeatherCombat.scaleDamageToPlayer(100));
+        assertEquals(50, WeatherCombat.scaleExp(50));
+        assertEquals(1.0, WeatherCombat.spawnMultiplier(), 0.0001);
+        assertFalse(WeatherCombat.gameplayEnabled());
     }
 
     @Test
-    void spawnMultiplierIsOneOrNightValue() {
-        double m = WeatherCombat.spawnMultiplier();
-        assertTrue(m == 1.0 || m > 1.0);
+    void spawnMultiplierIsOneWhenGated() {
+        // With the default-off flag, density never steps up — no clock dependence.
+        assertEquals(1.0, WeatherCombat.spawnMultiplier(), 0.0001);
     }
 
     @Test

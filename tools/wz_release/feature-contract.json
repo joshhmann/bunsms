@@ -1,0 +1,6175 @@
+{
+  "schema_version": 1,
+  "server_omit_nodes": [
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "nodes": [
+        "05120994",
+        "05120995",
+        "05120996",
+        "05120997",
+        "05120998",
+        "05120999"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/0/origin",
+      "type": "vector"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/0/z",
+      "type": "int"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/1/origin",
+      "type": "vector"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/1/z",
+      "type": "int"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/2/origin",
+      "type": "vector"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/2/z",
+      "type": "int"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/3/origin",
+      "type": "vector"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/3/z",
+      "type": "int"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/4/origin",
+      "type": "vector"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/4/z",
+      "type": "int"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/0",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        223
+      ]
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/1",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        222
+      ]
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/2",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        221
+      ]
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/3",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        224
+      ]
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/4",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        219
+      ]
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShaolinCN.img",
+      "node": "house15/base/11/0/origin",
+      "type": "vector"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShaolinCN.img",
+      "node": "house15/base/11/0/z",
+      "type": "int"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShaolinCN.img",
+      "node": "house15/base/11/0",
+      "type": "canvas",
+      "dimensions": [
+        29,
+        93
+      ]
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/arcana.img",
+      "node": "lightForest/acc/0/0/origin",
+      "type": "vector"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/arcana.img",
+      "node": "lightForest/acc/0/0/z",
+      "type": "int"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/arcana.img",
+      "node": "lightForest/acc/0/0",
+      "type": "canvas",
+      "dimensions": [
+        83,
+        133
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "UIWindow.img",
+      "node": "DailyCheckin/backgrnd",
+      "type": "canvas",
+      "dimensions": [
+        513,
+        346
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/WndBg",
+      "type": "canvas",
+      "dimensions": [
+        760,
+        495
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/BtBuy/normal",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        18
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/BtBuy/pressed",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        18
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/BtBuy/disabled",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        18
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/BtBuy/mouseOver",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        18
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/BtCart/normal",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        18
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/BtCart/pressed",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        18
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/BtCart/disabled",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        18
+      ]
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/BtCart/mouseOver",
+      "type": "canvas",
+      "dimensions": [
+        76,
+        18
+      ]
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/MapleMoonSky.img",
+      "node": "back/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/WeatherRainbow.img",
+      "node": "back/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/WeatherFog.img",
+      "node": "back/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/WeatherFog.img",
+      "node": "back/1",
+      "type": "canvas"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/WeatherFog.img",
+      "node": "back/2",
+      "type": "canvas"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/WeatherFog.img",
+      "node": "back/3",
+      "type": "canvas"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/WeatherSnow.img",
+      "node": "ani/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/WeatherSnow.img",
+      "node": "ani/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/WeatherSnow.img",
+      "node": "ani/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/WeatherSnow.img",
+      "node": "ani/1/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherSplash.img",
+      "node": "rain/0",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherSplash.img",
+      "node": "rain/0/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherSplash.img",
+      "node": "rain/1",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherSplash.img",
+      "node": "rain/1/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherSplash.img",
+      "node": "rain/2",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherSplash.img",
+      "node": "rain/2/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "0/0",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "0/0/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "0/1",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "0/1/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "0/2",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "0/2/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "1/0",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "1/0/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "1/1",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "1/1/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "1/2",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "1/2/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "2/0",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "2/0/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "2/1",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "2/1/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "2/2",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherPuddle.img",
+      "node": "2/2/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherAccum.img",
+      "node": "print/0",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherAccum.img",
+      "node": "print/0/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherAccum.img",
+      "node": "print/1",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherAccum.img",
+      "node": "print/1/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherAccum.img",
+      "node": "print/2",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherAccum.img",
+      "node": "print/2/0"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherParticles.img",
+      "node": "snowFall",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherParticles.img",
+      "node": "sandGrit",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherParticles.img",
+      "node": "blizzardSnow",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherParticles.img",
+      "node": "leafMix",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "WeatherParticles.img",
+      "node": "blossomMix",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp.img",
+      "node": "glow/large/0/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp.img",
+      "node": "glow/medium/0/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp.img",
+      "node": "glow/small/0/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp.img",
+      "node": "glow/core/0/0",
+      "type": "canvas"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "Weather.img",
+      "node": "rain",
+      "type": "sound"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "Weather.img",
+      "node": "wind",
+      "type": "sound"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShanghaiCN.img",
+      "node": "waitan/artificiality/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShanghaiCN.img",
+      "node": "waitan/artificiality/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/citySG.img",
+      "node": "CBD/artificiality/26",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/citySG.img",
+      "node": "CBD/artificiality/26/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/citySG.img",
+      "node": "CBD/artificiality/27",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/citySG.img",
+      "node": "CBD/artificiality/27/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/WeddingGL.img",
+      "node": "town/light/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/WeddingGL.img",
+      "node": "town/light/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc8.img",
+      "node": "magatia/acc/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc8.img",
+      "node": "magatia/acc/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ThemeGL.img",
+      "node": "Themetown/Streetlight/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ThemeGL.img",
+      "node": "Themetown/Streetlight/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc1.img",
+      "node": "grassySoil/space/21",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc1.img",
+      "node": "grassySoil/space/21/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc4.img",
+      "node": "toyCastle/artificiality/8",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc4.img",
+      "node": "toyCastle/artificiality/8/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc2.img",
+      "node": "metroCity/nightMarket/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc2.img",
+      "node": "metroCity/nightMarket/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/NightMarketTW.img",
+      "node": "NightMarket/StreetVender4/9",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/NightMarketTW.img",
+      "node": "NightMarket/StreetVender4/9/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc3.img",
+      "node": "christmas/acc/8",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc3.img",
+      "node": "christmas/acc/8/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/EventCN.img",
+      "node": "JumpEvent/acc/8",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/EventCN.img",
+      "node": "JumpEvent/acc/8/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc8.img",
+      "node": "sahelDesert/piramid/4",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc8.img",
+      "node": "sahelDesert/piramid/4/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc12.img",
+      "node": "aran/fire/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc12.img",
+      "node": "aran/fire/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc12.img",
+      "node": "rienFD/pengiun/5",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc12.img",
+      "node": "rienFD/pengiun/5/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/guide.img",
+      "node": "milepost/eurel/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/guide.img",
+      "node": "milepost/eurel/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShamanBT.img",
+      "node": "koCave/object/28/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/halloween.img",
+      "node": "inside/common/27",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/halloween.img",
+      "node": "inside/common/27/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/halloweenGL.img",
+      "node": "halloween/room2/wallcandle2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/halloweenGL.img",
+      "node": "halloween/room2/wallcandle2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShaolinCN.img",
+      "node": "house15/base/11",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/ShaolinCN.img",
+      "node": "house15/base/11/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc2.img",
+      "node": "metroCity/artificiality/20",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc2.img",
+      "node": "metroCity/artificiality/20/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc6.img",
+      "node": "minar/nature1/28",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc6.img",
+      "node": "minar/nature1/28/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/arcana.img",
+      "node": "lightForest/acc/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/arcana.img",
+      "node": "lightForest/acc/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc9.img",
+      "node": "nautilus/ship/3",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc9.img",
+      "node": "nautilus/ship/3/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc9.img",
+      "node": "nautilusPort/portal/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc9.img",
+      "node": "nautilusPort/portal/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc9.img",
+      "node": "nautilusPort/portal/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc9.img",
+      "node": "nautilusPort/portal/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc5.img",
+      "node": "aquaRoad/acc2/11",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc5.img",
+      "node": "aquaRoad/acc2/11/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc5.img",
+      "node": "aquaRoad/acc2/12",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc5.img",
+      "node": "aquaRoad/acc2/12/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc5.img",
+      "node": "aquaRoad/acc2/13",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/acc5.img",
+      "node": "aquaRoad/acc2/13/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/houseAR.img",
+      "node": "house0/acc/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/houseAR.img",
+      "node": "house0/acc/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/houseAR.img",
+      "node": "house0/acc/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/houseAR.img",
+      "node": "house0/acc/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/houseAR.img",
+      "node": "house0/acc/3",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/houseAR.img",
+      "node": "house0/acc/3/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/gaslamp/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/gaslamp/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/annual/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/annual/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/annual/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/annual/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/annual/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/annual/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/crystal/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/crystal/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/ornate/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/ornate/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/winged/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/winged/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/flood/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/flood/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/paper/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/paper/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/paper/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/paper/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/vine/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/vine/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/vine/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/vine/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/vine/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/vine/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/pillar/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "street/pillar/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "floor/shade/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "floor/shade/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "floor/shade/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "floor/shade/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "floor/shade/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "floor/shade/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/carriage/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/carriage/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/carriage/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/carriage/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/carriage/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/carriage/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/crystal/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/crystal/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/crystal/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/crystal/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/crystal/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/crystal/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/torch/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/torch/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/torch/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/torch/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/torch/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/torch/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/candle/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "wall/candle/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/chandelier/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/chandelier/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/chandelier/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/chandelier/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/chandelier/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/chandelier/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/chandelier/3",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/chandelier/3/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/lantern/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/lantern/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/candle/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "hang/candle/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/brazier/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/brazier/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/brazier/1",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/brazier/1/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/brazier/2",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/brazier/2/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/bowl/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/bowl/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/tripod/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/tripod/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/basket/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/basket/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/arch/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "fire/arch/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "neon/sign/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "neon/sign/0/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "neon/star/0",
+      "type": "property"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Obj/MapleMoonLamp2.img",
+      "node": "neon/star/0/0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "UIWindow.img",
+      "node": "Bag/BtClose/normal/0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "UIWindow.img",
+      "node": "Bag/BtClose/mouseOver/0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "Basic.img",
+      "node": "BtClose/normal/0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "Basic.img",
+      "node": "BtClose/pressed/0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "Basic.img",
+      "node": "BtClose/disabled/0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "Basic.img",
+      "node": "BtClose/mouseOver/0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "Basic.img",
+      "node": "VScr4/enabled/prev0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "Basic.img",
+      "node": "VScr4/enabled/next0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "Basic.img",
+      "node": "VScr4/enabled/base"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "Basic.img",
+      "node": "VScr4/enabled/thumb0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/Preview/0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/Preview/1"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "CashShop.img",
+      "node": "Base/Preview/2"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "UIWindow.img",
+      "node": "Item/New/Tab0/0"
+    },
+    {
+      "wz": "UI.wz",
+      "image": "UIWindow.img",
+      "node": "Item/New/Tab1/0"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Consume/0200.img",
+      "node": "02000000/info/icon"
+    },
+    {
+      "wz": "String.wz",
+      "image": "Consume.img",
+      "node": "2000000/name"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120003/info/icon"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120003/info/iconRaw"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/nightDesert.img",
+      "node": "back/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/nightDesert.img",
+      "node": "back/3"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/nightDesert.img",
+      "node": "back/8"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/nightDesert.img",
+      "node": "back/19"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/ancientForest.img",
+      "node": "back/28"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/ancientForest.img",
+      "node": "back/29"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/ancientForest.img",
+      "node": "back/30"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/ancientForest.img",
+      "node": "back/31"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/nightDesert.img",
+      "node": "ani/0"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Back/nightDesert.img",
+      "node": "ani/1"
+    },
+    {
+      "wz": "Map.wz",
+      "image": "Physics.img",
+      "node": ""
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "UI.img",
+      "node": "MenuUp"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "UI.img",
+      "node": "BtMouseClick"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "UI.img",
+      "node": "BtMouseOver"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120995/info/path",
+      "type": "string"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120995/info/type"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120995/info/cash"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120996/info/path",
+      "type": "string"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120996/info/type"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120996/info/cash"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120997/info/path",
+      "type": "string"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120997/info/type"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120997/info/cash"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120998/info/path",
+      "type": "string"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120998/info/type"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120998/info/cash"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120999/info/path",
+      "type": "string"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120999/info/type"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120999/info/cash"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120994/info/cash"
+    },
+    {
+      "wz": "String.wz",
+      "image": "Cash.img",
+      "node": "5120994/name",
+      "type": "string"
+    },
+    {
+      "wz": "String.wz",
+      "image": "Cash.img",
+      "node": "5120994/desc",
+      "type": "string"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120994/info/icon"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0512.img",
+      "node": "05120994/info/iconRaw"
+    }
+  ],
+  "scope": {
+    "tickets": [
+      3,
+      10,
+      13
+    ],
+    "research_only_tickets": [
+      11
+    ],
+    "intake_root": "/tmp/wz-release-inputs",
+    "feature_root": "features",
+    "no_merge_performed": true,
+    "no_serverDB_writes": true,
+    "no_fabricated_source_art": true
+  },
+  "operation_semantics": {
+    "copy_subtree": "Deep-clone every source leaf, metadata and UOL at the exact target node; never replace its parent image. source_wz=stock references immutable original stock through source_archive, not partially merged output.",
+    "import_image": "Import the complete native source image at target_image; preserve all other stock images.",
+    "set_properties": "Create missing property ancestors and add/replace only listed typed scalar children; preserve other children. Never infer an item icon.",
+    "verification_required": "Parent must parse sources/output, compare every donor subtree/image leaf semantically, compare untouched stock graphs, resolve every UOL (including external), and decode nonempty art/sound payloads. These are unexercised acceptance requirements, not claimed results."
+  },
+  "operations": [
+    {
+      "ticket": 13,
+      "op": "copy_subtree",
+      "source": "features/lamp-research/guide.img",
+      "source_key": "gms",
+      "source_node": "milepost/eurel/0",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/guide.img",
+      "target_node": "milepost/eurel/0",
+      "reason": "Required primary lamp catalog path absent from actual pinned stock; exact original Root subtree, no table renumbering"
+    },
+    {
+      "ticket": 13,
+      "op": "copy_subtree",
+      "source": "features/lamp-research/ShamanBT.img",
+      "source_key": "gms",
+      "source_image": "ShamanBT.img",
+      "source_node": "koCave/object/28",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/ShamanBT.img",
+      "target_node": "koCave/object/28",
+      "create_parents": true,
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "copy_subtree",
+      "source": "features/lamp-research/ShaolinCN.img",
+      "source_key": "gms",
+      "source_image": "ShaolinCN.img",
+      "source_node": "house15/base/11",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/ShaolinCN.img",
+      "target_node": "house15/base/11",
+      "create_parents": true,
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "copy_subtree",
+      "source": "features/lamp-research/arcana.img",
+      "source_key": "gms",
+      "source_image": "arcana.img",
+      "source_node": "lightForest/acc/0",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/arcana.img",
+      "target_node": "lightForest/acc/0",
+      "create_parents": true,
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 3,
+      "op": "copy_subtree",
+      "source": "features/dailycheckin/UI.wz",
+      "source_image": "UIWindow.img",
+      "source_node": "DailyCheckin",
+      "target_wz": "UI.wz",
+      "target_image": "UIWindow.img",
+      "target_node": "DailyCheckin",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 10,
+      "op": "copy_subtree",
+      "source": "features/cashshop/CashShop.img",
+      "source_image": "CashShop.img",
+      "source_node": "Base/WndBg",
+      "target_wz": "UI.wz",
+      "target_image": "CashShop.img",
+      "target_node": "Base/WndBg",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 10,
+      "op": "copy_subtree",
+      "source": "features/cashshop/CashShop.img",
+      "source_image": "CashShop.img",
+      "source_node": "Base/BtBuy",
+      "target_wz": "UI.wz",
+      "target_image": "CashShop.img",
+      "target_node": "Base/BtBuy",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 10,
+      "op": "copy_subtree",
+      "source": "features/cashshop/CashShop.img",
+      "source_image": "CashShop.img",
+      "source_node": "Base/BtCart",
+      "target_wz": "UI.wz",
+      "target_image": "CashShop.img",
+      "target_node": "Base/BtCart",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Effect/WeatherParticles.img",
+      "target_wz": "Effect.wz",
+      "target_image": "WeatherParticles.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Effect/WeatherSplash.img",
+      "target_wz": "Effect.wz",
+      "target_image": "WeatherSplash.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Effect/WeatherPuddle.img",
+      "target_wz": "Effect.wz",
+      "target_image": "WeatherPuddle.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Effect/WeatherAccum.img",
+      "target_wz": "Effect.wz",
+      "target_image": "WeatherAccum.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Map/Back/MapleMoonSky.img",
+      "target_wz": "Map.wz",
+      "target_image": "Back/MapleMoonSky.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Map/Back/WeatherSnow.img",
+      "target_wz": "Map.wz",
+      "target_image": "Back/WeatherSnow.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Map/Back/WeatherFog.img",
+      "target_wz": "Map.wz",
+      "target_image": "Back/WeatherFog.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Map/Back/WeatherRainbow.img",
+      "target_wz": "Map.wz",
+      "target_image": "Back/WeatherRainbow.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Map/Obj/MapleMoonLamp.img",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/MapleMoonLamp.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Map/Obj/MapleMoonLamp2.img",
+      "target_wz": "Map.wz",
+      "target_image": "Obj/MapleMoonLamp2.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "import_image",
+      "source": "features/weather/Sound/Weather.img",
+      "target_wz": "Sound.wz",
+      "target_image": "Weather.img",
+      "preserve_outside_target": true
+    },
+    {
+      "ticket": 13,
+      "op": "set_properties",
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0512.img",
+      "target_node": "05120995/info",
+      "properties": [
+        {
+          "path": "05120995/info/path",
+          "type": "string",
+          "value": "Effect/WeatherParticles.img/snowFall"
+        },
+        {
+          "path": "05120995/info/type",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "path": "05120995/info/cash",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "preserve_outside_target": true,
+      "forbidden_children": [
+        "icon",
+        "iconRaw"
+      ],
+      "note": "Native art pointer, not an inventory item. Source docs explicitly state speed is absent; do not synthesize it.",
+      "create_parents": true
+    },
+    {
+      "ticket": 13,
+      "op": "set_properties",
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0512.img",
+      "target_node": "05120996/info",
+      "properties": [
+        {
+          "path": "05120996/info/path",
+          "type": "string",
+          "value": "Effect/WeatherParticles.img/sandGrit"
+        },
+        {
+          "path": "05120996/info/type",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "path": "05120996/info/cash",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "preserve_outside_target": true,
+      "forbidden_children": [
+        "icon",
+        "iconRaw"
+      ],
+      "note": "Native art pointer, not an inventory item. Source docs explicitly state speed is absent; do not synthesize it.",
+      "create_parents": true
+    },
+    {
+      "ticket": 13,
+      "op": "set_properties",
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0512.img",
+      "target_node": "05120997/info",
+      "properties": [
+        {
+          "path": "05120997/info/path",
+          "type": "string",
+          "value": "Effect/WeatherParticles.img/blizzardSnow"
+        },
+        {
+          "path": "05120997/info/type",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "path": "05120997/info/cash",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "preserve_outside_target": true,
+      "forbidden_children": [
+        "icon",
+        "iconRaw"
+      ],
+      "note": "Native art pointer, not an inventory item. Source docs explicitly state speed is absent; do not synthesize it.",
+      "create_parents": true
+    },
+    {
+      "ticket": 13,
+      "op": "set_properties",
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0512.img",
+      "target_node": "05120998/info",
+      "properties": [
+        {
+          "path": "05120998/info/path",
+          "type": "string",
+          "value": "Effect/WeatherParticles.img/leafMix"
+        },
+        {
+          "path": "05120998/info/type",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "path": "05120998/info/cash",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "preserve_outside_target": true,
+      "forbidden_children": [
+        "icon",
+        "iconRaw"
+      ],
+      "note": "Native art pointer, not an inventory item. Source docs explicitly state speed is absent; do not synthesize it.",
+      "create_parents": true
+    },
+    {
+      "ticket": 13,
+      "op": "set_properties",
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0512.img",
+      "target_node": "05120999/info",
+      "properties": [
+        {
+          "path": "05120999/info/path",
+          "type": "string",
+          "value": "Effect/WeatherParticles.img/blossomMix"
+        },
+        {
+          "path": "05120999/info/type",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "path": "05120999/info/cash",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "preserve_outside_target": true,
+      "forbidden_children": [
+        "icon",
+        "iconRaw"
+      ],
+      "note": "Native art pointer, not an inventory item. Source docs explicitly state speed is absent; do not synthesize it.",
+      "create_parents": true
+    },
+    {
+      "ticket": 13,
+      "op": "copy_subtree",
+      "source_wz": "stock",
+      "source_archive": "Item.wz",
+      "source_image": "Cash/0512.img",
+      "source_node": "05120003/info/icon",
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0512.img",
+      "target_node": "05120994/info/icon",
+      "create_missing_parents": true,
+      "preserve_outside_target": true,
+      "create_parents": true
+    },
+    {
+      "ticket": 13,
+      "op": "copy_subtree",
+      "source_wz": "stock",
+      "source_archive": "Item.wz",
+      "source_image": "Cash/0512.img",
+      "source_node": "05120003/info/iconRaw",
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0512.img",
+      "target_node": "05120994/info/iconRaw",
+      "create_missing_parents": true,
+      "preserve_outside_target": true,
+      "create_parents": true
+    },
+    {
+      "ticket": 13,
+      "op": "set_properties",
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0512.img",
+      "target_node": "05120994/info",
+      "properties": [
+        {
+          "path": "05120994/info/cash",
+          "type": "int",
+          "value": 1
+        }
+      ],
+      "preserve_outside_target": true,
+      "create_parents": true,
+      "forbidden_children": [
+        "path",
+        "type",
+        "floatType"
+      ]
+    },
+    {
+      "ticket": 13,
+      "op": "set_properties",
+      "target_wz": "String.wz",
+      "target_image": "Cash.img",
+      "target_node": "5120994",
+      "properties": [
+        {
+          "path": "5120994/name",
+          "type": "string",
+          "value": "Blizzard"
+        },
+        {
+          "path": "5120994/desc",
+          "type": "string",
+          "value": "Heavy snow is driving across the area. Movement speed is reduced while you are out in it. Ends on its own when the blizzard passes."
+        }
+      ],
+      "preserve_outside_target": true,
+      "create_parents": true
+    }
+  ],
+  "preservation": {
+    "UI.wz": [
+      "UIWindow.img/Bag/BtClose and every UIWindow.img subtree except DailyCheckin",
+      "Every CashShop.img node except Base/WndBg,Base/BtBuy,Base/BtCart; in particular Base/Preview/0..2"
+    ],
+    "all_archives": "Preserve every node outside exact operation targets, including UOL type/value, canvas origin/delay/pixel_format/mag_level, sound header/payload and child ordering."
+  },
+  "runtime_contracts": [
+    {
+      "path": "UI/UIWindow.img/DailyCheckin/backgrnd",
+      "type": "canvas",
+      "width": 513,
+      "height": 346
+    },
+    {
+      "path": "UI/CashShop.img/Base/WndBg",
+      "type": "canvas",
+      "width": 760,
+      "height": 495,
+      "pixel_format": 2,
+      "mag_level": 0,
+      "origin": [
+        0,
+        0
+      ]
+    },
+    {
+      "path": "UI/CashShop.img/Base/BtBuy/normal",
+      "type": "canvas",
+      "width": 76,
+      "height": 18,
+      "pixel_format": 2,
+      "mag_level": 0,
+      "origin": [
+        0,
+        0
+      ],
+      "note": "Canvas is state itself, NOT state/0."
+    },
+    {
+      "path": "UI/CashShop.img/Base/BtBuy/pressed",
+      "type": "canvas",
+      "width": 76,
+      "height": 18,
+      "pixel_format": 2,
+      "mag_level": 0,
+      "origin": [
+        0,
+        0
+      ],
+      "note": "Canvas is state itself, NOT state/0."
+    },
+    {
+      "path": "UI/CashShop.img/Base/BtBuy/disabled",
+      "type": "canvas",
+      "width": 76,
+      "height": 18,
+      "pixel_format": 2,
+      "mag_level": 0,
+      "origin": [
+        0,
+        0
+      ],
+      "note": "Canvas is state itself, NOT state/0."
+    },
+    {
+      "path": "UI/CashShop.img/Base/BtBuy/mouseOver",
+      "type": "canvas",
+      "width": 76,
+      "height": 18,
+      "pixel_format": 2,
+      "mag_level": 0,
+      "origin": [
+        0,
+        0
+      ],
+      "note": "Canvas is state itself, NOT state/0."
+    },
+    {
+      "path": "UI/CashShop.img/Base/BtCart/normal",
+      "type": "canvas",
+      "width": 76,
+      "height": 18,
+      "pixel_format": 2,
+      "mag_level": 0,
+      "origin": [
+        0,
+        0
+      ],
+      "note": "Canvas is state itself, NOT state/0."
+    },
+    {
+      "path": "UI/CashShop.img/Base/BtCart/pressed",
+      "type": "canvas",
+      "width": 76,
+      "height": 18,
+      "pixel_format": 2,
+      "mag_level": 0,
+      "origin": [
+        0,
+        0
+      ],
+      "note": "Canvas is state itself, NOT state/0."
+    },
+    {
+      "path": "UI/CashShop.img/Base/BtCart/disabled",
+      "type": "canvas",
+      "width": 76,
+      "height": 18,
+      "pixel_format": 2,
+      "mag_level": 0,
+      "origin": [
+        0,
+        0
+      ],
+      "note": "Canvas is state itself, NOT state/0."
+    },
+    {
+      "path": "UI/CashShop.img/Base/BtCart/mouseOver",
+      "type": "canvas",
+      "width": 76,
+      "height": 18,
+      "pixel_format": 2,
+      "mag_level": 0,
+      "origin": [
+        0,
+        0
+      ],
+      "note": "Canvas is state itself, NOT state/0."
+    },
+    {
+      "path": "Map/Back/MapleMoonSky.img/back/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/WeatherRainbow.img/back/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/WeatherFog.img/back/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/WeatherFog.img/back/1",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/WeatherFog.img/back/2",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/WeatherFog.img/back/3",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/WeatherSnow.img/ani/0",
+      "type": "property",
+      "required_child": "0",
+      "numbered_children": "animation frames; preserve donor delays/origin/alpha and UOLs"
+    },
+    {
+      "path": "Map/Back/WeatherSnow.img/ani/1",
+      "type": "property",
+      "required_child": "0",
+      "numbered_children": "animation frames; preserve donor delays/origin/alpha and UOLs"
+    },
+    {
+      "path": "Effect/WeatherSplash.img/rain/0",
+      "type": "property",
+      "required_child": "0",
+      "expected_numbered_frames": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "evidence": "weathersplash.cpp:26-28; five frames x80ms comment"
+    },
+    {
+      "path": "Effect/WeatherSplash.img/rain/1",
+      "type": "property",
+      "required_child": "0",
+      "expected_numbered_frames": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "evidence": "weathersplash.cpp:26-28; five frames x80ms comment"
+    },
+    {
+      "path": "Effect/WeatherSplash.img/rain/2",
+      "type": "property",
+      "required_child": "0",
+      "expected_numbered_frames": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "evidence": "weathersplash.cpp:26-28; five frames x80ms comment"
+    },
+    {
+      "path": "Effect/WeatherPuddle.img/0/0",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherPuddle.img/0/1",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherPuddle.img/0/2",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherPuddle.img/1/0",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherPuddle.img/1/1",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherPuddle.img/1/2",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherPuddle.img/2/0",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherPuddle.img/2/1",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherPuddle.img/2/2",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherAccum.img/print/0",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherAccum.img/print/1",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherAccum.img/print/2",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path_pattern": "Effect/WeatherAccum.img/snow/{variant}",
+      "variant_rule": "Contiguous integers from 0, at least one and at most32; runtime stops at first missing property/frame0",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path_pattern": "Effect/WeatherAccum.img/leaf/{variant}",
+      "variant_rule": "Contiguous integers from 0, at least one and at most32; runtime stops at first missing property/frame0",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path_pattern": "Effect/WeatherAccum.img/petal/{variant}",
+      "variant_rule": "Contiguous integers from 0, at least one and at most32; runtime stops at first missing property/frame0",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Effect/WeatherParticles.img/snowFall",
+      "type": "property",
+      "numbered_children": "Preserve every donor numbered variant and its complete leaf graph; consumed by CField::BlowWeather via item info/path"
+    },
+    {
+      "path": "Effect/WeatherParticles.img/sandGrit",
+      "type": "property",
+      "numbered_children": "Preserve every donor numbered variant and its complete leaf graph; consumed by CField::BlowWeather via item info/path"
+    },
+    {
+      "path": "Effect/WeatherParticles.img/blizzardSnow",
+      "type": "property",
+      "numbered_children": "Preserve every donor numbered variant and its complete leaf graph; consumed by CField::BlowWeather via item info/path"
+    },
+    {
+      "path": "Effect/WeatherParticles.img/leafMix",
+      "type": "property",
+      "numbered_children": "Preserve every donor numbered variant and its complete leaf graph; consumed by CField::BlowWeather via item info/path"
+    },
+    {
+      "path": "Effect/WeatherParticles.img/blossomMix",
+      "type": "property",
+      "numbered_children": "Preserve every donor numbered variant and its complete leaf graph; consumed by CField::BlowWeather via item info/path"
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp.img/glow/large/0/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp.img/glow/medium/0/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp.img/glow/small/0/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp.img/glow/core/0/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Sound/Weather.img/rain",
+      "type": "sound",
+      "require_nonempty_payload": true
+    },
+    {
+      "path": "Sound/Weather.img/wind",
+      "type": "sound",
+      "require_nonempty_payload": true
+    },
+    {
+      "path": "Map/Obj/ShanghaiCN.img/waitan/artificiality/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 0,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/citySG.img/CBD/artificiality/26",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 1,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/citySG.img/CBD/artificiality/27",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 2,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/WeddingGL.img/town/light/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 3,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc8.img/magatia/acc/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 4,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/ThemeGL.img/Themetown/Streetlight/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 5,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc1.img/grassySoil/space/21",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 6,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc4.img/toyCastle/artificiality/8",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 7,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc2.img/metroCity/nightMarket/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 8,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/NightMarketTW.img/NightMarket/StreetVender4/9",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 9,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc3.img/christmas/acc/8",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 10,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/EventCN.img/JumpEvent/acc/8",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 11,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc8.img/sahelDesert/piramid/4",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 12,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc12.img/aran/fire/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 13,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc12.img/rienFD/pengiun/5",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 14,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/guide.img/milepost/eurel/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 15,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/ShamanBT.img/koCave/object/28",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 16,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/halloween.img/inside/common/27",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 17,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/halloweenGL.img/halloween/room2/wallcandle2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 18,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/ShaolinCN.img/house15/base/11",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 19,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc2.img/metroCity/artificiality/20",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 20,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc6.img/minar/nature1/28",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 21,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/arcana.img/lightForest/acc/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 22,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc9.img/nautilus/ship/3",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 23,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc9.img/nautilusPort/portal/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 24,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc9.img/nautilusPort/portal/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 25,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc5.img/aquaRoad/acc2/11",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 26,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc5.img/aquaRoad/acc2/12",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 27,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/acc5.img/aquaRoad/acc2/13",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 28,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/houseAR.img/house0/acc/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 29,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/houseAR.img/house0/acc/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 30,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/houseAR.img/house0/acc/3",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 31,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/gaslamp/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 32,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/annual/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 33,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/annual/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 34,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/annual/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 35,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/crystal/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 36,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/ornate/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 37,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/winged/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 38,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/flood/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 39,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/paper/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 40,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/paper/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 41,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/vine/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 42,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/vine/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 43,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/vine/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 44,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/street/pillar/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 45,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/floor/shade/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 46,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/floor/shade/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 47,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/floor/shade/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 48,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/carriage/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 49,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/carriage/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 50,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/carriage/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 51,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/crystal/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 52,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/crystal/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 53,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/crystal/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 54,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/torch/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 55,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/torch/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 56,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/torch/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 57,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/wall/candle/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 58,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/hang/chandelier/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 59,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/hang/chandelier/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 60,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/hang/chandelier/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 61,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/hang/chandelier/3",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 62,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/hang/lantern/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 63,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/hang/candle/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 64,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/fire/brazier/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 65,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/fire/brazier/1",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 66,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/fire/brazier/2",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 67,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/fire/bowl/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 68,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/fire/tripod/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 69,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/fire/basket/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 70,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/fire/arch/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 71,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/neon/sign/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 72,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    },
+    {
+      "path": "Map/Obj/MapleMoonLamp2.img/neon/star/0",
+      "type": "property",
+      "required_child": "0",
+      "lamp_wire_index": 73,
+      "note": "Full source animation and all UOL dependencies must resolve; glows alone do not supply fixtures."
+    }
+  ],
+  "stock_requirements": [
+    {
+      "path": "UI/UIWindow.img/Bag/BtClose/normal/0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/UIWindow.img/Bag/BtClose/mouseOver/0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/Basic.img/BtClose/normal/0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/Basic.img/BtClose/pressed/0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/Basic.img/BtClose/disabled/0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/Basic.img/BtClose/mouseOver/0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/Basic.img/VScr4/enabled/prev0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/Basic.img/VScr4/enabled/next0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/Basic.img/VScr4/enabled/base",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/Basic.img/VScr4/enabled/thumb0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/CashShop.img/Base/Preview/0",
+      "type": "canvas",
+      "width": 212,
+      "height": 165
+    },
+    {
+      "path": "UI/CashShop.img/Base/Preview/1",
+      "type": "canvas",
+      "width": 212,
+      "height": 165
+    },
+    {
+      "path": "UI/CashShop.img/Base/Preview/2",
+      "type": "canvas",
+      "width": 212,
+      "height": 165
+    },
+    {
+      "path": "UI/UIWindow.img/Item/New/Tab0/0",
+      "type": "canvas"
+    },
+    {
+      "path": "UI/UIWindow.img/Item/New/Tab1/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Item/Consume/0200.img/02000000/info/icon",
+      "type": "canvas"
+    },
+    {
+      "path": "String/Consume.img/2000000/name",
+      "type": "string",
+      "require_nonempty": true
+    },
+    {
+      "path": "Item/Cash/0512.img/05120003/info/icon",
+      "type": "canvas",
+      "width": 29,
+      "height": 30
+    },
+    {
+      "path": "Item/Cash/0512.img/05120003/info/iconRaw",
+      "type": "canvas",
+      "width": 29,
+      "height": 29
+    },
+    {
+      "path": "Map/Back/nightDesert.img/back/0",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/nightDesert.img/back/3",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/nightDesert.img/back/8",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/nightDesert.img/back/19",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/ancientForest.img/back/28",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/ancientForest.img/back/29",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/ancientForest.img/back/30",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/ancientForest.img/back/31",
+      "type": "canvas"
+    },
+    {
+      "path": "Map/Back/nightDesert.img/ani/0",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Map/Back/nightDesert.img/ani/1",
+      "type": "property",
+      "required_child": "0"
+    },
+    {
+      "path": "Map/Physics.img",
+      "type": "image",
+      "note": "weathermove reads stock physics, no custom art"
+    },
+    {
+      "path": "Sound/UI.img/MenuUp",
+      "type": "sound"
+    },
+    {
+      "path": "Sound/UI.img/BtMouseClick",
+      "type": "sound"
+    },
+    {
+      "path": "Sound/UI.img/BtMouseOver",
+      "type": "sound"
+    }
+  ],
+  "catalog": {
+    "source": "cashshop/catalog.tsv",
+    "source_rows": 1843,
+    "ids": [
+      1000000,
+      1000001,
+      1000002,
+      1000004,
+      1000005,
+      1000006,
+      1000007,
+      1000008,
+      1000009,
+      1000010,
+      1000013,
+      1000018,
+      1000020,
+      1000023,
+      1000027,
+      1001000,
+      1001001,
+      1001002,
+      1001003,
+      1001004,
+      1001005,
+      1001006,
+      1001009,
+      1001010,
+      1001011,
+      1001013,
+      1001016,
+      1001017,
+      1001019,
+      1001021,
+      1001023,
+      1001024,
+      1001025,
+      1001029,
+      1001030,
+      1001031,
+      1001032,
+      1001037,
+      1001039,
+      1001042,
+      1001043,
+      1001044,
+      1001048,
+      1001049,
+      1001055,
+      1002000,
+      1002018,
+      1002031,
+      1002032,
+      1002071,
+      1002077,
+      1002186,
+      1002192,
+      1002193,
+      1002200,
+      1002201,
+      1002220,
+      1002228,
+      1002229,
+      1002230,
+      1002231,
+      1002232,
+      1002233,
+      1002234,
+      1002235,
+      1002236,
+      1002237,
+      1002238,
+      1002239,
+      1002240,
+      1002250,
+      1002251,
+      1002256,
+      1002258,
+      1002259,
+      1002260,
+      1002261,
+      1002262,
+      1002263,
+      1002265,
+      1002266,
+      1002279,
+      1002280,
+      1002290,
+      1002291,
+      1002292,
+      1002293,
+      1002294,
+      1002295,
+      1002296,
+      1002297,
+      1002298,
+      1002299,
+      1002301,
+      1002302,
+      1002304,
+      1002307,
+      1002310,
+      1002311,
+      1002313,
+      1002315,
+      1002316,
+      1002317,
+      1002318,
+      1002319,
+      1002322,
+      1002334,
+      1002335,
+      1002336,
+      1002337,
+      1002342,
+      1002343,
+      1002344,
+      1002345,
+      1002346,
+      1002348,
+      1002349,
+      1002355,
+      1002356,
+      1002367,
+      1002374,
+      1002375,
+      1002376,
+      1002384,
+      1002385,
+      1002386,
+      1002387,
+      1002389,
+      1002396,
+      1002397,
+      1002409,
+      1002412,
+      1002414,
+      1002416,
+      1002417,
+      1002420,
+      1002427,
+      1002428,
+      1002429,
+      1002431,
+      1002432,
+      1002435,
+      1002437,
+      1002438,
+      1002440,
+      1002442,
+      1002443,
+      1002444,
+      1002445,
+      1002446,
+      1002449,
+      1002456,
+      1002457,
+      1002458,
+      1002459,
+      1002460,
+      1002461,
+      1002462,
+      1002463,
+      1002464,
+      1002465,
+      1002466,
+      1002467,
+      1002469,
+      1002470,
+      1002477,
+      1002478,
+      1002480,
+      1002481,
+      1002482,
+      1002484,
+      1002485,
+      1002486,
+      1002487,
+      1002489,
+      1002491,
+      1002493,
+      1002495,
+      1002496,
+      1002498,
+      1002499,
+      1002501,
+      1002502,
+      1002503,
+      1002504,
+      1002519,
+      1002520,
+      1002521,
+      1002522,
+      1002523,
+      1002526,
+      1002534,
+      1002536,
+      1002542,
+      1002543,
+      1002544,
+      1002545,
+      1002548,
+      1002549,
+      1002552,
+      1002555,
+      1002557,
+      1002558,
+      1002559,
+      1002560,
+      1002566,
+      1002568,
+      1002569,
+      1002575,
+      1002576,
+      1002582,
+      1002590,
+      1002591,
+      1002592,
+      1002593,
+      1002594,
+      1002596,
+      1002597,
+      1002598,
+      1002599,
+      1002605,
+      1002607,
+      1002608,
+      1002650,
+      1002654,
+      1002660,
+      1002666,
+      1002667,
+      1002672,
+      1002673,
+      1002674,
+      1002678,
+      1002679,
+      1002691,
+      1002692,
+      1002694,
+      1002695,
+      1002696,
+      1002697,
+      1002698,
+      1002703,
+      1002704,
+      1002705,
+      1002706,
+      1002708,
+      1002710,
+      1002713,
+      1002714,
+      1002721,
+      1002722,
+      1002724,
+      1002725,
+      1002726,
+      1002727,
+      1002735,
+      1002736,
+      1002738,
+      1002741,
+      1002747,
+      1002748,
+      1002752,
+      1002753,
+      1002754,
+      1002756,
+      1002759,
+      1002770,
+      1002771,
+      1002774,
+      1002784,
+      1002785,
+      1002796,
+      1002804,
+      1002820,
+      1002821,
+      1002822,
+      1002823,
+      1002831,
+      1002834,
+      1002835,
+      1002836,
+      1002837,
+      1002840,
+      1002844,
+      1002845,
+      1002847,
+      1002849,
+      1002863,
+      1002870,
+      1002876,
+      1002877,
+      1002885,
+      1002887,
+      1002889,
+      1002890,
+      1002891,
+      1002903,
+      1002907,
+      1002913,
+      1002920,
+      1002921,
+      1002922,
+      1002928,
+      1002929,
+      1002937,
+      1002941,
+      1002943,
+      1002944,
+      1002950,
+      1002951,
+      1002952,
+      1002953,
+      1002960,
+      1002961,
+      1002962,
+      1002968,
+      1002969,
+      1002973,
+      1002974,
+      1002976,
+      1002978,
+      1002979,
+      1002984,
+      1002995,
+      1003005,
+      1003008,
+      1003009,
+      1003013,
+      1003014,
+      1003015,
+      1003022,
+      1003044,
+      1003049,
+      1003050,
+      1003051,
+      1003052,
+      1003057,
+      1010000,
+      1010001,
+      1010002,
+      1010003,
+      1011000,
+      1011001,
+      1011002,
+      1011003,
+      1012000,
+      1012001,
+      1012002,
+      1012005,
+      1012006,
+      1012008,
+      1012009,
+      1012021,
+      1012022,
+      1012023,
+      1012024,
+      1012025,
+      1012026,
+      1012027,
+      1012028,
+      1012029,
+      1012030,
+      1012031,
+      1012032,
+      1012034,
+      1012035,
+      1012036,
+      1012037,
+      1012038,
+      1012039,
+      1012041,
+      1012042,
+      1012047,
+      1012048,
+      1012049,
+      1012050,
+      1012051,
+      1012052,
+      1012053,
+      1012054,
+      1012055,
+      1012056,
+      1012057,
+      1012062,
+      1012063,
+      1012074,
+      1012075,
+      1012080,
+      1012082,
+      1012083,
+      1012085,
+      1012090,
+      1012096,
+      1012097,
+      1012099,
+      1012100,
+      1012105,
+      1012112,
+      1012113,
+      1012114,
+      1012121,
+      1012122,
+      1012123,
+      1012124,
+      1012125,
+      1012126,
+      1012127,
+      1012128,
+      1012129,
+      1012134,
+      1012137,
+      1012147,
+      1012165,
+      1012166,
+      1012180,
+      1021000,
+      1022000,
+      1022001,
+      1022002,
+      1022003,
+      1022004,
+      1022005,
+      1022006,
+      1022007,
+      1022008,
+      1022012,
+      1022013,
+      1022014,
+      1022015,
+      1022016,
+      1022018,
+      1022020,
+      1022023,
+      1022024,
+      1022027,
+      1022028,
+      1022029,
+      1022030,
+      1022031,
+      1022033,
+      1022034,
+      1022035,
+      1022036,
+      1022037,
+      1022040,
+      1022041,
+      1022042,
+      1022043,
+      1022044,
+      1022045,
+      1022046,
+      1022047,
+      1022049,
+      1022050,
+      1022052,
+      1022053,
+      1022054,
+      1022055,
+      1022056,
+      1022057,
+      1022059,
+      1022061,
+      1022062,
+      1022063,
+      1022064,
+      1022065,
+      1022066,
+      1022069,
+      1022070,
+      1022071,
+      1022072,
+      1022074,
+      1022075,
+      1022081,
+      1022083,
+      1022084,
+      1022085,
+      1022086,
+      1022087,
+      1022095,
+      1022102,
+      1022104,
+      1050004,
+      1050012,
+      1050032,
+      1050033,
+      1050034,
+      1050040,
+      1050041,
+      1050042,
+      1050043,
+      1050044,
+      1050050,
+      1050057,
+      1050071,
+      1050079,
+      1050084,
+      1050085,
+      1050086,
+      1050087,
+      1050101,
+      1050109,
+      1050110,
+      1050113,
+      1050117,
+      1050118,
+      1050120,
+      1050124,
+      1050125,
+      1050135,
+      1050136,
+      1050137,
+      1050141,
+      1050146,
+      1050152,
+      1051002,
+      1051028,
+      1051029,
+      1051035,
+      1051036,
+      1051040,
+      1051048,
+      1051051,
+      1051059,
+      1051060,
+      1051061,
+      1051071,
+      1051072,
+      1051073,
+      1051074,
+      1051076,
+      1051081,
+      1051087,
+      1051089,
+      1051099,
+      1051100,
+      1051110,
+      1051111,
+      1051114,
+      1051116,
+      1051117,
+      1051118,
+      1051119,
+      1051121,
+      1051122,
+      1051123,
+      1051124,
+      1051125,
+      1051126,
+      1051128,
+      1051132,
+      1051134,
+      1051137,
+      1051138,
+      1051142,
+      1051144,
+      1051147,
+      1051148,
+      1051149,
+      1051154,
+      1051155,
+      1051156,
+      1051157,
+      1051160,
+      1051163,
+      1051164,
+      1051167,
+      1051170,
+      1051173,
+      1051175,
+      1051179,
+      1051180,
+      1051183,
+      1051185,
+      1051188,
+      1051192,
+      1052001,
+      1052003,
+      1052004,
+      1052010,
+      1052013,
+      1052014,
+      1052020,
+      1052021,
+      1052022,
+      1052024,
+      1052025,
+      1052027,
+      1052028,
+      1052029,
+      1052030,
+      1052035,
+      1052036,
+      1052037,
+      1052038,
+      1052039,
+      1052040,
+      1052041,
+      1052043,
+      1052045,
+      1052047,
+      1052048,
+      1052049,
+      1052050,
+      1052051,
+      1052053,
+      1052055,
+      1052069,
+      1052077,
+      1052078,
+      1052079,
+      1052084,
+      1052085,
+      1052086,
+      1052087,
+      1052089,
+      1052090,
+      1052094,
+      1052135,
+      1052142,
+      1052143,
+      1052144,
+      1052154,
+      1052169,
+      1052171,
+      1052175,
+      1052176,
+      1052179,
+      1052180,
+      1052182,
+      1052192,
+      1052193,
+      1052194,
+      1052199,
+      1052200,
+      1052203,
+      1052209,
+      1052214,
+      1052218,
+      1052234,
+      1040001,
+      1040027,
+      1040051,
+      1040054,
+      1040055,
+      1040056,
+      1040064,
+      1040077,
+      1040101,
+      1040114,
+      1040119,
+      1040123,
+      1040124,
+      1040125,
+      1040127,
+      1040128,
+      1040129,
+      1040130,
+      1040131,
+      1040132,
+      1040133,
+      1040134,
+      1040135,
+      1040144,
+      1041001,
+      1041005,
+      1041009,
+      1041071,
+      1041090,
+      1041104,
+      1041108,
+      1041112,
+      1041113,
+      1041114,
+      1041125,
+      1041127,
+      1041128,
+      1041129,
+      1041130,
+      1041131,
+      1041132,
+      1041134,
+      1041135,
+      1041136,
+      1041137,
+      1041142,
+      1042000,
+      1042001,
+      1042002,
+      1042004,
+      1042006,
+      1042012,
+      1042013,
+      1042014,
+      1042015,
+      1042016,
+      1042017,
+      1042018,
+      1042019,
+      1042021,
+      1042022,
+      1042023,
+      1042024,
+      1042025,
+      1042026,
+      1042027,
+      1042028,
+      1042029,
+      1042030,
+      1042031,
+      1042032,
+      1042034,
+      1042036,
+      1042037,
+      1042038,
+      1042039,
+      1042041,
+      1042042,
+      1042043,
+      1042044,
+      1042046,
+      1042049,
+      1042051,
+      1042052,
+      1042053,
+      1042054,
+      1042055,
+      1042056,
+      1042059,
+      1042060,
+      1042062,
+      1042063,
+      1042065,
+      1042066,
+      1042067,
+      1042068,
+      1042070,
+      1042071,
+      1042072,
+      1042073,
+      1042074,
+      1042075,
+      1042076,
+      1042077,
+      1042080,
+      1042081,
+      1042082,
+      1042083,
+      1042084,
+      1042085,
+      1042086,
+      1042087,
+      1042088,
+      1042089,
+      1042090,
+      1042091,
+      1042092,
+      1042093,
+      1042094,
+      1042095,
+      1042096,
+      1042097,
+      1042098,
+      1042099,
+      1042100,
+      1042101,
+      1042102,
+      1042103,
+      1042104,
+      1042105,
+      1042106,
+      1042107,
+      1042109,
+      1042110,
+      1042116,
+      1042117,
+      1042118,
+      1042119,
+      1042120,
+      1042121,
+      1042122,
+      1042125,
+      1042126,
+      1042127,
+      1042128,
+      1042129,
+      1042130,
+      1042131,
+      1042132,
+      1042133,
+      1042134,
+      1042138,
+      1042140,
+      1042141,
+      1042142,
+      1042143,
+      1042144,
+      1042145,
+      1042146,
+      1042147,
+      1042149,
+      1042150,
+      1042151,
+      1042152,
+      1042153,
+      1042154,
+      1042155,
+      1042156,
+      1042158,
+      1042160,
+      1042161,
+      1042163,
+      1042164,
+      1042166,
+      1042168,
+      1042169,
+      1042177,
+      1042181,
+      1042182,
+      1042183,
+      1042186,
+      1042187,
+      1060001,
+      1060003,
+      1060047,
+      1060049,
+      1060055,
+      1060096,
+      1060103,
+      1060108,
+      1060112,
+      1060114,
+      1060116,
+      1060117,
+      1060118,
+      1060126,
+      1061001,
+      1061004,
+      1061005,
+      1061007,
+      1061067,
+      1061072,
+      1061074,
+      1061075,
+      1061089,
+      1061107,
+      1061110,
+      1061111,
+      1061112,
+      1061113,
+      1061124,
+      1061126,
+      1061127,
+      1061128,
+      1061129,
+      1061132,
+      1061134,
+      1061135,
+      1061140,
+      1061143,
+      1061148,
+      1062003,
+      1062005,
+      1062009,
+      1062015,
+      1062016,
+      1062017,
+      1062018,
+      1062019,
+      1062020,
+      1062021,
+      1062023,
+      1062024,
+      1062025,
+      1062026,
+      1062027,
+      1062029,
+      1062030,
+      1062031,
+      1062032,
+      1062033,
+      1062034,
+      1062035,
+      1062038,
+      1062039,
+      1062040,
+      1062041,
+      1062042,
+      1062043,
+      1062045,
+      1062046,
+      1062047,
+      1062048,
+      1062051,
+      1062052,
+      1062053,
+      1062054,
+      1062055,
+      1062056,
+      1062057,
+      1062058,
+      1062059,
+      1062060,
+      1062061,
+      1062062,
+      1062063,
+      1062065,
+      1062066,
+      1062067,
+      1062068,
+      1062069,
+      1062070,
+      1062071,
+      1062073,
+      1062075,
+      1062077,
+      1062081,
+      1062082,
+      1062083,
+      1062084,
+      1062085,
+      1062089,
+      1062091,
+      1062092,
+      1062093,
+      1062094,
+      1062097,
+      1062098,
+      1062100,
+      1062101,
+      1062104,
+      1062105,
+      1062109,
+      1062110,
+      1062111,
+      1062113,
+      1062116,
+      1062119,
+      1070000,
+      1070002,
+      1070003,
+      1070007,
+      1070016,
+      1071001,
+      1071002,
+      1071004,
+      1071005,
+      1071006,
+      1071007,
+      1071008,
+      1071011,
+      1071012,
+      1071013,
+      1071014,
+      1071019,
+      1071020,
+      1071021,
+      1071026,
+      1072010,
+      1072014,
+      1072057,
+      1072058,
+      1072088,
+      1072094,
+      1072097,
+      1072098,
+      1072099,
+      1072100,
+      1072111,
+      1072153,
+      1072175,
+      1072180,
+      1072181,
+      1072186,
+      1072187,
+      1072188,
+      1072189,
+      1072190,
+      1072191,
+      1072199,
+      1072200,
+      1072201,
+      1072202,
+      1072217,
+      1072218,
+      1072219,
+      1072230,
+      1072232,
+      1072233,
+      1072234,
+      1072235,
+      1072236,
+      1072237,
+      1072240,
+      1072241,
+      1072242,
+      1072243,
+      1072244,
+      1072245,
+      1072246,
+      1072247,
+      1072250,
+      1072252,
+      1072255,
+      1072256,
+      1072257,
+      1072258,
+      1072259,
+      1072260,
+      1072274,
+      1072276,
+      1072279,
+      1072280,
+      1072284,
+      1072322,
+      1072323,
+      1072324,
+      1072325,
+      1072326,
+      1072329,
+      1072334,
+      1072335,
+      1072336,
+      1072337,
+      1072347,
+      1072348,
+      1072353,
+      1072367,
+      1072370,
+      1072371,
+      1072373,
+      1072374,
+      1072379,
+      1072380,
+      1072384,
+      1072388,
+      1072392,
+      1072394,
+      1072395,
+      1072408,
+      1072417,
+      1072437,
+      1080000,
+      1081000,
+      1081001,
+      1081002,
+      1081003,
+      1081004,
+      1082040,
+      1082041,
+      1082077,
+      1082078,
+      1082079,
+      1082102,
+      1082113,
+      1082156,
+      1082161,
+      1082162,
+      1082169,
+      1082170,
+      1082171,
+      1082172,
+      1082173,
+      1082227,
+      1082229,
+      1082231,
+      1082233,
+      1082247,
+      1082249,
+      1082251,
+      1082255,
+      1092031,
+      1092033,
+      1092039,
+      1092040,
+      1092044,
+      1092062,
+      1702000,
+      1702001,
+      1702002,
+      1702003,
+      1702004,
+      1702005,
+      1702006,
+      1702007,
+      1702009,
+      1702010,
+      1702011,
+      1702012,
+      1702013,
+      1702014,
+      1702015,
+      1702016,
+      1702017,
+      1702018,
+      1702019,
+      1702020,
+      1702021,
+      1702022,
+      1702023,
+      1702024,
+      1702025,
+      1702026,
+      1702028,
+      1702030,
+      1702031,
+      1702032,
+      1702033,
+      1702034,
+      1702035,
+      1702036,
+      1702037,
+      1702038,
+      1702039,
+      1702040,
+      1702041,
+      1702042,
+      1702045,
+      1702046,
+      1702047,
+      1702048,
+      1702050,
+      1702051,
+      1702052,
+      1702054,
+      1702055,
+      1702056,
+      1702057,
+      1702058,
+      1702059,
+      1702060,
+      1702061,
+      1702062,
+      1702063,
+      1702064,
+      1702065,
+      1702066,
+      1702070,
+      1702072,
+      1702073,
+      1702074,
+      1702078,
+      1702079,
+      1702080,
+      1702081,
+      1702082,
+      1702083,
+      1702084,
+      1702085,
+      1702086,
+      1702087,
+      1702088,
+      1702089,
+      1702090,
+      1702091,
+      1702092,
+      1702093,
+      1702094,
+      1702095,
+      1702096,
+      1702098,
+      1702099,
+      1702102,
+      1702103,
+      1702104,
+      1702105,
+      1702106,
+      1702107,
+      1702108,
+      1702112,
+      1702114,
+      1702121,
+      1702122,
+      1702123,
+      1702124,
+      1702126,
+      1702127,
+      1702128,
+      1702129,
+      1702130,
+      1702131,
+      1702132,
+      1702133,
+      1702134,
+      1702138,
+      1702139,
+      1702140,
+      1702141,
+      1702142,
+      1702143,
+      1702144,
+      1702145,
+      1702146,
+      1702147,
+      1702148,
+      1702151,
+      1702152,
+      1702153,
+      1702154,
+      1702155,
+      1702156,
+      1702157,
+      1702158,
+      1702159,
+      1702160,
+      1702161,
+      1702162,
+      1702163,
+      1702164,
+      1702165,
+      1702167,
+      1702168,
+      1702169,
+      1702170,
+      1702171,
+      1702173,
+      1702174,
+      1702175,
+      1702177,
+      1702179,
+      1702180,
+      1702181,
+      1702182,
+      1702184,
+      1702185,
+      1702188,
+      1702189,
+      1702191,
+      1702193,
+      1702195,
+      1702196,
+      1702201,
+      1702202,
+      1702204,
+      1702207,
+      1702208,
+      1702209,
+      1702210,
+      1702212,
+      1702213,
+      1702215,
+      1702217,
+      1702218,
+      1702219,
+      1702220,
+      1702226,
+      1702228,
+      1702229,
+      1702230,
+      1702233,
+      1702238,
+      1702246,
+      1702249,
+      1702250,
+      1702251,
+      1032024,
+      1032029,
+      1032036,
+      1032051,
+      1032052,
+      1032053,
+      1032054,
+      1032063,
+      1032071,
+      1032072,
+      1032073,
+      1032074,
+      1112001,
+      1112002,
+      1112003,
+      1112005,
+      1112006,
+      1112007,
+      1112012,
+      1112100,
+      1112101,
+      1112102,
+      1112103,
+      1112104,
+      1112105,
+      1112106,
+      1112107,
+      1112108,
+      1112109,
+      1112112,
+      1112113,
+      1112114,
+      1112115,
+      1112117,
+      1112122,
+      1112124,
+      1112125,
+      1112126,
+      1112201,
+      1112203,
+      1112206,
+      1112207,
+      1112208,
+      1112211,
+      1112212,
+      1112215,
+      1112216,
+      1112217,
+      1112219,
+      1112223,
+      1112224,
+      1112225,
+      1112227,
+      1112231,
+      1112232,
+      1112233,
+      1112234,
+      1112235,
+      1112236,
+      1112800,
+      1112801,
+      1112802,
+      1112808,
+      1112810,
+      1112811,
+      1112812,
+      1112900,
+      1112901,
+      1112902,
+      1112903,
+      1112904,
+      1112905,
+      1112906,
+      1112908,
+      1112916,
+      1102005,
+      1102006,
+      1102007,
+      1102008,
+      1102009,
+      1102010,
+      1102020,
+      1102025,
+      1102039,
+      1102044,
+      1102045,
+      1102049,
+      1102050,
+      1102051,
+      1102052,
+      1102058,
+      1102059,
+      1102060,
+      1102062,
+      1102063,
+      1102065,
+      1102066,
+      1102067,
+      1102068,
+      1102069,
+      1102070,
+      1102072,
+      1102073,
+      1102074,
+      1102075,
+      1102076,
+      1102077,
+      1102091,
+      1102092,
+      1102093,
+      1102094,
+      1102098,
+      1102107,
+      1102108,
+      1102110,
+      1102111,
+      1102112,
+      1102137,
+      1102138,
+      1102141,
+      1102142,
+      1102144,
+      1102150,
+      1102151,
+      1102153,
+      1102154,
+      1102155,
+      1102156,
+      1102157,
+      1102158,
+      1102159,
+      1102160,
+      1102164,
+      1102169,
+      1102175,
+      1102185,
+      1102186,
+      1102196,
+      1102202,
+      1102203,
+      1102210,
+      1102215,
+      1102216,
+      1102218,
+      1102223,
+      1102224,
+      5150001,
+      5150003,
+      5150005,
+      5150007,
+      5150008,
+      5150009,
+      5150010,
+      5150011,
+      5150012,
+      5150013,
+      5150019,
+      5150020,
+      5150024,
+      5150025,
+      5150026,
+      5150027,
+      5150030,
+      5150031,
+      5150032,
+      5150033,
+      5150040,
+      5150044,
+      5120000,
+      5120002,
+      5120003,
+      5120004,
+      5120005,
+      5120006,
+      5120007,
+      5120008,
+      5120009,
+      5120011,
+      5120012,
+      5120028,
+      5211004,
+      5211005,
+      5211006,
+      5211007,
+      5211008,
+      5211009,
+      5211010,
+      5211011,
+      5211012,
+      5211013,
+      5211014,
+      5211015,
+      5211016,
+      5211017,
+      5211018,
+      5211037,
+      5211038,
+      5211039,
+      5211040,
+      5211041,
+      5211042,
+      5211043,
+      5211044,
+      5211045,
+      5211048,
+      5211060,
+      5140000,
+      5140006,
+      4031063,
+      4031180,
+      4031191,
+      4031192,
+      5021000,
+      5021001,
+      5021002,
+      5021003,
+      5021004,
+      5021005,
+      5021006,
+      5021007,
+      5021008,
+      5021009,
+      5021010,
+      5021011,
+      5021012,
+      5021013,
+      5021014,
+      5021015,
+      5021016,
+      5021017,
+      5021019,
+      5021020,
+      5021021,
+      5021022,
+      5021023,
+      5021024,
+      5021025,
+      5021026,
+      5030000,
+      5030001,
+      5030002,
+      5030003,
+      5030004,
+      5030005,
+      5030006,
+      5030008,
+      5030010,
+      5030012,
+      5040000,
+      5041000,
+      5050000,
+      5050001,
+      5050002,
+      5050003,
+      5050004,
+      5060000,
+      5061000,
+      5061001,
+      5061002,
+      5061003,
+      5071000,
+      5072000,
+      5075000,
+      5075001,
+      5075002,
+      5075003,
+      5075004,
+      5075005,
+      5076000,
+      5077000,
+      5080000,
+      5080001,
+      5080002,
+      5080003,
+      5110000,
+      5121002,
+      5121006,
+      5121007,
+      5121009,
+      5121010,
+      5121015,
+      5121016,
+      5121017,
+      5121019,
+      5122000,
+      5130000,
+      5151000,
+      5151001,
+      5151002,
+      5151003,
+      5151004,
+      5151005,
+      5151006,
+      5151007,
+      5151008,
+      5151009,
+      5151016,
+      5151017,
+      5151019,
+      5151020,
+      5151021,
+      5151022,
+      5151025,
+      5151026,
+      5153000,
+      5153001,
+      5153002,
+      5153006,
+      5153007,
+      5153009,
+      5153010,
+      5180000,
+      5222000,
+      5230000,
+      5251000,
+      5251001,
+      5251002,
+      5251003,
+      5251100,
+      5281000,
+      5281001,
+      5290000,
+      5290001,
+      5290002,
+      5290003,
+      5290004,
+      5290005,
+      5290006,
+      5300000,
+      5300001,
+      5300002,
+      5360000,
+      5360001,
+      5360002,
+      5360003,
+      5360004,
+      5360005,
+      5360006,
+      5360007,
+      5360008,
+      5360042,
+      5370000,
+      5380000,
+      5390000,
+      5390001,
+      5390002,
+      5390005,
+      5390006,
+      5400000,
+      5401000,
+      5420000,
+      5420001,
+      5420002,
+      5420003,
+      5420004,
+      5420005,
+      5420006,
+      5430000,
+      5431000,
+      5432000,
+      5450000,
+      5451000,
+      5460000,
+      5470000,
+      5510000,
+      5520000,
+      5570000,
+      5610000,
+      5610001,
+      5152000,
+      5152001,
+      5152004,
+      5152005,
+      5152006,
+      5152007,
+      5152008,
+      5152009,
+      5152010,
+      5152011,
+      5152012,
+      5152013,
+      5152014,
+      5152015,
+      5152021,
+      5152022,
+      5152025,
+      5152026,
+      5152027,
+      5152028,
+      5152029,
+      5152030,
+      5152033,
+      5152034,
+      5152035,
+      5152036,
+      5152037,
+      5152038,
+      5152039,
+      5152040,
+      5152041,
+      5152042,
+      5152045,
+      5152046,
+      5152047,
+      5152048,
+      5152100,
+      5152101,
+      5152102,
+      5152103,
+      5152104,
+      5152105,
+      5152106,
+      5152107,
+      5160000,
+      5160001,
+      5160002,
+      5160003,
+      5160004,
+      5160005,
+      5160006,
+      5160007,
+      5160008,
+      5160009,
+      5160010,
+      5160011,
+      5160012,
+      5160013,
+      5160014,
+      5170000,
+      5000000,
+      5000001,
+      5000002,
+      5000003,
+      5000004,
+      5000005,
+      5000006,
+      5000007,
+      5000008,
+      5000009,
+      5000010,
+      5000011,
+      5000012,
+      5000013,
+      5000015,
+      5000017,
+      5000020,
+      5000022,
+      5000023,
+      5000024,
+      5000025,
+      5000026,
+      5000028,
+      5000034,
+      5000036,
+      5000039,
+      5000041,
+      5000042,
+      5000044,
+      5000045,
+      5000047,
+      5000058,
+      5000060,
+      5000066,
+      1802001,
+      1802002,
+      1802003,
+      1802004,
+      1802005,
+      1802006,
+      1802007,
+      1802010,
+      1802012,
+      1802013,
+      1802014,
+      1802015,
+      1802016,
+      1802017,
+      1802018,
+      1802020,
+      1802023,
+      1802024,
+      1802025,
+      1802026,
+      1802027,
+      1802028,
+      1802029,
+      1802030,
+      1802031,
+      1802033,
+      1802034,
+      1802035,
+      1802037,
+      1802038,
+      1802042,
+      1802045,
+      1802047,
+      1802048,
+      1802049,
+      1802050,
+      1802051,
+      1802052,
+      1802053,
+      1802054,
+      1802055,
+      1802059,
+      1802061,
+      1802062,
+      1802063,
+      1812000,
+      1812001,
+      1812002,
+      1812003,
+      1812004,
+      1812005,
+      1812006,
+      1812007,
+      1822000,
+      1832000,
+      5010000,
+      5010001,
+      5010002,
+      5010003,
+      5010004,
+      5010006,
+      5010007,
+      5010014,
+      5010016,
+      5010017,
+      5010018,
+      5010019,
+      5010021,
+      5010022,
+      5010024,
+      5010025,
+      5010026,
+      5010027,
+      5010028,
+      5010029,
+      5010030,
+      5010033,
+      5010034,
+      5010035,
+      5010038,
+      5010039,
+      5010041,
+      5010042,
+      5010043,
+      5010044,
+      5010045,
+      5010051,
+      5010052,
+      5010053,
+      5010054,
+      5010055,
+      5010056,
+      5010057,
+      5010059,
+      5010060,
+      5010061,
+      5010064,
+      5010065,
+      5010066,
+      5010068,
+      5010070,
+      5010073,
+      5010074,
+      5240000,
+      5240001,
+      5240002,
+      5240003,
+      5240004,
+      5240005,
+      5240006,
+      5240007,
+      5240008,
+      5240009,
+      5240010,
+      5240011,
+      5240012,
+      5240013,
+      5240015,
+      5240017,
+      5240018,
+      5240020,
+      5240021,
+      5240023,
+      5240024,
+      5240027,
+      5220000
+    ],
+    "coverage_status": "not_verified; names in TSV are not proof of WZ icon or String coverage",
+    "require_every_id": true,
+    "require_nonempty_resolved_icon": true,
+    "require_nonempty_wz_name": true,
+    "do_not_replace_missing_icon_with_placeholder": true,
+    "name_lookup_evidence": "server/src/main/java/server/ItemInformationProvider.java:212-277; catalog generator recursively visits String image name children",
+    "path_rules": {
+      "id8": "zero-pad item ID to8 decimal digits",
+      "equipment_icon": "Character/{equipment_directory}/{id8}.img/info/icon",
+      "equipment_directories": {
+        "100": "Cap",
+        "101": "Accessory",
+        "102": "Accessory",
+        "103": "Accessory",
+        "104": "Coat",
+        "105": "Longcoat",
+        "106": "Pants",
+        "107": "Shoes",
+        "108": "Glove",
+        "109": "Shield",
+        "110": "Cape",
+        "111": "Ring",
+        "170": "Weapon",
+        "180": "PetEquip",
+        "181": "PetEquip",
+        "182": "PetEquip",
+        "183": "PetEquip"
+      },
+      "equipment_name": "String/Eqp.img/Eqp/{string_category}/{id}/name",
+      "equipment_string_categories": {
+        "100": "Cap",
+        "101": "Accessory",
+        "102": "Accessory",
+        "103": "Accessory",
+        "104": "Coat",
+        "105": "Longcoat",
+        "106": "Pants",
+        "107": "Shoes",
+        "108": "Glove",
+        "109": "Shield",
+        "110": "Cape",
+        "111": "Ring",
+        "170": "Weapon",
+        "180": "PetEquip",
+        "181": "PetEquip",
+        "182": "PetEquip",
+        "183": "PetEquip"
+      },
+      "pet_icon": "Item/Pet/{id}.img/info/icon for5000000<=id<5010000",
+      "pet_name": "String/Pet.img/{id}/name",
+      "cash_icon": "Item/Cash/{id8[0:4]}.img/{id8}/info/icon for id>=5010000",
+      "cash_name": "String/Cash.img/{id}/name",
+      "etc_icon": "Item/Etc/{id8[0:4]}.img/{id8}/info/icon for4000000<=id<5000000",
+      "etc_name": "String/Etc.img/Etc/{id}/name",
+      "uol_rule": "Resolve UOLs before accepting icons or names, require actual nonempty canvas/text, preserve aliases."
+    }
+  },
+  "lamp_table": {
+    "total_sprites": 74,
+    "wire_order": "26 generated primary rows, then6 inline rows, then42 secondary rows. Indices are !lamp wire IDs; do not renumber.",
+    "lamp2_required": true,
+    "lamp2_reason": "lamps.cpp:114 includes weather_lamptable2.inc unconditionally;42 rows reference MapleMoonLamp2; Henesys replacement also references street/annual/0.",
+    "rows": [
+      {
+        "index": 0,
+        "path": "Map/Obj/ShanghaiCN.img/waitan/artificiality/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 1,
+        "path": "Map/Obj/citySG.img/CBD/artificiality/26",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 2,
+        "path": "Map/Obj/citySG.img/CBD/artificiality/27",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 3,
+        "path": "Map/Obj/WeddingGL.img/town/light/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 4,
+        "path": "Map/Obj/acc8.img/magatia/acc/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 5,
+        "path": "Map/Obj/ThemeGL.img/Themetown/Streetlight/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 6,
+        "path": "Map/Obj/acc1.img/grassySoil/space/21",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 7,
+        "path": "Map/Obj/acc4.img/toyCastle/artificiality/8",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 8,
+        "path": "Map/Obj/acc2.img/metroCity/nightMarket/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 9,
+        "path": "Map/Obj/NightMarketTW.img/NightMarket/StreetVender4/9",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 10,
+        "path": "Map/Obj/acc3.img/christmas/acc/8",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 11,
+        "path": "Map/Obj/EventCN.img/JumpEvent/acc/8",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 12,
+        "path": "Map/Obj/acc8.img/sahelDesert/piramid/4",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 13,
+        "path": "Map/Obj/acc12.img/aran/fire/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 14,
+        "path": "Map/Obj/acc12.img/rienFD/pengiun/5",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 15,
+        "path": "Map/Obj/guide.img/milepost/eurel/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 16,
+        "path": "Map/Obj/ShamanBT.img/koCave/object/28",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 17,
+        "path": "Map/Obj/halloween.img/inside/common/27",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 18,
+        "path": "Map/Obj/halloweenGL.img/halloween/room2/wallcandle2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 19,
+        "path": "Map/Obj/ShaolinCN.img/house15/base/11",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 20,
+        "path": "Map/Obj/acc2.img/metroCity/artificiality/20",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 21,
+        "path": "Map/Obj/acc6.img/minar/nature1/28",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 22,
+        "path": "Map/Obj/arcana.img/lightForest/acc/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 23,
+        "path": "Map/Obj/acc9.img/nautilus/ship/3",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 24,
+        "path": "Map/Obj/acc9.img/nautilusPort/portal/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 25,
+        "path": "Map/Obj/acc9.img/nautilusPort/portal/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 26,
+        "path": "Map/Obj/acc5.img/aquaRoad/acc2/11",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 27,
+        "path": "Map/Obj/acc5.img/aquaRoad/acc2/12",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 28,
+        "path": "Map/Obj/acc5.img/aquaRoad/acc2/13",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 29,
+        "path": "Map/Obj/houseAR.img/house0/acc/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 30,
+        "path": "Map/Obj/houseAR.img/house0/acc/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 31,
+        "path": "Map/Obj/houseAR.img/house0/acc/3",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 32,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/gaslamp/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 33,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/annual/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 34,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/annual/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 35,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/annual/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 36,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/crystal/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 37,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/ornate/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 38,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/winged/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 39,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/flood/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 40,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/paper/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 41,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/paper/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 42,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/vine/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 43,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/vine/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 44,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/vine/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 45,
+        "path": "Map/Obj/MapleMoonLamp2.img/street/pillar/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 46,
+        "path": "Map/Obj/MapleMoonLamp2.img/floor/shade/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 47,
+        "path": "Map/Obj/MapleMoonLamp2.img/floor/shade/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 48,
+        "path": "Map/Obj/MapleMoonLamp2.img/floor/shade/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 49,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/carriage/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 50,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/carriage/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 51,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/carriage/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 52,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/crystal/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 53,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/crystal/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 54,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/crystal/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 55,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/torch/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 56,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/torch/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 57,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/torch/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 58,
+        "path": "Map/Obj/MapleMoonLamp2.img/wall/candle/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 59,
+        "path": "Map/Obj/MapleMoonLamp2.img/hang/chandelier/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 60,
+        "path": "Map/Obj/MapleMoonLamp2.img/hang/chandelier/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 61,
+        "path": "Map/Obj/MapleMoonLamp2.img/hang/chandelier/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 62,
+        "path": "Map/Obj/MapleMoonLamp2.img/hang/chandelier/3",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 63,
+        "path": "Map/Obj/MapleMoonLamp2.img/hang/lantern/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 64,
+        "path": "Map/Obj/MapleMoonLamp2.img/hang/candle/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 65,
+        "path": "Map/Obj/MapleMoonLamp2.img/fire/brazier/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 66,
+        "path": "Map/Obj/MapleMoonLamp2.img/fire/brazier/1",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 67,
+        "path": "Map/Obj/MapleMoonLamp2.img/fire/brazier/2",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 68,
+        "path": "Map/Obj/MapleMoonLamp2.img/fire/bowl/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 69,
+        "path": "Map/Obj/MapleMoonLamp2.img/fire/tripod/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 70,
+        "path": "Map/Obj/MapleMoonLamp2.img/fire/basket/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 71,
+        "path": "Map/Obj/MapleMoonLamp2.img/fire/arch/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 72,
+        "path": "Map/Obj/MapleMoonLamp2.img/neon/sign/0",
+        "require_numbered_frame_zero": true
+      },
+      {
+        "index": 73,
+        "path": "Map/Obj/MapleMoonLamp2.img/neon/star/0",
+        "require_numbered_frame_zero": true
+      }
+    ],
+    "known_nonstock_primary_indices": [
+      16,
+      19,
+      22
+    ],
+    "candidate_banks": {
+      "16": "lamp-research/ShamanBT.img",
+      "19": "lamp-research/ShaolinCN.img",
+      "22": "lamp-research/arcana.img"
+    },
+    "source_subtree_inspection": [
+      {
+        "bank": "ShamanBT",
+        "node": "koCave/object/28",
+        "source_key": "gms",
+        "semantic_sha256": "c5340f1ae23b439db11d3d28ee6cc12f19419ba65ddb010e1b18a21d22908422",
+        "leaf_count": 10,
+        "canvases": [
+          {
+            "node": "koCave/object/28/0",
+            "dimensions": [
+              76,
+              223
+            ]
+          },
+          {
+            "node": "koCave/object/28/1",
+            "dimensions": [
+              76,
+              222
+            ]
+          },
+          {
+            "node": "koCave/object/28/2",
+            "dimensions": [
+              76,
+              221
+            ]
+          },
+          {
+            "node": "koCave/object/28/3",
+            "dimensions": [
+              76,
+              224
+            ]
+          },
+          {
+            "node": "koCave/object/28/4",
+            "dimensions": [
+              76,
+              219
+            ]
+          }
+        ],
+        "leaves": [
+          {
+            "node": "koCave/object/28/0/origin",
+            "type": "vector"
+          },
+          {
+            "node": "koCave/object/28/0/z",
+            "type": "int"
+          },
+          {
+            "node": "koCave/object/28/1/origin",
+            "type": "vector"
+          },
+          {
+            "node": "koCave/object/28/1/z",
+            "type": "int"
+          },
+          {
+            "node": "koCave/object/28/2/origin",
+            "type": "vector"
+          },
+          {
+            "node": "koCave/object/28/2/z",
+            "type": "int"
+          },
+          {
+            "node": "koCave/object/28/3/origin",
+            "type": "vector"
+          },
+          {
+            "node": "koCave/object/28/3/z",
+            "type": "int"
+          },
+          {
+            "node": "koCave/object/28/4/origin",
+            "type": "vector"
+          },
+          {
+            "node": "koCave/object/28/4/z",
+            "type": "int"
+          }
+        ],
+        "dependencies": []
+      },
+      {
+        "bank": "ShaolinCN",
+        "node": "house15/base/11",
+        "source_key": "gms",
+        "semantic_sha256": "46d5f926b0f5fe4b6ef2dd8afb87a370c052f5cec508196819503109fc806a92",
+        "leaf_count": 2,
+        "canvases": [
+          {
+            "node": "house15/base/11/0",
+            "dimensions": [
+              29,
+              93
+            ]
+          }
+        ],
+        "leaves": [
+          {
+            "node": "house15/base/11/0/origin",
+            "type": "vector"
+          },
+          {
+            "node": "house15/base/11/0/z",
+            "type": "int"
+          }
+        ],
+        "dependencies": []
+      },
+      {
+        "bank": "arcana",
+        "node": "lightForest/acc/0",
+        "source_key": "gms",
+        "semantic_sha256": "ecbf8a9d77391dd0b963ad0e2d87eb56d085138c9f61efdb007844e0f3559b96",
+        "leaf_count": 2,
+        "canvases": [
+          {
+            "node": "lightForest/acc/0/0",
+            "dimensions": [
+              83,
+              133
+            ]
+          }
+        ],
+        "leaves": [
+          {
+            "node": "lightForest/acc/0/0/origin",
+            "type": "vector"
+          },
+          {
+            "node": "lightForest/acc/0/0/z",
+            "type": "int"
+          }
+        ],
+        "dependencies": []
+      }
+    ],
+    "candidate_status": "Three original Root sprite subtrees parsed with GMS key and authorized for exact-node copy; all original leaf and canvas requirements recorded. No UOL, _inlink or _outlink occurs within these subtrees, so no beyond-subtree dependency was observed. Preserve every stock sibling and fixed lamp index.",
+    "manual_placement_coupling": "Original g_aManualLamps includes12 Ellinia references to index22. Missing original sprite means real missing lamps, not optional decoration.",
+    "lamp2_source_member": "weather-time-systems/optional/lamps/MapleMoonLamp2.img"
+  },
+  "weather_item_contract": {
+    "art_pointers": [
+      5120995,
+      5120996,
+      5120997,
+      5120998,
+      5120999
+    ],
+    "inventory_forbidden": [
+      5120995,
+      5120996,
+      5120997,
+      5120998,
+      5120999
+    ],
+    "no_speed_added": true,
+    "debuff_source": 5120994,
+    "debuff_icon_source": 5120003,
+    "debuff_required_output": [
+      "Item/Cash/0512.img/05120994/info/icon",
+      "Item/Cash/0512.img/05120994/info/iconRaw",
+      "Item/Cash/0512.img/05120994/info/cash",
+      "String/Cash.img/5120994/name",
+      "String/Cash.img/5120994/desc"
+    ],
+    "evidence": "weather IMPLEMENTATION.md:395-455; weather_profiles.inc:35-67",
+    "debuff_forbidden_info_children": [
+      "path",
+      "type",
+      "floatType"
+    ],
+    "runtime_source_evidence": [
+      "weather server WeatherDebuff.java:64-81 SOURCE_ITEM_ID=5120994; no path/type/floatType",
+      "repo server/src/main/java/server/weather/WeatherDebuff.java:64-81 identical SOURCE_ITEM_ID",
+      "weather client weather_profiles.inc:58-67 directly uses5120997,5120998,5120999,5120996",
+      "weather client weatheraccum.cpp:268-280 requires every variant/frame0; weatherpuddle.cpp:254-269 requires all3x3 frame0",
+      "weather client lamps.cpp:55-114 requires74 fixed-index sprites; object pipeline loads full animation under oS/l0/l1/l2"
+    ],
+    "speed_evidence": "Source IMPLEMENTATION.md:410-426 shows desired speed numbers3/6/4/2/2 but explicitly says shipped nodes have no speed and native BlowWeather defaults it. Feature client source passes only item ID through native BlowWeather; it does not implement a speed-property reader. No generated Item fragments exist in archive. Omission here is a documented metadata-authoring choice, NOT an observed source IMG leaf."
+  },
+  "prism_research": {
+    "ticket": 11,
+    "item_id": 5782000,
+    "original_ui_status": "No original loose ColorPrism fragment found in complete inspected archive member inventories or repository refs; packed Tenga candidates require parent native inspection before absence conclusion.",
+    "archive_inventories": "inventories/*.json (complete root archive listings, not truncated search excerpts)",
+    "packed_candidates": [
+      "prism-research/tenga/Item.wz",
+      "prism-research/tenga/String.wz",
+      "prism-research/tenga/UI.wz",
+      "prism-research/tenga/EzorsiaV2_UI.wz"
+    ],
+    "real_item_icon_candidate": {
+      "page_url": "https://maplestorydb.com/itemsinfo.php?id=5782000",
+      "url": "https://maplestorydb.com/dbsource/iconsource/Item/Item.Cash.0578.img.05782000.info.icon.png",
+      "input": "prism-research/5782000-original-icon.webp",
+      "observed_content_type": "image/png",
+      "observed_width": 34,
+      "observed_height": 33,
+      "attribution": "MapleStoryDB unofficial extracted item database; page identifies Premium Coloring Prism ID5782000. Original game item art candidate, not source bundle fragment, not proof of native WZ metadata.",
+      "use": "Parent may decode original pixels and preserve explicit extracted-web provenance; do not label as bundled ColorPrism art.",
+      "raw_provenance": {
+        "url": "https://maplestorydb.com/dbsource/iconsource/Item/Item.Cash.0578.img.05782000.info.icon.png",
+        "resolved_url": "https://maplestorydb.com/dbsource/iconsource/Item/Item.Cash.0578.img.05782000.info.icon.png",
+        "content_type": "image/png",
+        "bytes": 1297,
+        "sha256": "8a62c95b2697b76a25fa1fe635f83bf002b67f6f2d5c186a3d1b62e12079032e",
+        "path": "prism-research/5782000-original-icon.webp"
+      }
+    },
+    "expected_native_item_paths": [
+      "Item/Cash/0578.img/05782000/info/icon",
+      "Item/Cash/0578.img/05782000/info/iconRaw",
+      "Item/Cash/0578.img/05782000/info/cash",
+      "String/Cash.img/5782000/name",
+      "String/Cash.img/5782000/desc"
+    ],
+    "expected_ui_canvases": [
+      {
+        "path": "UI/UIWindow.img/ColorPrism/backgrnd",
+        "type": "canvas",
+        "width": 301,
+        "height": 406
+      },
+      {
+        "path": "UI/UIWindow.img/ColorPrism/trackTone",
+        "type": "canvas",
+        "width": 176,
+        "height": 8
+      },
+      {
+        "path": "UI/UIWindow.img/ColorPrism/trackChroma",
+        "type": "canvas",
+        "width": 176,
+        "height": 8
+      },
+      {
+        "path": "UI/UIWindow.img/ColorPrism/trackBright",
+        "type": "canvas",
+        "width": 176,
+        "height": 8
+      },
+      {
+        "path": "UI/UIWindow.img/ColorPrism/LayerBt/item/normal",
+        "type": "canvas",
+        "width": 14,
+        "height": 14
+      },
+      {
+        "path": "UI/UIWindow.img/ColorPrism/LayerBt/item/on",
+        "type": "canvas",
+        "width": 14,
+        "height": 14
+      },
+      {
+        "path": "UI/UIWindow.img/ColorPrism/LayerBt/item/off",
+        "type": "canvas",
+        "width": 14,
+        "height": 14
+      },
+      {
+        "path": "UI/UIWindow.img/ColorPrism/LayerBt/glow/normal",
+        "type": "canvas",
+        "width": 14,
+        "height": 14
+      },
+      {
+        "path": "UI/UIWindow.img/ColorPrism/LayerBt/glow/on",
+        "type": "canvas",
+        "width": 14,
+        "height": 14
+      },
+      {
+        "path": "UI/UIWindow.img/ColorPrism/LayerBt/glow/off",
+        "type": "canvas",
+        "width": 14,
+        "height": 14
+      }
+    ],
+    "optional_ui_canvas": "UI/UIWindow.img/ColorPrism/backgrndLook",
+    "provenance_rule": "Any fully authored replacement UI must be recorded as authored and coordinated with DLL geometry, never represented as recovered original bytes. This intake authors no replacement UI.",
+    "repo_refs": "Repository-wide ColorPrism/5782000 search finds server packet/handler/constants/tests/opcode docs and disabled client attachment comments, no asset bytes.",
+    "inventory_search": {
+      "match_rule": "case-insensitive complete path component ColorPrism or ColoringPrism, exact leaf0578.img/5782000/05782000, not unrelated IDs ending0578",
+      "archives_examined": 9,
+      "member_count": 201470,
+      "result": "No exact loose original Prism fragment; Tenga packed native candidates supplied separately.",
+      "status": "Member-level exhaustive; packed-node absence not established."
+    }
+  },
+  "provenance_file": "provenance.json",
+  "gaps": [
+    {
+      "id": "stock-coverage",
+      "status": "pending_parent_verification",
+      "details": "/tmp/mw-wz/full has only16 files; inspect additional /tmp/mw-wz WZ. Catalog1843, checkin2000000 and weather icon source5120003/output5120994 require real icon/name coverage."
+    },
+    {
+      "id": "primary-lamps",
+      "status": "sourced_pending_parent_merge_verification",
+      "details": "Primary lamp indices16,19,22 have exact real Root-source copy_subtree operations, every source leaf requirement and canvas dimensions. Read-only original parsing found no UOL/_inlink/_outlink dependency in these subtrees; parent must prove merged output and all74 targets."
+    },
+    {
+      "id": "prism-ui",
+      "status": "pending_packed_archive_inspection",
+      "details": "Loose original fragment absence is observed; Tenga packed UI/Item/String/Ezorsia banks not parsed by intake. No invented original art or metadata."
+    },
+    {
+      "id": "native-leaves",
+      "status": "pending_parent_verification",
+      "details": "Node shapes are source/docs-backed contracts, not executed source authoring scripts or native parser results. Parent must enumerate every source leaf/UOL and prove output equivalence."
+    }
+  ],
+  "source_archives": [
+    {
+      "archive": "Community Repack .IMG.zip",
+      "source_path": "/root/maplestory_dump/Community Repack .IMG.zip",
+      "bytes": 6365712609,
+      "sha256": "5f452832f8bac84b6b5ce8e2a2433f22da44a67ee6e49ad4a5f477d747d21ecf",
+      "member_count": 44300,
+      "inventory": "inventories/Community Repack .IMG.zip.json",
+      "inventory_sha256": "1187ecc831e9960a75f0e0c76e95418d31818a8793344377ec4f6dc60fb2a1ec"
+    },
+    {
+      "archive": "Evan.zip",
+      "source_path": "/root/maplestory_dump/Evan.zip",
+      "bytes": 61860666,
+      "sha256": "961e0cbf826aca48efa619afec51fd12c2472a82e654e6e73542b5bf65a0e5ce",
+      "member_count": 52,
+      "inventory": "inventories/Evan.zip.json",
+      "inventory_sha256": "fc62f122a96dfe8c5edd7bdb9531656d3ee51f8e7607996bf3f9f2ceaa4e54dd"
+    },
+    {
+      "archive": "MapleRoot Full Repack.zip",
+      "source_path": "/root/maplestory_dump/MapleRoot Full Repack.zip",
+      "bytes": 22440408909,
+      "sha256": "cff4896b66bd44b7671efbf319706ceff463682f9c006dc57c529fa9477b2361",
+      "member_count": 156859,
+      "inventory": "inventories/MapleRoot Full Repack.zip.json",
+      "inventory_sha256": "241b34deb50d9bb99ac4739e808b78ff1b59de4a4f067143737af836a8546c48"
+    },
+    {
+      "archive": "SoloMapling-wisteria-Wz-Mod-Tool-Suite-main.zip",
+      "source_path": "/root/maplestory_dump/SoloMapling-wisteria-Wz-Mod-Tool-Suite-main.zip",
+      "bytes": 5905488,
+      "sha256": "1e24e41eada8fde9bf3a88e1cc3537b6111479bdf8364e512afd54cd13096964",
+      "member_count": 25,
+      "inventory": "inventories/SoloMapling-wisteria-Wz-Mod-Tool-Suite-main.zip.json",
+      "inventory_sha256": "6ea3ce80b4c7971e270844eee9605f6213b3e1ad6171261b572b130a3694dc66"
+    },
+    {
+      "archive": "TengaMS2025.7z",
+      "source_path": "/root/maplestory_dump/TengaMS2025.7z",
+      "bytes": 4957985303,
+      "sha256": "39ee92d61070fa60b086c4af7f23156ef0660572ec13e665172e2c742e87d1da",
+      "member_count": 52,
+      "inventory": "inventories/TengaMS2025.7z.json",
+      "inventory_sha256": "6fc96d1c45804b2eb1fd480ff7526529cc03423b94b9d71798fac544dbd27af1"
+    },
+    {
+      "archive": "WorldMap-20261014T132910Z-1-001.zip",
+      "source_path": "/root/maplestory_dump/WorldMap-20261014T132910Z-1-001.zip",
+      "bytes": 11830311,
+      "sha256": "605b1a829cb31f6b176bf1ac79781d1df17a798d1c22e62a96d4a4f0d31bab8a",
+      "member_count": 29,
+      "inventory": "inventories/WorldMap-20261014T132910Z-1-001.zip.json",
+      "inventory_sha256": "7ffcf0b709fac60d02f5e7d346745c22f1d19ab4762e8b4195af8b59d7038014"
+    },
+    {
+      "archive": "cashshop-window.7z",
+      "source_path": "/root/maplestory_dump/cashshop-window.7z",
+      "bytes": 983314,
+      "sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member_count": 31,
+      "inventory": "inventories/cashshop-window.7z.json",
+      "inventory_sha256": "aab88197cbd4ec577efd21e58512e11ee9786ae80716c4aceb23288f40f7e93c"
+    },
+    {
+      "archive": "dailycheckin.zip",
+      "source_path": "/root/maplestory_dump/dailycheckin.zip",
+      "bytes": 48773,
+      "sha256": "bdc30cbe1febf66a7421d89b2ea1c64dcc4c3d9f070c7fc2f1b3fe106efadff1",
+      "member_count": 24,
+      "inventory": "inventories/dailycheckin.zip.json",
+      "inventory_sha256": "4617211d5f3a8cc62666dac31f1fb20405eb2288fc8f8fc7a9792d2e5ae3efa9"
+    },
+    {
+      "archive": "weather-time-systems.7z",
+      "source_path": "/root/maplestory_dump/weather-time-systems.7z",
+      "bytes": 4092764,
+      "sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member_count": 98,
+      "inventory": "inventories/weather-time-systems.7z.json",
+      "inventory_sha256": "b5c6cce0aeabb8d9a9b6437545155c2b1821f9e709f4d0dc92ca01503205a34b"
+    }
+  ],
+  "source_inputs": [
+    {
+      "path": "lamp-research/ShamanBT.img",
+      "archive": "MapleRoot Full Repack.zip",
+      "archive_sha256": "cff4896b66bd44b7671efbf319706ceff463682f9c006dc57c529fa9477b2361",
+      "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/ShamanBT.img",
+      "bytes": 12928112,
+      "sha256": "055e5bb68c90127c935c2a6d0c227f50026035e154e717133b87f2132577d1ef"
+    },
+    {
+      "path": "lamp-research/ShaolinCN.img",
+      "archive": "MapleRoot Full Repack.zip",
+      "archive_sha256": "cff4896b66bd44b7671efbf319706ceff463682f9c006dc57c529fa9477b2361",
+      "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/ShaolinCN.img",
+      "bytes": 4859922,
+      "sha256": "90d5d56724e948818a71c671ecfe0486acf741eb10751a5aff838479a16fa599"
+    },
+    {
+      "path": "lamp-research/arcana.img",
+      "archive": "MapleRoot Full Repack.zip",
+      "archive_sha256": "cff4896b66bd44b7671efbf319706ceff463682f9c006dc57c529fa9477b2361",
+      "member": "MapleRoot Full Repack/Game Files/Data/Map/Obj/arcana.img",
+      "bytes": 10457678,
+      "sha256": "1803d9646b4265365b57a9f4f7f2e9513fa8b502db2c3736b89a498845b58b8b"
+    },
+    {
+      "path": "prism-research/tenga/Item.wz",
+      "archive": "TengaMS2025.7z",
+      "archive_sha256": "39ee92d61070fa60b086c4af7f23156ef0660572ec13e665172e2c742e87d1da",
+      "member": "TengaMS2025/Item.wz",
+      "bytes": 474161845,
+      "sha256": "737341e002a76aa8673eca48e7d1d3fbd8f3185c6cdf69f8faf2dddbb16f9f0b"
+    },
+    {
+      "path": "prism-research/tenga/String.wz",
+      "archive": "TengaMS2025.7z",
+      "archive_sha256": "39ee92d61070fa60b086c4af7f23156ef0660572ec13e665172e2c742e87d1da",
+      "member": "TengaMS2025/String.wz",
+      "bytes": 8155512,
+      "sha256": "70bb963cb406a91c3f556fcd92d0323822918fdecf283ef4071bbdb14dbac4fd"
+    },
+    {
+      "path": "prism-research/tenga/UI.wz",
+      "archive": "TengaMS2025.7z",
+      "archive_sha256": "39ee92d61070fa60b086c4af7f23156ef0660572ec13e665172e2c742e87d1da",
+      "member": "TengaMS2025/UI.wz",
+      "bytes": 30972026,
+      "sha256": "bc2389409fc292e62d9f207efae1981a1e046d4f41cb9f85951e3100fcebf961"
+    },
+    {
+      "path": "prism-research/tenga/EzorsiaV2_UI.wz",
+      "archive": "TengaMS2025.7z",
+      "archive_sha256": "39ee92d61070fa60b086c4af7f23156ef0660572ec13e665172e2c742e87d1da",
+      "member": "TengaMS2025/EzorsiaV2_UI.wz",
+      "bytes": 1370002,
+      "sha256": "0fbbed3d8fdd326297d3f5055da801705e5f8169b3e757ce4489958eb8eb020c"
+    },
+    {
+      "path": "cashshop/CashShop.img",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/wz/UI/CashShop.img",
+      "bytes": 902130,
+      "sha256": "9e736592a4f8ac55d968a38b9782a0e9d114b3fcfeec5738027a9a457a4486a4"
+    },
+    {
+      "path": "evidence/cashshop/alternate-CashShop.img",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/img/UI/CashShop.img",
+      "bytes": 902130,
+      "sha256": "9e736592a4f8ac55d968a38b9782a0e9d114b3fcfeec5738027a9a457a4486a4"
+    },
+    {
+      "path": "evidence/cashshop/backgrnd.png",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/art/backgrnd.png",
+      "bytes": 1507915,
+      "sha256": "78fa1d52804eb938a8c630f09d20c7d288939fa174980fb1abf2046f4bbf2c0e"
+    },
+    {
+      "path": "cashshop/catalog.tsv",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/data/catalog.tsv",
+      "bytes": 75173,
+      "sha256": "c7b5c24819c9a8385cf560dd9036cfb8d08054fb1e853de45f23103814cbb955"
+    },
+    {
+      "path": "evidence/cashshop/README.md",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/README.md",
+      "bytes": 9761,
+      "sha256": "cca922c62f9af5db57358c72489076a935e278b6c72f59a57405432448280e2e"
+    },
+    {
+      "path": "evidence/cashshop/INTEGRATION.md",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/INTEGRATION.md",
+      "bytes": 5084,
+      "sha256": "46312da7556b21c6e98d880b752d0f8f23c6a4304ffcf9a1d8c536811bf74366"
+    },
+    {
+      "path": "evidence/cashshop/cashshopwnd.cpp",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/client/cashshopwnd.cpp",
+      "bytes": 174387,
+      "sha256": "b05f96a664759eabf98589e563ed2cf661ac2f78a4ecf7c125864838c404c123"
+    },
+    {
+      "path": "evidence/cashshop/import_cashshop_bg.py",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/tools/import_cashshop_bg.py",
+      "bytes": 5671,
+      "sha256": "7e55d6e43365b0912ad59f33defa75ba37c51b05fd99cdf2dfdc22b12870e328"
+    },
+    {
+      "path": "evidence/cashshop/make_cashshop_buttons.py",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/tools/make_cashshop_buttons.py",
+      "bytes": 7502,
+      "sha256": "c3b185839eb097d167a58bbd24a2afdac5ed59603ce10008cf1f120c76a0a2bc"
+    },
+    {
+      "path": "evidence/cashshop/gen_cashshop_catalog_v83.py",
+      "archive": "cashshop-window.7z",
+      "archive_sha256": "c10f2832f06f94356d6c430c961d8358d37b3f38fe78bd3cdf17e7dec5f5e03e",
+      "member": "cashshop-window/tools/gen_cashshop_catalog_v83.py",
+      "bytes": 12809,
+      "sha256": "476bf8d1be4da17a31c7fc9f2a8e2e7595f84fe58cdd1bd9dd05e2b41fa19e3f"
+    },
+    {
+      "path": "dailycheckin/UI.wz",
+      "archive": "dailycheckin.zip",
+      "archive_sha256": "bdc30cbe1febf66a7421d89b2ea1c64dcc4c3d9f070c7fc2f1b3fe106efadff1",
+      "member": "wz/UI.wz",
+      "bytes": 25375,
+      "sha256": "1f87e4c0894aa11a367ca1ebcbb3588318b7fb5955ffbae6bf5d4add0a9392eb"
+    },
+    {
+      "path": "evidence/dailycheckin/README.md",
+      "archive": "dailycheckin.zip",
+      "archive_sha256": "bdc30cbe1febf66a7421d89b2ea1c64dcc4c3d9f070c7fc2f1b3fe106efadff1",
+      "member": "README.md",
+      "bytes": 16811,
+      "sha256": "3a71c1f82c0e69f57ec392372ba90dce4ba7519caac56dd841c7ce292257ac39"
+    },
+    {
+      "path": "evidence/dailycheckin/dailycheckin.cpp",
+      "archive": "dailycheckin.zip",
+      "archive_sha256": "bdc30cbe1febf66a7421d89b2ea1c64dcc4c3d9f070c7fc2f1b3fe106efadff1",
+      "member": "client/src/dailycheckin.cpp",
+      "bytes": 27443,
+      "sha256": "30ddcce4497d635ecb104a29763af7d8ac1190a0215e2ba022fc81525fb787d1"
+    },
+    {
+      "path": "evidence/dailycheckin/DailyCheckinRewards.java",
+      "archive": "dailycheckin.zip",
+      "archive_sha256": "bdc30cbe1febf66a7421d89b2ea1c64dcc4c3d9f070c7fc2f1b3fe106efadff1",
+      "member": "server/src/main/java/server/DailyCheckinRewards.java",
+      "bytes": 5994,
+      "sha256": "650ebbe76c63ce60b126dd197b8eb818378929b72823eedb7738700d3035503a"
+    },
+    {
+      "path": "weather/Effect/WeatherParticles.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Effect/WeatherParticles.img",
+      "bytes": 5228,
+      "sha256": "def3ae5eb79886de214d56048c0d24602c7a035947e0e229680d602df2473754"
+    },
+    {
+      "path": "weather/Effect/WeatherSplash.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Effect/WeatherSplash.img",
+      "bytes": 13549,
+      "sha256": "09d3a18e8e4abbad98541ec93b1e3dc576f6af46d6e8c42637c6d965ec388974"
+    },
+    {
+      "path": "weather/Effect/WeatherPuddle.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Effect/WeatherPuddle.img",
+      "bytes": 23059,
+      "sha256": "e343f709314dd4797dd94c600ed488460229fe31a2ac60b3a60317c56491ae68"
+    },
+    {
+      "path": "weather/Effect/WeatherAccum.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Effect/WeatherAccum.img",
+      "bytes": 7382,
+      "sha256": "a3ca50fd6087b2c00c4a9179246fdaa1034062f219a0bab250100e2d450baeec"
+    },
+    {
+      "path": "weather/Map/Back/MapleMoonSky.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Map/Back/MapleMoonSky.img",
+      "bytes": 1364,
+      "sha256": "35ca895108f903fe441418a3c686c247b2362f8b60db0f1ab145ec31d884eb51"
+    },
+    {
+      "path": "weather/Map/Back/WeatherSnow.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Map/Back/WeatherSnow.img",
+      "bytes": 45135,
+      "sha256": "b03006ca06421259782f879eefe4f1b86578c3eb2a6dd722ee7ad39d8a2bc994"
+    },
+    {
+      "path": "weather/Map/Back/WeatherFog.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Map/Back/WeatherFog.img",
+      "bytes": 225293,
+      "sha256": "c7f2d1f814d05182bdc8c44b81c16d02aea06f0b834b1ea36e902cf2533b979b"
+    },
+    {
+      "path": "weather/Map/Back/WeatherRainbow.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Map/Back/WeatherRainbow.img",
+      "bytes": 181055,
+      "sha256": "37b579776a4d4755e849fba59e1bd83efa29ac2b9ba6ceeca60d845cb55e2c9d"
+    },
+    {
+      "path": "weather/Map/Obj/MapleMoonLamp.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Map/Obj/MapleMoonLamp.img",
+      "bytes": 7790,
+      "sha256": "3fcf2ce04e38ac274d179a994888423c8be77a46d692ef85b65aac5d4bc765f1"
+    },
+    {
+      "path": "weather/Sound/Weather.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/wz/client/Sound/Weather.img",
+      "bytes": 1927557,
+      "sha256": "1cb1badc398533dffd86f00a6839b233e07fc219880b8828d35682f137a0fafd"
+    },
+    {
+      "path": "weather/Map/Obj/MapleMoonLamp2.img",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/optional/lamps/MapleMoonLamp2.img",
+      "bytes": 1545100,
+      "sha256": "6f6a10f86932e5fa24e6b10687c5d2ba12e6be439240dfdcedf59e8ce312c7d9"
+    },
+    {
+      "path": "evidence/weather/WeatherDebuff.java",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/server/server/weather/WeatherDebuff.java",
+      "bytes": 7105,
+      "sha256": "fb83dfe65cfde2a1d17efbc205ab669d02ff3db2c69293c03e70e742340d5bf9"
+    },
+    {
+      "path": "evidence/weather/README.md",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/README.md",
+      "bytes": 24372,
+      "sha256": "ad3277152a664eafb211bfd39725088db3d5d3913f7ee6a288d62f7f69e89c48"
+    },
+    {
+      "path": "evidence/weather/IMPLEMENTATION.md",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/IMPLEMENTATION.md",
+      "bytes": 65671,
+      "sha256": "e8973ea78aa4d9c1126341ed8dcb1cab3f4dcbea42c7e5cce2c4da39401151f9"
+    },
+    {
+      "path": "evidence/weather/weather_lamptable.inc",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/client/weather_lamptable.inc",
+      "bytes": 6744,
+      "sha256": "3179cd91924c4cacee820d13a4cffaa1f5541dbc43dabc26b15f503acea9d4ef"
+    },
+    {
+      "path": "evidence/weather/weather_lamptable2.inc",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/client/weather_lamptable2.inc",
+      "bytes": 9207,
+      "sha256": "da4aa0347cf19ae6c491529c22b8fc1c37970ffbd25cc753e87adf90e87baba1"
+    },
+    {
+      "path": "evidence/weather/lamps.cpp",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/client/lamps.cpp",
+      "bytes": 127073,
+      "sha256": "04dfabedf83357a44f60c238aed17f1fab6cbf2311d5c809ee49a4d48f6ad512"
+    },
+    {
+      "path": "evidence/weather/weather_profiles.inc",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/client/weather_profiles.inc",
+      "bytes": 4906,
+      "sha256": "79f37ec2668cd2affc9f4490f8ae9401019b7d2e2599ffa7e790efbc94445a83"
+    },
+    {
+      "path": "evidence/weather/weatherfx.cpp",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/client/weatherfx.cpp",
+      "bytes": 60660,
+      "sha256": "28dcc4b248fb2f48061495114c64f245edb669687280fa43732e7ee91f202e65"
+    },
+    {
+      "path": "evidence/weather/weatheraccum.cpp",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/client/weatheraccum.cpp",
+      "bytes": 35359,
+      "sha256": "84bf287d2959019268675c5ca1a17332db54c649ba7a350a8b50d99e2c54b7cf"
+    },
+    {
+      "path": "evidence/weather/weatherpuddle.cpp",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/client/weatherpuddle.cpp",
+      "bytes": 32848,
+      "sha256": "97d3f125abcfb202aa4c59d3522ebebec1d385a1725804f7a8008e10597476c7"
+    },
+    {
+      "path": "evidence/weather/weathersplash.cpp",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/client/weathersplash.cpp",
+      "bytes": 18086,
+      "sha256": "48549f81eb65e64887a1ca05df7daaed628a8667dd4dbdded49babf607b7289c"
+    },
+    {
+      "path": "evidence/weather/weathersound.cpp",
+      "archive": "weather-time-systems.7z",
+      "archive_sha256": "cd749db8163b1e4bdf0aea40cee88e8043d5d4ccfb4d0daa05055976bc3cff83",
+      "member": "weather-time-systems/client/weathersound.cpp",
+      "bytes": 8844,
+      "sha256": "db200091aa1ee6d40f462ed4068e3d389e9e717dea0f6a621a92fa245f057f68"
+    },
+    {
+      "path": "evidence/prism/README.md",
+      "source_path": "/root/maplestory_dump/README.md",
+      "bytes": 15592,
+      "sha256": "8a5a113fe0c004ca3c44469f3780bf370663654a62fcdd9223ceada07d73ba9b"
+    },
+    {
+      "path": "evidence/prism/IMPLEMENTATION.md",
+      "source_path": "/root/maplestory_dump/IMPLEMENTATION.md",
+      "bytes": 41063,
+      "sha256": "07abba4c9b08e8a4613c2a80514f35babbf45293ca740124973c4747963ed653"
+    },
+    {
+      "path": "evidence/prism/INTEGRATION.md",
+      "source_path": "/root/maplestory_dump/INTEGRATION.md",
+      "bytes": 16710,
+      "sha256": "12775af3e650c558c2ff6809dc5830135d245d184aaa267bf666ac6a988afade"
+    },
+    {
+      "path": "evidence/prism/INTEGRATION (1).md",
+      "source_path": "/root/maplestory_dump/INTEGRATION (1).md",
+      "bytes": 24152,
+      "sha256": "c54ab68bd12cf3253c26e9e74a38c56deb524a1793e1f0c6e7875cc336694b73"
+    },
+    {
+      "path": "evidence/prism/INTEGRATION (2).md",
+      "source_path": "/root/maplestory_dump/INTEGRATION (2).md",
+      "bytes": 64603,
+      "sha256": "18289b9283591dacafb98011734c5989e89e11e439df670e0dbcdefb0c65b7d6"
+    }
+  ],
+  "remote_sources": [
+    {
+      "url": "https://maplestorydb.com/dbsource/iconsource/Item/Item.Cash.0578.img.05782000.info.icon.png",
+      "resolved_url": "https://maplestorydb.com/dbsource/iconsource/Item/Item.Cash.0578.img.05782000.info.icon.png",
+      "content_type": "image/png",
+      "bytes": 1297,
+      "sha256": "8a62c95b2697b76a25fa1fe635f83bf002b67f6f2d5c186a3d1b62e12079032e",
+      "path": "prism-research/5782000-original-icon.webp"
+    },
+    {
+      "url": "https://maplestorydb.com/itemsinfo.php?id=5782000",
+      "resolved_url": "https://maplestorydb.com/itemsinfo.php?id=5782000",
+      "content_type": "text/html",
+      "bytes": 53128,
+      "sha256": "3f8b16b5a09448437d292ba7d6c2ca09562edc0c7b3a0bf7c1a274c11e49d207",
+      "path": "prism-research/5782000-source.html"
+    }
+  ]
+}

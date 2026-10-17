@@ -46,6 +46,10 @@ public class CheckinCommand extends Command {
             player.dropMessage(6, "Daily Check-In unlocks at Level " + DailyCheckinRewards.MIN_LEVEL + ".");
             return;
         }
+        if (!c.hasCaps(client.ClientCaps.CHECKIN_WINDOW)) {
+            player.dropMessage(6, "Daily Check-In requires a compatible BunsMS client.");
+            return;
+        }
         int claimable = player.refreshCheckin();
         int viewDay = claimable >= 1 ? claimable : player.getCheckinDay();
         c.sendPacket(PacketCreator.dailyCheckinSnapshot(viewDay, player.getCheckinClaimed(), 0));

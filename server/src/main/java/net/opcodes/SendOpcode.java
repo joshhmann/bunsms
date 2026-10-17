@@ -373,7 +373,10 @@ public enum SendOpcode {
     // Field order in server.lamp.LampPackets is authoritative and must match
     // Lamp_HandlePreviewPacket in the client DLL's lamps.cpp exactly. 0x373E is
     // reserved as the recv twin and is likewise unused.
-    LAMP_PREVIEW(0x373F);
+    LAMP_PREVIEW(0x373F),
+    // Capability negotiation ack (contract v1, server-owned): reply-only to
+    // CLIENT_CAPS_ANNOUNCE, never unsolicited, never broadcast.
+    CLIENT_CAPS_ACK(0x373B);
     private int code = -2;
 
     SendOpcode(int code) {

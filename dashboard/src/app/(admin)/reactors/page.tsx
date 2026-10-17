@@ -38,25 +38,19 @@ export default function ReactorsPage() {
       .catch(() => setLoading(false));
   }, []);
 
-  async function handlePublish(mode: "local" | "r2") {
+  async function handlePublish() {
     setPublishing(true);
-    setPublishStatus(mode === "local" ? "Building local WZ..." : "Starting R2 publish...");
+    setPublishStatus("Starting verified asset publication...");
     try {
-      if (mode === "local") {
-        const res = await fetch("/api/admin/reactors/publish-local", { method: "POST" });
-        const data = await res.json();
-        setPublishing(false);
-        if (data.success) {
-          setPublishStatus(`Done! ${data.actions?.join(" | ")}\n\nCopy Reactor.wz from ${data.output} to your game client folder, then restart server.`);
-        } else {
-          setPublishStatus(`Error: ${data.error}`);
-        }
-      } else {
-        await fetch("/api/admin/reactors/publish", { method: "POST" });
-        const poll = setInterval(async () => {
+      const response = await fetch("/api/admin/reactors/publish", { method: "POST" });
+      const started = await response.json();
+      if (!response.ok || started.error || !started.id) throw new Error(started.error || "Publication did not start");
+      const poll = setInterval(async () => {
+        try {
           const res = await fetch("/api/admin/reactors/publish");
           const status = await res.json();
-          setPublishStatus(status.step || status.status);
+          if (!res.ok || status.id !== started.id) throw new Error(status.error || "Publication job status changed; no completion was acknowledged");
+          setPublishStatus(status.error || status.step || status.status);
           if (status.status === "done" || status.status === "error") {
             clearInterval(poll);
             setPublishing(false);
@@ -66,11 +60,15 @@ export default function ReactorsPage() {
               setReactors(Array.isArray(data) ? data : []);
             }
           }
-        }, 1000);
-      }
-    } catch {
+        } catch (error) {
+          clearInterval(poll);
+          setPublishing(false);
+          setPublishStatus(error instanceof Error ? error.message : "Publication status could not be read");
+        }
+      }, 1000);
+    } catch (error) {
       setPublishing(false);
-      setPublishStatus("Publish failed");
+      setPublishStatus(error instanceof Error ? error.message : "Publication failed");
     }
   }
 
@@ -90,18 +88,11 @@ export default function ReactorsPage() {
         <h1 className="text-2xl font-bold text-text-primary">Custom Reactors</h1>
         <div className="flex gap-3">
           <button
-            onClick={() => handlePublish("local")}
-            disabled={publishing || reactors.length === 0}
-            className="rounded-lg bg-accent-green/20 px-4 py-2 text-sm font-medium text-accent-green transition-colors hover:bg-accent-green/30 disabled:opacity-50"
-          >
-            {publishing ? "Building..." : "Build Local WZ"}
-          </button>
-          <button
-            onClick={() => handlePublish("r2")}
+            onClick={handlePublish}
             disabled={publishing || reactors.length === 0}
             className="rounded-lg bg-accent-purple/20 px-4 py-2 text-sm font-medium text-accent-purple transition-colors hover:bg-accent-purple/30 disabled:opacity-50"
           >
-            {publishing ? "Publishing..." : "Publish to R2"}
+            {publishing ? "Publishing..." : "Publish verified release"}
           </button>
           <Link
             href="/reactors/create"

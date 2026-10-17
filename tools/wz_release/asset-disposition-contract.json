@@ -1,0 +1,2363 @@
+{
+  "schema_version": 1,
+  "scope": "Materialize genuine published GMS195 consumed Summon32/33/36 and43 exact Lotus source-linked Mob canvases using existing guarded pixels_only; preserve5 bounded unconsumed modern metadata observations. No actor/ID/stat/map/art substitution.",
+  "operations": [
+    {
+      "op": "copy_subtree",
+      "target_wz": "Effect.wz",
+      "target_image": "Summon.img",
+      "target_node": "32",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/Summon.img",
+      "source_key": "gms",
+      "source_node": "32"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Effect.wz",
+      "target_image": "Summon.img",
+      "target_node": "33",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/Summon.img",
+      "source_key": "gms",
+      "source_node": "33"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Effect.wz",
+      "target_image": "Summon.img",
+      "target_node": "36",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/Summon.img",
+      "source_key": "gms",
+      "source_node": "36"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000420.img",
+      "target_node": "regen/15",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/48/start/14",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/48/start/14"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000421.img",
+      "target_node": "regen/15",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/48/start/14",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/48/start/14"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000422.img",
+      "target_node": "regen/15",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/48/start/14",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/48/start/14"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000423.img",
+      "target_node": "regen/15",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/48/start/14",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/48/start/14"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000424.img",
+      "target_node": "regen/16",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/49/start/15",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/49/start/15"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000425.img",
+      "target_node": "regen/16",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/49/start/15",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/49/start/15"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000426.img",
+      "target_node": "regen/16",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/49/start/15",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/49/start/15"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000427.img",
+      "target_node": "regen/16",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/start/15",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/start/15"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000428.img",
+      "target_node": "regen/16",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/start/15",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/start/15"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000429.img",
+      "target_node": "regen/16",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/start/15",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/start/15"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000430.img",
+      "target_node": "regen/15",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/51/start/14",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/51/start/14"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000430.img",
+      "target_node": "hit1/0",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/0",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/0"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000430.img",
+      "target_node": "hit1/1",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/1",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/1"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000430.img",
+      "target_node": "hit1/2",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/2",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/2"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000430.img",
+      "target_node": "hit1/3",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/3",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/3"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000430.img",
+      "target_node": "hit1/4",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/4",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/4"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000431.img",
+      "target_node": "regen/15",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/51/start/14",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/51/start/14"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000431.img",
+      "target_node": "hit1/0",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/0",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/0"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000431.img",
+      "target_node": "hit1/1",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/1",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/1"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000431.img",
+      "target_node": "hit1/2",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/2",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/2"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000431.img",
+      "target_node": "hit1/3",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/3",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/3"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000431.img",
+      "target_node": "hit1/4",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/4",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/4"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000432.img",
+      "target_node": "regen/15",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/51/start/14",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/51/start/14"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000432.img",
+      "target_node": "hit1/0",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/0",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/0"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000432.img",
+      "target_node": "hit1/1",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/1",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/1"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000432.img",
+      "target_node": "hit1/2",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/2",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/2"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000432.img",
+      "target_node": "hit1/3",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/3",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/3"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000432.img",
+      "target_node": "hit1/4",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/4",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/4"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000433.img",
+      "target_node": "hit1/0",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/0",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/0"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000433.img",
+      "target_node": "hit1/1",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/1",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/1"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000433.img",
+      "target_node": "hit1/2",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/2",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/2"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000433.img",
+      "target_node": "hit1/3",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/3",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/3"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000433.img",
+      "target_node": "hit1/4",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/4",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/4"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000434.img",
+      "target_node": "hit1/0",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/0",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/0"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000434.img",
+      "target_node": "hit1/1",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/1",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/1"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000434.img",
+      "target_node": "hit1/2",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/2",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/2"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000434.img",
+      "target_node": "hit1/3",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/3",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/3"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000434.img",
+      "target_node": "hit1/4",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/4",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/4"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000435.img",
+      "target_node": "hit1/0",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/0",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/0"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000435.img",
+      "target_node": "hit1/1",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/1",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/1"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000435.img",
+      "target_node": "hit1/2",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/2",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/2"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000435.img",
+      "target_node": "hit1/3",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/3",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/3"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "Mob.wz",
+      "target_image": "0000435.img",
+      "target_node": "hit1/4",
+      "source": "published-gms195-effect-materialized-20261016/raw/Effect.wz/BasicEff.img",
+      "source_key": "gms",
+      "source_node": "ObtacleAtom/50/hit/4",
+      "pixels_only": true,
+      "expected_link": "ObtacleAtom/50/hit/4"
+    }
+  ],
+  "requirements": [
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "32",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33",
+      "type": "property"
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36",
+      "type": "property"
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000420.img",
+      "node": "regen/15",
+      "type": "canvas",
+      "dimensions": [
+        72,
+        102
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000421.img",
+      "node": "regen/15",
+      "type": "canvas",
+      "dimensions": [
+        72,
+        102
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000422.img",
+      "node": "regen/15",
+      "type": "canvas",
+      "dimensions": [
+        72,
+        102
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000423.img",
+      "node": "regen/15",
+      "type": "canvas",
+      "dimensions": [
+        72,
+        102
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000424.img",
+      "node": "regen/16",
+      "type": "canvas",
+      "dimensions": [
+        103,
+        127
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000425.img",
+      "node": "regen/16",
+      "type": "canvas",
+      "dimensions": [
+        103,
+        127
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000426.img",
+      "node": "regen/16",
+      "type": "canvas",
+      "dimensions": [
+        103,
+        127
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000427.img",
+      "node": "regen/16",
+      "type": "canvas",
+      "dimensions": [
+        130,
+        126
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000428.img",
+      "node": "regen/16",
+      "type": "canvas",
+      "dimensions": [
+        130,
+        126
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000429.img",
+      "node": "regen/16",
+      "type": "canvas",
+      "dimensions": [
+        130,
+        126
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "regen/15",
+      "type": "canvas",
+      "dimensions": [
+        253,
+        192
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "hit1/0",
+      "type": "canvas",
+      "dimensions": [
+        115,
+        112
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "hit1/1",
+      "type": "canvas",
+      "dimensions": [
+        120,
+        128
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "hit1/2",
+      "type": "canvas",
+      "dimensions": [
+        133,
+        133
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "hit1/3",
+      "type": "canvas",
+      "dimensions": [
+        139,
+        129
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "hit1/4",
+      "type": "canvas",
+      "dimensions": [
+        113,
+        124
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "regen/15",
+      "type": "canvas",
+      "dimensions": [
+        253,
+        192
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "hit1/0",
+      "type": "canvas",
+      "dimensions": [
+        115,
+        112
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "hit1/1",
+      "type": "canvas",
+      "dimensions": [
+        120,
+        128
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "hit1/2",
+      "type": "canvas",
+      "dimensions": [
+        133,
+        133
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "hit1/3",
+      "type": "canvas",
+      "dimensions": [
+        139,
+        129
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "hit1/4",
+      "type": "canvas",
+      "dimensions": [
+        113,
+        124
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "regen/15",
+      "type": "canvas",
+      "dimensions": [
+        253,
+        192
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "hit1/0",
+      "type": "canvas",
+      "dimensions": [
+        115,
+        112
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "hit1/1",
+      "type": "canvas",
+      "dimensions": [
+        120,
+        128
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "hit1/2",
+      "type": "canvas",
+      "dimensions": [
+        133,
+        133
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "hit1/3",
+      "type": "canvas",
+      "dimensions": [
+        139,
+        129
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "hit1/4",
+      "type": "canvas",
+      "dimensions": [
+        113,
+        124
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "hit1/0",
+      "type": "canvas",
+      "dimensions": [
+        115,
+        112
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "hit1/1",
+      "type": "canvas",
+      "dimensions": [
+        120,
+        128
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "hit1/2",
+      "type": "canvas",
+      "dimensions": [
+        133,
+        133
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "hit1/3",
+      "type": "canvas",
+      "dimensions": [
+        139,
+        129
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "hit1/4",
+      "type": "canvas",
+      "dimensions": [
+        113,
+        124
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "hit1/0",
+      "type": "canvas",
+      "dimensions": [
+        115,
+        112
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "hit1/1",
+      "type": "canvas",
+      "dimensions": [
+        120,
+        128
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "hit1/2",
+      "type": "canvas",
+      "dimensions": [
+        133,
+        133
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "hit1/3",
+      "type": "canvas",
+      "dimensions": [
+        139,
+        129
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "hit1/4",
+      "type": "canvas",
+      "dimensions": [
+        113,
+        124
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "hit1/0",
+      "type": "canvas",
+      "dimensions": [
+        115,
+        112
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "hit1/1",
+      "type": "canvas",
+      "dimensions": [
+        120,
+        128
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "hit1/2",
+      "type": "canvas",
+      "dimensions": [
+        133,
+        133
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "hit1/3",
+      "type": "canvas",
+      "dimensions": [
+        139,
+        129
+      ]
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "hit1/4",
+      "type": "canvas",
+      "dimensions": [
+        113,
+        124
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "32/0",
+      "type": "canvas",
+      "dimensions": [
+        1,
+        1
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/0",
+      "type": "canvas",
+      "dimensions": [
+        75,
+        59
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/1",
+      "type": "canvas",
+      "dimensions": [
+        78,
+        95
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/10",
+      "type": "canvas",
+      "dimensions": [
+        143,
+        157
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/11",
+      "type": "canvas",
+      "dimensions": [
+        206,
+        203
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/12",
+      "type": "canvas",
+      "dimensions": [
+        206,
+        203
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/13",
+      "type": "canvas",
+      "dimensions": [
+        206,
+        203
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/14",
+      "type": "canvas",
+      "dimensions": [
+        209,
+        203
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/2",
+      "type": "canvas",
+      "dimensions": [
+        123,
+        152
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/3",
+      "type": "canvas",
+      "dimensions": [
+        149,
+        187
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/4",
+      "type": "canvas",
+      "dimensions": [
+        148,
+        181
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/5",
+      "type": "canvas",
+      "dimensions": [
+        143,
+        171
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/6",
+      "type": "canvas",
+      "dimensions": [
+        147,
+        162
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/7",
+      "type": "canvas",
+      "dimensions": [
+        146,
+        160
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/8",
+      "type": "canvas",
+      "dimensions": [
+        145,
+        159
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33/9",
+      "type": "canvas",
+      "dimensions": [
+        144,
+        158
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36/0",
+      "type": "canvas",
+      "dimensions": [
+        172,
+        182
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36/1",
+      "type": "canvas",
+      "dimensions": [
+        176,
+        197
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36/2",
+      "type": "canvas",
+      "dimensions": [
+        175,
+        197
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36/3",
+      "type": "canvas",
+      "dimensions": [
+        162,
+        192
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36/4",
+      "type": "canvas",
+      "dimensions": [
+        169,
+        150
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36/5",
+      "type": "canvas",
+      "dimensions": [
+        93,
+        115
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36/6",
+      "type": "canvas",
+      "dimensions": [
+        84,
+        67
+      ]
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36/7",
+      "type": "canvas",
+      "dimensions": [
+        81,
+        68
+      ]
+    }
+  ],
+  "known_source_gaps": [
+    {
+      "wz": "Sound.wz",
+      "image": "Voice4.img",
+      "node": "BM2/H_effect/2_2",
+      "classification": "UNCONSUMED",
+      "consumer": "Modern450010101 info/specialSound retained; no original-v83/DLL consumer established",
+      "uncertainty": "[INFERENCE] bounded static string-pool and DLL source evidence, not proof of every dynamic lookup",
+      "evidence": "Windows peer: originalv83 6800strings decoded realkeyB001EC/rotation79EBF3; no specialSound/Voice4; full paired DLL source literal search no consumer"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "Voice4.img",
+      "node": "BM2/H_effect/2_3",
+      "classification": "UNCONSUMED",
+      "consumer": "Modern450010101 info/specialSound retained; no original-v83/DLL consumer established",
+      "uncertainty": "[INFERENCE] bounded static string-pool and DLL source evidence, not proof of every dynamic lookup",
+      "evidence": "Windows peer: originalv83 6800strings decoded realkeyB001EC/rotation79EBF3; no specialSound/Voice4; full paired DLL source literal search no consumer"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "Voice4.img",
+      "node": "BM2/H_effect/3_3",
+      "classification": "UNCONSUMED",
+      "consumer": "Modern450010101 info/specialSound retained; no original-v83/DLL consumer established",
+      "uncertainty": "[INFERENCE] bounded static string-pool and DLL source evidence, not proof of every dynamic lookup",
+      "evidence": "Windows peer: originalv83 6800strings decoded realkeyB001EC/rotation79EBF3; no specialSound/Voice4; full paired DLL source literal search no consumer"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "Voice4.img",
+      "node": "BM2/H_effect/3_4",
+      "classification": "UNCONSUMED",
+      "consumer": "Modern450010101 info/specialSound retained; no original-v83/DLL consumer established",
+      "uncertainty": "[INFERENCE] bounded static string-pool and DLL source evidence, not proof of every dynamic lookup",
+      "evidence": "Windows peer: originalv83 6800strings decoded realkeyB001EC/rotation79EBF3; no specialSound/Voice4; full paired DLL source literal search no consumer"
+    },
+    {
+      "wz": "Sound.wz",
+      "image": "Voice4.img",
+      "node": "BM2/H_effect/3_5",
+      "classification": "UNCONSUMED",
+      "consumer": "Modern450010101 info/specialSound retained; no original-v83/DLL consumer established",
+      "uncertainty": "[INFERENCE] bounded static string-pool and DLL source evidence, not proof of every dynamic lookup",
+      "evidence": "Windows peer: originalv83 6800strings decoded realkeyB001EC/rotation79EBF3; no specialSound/Voice4; full paired DLL source literal search no consumer"
+    }
+  ],
+  "historical_frozen_rc3_missing_source_observations": [
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "32",
+      "classification": "MISSING",
+      "consumer": "v83 CMob::Init spawn appearance",
+      "acceptance": "HOLD affected family visual acceptance; null guard is not cosmetic classification",
+      "evidence": {
+        "sourceCorpusObservation": "MapleRoot raw Effect/Summon.img, Community raw Effect/Summon.img and TengaMS2025/Effect.wz nodes observed0..29 subset, no32/33/36; source actor aliases target absent in all supplied Effect corpora",
+        "nativeConsumerReport": "full-content-windows reported actual Angel.idb CMob::Init662C69\u2192StringPool636 Effect/Summon.img/%d; checked-null branch662D85...commonbodytail663396; appearance timing differs, actual gameplayvisual classification PENDING",
+        "consumerEvidenceArtifact": "/tmp/buns-release-coordination/native-asset-consumer-evidence.json"
+      }
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "33",
+      "classification": "MISSING",
+      "consumer": "v83 CMob::Init spawn appearance",
+      "acceptance": "HOLD affected family visual acceptance; null guard is not cosmetic classification",
+      "evidence": {
+        "sourceCorpusObservation": "MapleRoot raw Effect/Summon.img, Community raw Effect/Summon.img and TengaMS2025/Effect.wz nodes observed0..29 subset, no32/33/36; source actor aliases target absent in all supplied Effect corpora",
+        "nativeConsumerReport": "full-content-windows reported actual Angel.idb CMob::Init662C69\u2192StringPool636 Effect/Summon.img/%d; checked-null branch662D85...commonbodytail663396; appearance timing differs, actual gameplayvisual classification PENDING",
+        "consumerEvidenceArtifact": "/tmp/buns-release-coordination/native-asset-consumer-evidence.json"
+      }
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "node": "36",
+      "classification": "MISSING",
+      "consumer": "v83 CMob::Init spawn appearance",
+      "acceptance": "HOLD affected family visual acceptance; null guard is not cosmetic classification",
+      "evidence": {
+        "sourceCorpusObservation": "MapleRoot raw Effect/Summon.img, Community raw Effect/Summon.img and TengaMS2025/Effect.wz nodes observed0..29 subset, no32/33/36; source actor aliases target absent in all supplied Effect corpora",
+        "nativeConsumerReport": "full-content-windows reported actual Angel.idb CMob::Init662C69\u2192StringPool636 Effect/Summon.img/%d; checked-null branch662D85...commonbodytail663396; appearance timing differs, actual gameplayvisual classification PENDING",
+        "consumerEvidenceArtifact": "/tmp/buns-release-coordination/native-asset-consumer-evidence.json"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000420.img",
+      "node": "ObtacleAtom/48/start/14",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/15",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000420.img",
+        "sourceSha256": "378853c71ba3e6a9f9f0b0cafd8d46fc206c14dc800497f9cc22661fff34190b",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000421.img",
+      "node": "ObtacleAtom/48/start/14",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/15",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000421.img",
+        "sourceSha256": "5381a9a15fc775e5365d7b27cdd944227e4b984be6e8a5f0bdc98ea70fba75f4",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000422.img",
+      "node": "ObtacleAtom/48/start/14",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/15",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000422.img",
+        "sourceSha256": "5f89e23a1af81eaca9e9d607c4b175dd7831100b54b0ae414ad1ccb9f75f04f3",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000423.img",
+      "node": "ObtacleAtom/48/start/14",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/15",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000423.img",
+        "sourceSha256": "b97581e8936db6802ff3bb4f3db80cda8b57def01d97573a51fe26d56437ca1a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000424.img",
+      "node": "ObtacleAtom/49/start/15",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/16",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000424.img",
+        "sourceSha256": "5cbc3c91649c65e1e97cb904b9d62f3e017402b6451510935054454f86a187f9",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000425.img",
+      "node": "ObtacleAtom/49/start/15",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/16",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000425.img",
+        "sourceSha256": "50b087ad5a8ca1681c1146d65406be57d3452bd5acaed7fd42a7a06b935a51d4",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000426.img",
+      "node": "ObtacleAtom/49/start/15",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/16",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000426.img",
+        "sourceSha256": "032c92201e3c71947aaccb200821b067465dd97898f5d0fbd9f0d5d934702cf6",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000427.img",
+      "node": "ObtacleAtom/50/start/15",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/16",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000427.img",
+        "sourceSha256": "910f38d88df2438f4fc32048a92f807ac5d4844fef5fffdf04ff79d2a56cdaf2",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000428.img",
+      "node": "ObtacleAtom/50/start/15",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/16",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000428.img",
+        "sourceSha256": "de8466ea8d224f85a350b484f5fd0f4c1203bdfb0855608ba9659379671eaee0",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000429.img",
+      "node": "ObtacleAtom/50/start/15",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/16",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000429.img",
+        "sourceSha256": "86a81ab9332a8bd7b58833e416119eb6e8390d443edaee0f382075beabe69f37",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "ObtacleAtom/51/start/14",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/15",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000430.img",
+        "sourceSha256": "04139e7c79fb79917896e4f790c5ed17fa3920337c9606aad5481b272d2e296c",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "ObtacleAtom/50/hit/0",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/0",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000430.img",
+        "sourceSha256": "04139e7c79fb79917896e4f790c5ed17fa3920337c9606aad5481b272d2e296c",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "ObtacleAtom/50/hit/1",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/1",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000430.img",
+        "sourceSha256": "04139e7c79fb79917896e4f790c5ed17fa3920337c9606aad5481b272d2e296c",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "ObtacleAtom/50/hit/2",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/2",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000430.img",
+        "sourceSha256": "04139e7c79fb79917896e4f790c5ed17fa3920337c9606aad5481b272d2e296c",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "ObtacleAtom/50/hit/3",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/3",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000430.img",
+        "sourceSha256": "04139e7c79fb79917896e4f790c5ed17fa3920337c9606aad5481b272d2e296c",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "node": "ObtacleAtom/50/hit/4",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/4",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000430.img",
+        "sourceSha256": "04139e7c79fb79917896e4f790c5ed17fa3920337c9606aad5481b272d2e296c",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "ObtacleAtom/51/start/14",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/15",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000431.img",
+        "sourceSha256": "cf7c2bb6d91f15ce89325120da79c70a9f78a1d5fa7af8af54de16f32dddd0ce",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "ObtacleAtom/50/hit/0",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/0",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000431.img",
+        "sourceSha256": "cf7c2bb6d91f15ce89325120da79c70a9f78a1d5fa7af8af54de16f32dddd0ce",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "ObtacleAtom/50/hit/1",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/1",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000431.img",
+        "sourceSha256": "cf7c2bb6d91f15ce89325120da79c70a9f78a1d5fa7af8af54de16f32dddd0ce",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "ObtacleAtom/50/hit/2",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/2",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000431.img",
+        "sourceSha256": "cf7c2bb6d91f15ce89325120da79c70a9f78a1d5fa7af8af54de16f32dddd0ce",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "ObtacleAtom/50/hit/3",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/3",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000431.img",
+        "sourceSha256": "cf7c2bb6d91f15ce89325120da79c70a9f78a1d5fa7af8af54de16f32dddd0ce",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "node": "ObtacleAtom/50/hit/4",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/4",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000431.img",
+        "sourceSha256": "cf7c2bb6d91f15ce89325120da79c70a9f78a1d5fa7af8af54de16f32dddd0ce",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "ObtacleAtom/51/start/14",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "regen/15",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000432.img",
+        "sourceSha256": "f871507f9e6c2a31c4d4450e15779f73c76fc058404635ea6b8266a93acc87f3",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "ObtacleAtom/50/hit/0",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/0",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000432.img",
+        "sourceSha256": "f871507f9e6c2a31c4d4450e15779f73c76fc058404635ea6b8266a93acc87f3",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "ObtacleAtom/50/hit/1",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/1",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000432.img",
+        "sourceSha256": "f871507f9e6c2a31c4d4450e15779f73c76fc058404635ea6b8266a93acc87f3",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "ObtacleAtom/50/hit/2",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/2",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000432.img",
+        "sourceSha256": "f871507f9e6c2a31c4d4450e15779f73c76fc058404635ea6b8266a93acc87f3",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "ObtacleAtom/50/hit/3",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/3",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000432.img",
+        "sourceSha256": "f871507f9e6c2a31c4d4450e15779f73c76fc058404635ea6b8266a93acc87f3",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "node": "ObtacleAtom/50/hit/4",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/4",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000432.img",
+        "sourceSha256": "f871507f9e6c2a31c4d4450e15779f73c76fc058404635ea6b8266a93acc87f3",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "ObtacleAtom/50/hit/0",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/0",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000433.img",
+        "sourceSha256": "d86976059c50f7f620a7755a9ada4f22b636774556d2ccd6b62f5f3b6a0bc9dc",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "ObtacleAtom/50/hit/1",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/1",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000433.img",
+        "sourceSha256": "d86976059c50f7f620a7755a9ada4f22b636774556d2ccd6b62f5f3b6a0bc9dc",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "ObtacleAtom/50/hit/2",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/2",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000433.img",
+        "sourceSha256": "d86976059c50f7f620a7755a9ada4f22b636774556d2ccd6b62f5f3b6a0bc9dc",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "ObtacleAtom/50/hit/3",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/3",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000433.img",
+        "sourceSha256": "d86976059c50f7f620a7755a9ada4f22b636774556d2ccd6b62f5f3b6a0bc9dc",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "node": "ObtacleAtom/50/hit/4",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/4",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000433.img",
+        "sourceSha256": "d86976059c50f7f620a7755a9ada4f22b636774556d2ccd6b62f5f3b6a0bc9dc",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "ObtacleAtom/50/hit/0",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/0",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000434.img",
+        "sourceSha256": "1419fcfd25234561df6c0277432ed0ef7ddcc7a34d891bddb5ffb43448ef3a4a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "ObtacleAtom/50/hit/1",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/1",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000434.img",
+        "sourceSha256": "1419fcfd25234561df6c0277432ed0ef7ddcc7a34d891bddb5ffb43448ef3a4a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "ObtacleAtom/50/hit/2",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/2",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000434.img",
+        "sourceSha256": "1419fcfd25234561df6c0277432ed0ef7ddcc7a34d891bddb5ffb43448ef3a4a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "ObtacleAtom/50/hit/3",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/3",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000434.img",
+        "sourceSha256": "1419fcfd25234561df6c0277432ed0ef7ddcc7a34d891bddb5ffb43448ef3a4a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "node": "ObtacleAtom/50/hit/4",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/4",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000434.img",
+        "sourceSha256": "1419fcfd25234561df6c0277432ed0ef7ddcc7a34d891bddb5ffb43448ef3a4a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "ObtacleAtom/50/hit/0",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/0",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000435.img",
+        "sourceSha256": "223de3415ffff26e194b95ddc7755bb10ece521a65558de46ebaa75cf8f9c95a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "ObtacleAtom/50/hit/1",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/1",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000435.img",
+        "sourceSha256": "223de3415ffff26e194b95ddc7755bb10ece521a65558de46ebaa75cf8f9c95a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "ObtacleAtom/50/hit/2",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/2",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000435.img",
+        "sourceSha256": "223de3415ffff26e194b95ddc7755bb10ece521a65558de46ebaa75cf8f9c95a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "ObtacleAtom/50/hit/3",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/3",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000435.img",
+        "sourceSha256": "223de3415ffff26e194b95ddc7755bb10ece521a65558de46ebaa75cf8f9c95a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "node": "ObtacleAtom/50/hit/4",
+      "classification": "MISSING",
+      "consumer": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "source_placeholder_path": "hit1/4",
+      "acceptance": "HOLD Lotus cue/hazard visual acceptance until actual required combat cues/body verified",
+      "evidence": {
+        "sourceRaw": "boss-mechanics/raw/Mob.wz/0000435.img",
+        "sourceSha256": "223de3415ffff26e194b95ddc7755bb10ece521a65558de46ebaa75cf8f9c95a",
+        "nativeConsumer": "PinnedKaentake inlink.cpp28..61,44..47; reported by Windows peer; actual visual acceptance PENDING"
+      }
+    }
+  ],
+  "source_asset_resolutions": [
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "historicalMissingNode": "32",
+      "actualMaterializedConsumerNode": "32",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/Summon.img/32",
+      "originalConsumerEvidence": "v83 CMob::Init spawn appearance",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "historicalMissingNode": "33",
+      "actualMaterializedConsumerNode": "33",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/Summon.img/33",
+      "originalConsumerEvidence": "v83 CMob::Init spawn appearance",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Effect.wz",
+      "image": "Summon.img",
+      "historicalMissingNode": "36",
+      "actualMaterializedConsumerNode": "36",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/Summon.img/36",
+      "originalConsumerEvidence": "v83 CMob::Init spawn appearance",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000420.img",
+      "historicalMissingNode": "ObtacleAtom/48/start/14",
+      "actualMaterializedConsumerNode": "regen/15",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/48/start/14",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000421.img",
+      "historicalMissingNode": "ObtacleAtom/48/start/14",
+      "actualMaterializedConsumerNode": "regen/15",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/48/start/14",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000422.img",
+      "historicalMissingNode": "ObtacleAtom/48/start/14",
+      "actualMaterializedConsumerNode": "regen/15",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/48/start/14",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000423.img",
+      "historicalMissingNode": "ObtacleAtom/48/start/14",
+      "actualMaterializedConsumerNode": "regen/15",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/48/start/14",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000424.img",
+      "historicalMissingNode": "ObtacleAtom/49/start/15",
+      "actualMaterializedConsumerNode": "regen/16",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/49/start/15",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000425.img",
+      "historicalMissingNode": "ObtacleAtom/49/start/15",
+      "actualMaterializedConsumerNode": "regen/16",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/49/start/15",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000426.img",
+      "historicalMissingNode": "ObtacleAtom/49/start/15",
+      "actualMaterializedConsumerNode": "regen/16",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/49/start/15",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000427.img",
+      "historicalMissingNode": "ObtacleAtom/50/start/15",
+      "actualMaterializedConsumerNode": "regen/16",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/start/15",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000428.img",
+      "historicalMissingNode": "ObtacleAtom/50/start/15",
+      "actualMaterializedConsumerNode": "regen/16",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/start/15",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000429.img",
+      "historicalMissingNode": "ObtacleAtom/50/start/15",
+      "actualMaterializedConsumerNode": "regen/16",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/start/15",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "historicalMissingNode": "ObtacleAtom/51/start/14",
+      "actualMaterializedConsumerNode": "regen/15",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/51/start/14",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/0",
+      "actualMaterializedConsumerNode": "hit1/0",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/0",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/1",
+      "actualMaterializedConsumerNode": "hit1/1",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/1",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/2",
+      "actualMaterializedConsumerNode": "hit1/2",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/2",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/3",
+      "actualMaterializedConsumerNode": "hit1/3",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/3",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000430.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/4",
+      "actualMaterializedConsumerNode": "hit1/4",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/4",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "historicalMissingNode": "ObtacleAtom/51/start/14",
+      "actualMaterializedConsumerNode": "regen/15",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/51/start/14",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/0",
+      "actualMaterializedConsumerNode": "hit1/0",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/0",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/1",
+      "actualMaterializedConsumerNode": "hit1/1",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/1",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/2",
+      "actualMaterializedConsumerNode": "hit1/2",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/2",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/3",
+      "actualMaterializedConsumerNode": "hit1/3",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/3",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000431.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/4",
+      "actualMaterializedConsumerNode": "hit1/4",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/4",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "historicalMissingNode": "ObtacleAtom/51/start/14",
+      "actualMaterializedConsumerNode": "regen/15",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/51/start/14",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/0",
+      "actualMaterializedConsumerNode": "hit1/0",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/0",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/1",
+      "actualMaterializedConsumerNode": "hit1/1",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/1",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/2",
+      "actualMaterializedConsumerNode": "hit1/2",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/2",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/3",
+      "actualMaterializedConsumerNode": "hit1/3",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/3",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000432.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/4",
+      "actualMaterializedConsumerNode": "hit1/4",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/4",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/0",
+      "actualMaterializedConsumerNode": "hit1/0",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/0",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/1",
+      "actualMaterializedConsumerNode": "hit1/1",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/1",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/2",
+      "actualMaterializedConsumerNode": "hit1/2",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/2",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/3",
+      "actualMaterializedConsumerNode": "hit1/3",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/3",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000433.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/4",
+      "actualMaterializedConsumerNode": "hit1/4",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/4",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/0",
+      "actualMaterializedConsumerNode": "hit1/0",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/0",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/1",
+      "actualMaterializedConsumerNode": "hit1/1",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/1",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/2",
+      "actualMaterializedConsumerNode": "hit1/2",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/2",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/3",
+      "actualMaterializedConsumerNode": "hit1/3",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/3",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000434.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/4",
+      "actualMaterializedConsumerNode": "hit1/4",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/4",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/0",
+      "actualMaterializedConsumerNode": "hit1/0",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/0",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/1",
+      "actualMaterializedConsumerNode": "hit1/1",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/1",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/2",
+      "actualMaterializedConsumerNode": "hit1/2",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/2",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/3",
+      "actualMaterializedConsumerNode": "hit1/3",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/3",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    },
+    {
+      "wz": "Mob.wz",
+      "image": "0000435.img",
+      "historicalMissingNode": "ObtacleAtom/50/hit/4",
+      "actualMaterializedConsumerNode": "hit1/4",
+      "classification": "SOURCE_MATERIALIZATION_PLANNED_NATIVE_VISUAL_PENDING",
+      "sourceRoot": "https://maplestory.io/api/wz/GMS/195/Effect/BasicEff.img/ObtacleAtom/50/hit/4",
+      "originalConsumerEvidence": "Native inlink.cpp preserves original1x1 canvas when source target absent",
+      "nativeVisualAcceptance": false
+    }
+  ],
+  "published_source_provenance": {
+    "manifest": "published-gms195-effect-20261016/source-snapshots-completed-pass.json",
+    "manifestSha256": "37e74fa42c3d3df6dc3112380e0f04e20207ae21c84ee792edca8e73d78609e6",
+    "typedJsonSnapshots": 144,
+    "losslessPngs": 33,
+    "intakeSourceCommit": "4c1a6d4e9aff58c886359abf26b2e6249408b46c",
+    "rawDonorSha256": {
+      "Effect.wz/Summon.img": "ca4b4b045b8267c6fce205c3a2a7341c79cc82d8a889a2f954498ece9c24f83d",
+      "Effect.wz/BasicEff.img": "d8deec620a81cb1a8ba383ad8cad82e19e7d99f36d53962199094814d46b7348"
+    },
+    "sourceNamespace": "Exact Effect/BasicEff.img/ObtacleAtom targets; materialize pixels at existing original Mob canvas frames, not fake Mob/ObtacleAtom aliases",
+    "metadataPolicy": "pixels_only keeps all original Mob metadata and order except resolved source link; authored Summon32 1x1 is genuine and retained",
+    "pixelSourceAuthorship": "Published GMS195 WZ nodes, not Buns synthetic art",
+    "nativeVisualAcceptance": "PENDING_AFTER_FULL_MATERIALIZATION_AND_REAL_WINDOWS_CONSUMPTION"
+  }
+}

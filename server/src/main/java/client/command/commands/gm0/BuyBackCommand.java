@@ -42,7 +42,13 @@ public class BuyBackCommand extends Command {
 
         try {
             if (params.length == 1 && params[0].equalsIgnoreCase("list")) {
-                List<Transaction> transactions = TransactionService.getLastTransactions(player.getId(), YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+                final List<Transaction> transactions;
+                try {
+                    transactions = TransactionService.getLastTransactions(player.getId(), YamlConfig.config.server.MAXIMUM_TRANSACTIONS_FOR_BUYBACK);
+                } catch (IllegalStateException e) {
+                    player.dropMessage(6, "Could not load transaction history. Please try again later.");
+                    return;
+                }
 
                 if (transactions.isEmpty()) {
                     player.dropMessage(6, "There are no previous transactions at this time.");
@@ -53,11 +59,12 @@ public class BuyBackCommand extends Command {
                 for (int i = 0; i < transactions.size(); i++) {
                     Transaction transaction = transactions.get(i);
                     int totalItems = transaction.items().size();
-                    int totalMesos = TransactionService.getTotalPurchasePrice(transaction);
+                    String quote = transaction.creditedMesos() == null ? "unavailable: sale credit not recorded"
+                            : GameConstants.numberWithCommas(transaction.creditedMesos()) + " mesos";
 
                     String suffix = transaction.buybackUsed() ? " [Used]" : "";
 
-                    stringBuilder.append(i + 1).append(". ").append(totalItems).append(" items (").append(GameConstants.numberWithCommas(totalMesos)).append(" mesos)").append(suffix).append("\r\n");
+                    stringBuilder.append(transaction.transactionId()).append(". ").append(totalItems).append(" items (").append(quote).append(")").append(suffix).append("\r\n");
                 }
 
                 player.dropMessage(6, stringBuilder.toString());
@@ -76,7 +83,7 @@ public class BuyBackCommand extends Command {
                     break;
                 }
                 default:
-                    player.dropMessage(6, "Usage: @buyback [list|<transactionNumber>]");
+                    player.dropMessage(6, "Usage: @buyback [list|<saleId>]");
                     break;
             }
         } catch (Exception e) {
@@ -85,19 +92,19 @@ public class BuyBackCommand extends Command {
     }
 
     private static String tryProcessTransaction(String[] params, Character player) {
-        int transactionIndex;
+        int transactionId;
 
         try {
-            transactionIndex = Integer.parseInt(params[0]) - 1;
+            transactionId = Integer.parseInt(params[0]);
         } catch (NumberFormatException e) {
             return "Invalid transaction number.";
         }
 
-        if (transactionIndex < 0) {
+        if (transactionId < 1) {
             return "Invalid transaction number.";
         }
 
-        SelectionListStringResult result = TransactionService.processTransaction(player, transactionIndex);
+        SelectionListStringResult result = TransactionService.processTransaction(player, transactionId);
         return result.getMessage();
     }
 }

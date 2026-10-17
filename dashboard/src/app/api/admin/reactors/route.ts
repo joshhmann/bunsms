@@ -1,27 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { execute, query } from "@/lib/db";
-import { uploadToR2, isR2Configured } from "@/lib/r2";
+import { publishBuffers, resolveAssetPath } from "@/lib/assets";
 import { generateReactorFrames } from "@/lib/wz/reactor-animator";
-import { generateReactorXml, generateReactorScript } from "@/lib/wz/reactor-builder";
 import type { AnimationStyle } from "@/lib/wz/reactor-animator";
 import type { ScriptTemplate } from "@/lib/wz/reactor-builder";
-import { writeFileSync, mkdirSync, existsSync } from "fs";
-import { join } from "path";
 
-// Auto-detect: local dev uses ../server, prod uses /cosmic (writable volume)
-function getServerRoot(): string {
-  if (process.env.WZ_ROOT) return process.env.WZ_ROOT;
-  const localServer = join(process.cwd(), "..", "server");
-  if (existsSync(join(localServer, "wz"))) return join(localServer, "wz");
-  return "/cosmic/wz";
-}
-
-function getScriptsRoot(): string {
-  if (process.env.WZ_ROOT) return process.env.WZ_ROOT.replace("/wz", "/scripts");
-  const localServer = join(process.cwd(), "..", "server");
-  if (existsSync(join(localServer, "scripts"))) return join(localServer, "scripts");
-  return "/cosmic/scripts";
-}
 
 // Custom reactor IDs use 99XXXXX range to avoid ALL vanilla conflicts
 const CUSTOM_REACTOR_ID_MIN = 9900000;
@@ -29,31 +12,9 @@ const CUSTOM_REACTOR_ID_MAX = 9999999;
 
 // Scan client WZ + DB to find a free reactor ID
 function getUsedWzIds(): Set<number> {
-  const used = new Set<number>();
-  try {
-    const wzDir = join(process.cwd(), "..", "client", "cosmic-wz");
-    const reactorWzPath = join(wzDir, "Reactor.wz");
-    if (existsSync(reactorWzPath)) {
-      const { parseWzFile } = require("@/lib/wz/patcher");
-      const wz = parseWzFile(reactorWzPath);
-      for (const entry of wz.root) {
-        const id = parseInt(entry.name.replace(".img", ""));
-        if (!isNaN(id)) used.add(id);
-      }
-    }
-  } catch {}
-  // Also check server WZ XML files
-  try {
-    const serverDir = join(getServerRoot(), "Reactor.wz");
-    if (existsSync(serverDir)) {
-      const { readdirSync } = require("fs");
-      for (const f of readdirSync(serverDir)) {
-        const id = parseInt(f.replace(".img.xml", ""));
-        if (!isNaN(id)) used.add(id);
-      }
-    }
-  } catch {}
-  return used;
+  const { parseWzFile } = require("@/lib/wz/patcher");
+  const wz = parseWzFile(resolveAssetPath("Reactor.wz"));
+  return new Set(wz.root.map((entry: { name: string }) => parseInt(entry.name)).filter(Number.isInteger));
 }
 
 async function getNextReactorId(): Promise<number> {
@@ -110,50 +71,12 @@ export async function POST(request: NextRequest) {
     // Generate animation frames
     const frames = generateReactorFrames(idlePngBuf, animationStyle);
 
-    // Save idle PNG locally for publish-local
-    const outputDir = join("/tmp", "reactor-sprites");
-    mkdirSync(outputDir, { recursive: true });
-    writeFileSync(join(outputDir, `reactor-${reactorId}-idle.png`), idlePngBuf);
+    const idleKey = `reactors/${reactorId}/idle.png`;
+    const publication = await publishBuffers([{ key: idleKey, data: idlePngBuf }]);
+    const idlePngUrl = publication.assets.find((asset) => asset.key === idleKey)!.url;
 
-    // Upload idle PNG to R2 (skip if not configured — local dev)
-    let idlePngUrl: string | null = null;
-    if (isR2Configured()) {
-      const idleR2 = await uploadToR2(`reactors/${reactorId}/idle.png`, idlePngBuf);
-      idlePngUrl = idleR2.url || null;
-    }
-
-    // Generate and write server-side XML
+    // Drafts do not mutate game XML/scripts outside the release transaction.
     const actions: string[] = [];
-    const reactorDef = {
-      reactorId,
-      name,
-      eventType,
-      hitsToBreak,
-      idlePng: frames.idle, // use downscaled idle from animator, not raw upload
-      hitFrames: frames.hit,
-      breakFrames: frames.break,
-      hitDelay,
-      breakDelay,
-      triggerItemId: triggerItemId ?? undefined,
-      triggerItemQty,
-      timeout: timeoutMs ?? undefined,
-    };
-
-    // Server XML
-    const xml = generateReactorXml(reactorDef);
-    const xmlDir = join(getServerRoot(), "Reactor.wz");
-    mkdirSync(xmlDir, { recursive: true });
-    const xmlPath = join(xmlDir, `${String(reactorId).padStart(7, "0")}.img.xml`);
-    writeFileSync(xmlPath, xml, "utf-8");
-    actions.push(`Wrote server XML: ${xmlPath}`);
-
-    // Reactor script
-    const script = generateReactorScript(scriptTemplate);
-    const scriptDir = join(getScriptsRoot(), "reactor");
-    mkdirSync(scriptDir, { recursive: true });
-    const scriptPath = join(scriptDir, `${reactorId}.js`);
-    writeFileSync(scriptPath, script, "utf-8");
-    actions.push(`Wrote reactor script: ${scriptPath}`);
 
     // Save to DB
     await execute(
@@ -195,7 +118,7 @@ export async function POST(request: NextRequest) {
       hitFrameCount: frames.hit.length,
       breakFrameCount: frames.break.length,
       actions,
-      note: "Reactor created with drops configured. Use 'Publish' to build client WZ files, or place directly via preactor table (server XML is already written).",
+      note: "Draft saved with committed art. Publish to commit native/server/browser assets and apply the game-server overlay.",
     });
   } catch (err: any) {
     console.error("Reactor creation error:", err);
@@ -229,21 +152,6 @@ export async function DELETE(request: NextRequest) {
 
     const actions: string[] = [];
 
-    // Remove server XML
-    const xmlPath = join(getServerRoot(), "Reactor.wz", `${String(reactorId).padStart(7, "0")}.img.xml`);
-    try {
-      const { unlinkSync } = await import("fs");
-      unlinkSync(xmlPath);
-      actions.push(`Removed server XML`);
-    } catch {}
-
-    // Remove script
-    const scriptPath = join(getScriptsRoot(), "reactor", `${reactorId}.js`);
-    try {
-      const { unlinkSync } = await import("fs");
-      unlinkSync(scriptPath);
-      actions.push(`Removed reactor script`);
-    } catch {}
 
     // Remove from DB
     await execute("DELETE FROM custom_reactors WHERE reactor_id = ?", [reactorId]);

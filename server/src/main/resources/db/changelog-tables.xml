@@ -106,7 +106,7 @@
     </changeSet>
 
     <changeSet id="26" author="solobots">
-        <sqlFile path="db/tables/026-daily-checkin.sql" splitStatements="false" endDelimiter="$$"/>
+        <sqlFile path="db/tables/026-daily-checkin.sql" splitStatements="true" stripComments="true"/>
     </changeSet>
 
     <changeSet id="27" author="solobots">
@@ -114,11 +114,27 @@
     </changeSet>
 
     <changeSet id="28" author="solobots">
-        <sqlFile path="db/tables/028-coloring-prism.sql" splitStatements="false" endDelimiter="$$"/>
+        <sqlFile path="db/tables/028-coloring-prism.sql" splitStatements="true" stripComments="true"/>
     </changeSet>
 
     <changeSet id="29" author="bosspack-wave0">
         <sqlFile path="db/tables/029-boss-pack-entries.sql"/>
+    </changeSet>
+
+    <changeSet id="30" author="solobots">
+        <sqlFile path="db/tables/030-buyback-tints.sql" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="31" author="solobots">
+        <sqlFile path="db/tables/031-buyback-credit.sql" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="32" author="mapleroot-expeditions">
+        <sqlFile path="db/tables/032-expedition-leaderboards.sql" splitStatements="true" stripComments="true"/>
+    </changeSet>
+
+    <changeSet id="36" author="mapleroot-expeditions">
+        <sqlFile path="db/tables/036-expedition-participant-names.sql" splitStatements="true" stripComments="true"/>
     </changeSet>
 
 </databaseChangeLog>

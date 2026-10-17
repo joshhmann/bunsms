@@ -20,8 +20,8 @@ public class CharacterStorage {
         activeBotMap.put(id, character);
     }
 
-    public static void removeActiveBot(int id) {
-        activeBotMap.remove(id);
+    public static BotSM removeActiveBot(int id) {
+        return activeBotMap.remove(id);
     }
 
     public static boolean botLoggedIn(int id) {
@@ -30,6 +30,11 @@ public class CharacterStorage {
 
     public static BotSM getBotById(int id) {
         return activeBotMap.get(id);
+    }
+
+    public static boolean isRegisteredBot(Character character) {
+        BotSM controller = activeBotMap.get(character.getId());
+        return controller != null && controller.getChr() == character;
     }
 
     public static Map<Integer, BotSM> getAllBots() {

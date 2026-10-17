@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { restartGameServer } from "@/lib/fly-restart";
+import { isPrivateRequestAuthorized } from "@/lib/auth";
+import { restartGameServer } from "@/lib/game-control";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/gm/restart — Manual trigger to restart the game server
-export async function GET() {
+export async function POST(request: Request) {
   try {
-    const machineId = await restartGameServer();
-    return NextResponse.json({ action: "restarted", machine: machineId });
-  } catch (err: any) {
-    return NextResponse.json(
-      { action: "error", error: err.message },
-      { status: 500 },
-    );
+    if (!await isPrivateRequestAuthorized(request)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json(await restartGameServer());
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Game apply failed" }, { status: 502 });
   }
 }

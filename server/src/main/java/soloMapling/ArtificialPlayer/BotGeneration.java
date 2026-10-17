@@ -4,9 +4,11 @@ import client.Character;
 import client.Client;
 import client.Job;
 import server.maps.MapleMap;
+import server.expeditions.Expedition;
 import soloMapling.ArtificialPlayer.BotAttackSystem.BotBuffDriver;
 import soloMapling.ArtificialPlayer.BotBuffRequestSystem.BotBuffRequestHandler;
 import soloMapling.ArtificialPlayer.BotMessagingSystem.CharacterStorage;
+import soloMapling.ArtificialPlayer.BotTypes.FollowerBot;
 import soloMapling.server.SoloMaplingConstants;
 import soloMapling.server.SoloMaplingUtilities;
 
@@ -181,12 +183,40 @@ public class BotGeneration {
     }
 
     public static void removeBotFromServer(Character fakechar) {
+        BotSM controller = CharacterStorage.removeActiveBot(fakechar.getId());
+        if (controller instanceof FollowerBot follower) {
+            leaveFollowerExpedition(follower, true);
+        }
+        if (controller != null && controller.getRunning()) {
+            controller.setRunning(false);
+            controller.stopScheduledTask();
+        }
         fakechar.getMap().removePlayer(fakechar);
         channel.removePlayer(fakechar);
         world.getPlayerStorage().removePlayer(fakechar.getId());
-        CharacterStorage.removeActiveBot(fakechar.getId());//
         BotBuffDriver.clearBot(fakechar.getId());   // Phase 3a: release buff recast timers
         BotBuffRequestHandler.clearBot(fakechar.getId());   // release chat-buff-request cooldown
+    }
+
+    public static void leaveFollowerExpedition(FollowerBot follower, boolean disconnected) {
+        Character bot = follower.getChr();
+        MapleMap map = bot == null ? null : bot.getMap();
+        if (map == null) {
+            return;
+        }
+        var event = bot.getEventInstance();
+        if (event != null && event.isFollowerExpeditionParticipant(bot)) {
+            if (disconnected) {
+                event.playerDisconnected(bot);
+            } else {
+                event.removePlayer(bot);
+            }
+        }
+        for (Expedition expedition : map.getChannelServer().getExpeditions()) {
+            if (expedition.getType().allowsFollowerRegistration() && expedition.contains(bot)) {
+                expedition.removeMember(bot);
+            }
+        }
     }
 
     private static void addBotToServer(Character fakechar) {

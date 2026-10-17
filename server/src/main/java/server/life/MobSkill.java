@@ -197,6 +197,35 @@ public class MobSkill {
         if (!makeChanceResult()) {
             return;
         }
+        MapleMap map = monster.getMap();
+        if (monster.getId() == 8840000) {
+            if (id.type() == MobSkillType.ATTACK_UP || id.type() == MobSkillType.ATTACK_UP_M) {
+                int firstAdds = map.countMonster(8210006);
+                if (firstAdds > 0) {
+                    monster.heal((monster.getMaxHp() / 20) * firstAdds, 0);
+                    map.killMonster(8210006);
+                }
+                if (map.countMonster(8210007) > 0) {
+                    // Source uses the remaining 8210006 count here, not 8210007.
+                    // Retain that behavior rather than silently change boss balance.
+                    monster.heal((monster.getMaxHp() / 10) * map.countMonster(8210006), 0);
+                    map.killMonster(8210007);
+                }
+            }
+            if (id.type() == MobSkillType.DEFENSE_UP || id.type() == MobSkillType.DEFENSE_UP_M) {
+                map.teleportVonLeon(monster);
+            }
+        } else if (monster.getId() == 8240099) {
+            // Genuine source nextInt(0,1)/nextInt(1) always selects actor type 0.
+            switch (id.level()) {
+                case 7 -> map.spawnLotusActors(0, java.util.concurrent.ThreadLocalRandom.current().nextInt(10, 15));
+                case 8 -> map.spawnLotusActors(0, java.util.concurrent.ThreadLocalRandom.current().nextInt(8, 10));
+                case 11 -> map.spawnLotusActors(0, java.util.concurrent.ThreadLocalRandom.current().nextInt(12, 15));
+                case 65 -> map.spawnLotusActors(2, 8);
+            }
+        } else if (monster.getId() == 8880002 && id.level() == 13) {
+            map.spawnMagnusPillars();
+        }
 
         Disease disease = null;
         Map<MonsterStatus, Integer> stats = new EnumMap<>(MonsterStatus.class);
@@ -415,6 +444,10 @@ public class MobSkill {
 
     public int getMpCon() {
         return mpCon;
+    }
+
+    public int getSpawnEffect() {
+        return spawnEffect;
     }
 
     public int getHP() {

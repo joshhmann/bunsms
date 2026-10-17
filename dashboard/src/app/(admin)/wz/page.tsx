@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Card from "@/components/Card";
+import { hashBrowserFile } from "@/lib/hash-file";
 
 interface ManifestFile {
   name: string;
@@ -197,6 +198,10 @@ function UploadModal({
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [releaseId, setReleaseId] = useState("");
+  const [expectedHash, setExpectedHash] = useState("");
+  const [expectedSize, setExpectedSize] = useState("");
+  const [operationsText, setOperationsText] = useState("[]");
 
   const onPick = (f: File) => {
     setFile(f);
@@ -214,23 +219,22 @@ function UploadModal({
   const sizeSuspicious =
     sizeChangePct !== null && (sizeChangePct < -50 || sizeChangePct > 100);
 
-  // Cloudflare body cap is 100 MB on Free/Pro. Surface the wrangler-and-register
-  // path before the request even hits the network for anything close to that.
-  const CLOUDFLARE_LIMIT_BYTES = 95 * 1024 * 1024;
-  const tooBigForBrowser =
-    !!file && file.size >= CLOUDFLARE_LIMIT_BYTES;
-  const currentTooBigForBrowser =
-    !!current && current.size >= CLOUDFLARE_LIMIT_BYTES;
+  const tooLarge = !!file && file.size > 1024 * 1024 * 1024;
 
   const registerExisting = async () => {
     setBusy(true);
     setError(null);
     setResult(null);
     try {
+      const operations = JSON.parse(operationsText);
+      if (!Array.isArray(operations)) throw new Error("NX operations must be a JSON array.");
+      if (!releaseId || !/^[a-f0-9]{64}$/.test(expectedHash) || !/^\d+$/.test(expectedSize)) {
+        throw new Error("Register requires an existing staged release ID and independently expected SHA-256/size.");
+      }
       const res = await fetch("/api/admin/wz/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, releaseId, hash: expectedHash, size: Number(expectedSize), operations }),
       });
       const raw = await res.text();
       let data: any = {};
@@ -244,15 +248,7 @@ function UploadModal({
           data.error || `HTTP ${res.status} — ${fallback || "(no body)"}`
         );
       }
-      setResult(
-        data.version
-          ? `Registered. Manifest now v${data.version} (${formatSize(data.size)}, hash ${shortHash(data.hash)}).`
-          : data.serverRestart
-            ? data.serverRestart.success
-              ? `Registered. Server restart triggered (machine ${data.serverRestart.machineId}).`
-              : `Registered, but server restart failed: ${data.serverRestart.error}. Restart manually.`
-            : `Registered (${formatSize(data.size)}).`
-      );
+      setResult(`Published release ${data.releaseId}, manifest v${data.version} (${formatSize(data.size)}, hash ${shortHash(data.hash)}).`);
       setTimeout(onDone, 1500);
     } catch (e: any) {
       setError(e.message);
@@ -262,19 +258,28 @@ function UploadModal({
   };
 
   const submit = async () => {
-    if (!file) return;
+    if (!file || tooLarge) return;
     setBusy(true);
     setError(null);
     setResult(null);
     try {
+      const operations = JSON.parse(operationsText);
+      if (!Array.isArray(operations)) throw new Error("NX operations must be a JSON array.");
+      setResult("Computing the intended file SHA-256 before upload…");
+      const expected = await hashBrowserFile(file);
+      setExpectedHash(expected.hash);
+      setExpectedSize(String(expected.size));
       const fd = new FormData();
       fd.append("name", name);
+      fd.append("expected", JSON.stringify([{ key: name, ...expected }]));
+      fd.append("operations", JSON.stringify(operations));
+      if (releaseId) fd.append("releaseId", releaseId);
       fd.append("file", file);
       const res = await fetch("/api/admin/wz/upload", {
         method: "POST",
         body: fd,
       });
-      // Read as text first so we can surface non-JSON server errors (Fly proxy
+      // Read as text first so we can surface non-JSON server errors (proxy
       // 413, runtime body-limit HTML pages, etc.) instead of crashing on
       // `Unexpected token '<'`.
       const raw = await res.text();
@@ -291,15 +296,7 @@ function UploadModal({
           data.error || `HTTP ${res.status} — ${fallback || "(no body)"}`
         );
       }
-      setResult(
-        data.version
-          ? `Uploaded. Manifest now v${data.version} (${formatSize(data.size)})`
-          : data.serverRestart
-            ? data.serverRestart.success
-              ? `Uploaded. Server restart triggered (machine ${data.serverRestart.machineId}).`
-              : `Uploaded, but server restart failed: ${data.serverRestart.error}. Restart manually.`
-            : `Uploaded (${formatSize(data.size)}).`
-      );
+      setResult(`Published release ${data.releaseId}, manifest v${data.version} (${formatSize(data.size)}).`);
       // Wait a beat so the user can see the result, then refresh.
       setTimeout(onDone, 1200);
     } catch (e: any) {
@@ -396,19 +393,27 @@ function UploadModal({
           </div>
         )}
 
-        {(tooBigForBrowser || currentTooBigForBrowser) && (
-          <div className="mt-3 rounded-lg border border-accent-gold/40 bg-accent-gold/5 px-3 py-2 text-xs text-accent-gold">
-            <p className="mb-2 font-medium">
-              File is too large for browser upload (Cloudflare caps request bodies at 100 MB).
-            </p>
-            <p className="mb-2">
-              Push the binary to R2 directly with wrangler, then click <b>Register from R2</b> below to update the manifest.
-            </p>
-            <pre className="overflow-x-auto rounded bg-black/30 px-2 py-1.5 font-mono text-[11px] text-text-primary">
-              npx wrangler r2 object put bunsms-client/{name} --file {name} --remote
-            </pre>
-          </div>
-        )}
+        <div className="mt-3 space-y-2 text-xs text-text-secondary">
+          <p>Use this private LAN dashboard or the authenticated publisher CLI. Never copy candidates into the live object directory.</p>
+          <label className="block">
+            NX operations JSON (required for changed browser-convertible WZ; explicit IMG/subtree targets)
+            <textarea value={operationsText} onChange={(e) => setOperationsText(e.target.value)} disabled={busy}
+              className="mt-1 w-full rounded bg-bg-card p-2 font-mono" rows={3} />
+          </label>
+          <details>
+            <summary>Register bytes already uploaded to a staged release</summary>
+            <label className="mt-2 block">Release ID
+              <input value={releaseId} onChange={(e) => setReleaseId(e.target.value)} disabled={busy} className="mt-1 w-full rounded bg-bg-card p-2 font-mono" />
+            </label>
+            <label className="mt-2 block">Expected SHA-256
+              <input value={expectedHash} onChange={(e) => setExpectedHash(e.target.value)} disabled={busy} className="mt-1 w-full rounded bg-bg-card p-2 font-mono" />
+            </label>
+            <label className="mt-2 block">Expected byte size
+              <input value={expectedSize} onChange={(e) => setExpectedSize(e.target.value)} disabled={busy} className="mt-1 w-full rounded bg-bg-card p-2 font-mono" />
+            </label>
+          </details>
+          {tooLarge && <p className="text-accent-red">Upload exceeds the 1 GiB limit. Use verified out-of-band staging through the publisher CLI.</p>}
+        </div>
 
         {error && (
           <div className="mt-3 rounded-lg border border-accent-red/40 bg-accent-red/5 px-3 py-2 text-xs text-accent-red">
@@ -426,10 +431,10 @@ function UploadModal({
           <button
             onClick={registerExisting}
             disabled={busy}
-            title="Re-read the file from R2 and refresh the manifest entry. Use after uploading via wrangler."
+            title="Publish independently expected bytes from an existing staged release. Direct-live registration is not supported."
             className="rounded-lg border border-border bg-bg-card px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-card-hover disabled:opacity-40"
           >
-            {busy ? "…" : "Register from R2"}
+            {busy ? "…" : "Register staged bytes"}
           </button>
           <button
             onClick={onClose}
@@ -440,7 +445,7 @@ function UploadModal({
           </button>
           <button
             onClick={submit}
-            disabled={!file || busy}
+            disabled={!file || busy || tooLarge}
             className="rounded-lg border border-accent-gold bg-accent-gold/10 px-4 py-1.5 text-sm font-medium text-accent-gold hover:bg-accent-gold/20 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {busy ? "Uploading…" : sizeSuspicious ? "Upload anyway" : "Upload"}

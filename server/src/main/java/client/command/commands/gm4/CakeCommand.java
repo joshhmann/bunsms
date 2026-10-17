@@ -41,7 +41,7 @@ public class CakeCommand extends Command {
         Monster monster = LifeFactory.getMonster(MobId.GIANT_CAKE);
         if (params.length == 1) {
             double mobHp = Double.parseDouble(params[0]);
-            int newHp = (mobHp <= 0) ? Integer.MAX_VALUE : ((mobHp > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) mobHp);
+            long newHp = (mobHp <= 0) ? Monster.MAX_MONSTER_HP : ((mobHp > Monster.MAX_MONSTER_HP) ? Monster.MAX_MONSTER_HP : (long) mobHp);
 
             monster.setStartingHp(newHp);
         }

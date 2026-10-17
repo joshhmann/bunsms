@@ -11,7 +11,6 @@ const PUBLIC_PATHS = [
   "/api/register",
   "/api/server",
   "/api/config",
-  "/api/launcher/",
   "/api/vote/",
   "/worldmap",
   "/api/worldmap/",
@@ -21,6 +20,15 @@ const PUBLIC_PATHS = [
   "/api/npc/", // handles its own x-npc-secret auth at the route layer
   "/rankings",
   "/api/rankings",
+];
+
+// Launcher manifest/news: public reads only. Client bytes are served by the
+// dedicated aiohttp asset service (/client/*), not by Next. Mutation
+// (POST/PUT/DELETE) always requires session JWT or x-gm-secret auth below —
+// the manifest POST accepts replacement payloads and must never be anonymous.
+const PUBLIC_LAUNCHER_GETS = [
+  "/api/launcher/manifest",
+  "/api/launcher/news",
 ];
 
 // Exact-match paths and prefix-match paths kept separate — a single "/"
@@ -48,6 +56,15 @@ function isPublicAsset(pathname: string) {
   );
 }
 
+function isPublicLauncherGet(pathname: string, method: string) {
+  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") return false;
+  return PUBLIC_LAUNCHER_GETS.some((p) => {
+    if (p === pathname) return true;
+    if (p.endsWith("/") && p.length > 1 && pathname.startsWith(p)) return true;
+    return false;
+  });
+}
+
 /**
  * Timing-safe comparison to avoid leaking secret length/prefix via response
  * timing. Edge runtime doesn't expose crypto.timingSafeEqual, so we roll it.
@@ -63,6 +80,9 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublicAsset(pathname) || isPublicPath(pathname)) {
+    return NextResponse.next();
+  }
+  if (isPublicLauncherGet(pathname, request.method)) {
     return NextResponse.next();
   }
 
@@ -97,5 +117,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Next clones/buffers middleware request bodies before the route executes.
+  // These exact streaming routes authenticate headers themselves before reading bytes.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/launcher/upload/?$|api/admin/wz/upload/?$|api/admin/baker/sprite/?$).*)"],
 };

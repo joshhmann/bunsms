@@ -47,6 +47,12 @@ public final class CashShopWindowHandler extends AbstractPacketHandler {
         if (chr == null) {
             return;
         }
+        // Contract v1: custom window requests require the negotiated cap.
+        // Unflagged sessions never produce these bytes legitimately; drop them
+        // rather than answering on custom opcodes they cannot decode.
+        if (!c.hasCaps(client.ClientCaps.CASHSHOP_WINDOW)) {
+            return;
+        }
         // If the player really is inside the cash-shop stage, the stage UI owns them.
         if (chr.getCashShop().isOpened()) {
             return;
