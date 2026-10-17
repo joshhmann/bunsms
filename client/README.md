@@ -158,7 +158,7 @@ release; no dinput8 proxy is required for this path.
 
 ### Full-content Windows testing launcher
 
-The `1.1.0-rc.1` Electron launcher uses a separate `com.bunsms.launcher.rc`
+The `1.1.0-rc.6` Electron launcher uses a separate `com.bunsms.launcher.rc`
 application identity and is visibly labeled **TESTING**, not a production
 server/database rollout. Its packaged `release-config.json` pins the immutable
 RC complete-client manifest; workflow operator inputs are written into this
