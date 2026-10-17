@@ -589,14 +589,8 @@
     "Sound.wz/Weather.img",
     "String.wz/Cash.img",
     "String.wz/Consume.img",
-    "String.wz/Eqp.img",
-    "String.wz/Etc.img",
-    "String.wz/Map.img",
-    "String.wz/Mob.img",
     "String.wz/MonsterBook.img",
-    "String.wz/Npc.img",
-    "UI.wz/CashShop.img",
-    "UI.wz/UIWindow.img"
+    "String.wz/Etc.img"
   ],
   "requirements": [
     {
@@ -1431,17 +1425,22 @@
       "type": "property"
     },
     {
-      "path": "Map.wz/Obj/MapleMoonLamp2.img/hang/candle/0/0"
+      "path": "String.wz/Consume.img/2388159/name",
+      "type": "string",
+      "value": "Castellan Card"
     },
     {
-      "path": "Map.wz/Obj/MapleMoonLamp2.img/fire/brazier/0",
-      "type": "property"
+      "path": "String.wz/Etc.img/Etc/4000345/name",
+      "type": "string",
+      "value": "Daimyo's Stolen Armrest"
     },
     {
-      "path": "Map.wz/Obj/MapleMoonLamp2.img/fire/brazier/0/0"
+      "path": "String.wz/Etc.img/Etc/4000346/name",
+      "type": "string",
+      "value": "Emperor Toad Wallet"
     },
     {
-      "path": "Map.wz/Obj/MapleMoonLamp2.img/fire/brazier/1",
+      "path": "String.wz/MonsterBook.img/9400408",
       "type": "property"
     },
     {
@@ -182445,74 +182444,68 @@
     {
       "path": "Map.wz/Map/Map2/271000300.img/portal/3/script",
       "type": "string",
-      "value": "in_knights00"
+      "value": "Illustration: False Daimyo [9400408].\\nBuns card acquisition areas: Zipangu [800040410].\\nCard drops from: False Daimyo [9400408].\\nRewards lists this illustrated form's configured non-quest monster-item drops."
     },
     {
-      "path": "Map.wz/Map/Map2/271000300.img/portal/3/pt",
+      "path": "String.wz/MonsterBook.img/9400408/map/0",
       "type": "int",
-      "value": 7
+      "value": 800040410
     },
     {
-      "path": "Map.wz/Map/Map2/271030010.img/portal/2/script",
-      "type": "string",
-      "value": "in_knights01"
-    },
-    {
-      "path": "Map.wz/Map/Map2/271030010.img/portal/2/pt",
+      "path": "String.wz/MonsterBook.img/9400408/reward/0",
       "type": "int",
-      "value": 7
+      "value": 1382045
     },
     {
-      "path": "Map.wz/Map/Map2/271030200.img/portal/3/script",
-      "type": "string",
-      "value": "spirit00"
-    },
-    {
-      "path": "Map.wz/Map/Map2/271030200.img/portal/3/pt",
+      "path": "String.wz/MonsterBook.img/9400408/reward/1",
       "type": "int",
-      "value": 7
+      "value": 1382046
     },
     {
-      "path": "Map.wz/Map/Map2/271030600.img/portal/3/script",
-      "type": "string",
-      "value": "in_cygnusGarden"
-    },
-    {
-      "path": "Map.wz/Map/Map2/271030600.img/portal/3/pt",
+      "path": "String.wz/MonsterBook.img/9400408/reward/2",
       "type": "int",
-      "value": 7
+      "value": 1382047
     },
     {
-      "path": "Map.wz/Map/Map1/103000000.img/portal/38/pt",
+      "path": "String.wz/MonsterBook.img/9400408/reward/3",
       "type": "int",
-      "value": 2
+      "value": 1382048
     },
     {
-      "path": "Map.wz/Map/Map1/103000000.img/portal/38/tm",
+      "path": "String.wz/MonsterBook.img/9400408/reward/4",
       "type": "int",
-      "value": 65
+      "value": 2000005
     },
     {
-      "path": "Map.wz/Map/Map1/103000000.img/portal/38/tn",
-      "type": "string",
-      "value": "earth65"
+      "path": "String.wz/MonsterBook.img/9400408/reward/5",
+      "type": "int",
+      "value": 2388159
     },
     {
-      "path": "Quest.wz/Check.img/31124/1/infoex/0/value",
-      "type": "string",
-      "value": "1"
+      "path": "String.wz/MonsterBook.img/9400408/reward/6",
+      "type": "int",
+      "value": 4000345
     },
     {
-      "path": "Item.wz/Consume/0203.img/02030021",
-      "type": "property"
+      "path": "String.wz/MonsterBook.img/9400408/reward/7",
+      "type": "int",
+      "value": 4000346
     },
     {
-      "path": "Item.wz/Etc/0403.img/04032835",
-      "type": "property"
+      "path": "Item.wz/Consume/0238.img/02388159/info/iconRaw",
+      "type": "canvas",
+      "dimensions": [
+        27,
+        38
+      ]
     },
     {
-      "path": "Item.wz/Etc/0403.img/04032860",
-      "type": "property"
+      "path": "Item.wz/Consume/0238.img/02388159/info/icon",
+      "type": "canvas",
+      "dimensions": [
+        32,
+        32
+      ]
     },
     {
       "path": "String.wz/Consume.img/2030021",
