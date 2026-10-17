@@ -155,6 +155,10 @@ function Save-NativeSnapshot([int[]]$Ids) {
                 actualAuthentication = 'PENDING server/UI evidence'
                 basis = 'Observed native window/nonuniform screenshot, completed normal Windows approval and live owned backend/listener; input submission is not authentication proof.' }
             try {
+                $report.accountBeforeLogin = Read-QAAccountState
+                if ($report.accountBeforeLogin.status -ne 'account-not-found') {
+                    throw 'Expected disposable QA account already exists before credentials; preserve stale-state evidence rather than resetting or seeding authentication'
+                }
                 [NativeSmoke]::ClickClient($window, 470, 245)
                 [NativeSmoke]::TypeClientText($window, 'bunsrcqa')
                 $report.loginInput.usernameEvidenceUtc = [DateTime]::UtcNow.ToString('O')
@@ -290,6 +294,41 @@ function Save-NativeSnapshot([int[]]$Ids) {
                     [NativeSmoke]::ClickClient($window, 548, 294)
                     $report.characterNameAction.status = 'submitted-normal-character-name'
                 } catch { $report.characterNameAction.status = 'failed'; $report.characterNameAction.error = $_.Exception.ToString(); throw }
+            }
+        }
+    }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.characterNameAction.status -eq 'submitted-normal-character-name' -and
+        -not $report.appearanceAction -and ([datetime]$row.utc) -gt ([datetime]$report.characterNameAction.utc).AddSeconds(2)) {
+        $state = Read-QAAccountState
+        $report.accountBeforeAppearance = $state
+        if ($state.status -eq 'observed' -and $state.account.tos -eq 1 -and
+            $state.account.gender -eq 0 -and $state.account.loggedin -eq 2 -and @($state.account.characters).Count -eq 0) {
+            $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+            if ($window) {
+                $report.appearanceAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                    scope = 'Normal OK on observed default Character Settings; actual server character creation remains required, never seeded' }
+                try {
+                    [NativeSmoke]::ClickClient($window, 559, 445)
+                    $report.appearanceAction.status = 'submitted-normal-default-appearance'
+                } catch { $report.appearanceAction.status = 'failed'; $report.appearanceAction.error = $_.Exception.ToString(); throw }
+            }
+        }
+    }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.appearanceAction.status -eq 'submitted-normal-default-appearance' -and
+        -not $report.characterStartAction -and ([datetime]$row.utc) -gt ([datetime]$report.appearanceAction.utc).AddSeconds(2)) {
+        $state = Read-QAAccountState
+        $report.accountBeforeCharacterStart = $state
+        $created = @($state.account.characters | Where-Object { $_.name -eq $report.characterNameAction.name -and $_.id -gt 0 -and $_.world -eq 0 })
+        if ($state.status -eq 'observed' -and $state.account.loggedin -eq 2 -and $created.Count -eq 1) {
+            $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+            if ($window) {
+                $report.characterStartAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; characterId = $created[0].id
+                    scope = 'Normal first character slot and observed Start button after genuine persisted creation; next native screen/world requires actual review' }
+                try {
+                    [NativeSmoke]::ClickClient($window, 255, 333)
+                    [NativeSmoke]::ClickClient($window, 624, 160)
+                    $report.characterStartAction.status = 'submitted-normal-character-start'
+                } catch { $report.characterStartAction.status = 'failed'; $report.characterStartAction.error = $_.Exception.ToString(); throw }
             }
         }
     }
@@ -539,6 +578,8 @@ try {
                             channelButtonAction = $login.channelButtonAction; createButtonAction = $login.createButtonAction; accountAfterObservation = $login.accountAfterObservation
                             explorerTypeAction = $login.explorerTypeAction
                             characterNameAction = $login.characterNameAction
+                            appearanceAction = $login.appearanceAction; characterStartAction = $login.characterStartAction
+                            accountBeforeLogin = $login.accountBeforeLogin
                             acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
                         if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
                             throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
@@ -679,11 +720,25 @@ try {
     if ($ExerciseLogin) {
         $report.accountAfterObservation = Read-QAAccountState
         $report.accountAfterObservation | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $OutputDirectory 'qa-account-state.json')
+        if ($report.accountAfterObservation.status -ne 'observed' -or
+            $report.accountAfterObservation.account.name -ne $report.loginInput.username -or
+            $report.accountAfterObservation.account.loggedin -ne 2) {
+            throw 'Normal QA login did not authenticate the expected account; inspect actual UI and retained read-only account state, not input submission or startup-only green'
+        }
+        $report.loginInput.actualAuthentication = 'PASS: expected QA account observed authenticated by the real isolated server; character/world acceptance still requires actual evidence'
         if ($report.termsAction.status -eq 'failed') { throw 'Normal owned QA terms interaction failed; inspect actual UI and read-only account state' }
         if ($report.genderAction.status -eq 'failed') { throw 'Normal owned QA gender interaction failed; inspect actual UI and read-only account state' }
         if ($report.worldButtonAction.status -eq 'failed') { throw 'Normal owned QA world-button input failed; inspect actual native UI before any world acceptance claim' }
         if ($report.channelButtonAction.status -eq 'failed') { throw 'Normal owned QA channel-button input failed; inspect actual native UI before any character/world acceptance claim' }
         if ($report.createButtonAction.status -eq 'failed') { throw 'Normal owned QA character-creation input failed; inspect actual native UI before any character/world acceptance claim' }
+        if ($report.explorerTypeAction.status -eq 'failed') { throw 'Normal owned QA character-type input failed; retain actual UI evidence' }
+        if ($report.characterNameAction.status -eq 'failed') { throw 'Normal owned QA character-name input failed; retain actual UI evidence' }
+        if ($report.appearanceAction.status -eq 'failed') { throw 'Normal owned QA appearance confirmation failed; retain actual UI evidence' }
+        if ($report.characterStartAction.status -eq 'failed') { throw 'Normal owned QA character Start failed; retain actual UI evidence' }
+        if ($report.appearanceAction.status -eq 'submitted-normal-default-appearance' -and
+            @($report.accountAfterObservation.account.characters | Where-Object { $_.name -eq $report.characterNameAction.name -and $_.id -gt 0 -and $_.world -eq 0 }).Count -ne 1) {
+            throw 'Normal QA character creation did not persist the expected character; no character/world pass from submitted input'
+        }
         if ($report.genderAction.status -eq 'submitted-normal-gender-confirm' -and
             $report.accountAfterObservation.status -eq 'observed' -and $report.accountAfterObservation.account.gender -eq 10) {
             throw 'Normal QA gender confirmation did not persist; inspect actual UI before advancing account acceptance'
