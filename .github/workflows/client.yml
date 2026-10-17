@@ -118,7 +118,13 @@ jobs:
             $exports = & $dumpbin /exports $check.path
             if ($LASTEXITCODE) { throw "Cannot read exports: $($check.path)" }
             $exports | Write-Output
-            if (-not ($exports -match ("\s" + [regex]::Escape($check.name) + "\s*$"))) {
+            $exportNames = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+            foreach ($row in $exports) {
+              if ($row -match '^\s+\d+\s+[0-9A-Fa-f]+\s+[0-9A-Fa-f]+\s+(\S+)') {
+                [void]$exportNames.Add($Matches[1])
+              }
+            }
+            if (-not $exportNames.Contains($check.name)) {
               throw "Required exact native export absent: $($check.name)"
             }
           }
