@@ -1,8 +1,28 @@
 {
   "schema_version": 1,
-  "scope": "Full accepted ordinary progression closure: scripted source portals, Lion King3171 ancestry, genuine permit/drop and scouting action repair",
+  "scope": "Full accepted ordinary progression closure: scripted source portals, Lion King3171 ancestry, genuine permit/drop and scouting action repair; genuine Hyper Teleport Rock5590001 item/name dependency, with acquisition separately unqualified",
   "issues": [],
   "assets": [
+    {
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0559.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/Item/Cash/0559.img",
+        "sha256": "77315c3d6e4fb6c22827cc395b5cfe41907cba16309dca17bd280d301deda0ed"
+      }
+    },
+    {
+      "target_wz": "String.wz",
+      "target_image": "Cash.img",
+      "action": "copy-subtree",
+      "raw_source": {
+        "archive": "mapleroot",
+        "member": "MapleRoot Full Repack/Game Files/Data/String/Cash.img",
+        "sha256": "f7e3e66eb3bcb502860313172df0f75e08ea341ae9626b0e9cb305dc4838d78f"
+      }
+    },
     {
       "target_wz": "Item.wz",
       "target_image": "Consume/0203.img",
@@ -260,6 +280,24 @@
     }
   ],
   "operations": [
+    {
+      "op": "copy_subtree",
+      "target_wz": "Item.wz",
+      "target_image": "Cash/0559.img",
+      "target_node": "05590001",
+      "source": "boss-progression/raw/Item.wz/Cash/0559.img",
+      "source_key": "gms",
+      "source_node": "05590001"
+    },
+    {
+      "op": "copy_subtree",
+      "target_wz": "String.wz",
+      "target_image": "Cash.img",
+      "target_node": "5590001",
+      "source": "boss-progression/raw/String.wz/Cash.img",
+      "source_key": "gms",
+      "source_node": "5590001"
+    },
     {
       "op": "copy_subtree",
       "target_wz": "Quest.wz",
@@ -1874,6 +1912,52 @@
   ],
   "requirements": [
     {
+      "wz": "Item.wz",
+      "image": "Cash/0559.img",
+      "node": "05590001",
+      "type": "property"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0559.img",
+      "node": "05590001/info/icon",
+      "type": "canvas"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0559.img",
+      "node": "05590001/info/iconRaw",
+      "type": "canvas"
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0559.img",
+      "node": "05590001/info/cash",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "wz": "Item.wz",
+      "image": "Cash/0559.img",
+      "node": "05590001/info/slotMax",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "wz": "String.wz",
+      "image": "Cash.img",
+      "node": "5590001/name",
+      "type": "string",
+      "value": "Hyper Teleport Rock"
+    },
+    {
+      "wz": "String.wz",
+      "image": "Cash.img",
+      "node": "5590001/desc",
+      "type": "string",
+      "value": "Allow the user to teleport clicking maps in the Worldmap!"
+    },
+    {
       "wz": "Quest.wz",
       "image": "Check.img",
       "node": "3168",
@@ -2688,6 +2772,13 @@
   ],
   "integration_deltas": [],
   "adaptations": [
+    {
+      "item": 5590001,
+      "actual_consumer_failure": "Current rc5 a2 server Cash0559 has only05590000; real getSlotMaxForCharacter returns0 for missing05590001 and ordinary InventoryManipulator grant fails before a positive HyperTP warp.",
+      "targeted_dependency": "Copy only genuine provided raw05590001 and matching Cash string5590001 with original pixels/metadata; preserve stock05590000 and every unrelated item/name.",
+      "acquisition_status": "PENDING: provided rawCommodity/CashPackage and owned shop/drop rows have no5590001 reference; excluded donor-shop10x4001253 is not replacement authority. Initial QA inventory is not acquisition proof.",
+      "acceptance": "Actual registered HyperTP handler/item/persistence plus native item/UI and genuine acquisition remain required; source intake is not full feature completion."
+    },
     {
       "quest": 31124,
       "source_conflict": "endCheck requires4032922 obtainable only while successor31125 started, which requires31124 complete; source portal forceComplete bypassed Act1750000",

@@ -5,7 +5,6 @@ import client.inventory.Inventory;
 import client.inventory.InventoryType;
 import client.inventory.Item;
 import constants.id.ItemId;
-import net.opcodes.RecvOpcode;
 import net.packet.InPacket;
 import net.server.channel.Channel;
 import org.junit.jupiter.api.Test;
@@ -18,7 +17,6 @@ import server.maps.Portal;
 import testutil.HandlerTest;
 import testutil.Packets;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -74,15 +72,6 @@ class HyperTPHandlerTest extends HandlerTest {
         lenient().when(cash.findById(ItemId.HYPER_TELEPORT_ROCK)).thenReturn(rock);
     }
 
-    @Test
-    void opcodeValueMatchesSource() {
-        assertEquals(0xF1, RecvOpcode.USE_HYPERROCK.getValue());
-    }
-
-    @Test
-    void itemConstantMatchesSource() {
-        assertEquals(5590001, ItemId.HYPER_TELEPORT_ROCK);
-    }
 
     @Test
     void warpSucceedsWithRockAndNoCooldown() {

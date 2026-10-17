@@ -5,10 +5,12 @@ in a Windows TESTING RC with a matching full-content test server**, not a reduce
 stock baseline. [CURRENT-STATE.md](CURRENT-STATE.md) records exact source,
 artifacts, exercised evidence and holds. Only full-content-server and
 full-content-windows are active; old worker names are historical. Browser and
-Linux/Wine are PARKED, not completed and not Windows runtime gates. Existing
-production Java/DB/browser/NX remain unchanged until explicit verified rollout.
-The backend retains its actual existing Linux deployment method; Windows backend
-execution is a temporary CI harness only. GitHub Issues remain OFF.
+Linux/Wine are PARKED, not completed and not Windows runtime gates. The user
+authorized backed-up matching deployment to **.164 DEVELOPMENT**, using its
+existing Linux Compose, private configuration/DB/runtime backups and retained
+player data/rollback. No parallel .187 QA stack is required; exact old .187
+retirement is authorized if needed. No WAN/NAT/Tailscale change or backend
+platform migration. Windows backend execution is CI-only. GitHub Issues remain OFF.
 
 Upstream review is pinned16ab7b7, unrelated histories: selective picks, not rebase.
 Preserve GROUPA0874223/GROUPB60b869c; historical236 is not a latest436-behind claim.
@@ -34,6 +36,10 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   is not ordinary-player window/reward/relog proof.
   Dependencies: opcode registry/injector choice resolved; actual paired Windows
   negotiation and feature acceptance required, not parked browser promotion.
+  Server request/command compatibility now has actual unannounced/short-noACK/
+  unsupported-mask/new-client-reset no-mutation/no-custom-byte proof and actual
+  valid-negotiation snapshots: JAR63790903, `caps-public-green-20261016-175305`.
+  Full native window/claim/reward acceptance remains open, not checked off.
 
 - [x] **Ticket 4 — Evan WZ merge review + playable prerequisites (REVIEW ONLY)** — Owner: WZ integration
   Evidence: [durable per-file review](EVAN-WZ-REVIEW.md) and its linked full SHA256 manifest.
@@ -85,6 +91,14 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
  49 inherited Sound aliases plus five bounded UNCONSUMED Voice4 records.
   This is not full asset/engine/visual acceptance. Actual published server Book
   map/reward/episode values match all13 native definitions, not native Book UI proof.
+  New genuine Hyper05590001/native Cash name is narrowly materialized in rc6
+  with stock05590000 and the other49 catalog files preserved. Its real inventory/
+  opcode241 warp/cooldown/reload consumer passed; source/target field-limit/EIM,
+  actual acquisition and native UI remain open. Actual ordinary31124 dialogue/
+  eight portals/normal completion granted17.5m EXP once with no free emblem and
+  persisted on reload; this does not finish Rulax/Alcaster or all progression.
+  rc6 Item/String changes require fresh reader/engine qualification; old rc5
+  FAIL54 is retained, never relabeled as a new-byte pass.
   Genuine human-led follower HardLotus consent→six NPC/EIM participants→unforced
   AI combat/reward/boards/reload and stale-owner/abort/reentry proof is bounded,
   not all-family/PQ/native movement acceptance. Preserve GM4 exclusion and bot cap0.

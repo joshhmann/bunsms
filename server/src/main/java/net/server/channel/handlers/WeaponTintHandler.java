@@ -61,6 +61,9 @@ public final class WeaponTintHandler extends AbstractPacketHandler {
         if (chr == null) {
             return;
         }
+        if (!c.hasCaps(client.ClientCaps.PRISM_SYNC)) {
+            return;
+        }
         if (p.available() < 1) {
             return;
         }

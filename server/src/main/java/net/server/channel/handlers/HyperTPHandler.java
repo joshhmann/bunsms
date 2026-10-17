@@ -18,8 +18,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /*
  * Hyper Teleport Rock (item 5590001) — MapleRoot port.
  *
- * Single handler, no DB/WZ changes: the warp target comes from the packet (like the
- * source HyperTPHandler), the item lives in CASH inventory, and the 5-minute cooldown
+ * Warp targets come from the packet; genuine Item/String assets for5590001 are
+ * required. The rock lives in CASH inventory and its 5-minute cooldown
  * is enforced server-side in process memory.
  *
  * Wire (client -> server, RecvOpcode.USE_HYPERROCK = 0xF1, same value as the source):

@@ -36,6 +36,9 @@ public final class DailyCheckinHandler extends AbstractPacketHandler {
         if (player == null) {
             return;
         }
+        if (!c.hasCaps(client.ClientCaps.CHECKIN_WINDOW)) {
+            return;
+        }
         int action = p.readByte();
 
         // Level gate (defense-in-depth; the window also isn't pushed to lower-level characters).

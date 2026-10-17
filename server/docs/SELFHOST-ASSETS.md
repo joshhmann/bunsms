@@ -19,7 +19,7 @@ be deleted; they are not a runtime fallback or a rollback mechanism.
 - Private game/converter control: authenticated Unix socket only, not an HTTP
   listener on another public/LAN port.
 - `GAME_SERVER_HOST=server` is the internal Docker health target.
-  `GAME_CLIENT_HOST=buns.asslorde.com` is the explicit production advertised
+  `GAME_CLIENT_HOST=buns.asslorde.com` is the canonical advertised
   native-client hostname; if unset the API omits the client-host field.
   Explicit `192.168.0.164`/`127.0.0.1` test overrides remain valid.
   **Public native activation deferred by owner.** Advertising the domain does
@@ -32,11 +32,13 @@ commit has been built, deployed, or activated. Java/DB/schema/live browser-NX
 changes require the relevant owner gates; isolated tests do not authorize them.
 
 The current target is the full accepted **Windows TESTING RC plus a matching
-Linux test server**, not an unverified production switch or a Windows backend
-requirement. `/rc-assets/` is the approved read-only QA prefix on the canonical
-domain; sealed candidates there do not activate production Java/DB/browser/NX.
-Exact current pins, exercised receipts and holds are in `CURRENT-STATE.md` and
-the single-writer release coordination contract.
+Linux development server**, not a Windows backend requirement. The user explicitly
+authorized backed-up deployment to the existing **.164 DEVELOPMENT** Compose;
+it is not production. Private DB/config/runtime snapshots, retained player data
+and rollback remain mandatory. `/rc-assets/` is the approved read-only QA prefix:
+sealing never implicitly applies Java/DB or changes browser/NX. Exact current
+pins, observed receipts and holds are in `CURRENT-STATE.md` and the single-writer
+coordination contract. Choose that one existing stack, not a second .187 server.
 
 The current inactive full65-file Kaentake candidate is
 `03c5dcc5-c980-457e-a218-d650d0af07f2`: gameplay dd8de85/JARfc59,
