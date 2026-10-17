@@ -40,22 +40,41 @@ sealing never implicitly applies Java/DB or changes browser/NX. Exact current
 pins, observed receipts and holds are in `CURRENT-STATE.md` and the single-writer
 coordination contract. Choose that one existing stack, not a second .187 server.
 
-The current inactive full65-file Kaentake candidate is
-`03c5dcc5-c980-457e-a218-d650d0af07f2`: gameplay dd8de85/JARfc59,
-current exercised6a01 runtime13, backend520 with all932 authored data before Java,
-and exact3.801GB XML/scripts tar a2. The established bootstrap contract remains
-`jar.path/size/sha256`; an earlier producer's flat-field regression was rejected
-before MySQL/Java/native and replaced with a new immutable bundle, not a consumer
-guard waiver. Current actual Linux entrypoint/HTTPS/full payload/53 migrations/
-four GMS83 greetings passed; native account/world/features and final installer
-qualification remain pending. A sealed file-complete profile is not gameplay PASS.
+The current inactive full65-file Kaentake profile is
+`62d4c2ee-4ce6-4851-9daa-ea61bb45ffeb` / manifest SHA`c386861af826537e11051bcb4970061b67221bb2850b1c6574ab2eea5f10ed0b`:
+gameplay8b2110f/JAR637, unchanged exercised6a01 runtime13, complete backend30de
+with932 authored data files/1993 scripts before Java, and full3.912GB XML3a06.
+The nested `jar.path/size/sha256` contract is unchanged; old03/520/fc59/a2
+remains an immutable predecessor, not the current qualification.
 
-Authorized capacity work changed the **existing** .164 LXC125 rootfs quota
-online90→98GiB through trusted Proxmox `pct resize`, after exact IP/machine-ID/
-dataset and ONLINE pool-headroom checks. Init PID6640 did not change. No dumps,
-artifacts or rollback bytes were deleted, no production Java/DB/browser/NX service
-was restarted, and no deployment platform/layout changed. The proof is
-`/tmp/buns-full-content-qa-dd8de85/capacity-expansion-proof.json`.
+Actual whole canonical HTTPS gzip/descriptor delivery passed size/SHA, binary
+Content-Type, one exact Content-Length/no Content-Encoding and206 tail. The
+matching existing .164 Compose now runs plain PID1 Java637 against the preserved
+real MySQL8.4 volume/UUID,53 migrations and exact56651-file installed payload.
+All four GMS83 greetings passed from .187→.164; HOST/LANHOST advertise192.168.0.164,
+native ports bind that LAN address and MySQL3309 is host-private127.0.0.1.
+Actual accepted rates10/8/5/8 and3172 online actors were observed without
+NPE/CME/OOM/unexpected exception causes. Two retained `server_config` startup
+warnings belong to existing dashboard migration001; DB-persisted rates/message
+remain open rather than applying its10x seeds or inventing Java DDL.
+
+The exact **NotSigned** testing installer8c224127/83844007B is public through
+the same authority; actual whole HTTPS/HEAD/Range matches the Windows NSIS/65-file
+installed-app supplier. Its artifact-only publication does not mutate sealed62d
+or active682. Native PIC/world, all feature/family qualification, final manifest
+rollback consumer and the full reader's unwaived54 errors remain separate.
+
+Private current-userdata backup and isolated same8.4 restore preceded actual
+graceful game/dashboard shutdown143/0 and final quiescent SQL SHA`908cab4d639bbcf87b6f143cbe9a4767ded294a9284426a1863c31f6a4185a80`.
+No shared live verification restore/reset occurred. Original WZ/scripts and
+exact old JAR/config/command remain available for rollback; private filesystem
+snapshots are not SQL-consistency claims or permission for whole-guest rollback.
+Existing Proxmox-host COW staged the real baseline without changing guest security.
+Owned rootfs quota grew online90→130GiB with unchanged init6640/ONLINE pool;
+the final actual31.796GB available exceeded the conservative25.003GB peak.
+Failed prior capacity/readiness-fixture guards are retained. No user dump/artifact
+was deleted, no new platform/WAN/NAT/Tailscale was added, and old .187 is untouched.
+Browser/NX bytes remain parked/preserved, not proof of new-world compatibility.
 
 ## One immutable release boundary
 

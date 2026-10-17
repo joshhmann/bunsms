@@ -131,7 +131,7 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   Dependencies: paired native feature/runtime proof and exact Effect/Sound source
   disposition; consumed missing effects require actual visual classification.
 
-- [ ] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz)** — full-content-windows; actual full51/current-B startup and0x3f ACK on held diagnostic backend proven38980205188; current03/520/fc59/a2 ordinary account/channel/world and feature acceptance pending
+- [ ] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz)** — full-content-windows; current exact62d/637/30de/3a06 full65/current6a01 runtime startup,0x3f ACK, ordinary GM0 auth and genuine default creation proven38996354495; actual PIC/world/movement/chat/features remain open. Matching persistent .164 LAN backend and exact public RC6 installer8c are available for the user-authorized existing-character manual TESTING path, not a fully qualified release.
   Scope: Smoke staged Windows EXE/DLL/Custom.wz trial (Kaentake opt-in profile
   `0af7a62`+`35099e0` normally hosted); record pass/fail incl. Windows/Wine
   status; no behavior changes. Compat GO already recorded; this is the
@@ -167,16 +167,27 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   exact retained overlay rollback with persistent pending recovery.
   Source-compose/systemd/CI/runbook parity is part of the repair, not a manual
   substitute for a missing API. Final hash-set handler/SQL/byte-service,
-  producer/cohort and entrypoint acceptance remain required. Current03/520/fc59/a2
-  actual unmodified Linux entrypoint/whole HTTPS/hash/extraction/all932 data/
-  53-migration/four-GMS83-greeting proof passed; final manifest/installer consumer
-  qualification and rollout remain separate. Read-only `/rc-assets/` leaves
-  production Java/DB/browser/NX services unchanged; authorized existing hosting
-  rootfs quota did grow90→98GiB online without deleting bytes or restarting services.
-  Generic binary tar headers/whole HTTPS/HEAD/Range are proved for actual3.801GBa2,
-  not a `.bin` bootstrap alias. Exact receipts/pins are in CURRENT-STATE.
+  producer/cohort and final rollback consumer acceptance remain required.
+  Current62d/637/30de/3a06 actual existing .164 Linux entrypoint/whole HTTPS/
+  hash/extraction/all932 data/56651 exact installed payload/53 migrations passed.
+  Real current player data was privately backed up/restored in isolated8.4
+  before graceful quiescence/final backup and deployment;7 characters/26 accounts,
+  the existing volume/UUID and rates10/8/5/8 remain. All four GMS83 greetings
+  passed from .187→.164 with explicit advertised LAN HOST. Real3172-actor
+  bounded stability is not all bots/PQ/family acceptance; two existing optional
+  dashboard-owned server_config warnings remain explicit and unmodified.
+  Actual NSIS/65-file installed consumer and public installer8c whole HTTPS/
+  HEAD/206 tail passed; source review found no issue in its bounded scope.
+  Active682 and browser/NX bytes remain retained; native world/features,
+  reader raw54 and final manifest/installer rollback qualification stay open.
+  The user-authorized .164 **development** game/DB/dashboard were gracefully
+  transitioned using existing Compose, not called “production unchanged.”
+  Existing quota grew online90→130GiB with same init6640/ONLINE pool; no prune,
+  user-file deletion, new platform, WAN/NAT/Tailscale or old .187 change.
+  Generic binary transport is proved for the actual new3.912GB3a06 gzip and
+  exact installer, not a `.bin` alias. Receipts/pins are in CURRENT-STATE.
   Network contract is final: existing domains/ports, canonical advertised
-  production client host `buns.asslorde.com`, explicit LAN/loopback overrides,
+  default client host `buns.asslorde.com`, explicit LAN/loopback overrides,
   no Tailscale/NAT changes. Public native activation deferred by owner.
   Internal Docker `server` is health only, never a client endpoint.
   Original R2 objects are retained but never used as runtime/rollback fallback.
