@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const net = require("node:net");
+const crypto = require("node:crypto");
 const { spawn } = require("node:child_process");
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -193,6 +194,91 @@ async function run() {
         await snapshot("installed-operation-failure.png").catch(() => {});
         throw error;
       } finally { report.fullInstall.finishedUtc = new Date().toISOString(); }
+      const settledProfile = async (expectedDirectory) => {
+        const until = Date.now() + 120000;
+        let state;
+        while (Date.now() < until) {
+          state = await ui();
+          if (state.path && path.resolve(state.path).toLowerCase() === expectedDirectory.toLowerCase() && !state.buttonDisabled) {
+            assert.ok(!state.updateClass.split(" ").includes("error"), `Actual profile UI failed: ${JSON.stringify(state)}`);
+            return state;
+          }
+          await delay(250);
+        }
+        throw new Error(`Actual profile UI did not settle: ${JSON.stringify(state)}`);
+      };
+      const stockDirectory = `${directory}-stock-existing`;
+      report.stockPatchPreservation = { directory: stockDirectory, startedUtc: new Date().toISOString(),
+        status: "not-completed", scope: "Existing-client Stock patch/INI/profile isolation only; NOT a complete Stock delivery or Stock gameplay proof" };
+      try {
+        const excluded = new Set(["kaentake.exe", "kaentake.dll", "custom.wz", "bunsms.dll", "config.ini"]);
+        fs.cpSync(directory, stockDirectory, { recursive: true,
+          filter: source => !excluded.has(path.basename(source).toLowerCase()) });
+        const response = await fetch("https://buns.asslorde.com/api/launcher/manifest?profile=stock");
+        assert.ok(response.ok, `Canonical Stock patch authority failed: ${response.status}`);
+        const stockManifest = await response.json();
+        const config = stockManifest.files.find(file => file.name.toLowerCase() === "config.ini");
+        assert.ok(config, "Canonical Stock patch list has no user INI template");
+        const templateResponse = await fetch(config.url);
+        assert.ok(templateResponse.ok, `Canonical Stock INI fixture failed: ${templateResponse.status}`);
+        const template = Buffer.from(await templateResponse.arrayBuffer());
+        assert.equal(template.length, config.size);
+        assert.equal(crypto.createHash("sha256").update(template).digest("hex"), config.hash);
+        await click("profile-stock");
+        const selectedStock = await evaluate(`window.buns.setProfilePath("stock", ${JSON.stringify(stockDirectory)})`);
+        assert.equal(selectedStock.success, true, "Existing isolated Stock path was rejected");
+        assert.equal((await evaluate("window.buns.setHD(true)")).success, true);
+        const userIni = template.toString("utf8")
+          .replace(/^ServerIP_Address=.*$/m, "ServerIP_Address=127.0.0.1")
+          .replace(/^width=.*$/m, "width=1366").replace(/^height=.*$/m, "height=768")
+          + "\r\n[OwnedProfileProof]\r\nPreference=retain-user-bytes\r\n";
+        fs.writeFileSync(path.join(stockDirectory, "config.ini"), userIni);
+        const patch = await evaluate("window.buns.checkUpdates()");
+        report.stockPatchPreservation.patch = patch;
+        assert.equal(patch.status, "updates_available", "Existing Stock patch check did not authorize its actual managed updates");
+        assert.equal(patch.profile, "stock");
+        assert.ok(patch.updates.length > 0 && patch.leaseId);
+        await evaluate(`globalThis.__stockPatchTransfer = { settled: false };
+          window.buns.downloadUpdates(${JSON.stringify({ profile: patch.profile, leaseId: patch.leaseId,
+            updates: patch.updates.map(({ name }) => ({ name })) })})
+            .then(result => { globalThis.__stockPatchTransfer = { settled: true, result }; },
+              error => { globalThis.__stockPatchTransfer = { settled: true, error: String(error) }; }); true;`);
+        await click("profile-kaentake");
+        const patchDeadline = Date.now() + 45 * 60 * 1000;
+        let transfer;
+        while (Date.now() < patchDeadline) {
+          transfer = await evaluate("globalThis.__stockPatchTransfer");
+          if (transfer.settled) break;
+          if (child.exitCode !== null) throw new Error(`Launcher exited during real Stock patch transfer: ${child.exitCode}`);
+          await delay(1000);
+        }
+        report.stockPatchPreservation.transfer = transfer;
+        assert.equal(transfer?.result?.success, true, `Actual Stock patch transfer failed: ${JSON.stringify(transfer)}`);
+        assert.equal(fs.readFileSync(path.join(stockDirectory, "config.ini"), "utf8"), userIni,
+          "Stock patching changed user host/resolution/extra-section bytes");
+        const profilesAfter = await evaluate("window.buns.getProfile()");
+        report.stockPatchPreservation.profilesAfter = profilesAfter;
+        assert.equal(profilesAfter.active, "kaentake", "Profile switch during the transfer did not persist");
+        assert.equal(path.resolve(profilesAfter.profiles.find(profile => profile.id === "kaentake").path).toLowerCase(), directory.toLowerCase());
+        assert.equal(path.resolve(profilesAfter.profiles.find(profile => profile.id === "stock").path).toLowerCase(), stockDirectory.toLowerCase());
+        report.stockPatchPreservation.nativeAfter = await evaluate("window.buns.checkUpdates()");
+        assert.equal(report.stockPatchPreservation.nativeAfter.status, "up_to_date", "Stock transfer changed the native managed cohort");
+        assert.equal(report.stockPatchPreservation.nativeAfter.verifiedFiles, report.fullInstall.finalPreflight.verifiedFiles);
+        await click("profile-stock");
+        report.stockPatchPreservation.stockAfter = await evaluate("window.buns.checkUpdates()");
+        assert.equal(report.stockPatchPreservation.stockAfter.status, "up_to_date", "Stock managed patches did not converge");
+        assert.equal(await evaluate("window.buns.getServerHost()"), "127.0.0.1");
+        report.stockPatchPreservation.stockUi = await settledProfile(stockDirectory);
+        await snapshot("installed-stock-patch.png");
+        await click("profile-kaentake");
+        report.stockPatchPreservation.nativeUi = await settledProfile(directory);
+        report.stockPatchPreservation.status = "actual-stock-patch-user-ini-and-cross-profile-isolation-observed";
+      } catch (error) {
+        report.stockPatchPreservation.status = "failed";
+        report.stockPatchPreservation.error = error.stack;
+        await snapshot("installed-stock-patch-failure.png").catch(() => {});
+        throw error;
+      } finally { report.stockPatchPreservation.finishedUtc = new Date().toISOString(); }
     }
     report.renderedAtCapture = await evaluate("document.body.innerText");
     report.screenshotCapturedUtc = new Date().toISOString();

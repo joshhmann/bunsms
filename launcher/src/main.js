@@ -642,25 +642,27 @@ async function inspectProfile(id, dir) {
         throw new Error(`Unsupported client download URL for ${file.name}`);
       return Object.freeze({ ...file, url: address.href });
     }));
-    const provenance = manifest.provenance;
-    if (!provenance?.url || !/^[a-f\d]{64}$/i.test(provenance.sha256 || ""))
-      throw new Error("Complete client manifest has no pinned provenance authority.");
-    const bytes = await fetchBytes(new URL(provenance.url, url).href);
-    if (crypto.createHash("sha256").update(bytes).digest("hex") !== provenance.sha256.toLowerCase())
-      throw new Error("Complete client provenance hash does not match the published pin.");
-    const sourceFiles = JSON.parse(bytes.toString("utf-8")).files;
-    const key = (name) => String(name).replace(/\\/g, "/").toLowerCase();
-    const required = new Map(files.map((file) => [key(file.name), file]));
-    if (!Array.isArray(sourceFiles) || sourceFiles.length !== files.length)
-      throw new Error("Complete client manifest and provenance have different file sets.");
-    const seen = new Set();
-    for (const source of sourceFiles) {
-      const name = key(source.name);
-      const file = required.get(name);
-      if (seen.has(name) || !file || source.size !== file.size ||
-          String(source.sha256).toLowerCase() !== file.hash.toLowerCase())
-        throw new Error(`Complete client provenance disagrees on ${source.name || "<unnamed>"}.`);
-      seen.add(name);
+    if (id === "kaentake") {
+      const provenance = manifest.provenance;
+      if (!provenance?.url || !/^[a-f\d]{64}$/i.test(provenance.sha256 || ""))
+        throw new Error("Complete client manifest has no pinned provenance authority.");
+      const bytes = await fetchBytes(new URL(provenance.url, url).href);
+      if (crypto.createHash("sha256").update(bytes).digest("hex") !== provenance.sha256.toLowerCase())
+        throw new Error("Complete client provenance hash does not match the published pin.");
+      const sourceFiles = JSON.parse(bytes.toString("utf-8")).files;
+      const key = (name) => String(name).replace(/\\/g, "/").toLowerCase();
+      const required = new Map(files.map((file) => [key(file.name), file]));
+      if (!Array.isArray(sourceFiles) || sourceFiles.length !== files.length)
+        throw new Error("Complete client manifest and provenance have different file sets.");
+      const seen = new Set();
+      for (const source of sourceFiles) {
+        const name = key(source.name);
+        const file = required.get(name);
+        if (seen.has(name) || !file || source.size !== file.size ||
+            String(source.sha256).toLowerCase() !== file.hash.toLowerCase())
+          throw new Error(`Complete client provenance disagrees on ${source.name || "<unnamed>"}.`);
+        seen.add(name);
+      }
     }
     const updates = await inspectClientFiles(id, dir, files);
     profileChecks.set(id, { dir, updates });

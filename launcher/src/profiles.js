@@ -1,6 +1,6 @@
-// Profile folders and complete-client manifest policy. Fresh installs use
-// Kaentake; explicit existing stock folders remain isolated rollback/testing
-// choices. A profile is never launchable from a partial patch manifest.
+// Profile folders and authoritative managed-file policy. Fresh installs use
+// complete Kaentake manifests. Stock retains existing-client patch updates;
+// its patch list is never a fresh-client dependency authority.
 "use strict";
 const { isIP } = require("node:net");
 
@@ -39,14 +39,19 @@ function filterManifest(files, activeProfile, hdMode) {
   });
 }
 
-// Every profile-matching file in a publisher-certified COMPLETE manifest is
-// required. A patch manifest is not a fresh-client dependency authority.
+// Require the complete native dependency authority for fresh Kaentake installs.
+// Stock keeps its existing patch-list contract, with the same file validation.
 function requiredClientFiles(manifest, profileId, hdMode) {
   if (!PROFILES[profileId] || !Array.isArray(manifest?.files) ||
-      !Array.isArray(manifest.completeProfiles) || !manifest.completeProfiles.includes(profileId)) {
+      (profileId === "kaentake" && (!Array.isArray(manifest.completeProfiles) ||
+        !manifest.completeProfiles.includes(profileId)))) {
     throw new Error(`A complete client manifest is not available for ${profileId}; this profile is not ready to install or launch.`);
   }
-  const files = filterManifest(manifest.files, profileId, hdMode);
+  const files = filterManifest(manifest.files, profileId, hdMode).map((file) =>
+    profileId === "stock" && String(file.name).toLowerCase() === "config.ini" &&
+      file.configKind === undefined
+      ? { ...file, configKind: PROFILES.stock.configKind }
+      : file);
   const names = new Set();
   for (const file of files) {
     const name = String(file.name || "").replace(/\\/g, "/");
@@ -56,7 +61,7 @@ function requiredClientFiles(manifest, profileId, hdMode) {
     if (invalidPart || names.has(name.toLowerCase()) ||
         !Number.isSafeInteger(file.size) || file.size <= 0 ||
         !/^[a-f\d]{64}$/i.test(file.hash || "")) {
-      throw new Error(`Invalid or colliding file in complete client manifest: ${name || "<unnamed>"}`);
+      throw new Error(`Invalid or colliding managed client file: ${name || "<unnamed>"}`);
     }
     names.add(name.toLowerCase());
     assertDownloadable(file);
