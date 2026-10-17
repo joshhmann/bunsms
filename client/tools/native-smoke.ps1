@@ -273,6 +273,26 @@ function Save-NativeSnapshot([int[]]$Ids) {
             }
         }
     }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.explorerTypeAction.status -eq 'submitted-normal-explorer-type-select' -and
+        -not $report.characterNameAction -and ([datetime]$row.utc) -gt ([datetime]$report.explorerTypeAction.utc).AddSeconds(2)) {
+        $state = Read-QAAccountState
+        $report.accountBeforeCharacterName = $state
+        if ($state.status -eq 'observed' -and $state.account.tos -eq 1 -and
+            $state.account.gender -eq 0 -and $state.account.loggedin -eq 2 -and @($state.account.characters).Count -eq 0) {
+            $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+            if ($window) {
+                $report.characterNameAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; name = 'WinRcQa'
+                    scope = 'Normal typed name and OK on the observed native character-name screen; no database-created character or world-entry claim' }
+                try {
+                    [NativeSmoke]::ClickClient($window, 582, 211)
+                    [NativeSmoke]::TypeClientText($window, 'WinRcQa')
+                    $report.characterNameAction.nameEvidence = Save-Screenshot $window.ClientX $window.ClientY $window.ClientWidth $window.ClientHeight (Join-Path $OutputDirectory 'ordinary-character-name.png')
+                    [NativeSmoke]::ClickClient($window, 548, 294)
+                    $report.characterNameAction.status = 'submitted-normal-character-name'
+                } catch { $report.characterNameAction.status = 'failed'; $report.characterNameAction.error = $_.Exception.ToString(); throw }
+            }
+        }
+    }
 }
 
 try {
@@ -518,6 +538,7 @@ try {
                             termsAction = $login.termsAction; genderAction = $login.genderAction; worldButtonAction = $login.worldButtonAction
                             channelButtonAction = $login.channelButtonAction; createButtonAction = $login.createButtonAction; accountAfterObservation = $login.accountAfterObservation
                             explorerTypeAction = $login.explorerTypeAction
+                            characterNameAction = $login.characterNameAction
                             acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
                         if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
                             throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
