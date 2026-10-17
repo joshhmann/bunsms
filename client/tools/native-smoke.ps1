@@ -151,15 +151,16 @@ function Save-NativeSnapshot([int[]]$Ids) {
                 javaPid = $java.Id; javaCreationUtc = $java.StartTime.ToUniversalTime().ToString('O')
                 mysqlPid = $mysql.Id; mysqlCreationUtc = $mysql.StartTime.ToUniversalTime().ToString('O')
                 foregroundBeforeCredentials = [NativeSmoke]::ForegroundContext()
+                keyboardDelivery = 'Normal mapped Windows key down/up, 100ms each; owned foreground checked for every character'
                 actualAuthentication = 'PENDING server/UI evidence'
                 basis = 'Observed native window/nonuniform screenshot, completed normal Windows approval and live owned backend/listener; input submission is not authentication proof.' }
             try {
                 [NativeSmoke]::ClickClient($window, 470, 245)
-                [System.Windows.Forms.SendKeys]::SendWait('bunsrcqa')
+                [NativeSmoke]::TypeClientText($window, 'bunsrcqa')
                 $report.loginInput.usernameEvidenceUtc = [DateTime]::UtcNow.ToString('O')
                 $report.loginInput.usernameEvidence = Save-Screenshot $window.ClientX $window.ClientY $window.ClientWidth $window.ClientHeight (Join-Path $OutputDirectory 'ordinary-login-id-before-password.png')
                 [NativeSmoke]::ClickClient($window, 470, 279)
-                [System.Windows.Forms.SendKeys]::SendWait($script:qaPassword)
+                [NativeSmoke]::TypeClientText($window, $script:qaPassword)
                 [NativeSmoke]::ClickClient($window, 640, 245)
                 $report.loginInput.status = 'submitted-normal-OS-login-input'
             } catch { $report.loginInput.status = 'failed'; $report.loginInput.error = $_.Exception.ToString(); throw }

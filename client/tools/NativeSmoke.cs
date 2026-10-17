@@ -244,6 +244,40 @@ public static class NativeSmoke
         System.Threading.Thread.Sleep(100);
     }
 
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern short VkKeyScan(char character);
+    [DllImport("user32.dll")] private static extern uint MapVirtualKey(uint code, uint mapType);
+    [DllImport("user32.dll")] private static extern short GetKeyState(int key);
+    [DllImport("user32.dll")] private static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
+
+    public static void TypeClientText(WindowInfo window, string text)
+    {
+        IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
+        bool capsLock = (GetKeyState(0x14) & 1) != 0;
+        byte shiftScan = (byte)MapVirtualKey(0x10, 0);
+        foreach (char character in text)
+        {
+            uint owner; GetWindowThreadProcessId(hwnd, out owner);
+            if (owner != window.ProcessId || !window.Visible || window.Class != "MapleStoryClass" ||
+                GetForegroundWindow() != hwnd)
+                throw new InvalidOperationException("Native game lost input ownership; no further text submitted");
+            short mapping = VkKeyScan(character);
+            if (mapping == -1 || ((mapping >> 8) & ~1) != 0)
+                throw new InvalidOperationException("Text requires an unsupported keyboard modifier");
+            byte key = (byte)(mapping & 0xff), scan = (byte)MapVirtualKey((uint)(mapping & 0xff), 0);
+            bool shift = ((mapping >> 8) & 1) != 0;
+            if (key >= 0x41 && key <= 0x5a && capsLock) shift = !shift;
+            if (shift) keybd_event(0x10, shiftScan, 0, UIntPtr.Zero);
+            try
+            {
+                keybd_event(key, scan, 0, UIntPtr.Zero);
+                try { System.Threading.Thread.Sleep(100); }
+                finally { keybd_event(key, scan, 0x0002, UIntPtr.Zero); }
+                System.Threading.Thread.Sleep(100);
+            }
+            finally { if (shift) keybd_event(0x10, shiftScan, 0x0002, UIntPtr.Zero); }
+        }
+    }
+
     public static void DragClient(WindowInfo window, int startX, int startY, int endX, int endY)
     {
         IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
