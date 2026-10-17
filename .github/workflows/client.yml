@@ -102,7 +102,7 @@ jobs:
 
       - name: Build pinned Kaentake runtime
         run: cmake --build client/build-kaentake --config Release --target injector launcher
-      - name: Verify exact native companion and bridge export ABIs
+      - name: Verify native export ABIs and paired symbols
         shell: pwsh
         run: |
           $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
@@ -122,6 +122,12 @@ jobs:
               throw "Required exact native export absent: $($check.name)"
             }
           }
+          $symbols = 'client/build/Release/BunsMS.pdb'
+          if (-not (Test-Path $symbols -PathType Leaf) -or (Get-Item $symbols).Length -le 0) {
+            throw 'Required matching native Release PDB was not generated'
+          }
+          & $dumpbin /pdbpath:verbose client/build/Release/BunsMS.dll
+          if ($LASTEXITCODE) { throw 'Native DLL/PDB correspondence inspection failed' }
 
       - name: Publish Kaentake runtime artifact
         uses: actions/upload-artifact@v4
@@ -160,6 +166,7 @@ jobs:
           path: |
             client/build/Release/BunsMS.dll
             client/build/Release/BunsMS.pdb
+          if-no-files-found: error
 
   native-smoke:
     if: github.event_name == 'workflow_dispatch' && inputs.native_smoke
