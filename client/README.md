@@ -107,7 +107,7 @@ with ordinary game input; it does not hide, elevate or force-focus the game.
 Run `38979821934` reached the real native character chooser after normal
 login, Terms, gender and channel input. It remains an internal control, not
 full-content world/gameplay acceptance or a Windows backend deployment plan.
-The opt-in `exercise_login` path reserves at least five minutes for ordinary
+The opt-in `exercise_login` path reserves ten minutes for ordinary
 account menus; this does not extend the startup-only A/B controls or turn an
 unfinished character/world flow into a pass.
 

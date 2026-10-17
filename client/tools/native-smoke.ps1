@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory)][string]$CompanionArtifact,
     [Parameter(Mandatory)][string]$RuntimeArtifact,
     [string]$OutputDirectory = 'native-smoke-output',
-    [ValidateRange(30, 300)][int]$ObserveSeconds = 90,
+    [ValidateRange(30, 600)][int]$ObserveSeconds = 90,
     [string]$GameHost = 'buns.asslorde.com',
     [switch]$ExerciseLogin,
     [string]$PreparedGameDirectory = '',
@@ -255,6 +255,23 @@ function Save-NativeSnapshot([int[]]$Ids) {
             }
         }
     }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.createButtonAction.status -eq 'submitted-normal-create-character-click' -and
+        -not $report.explorerTypeAction -and ([datetime]$row.utc) -gt ([datetime]$report.createButtonAction.utc).AddSeconds(2)) {
+        $state = Read-QAAccountState
+        $report.accountBeforeExplorerType = $state
+        if ($state.status -eq 'observed' -and $state.account.tos -eq 1 -and
+            $state.account.gender -eq 0 -and $state.account.loggedin -eq 2 -and @($state.account.characters).Count -eq 0) {
+            $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+            if ($window) {
+                $report.explorerTypeAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                    scope = 'Normal Select on the observed default Explorers character-type menu; no invented character or world-entry claim' }
+                try {
+                    [NativeSmoke]::ClickClient($window, 566, 416)
+                    $report.explorerTypeAction.status = 'submitted-normal-explorer-type-select'
+                } catch { $report.explorerTypeAction.status = 'failed'; $report.explorerTypeAction.error = $_.Exception.ToString(); throw }
+            }
+        }
+    }
 }
 
 try {
@@ -499,6 +516,7 @@ try {
                             input = $login.loginInput; foregroundAttempt = $login.foregroundAttempt
                             termsAction = $login.termsAction; genderAction = $login.genderAction; worldButtonAction = $login.worldButtonAction
                             channelButtonAction = $login.channelButtonAction; createButtonAction = $login.createButtonAction; accountAfterObservation = $login.accountAfterObservation
+                            explorerTypeAction = $login.explorerTypeAction
                             acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
                         if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
                             throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
@@ -601,7 +619,7 @@ try {
         } finally { $stream.Dispose() }
     } catch { $report.executableMemoryLayoutObservationError = $_.Exception.Message }
     $debugLog = Join-Path $OutputDirectory 'native-debug.log'
-    $captureSeconds = if ($ExerciseLogin) { [Math]::Max($ObserveSeconds, 300) } else { $ObserveSeconds }
+    $captureSeconds = if ($ExerciseLogin) { [Math]::Max($ObserveSeconds, 600) } else { $ObserveSeconds }
     $report.observeSeconds = $captureSeconds
     $backendResult = [IO.Path]::GetFullPath('native-backend-output/result.json')
     if (Test-Path $backendResult) {
