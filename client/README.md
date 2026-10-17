@@ -183,6 +183,15 @@ playability acceptance. Java/MySQL are used only by the isolated same-runner CI
 backend helper; players retain the existing Linux-hosted server deployment and
 never install a backend with the launcher.
 
+The opt-in native `exercise_login` check additionally requires the owned fresh
+schema's QA account to be absent before ordinary credential input, then observes
+that expected account authenticated through the real server's read-only state.
+Submitted keys alone are not a pass. Account `loggedin = 2` is authentication,
+not character/world entry; inspect the actual native UI and exercise world,
+movement/chat and feature paths separately. Startup-only mode remains explicitly
+limited to startup. A legitimate existing-character login is an independent
+consumer path, not a substitute for the fresh native creation case.
+
 News `type` and `text` are untrusted plaintext: the renderer creates DOM elements
 and assigns `textContent`, never interpolates those fields as markup. The
 installer workflow's `news_security_smoke` mode consumes a pinned, canonical

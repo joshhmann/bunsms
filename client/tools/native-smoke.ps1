@@ -67,7 +67,7 @@ function Read-QAAccountState {
     $mysql = Get-Process -Id $backend.mysqlPid -ErrorAction Stop
     if ($mysql.ProcessName -ne 'mysqld') { throw 'QA MySQL PID identity changed before read-only observation' }
     $query = @'
-SELECT JSON_OBJECT('id',a.id,'name',a.name,'tos',a.tos,'loggedin',a.loggedin,'gender',a.gender,'characters',(SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT('id',c.id,'name',c.name,'world',c.world,'map',c.map,'level',c.level)),JSON_ARRAY()) FROM characters c WHERE c.accountid=a.id)) FROM accounts a WHERE a.name='bunsrcqa';
+SELECT JSON_OBJECT('id',a.id,'name',a.name,'tos',a.tos,'loggedin',a.loggedin,'gender',a.gender,'picConfigured',(a.pic IS NOT NULL AND a.pic<>''),'characters',(SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT('id',c.id,'name',c.name,'world',c.world,'map',c.map,'level',c.level)),JSON_ARRAY()) FROM characters c WHERE c.accountid=a.id)) FROM accounts a WHERE a.name='bunsrcqa';
 '@
     $raw = @(& (Join-Path $backend.mysqlDirectory 'bin/mysql.exe') --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 --user=root --database=buns_rc --batch --skip-column-names "--execute=$query")
     if ($LASTEXITCODE) { throw 'Isolated read-only QA account query failed' }
@@ -332,6 +332,27 @@ function Save-NativeSnapshot([int[]]$Ids) {
             }
         }
     }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.characterStartAction.status -eq 'submitted-normal-character-start' -and
+        -not $report.picAction -and ([datetime]$row.utc) -gt ([datetime]$report.characterStartAction.utc).AddSeconds(2)) {
+        $state = Read-QAAccountState
+        $report.accountBeforePic = $state
+        $created = @($state.account.characters | Where-Object { $_.id -eq $report.characterStartAction.characterId })
+        if ($state.status -eq 'observed' -and $state.account.loggedin -eq 2 -and
+            -not $state.account.picConfigured -and $created.Count -eq 1) {
+            $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+            if ($window) {
+                $report.picAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                    scope = 'Normal keyboard input and OK on observed stock PIC dialog; no PIC disablement, direct DB/auth write or world claim' }
+                try {
+                    [NativeSmoke]::ClickClient($window, 399, 213)
+                    [NativeSmoke]::TypeClientText($window, $script:qaPic)
+                    $report.picAction.entryEvidence = Save-Screenshot $window.ClientX $window.ClientY $window.ClientWidth $window.ClientHeight (Join-Path $OutputDirectory 'ordinary-pic-before-confirm.png')
+                    [NativeSmoke]::ClickClient($window, 370, 408)
+                    $report.picAction.status = 'submitted-normal-pic-keyboard-input'
+                } catch { $report.picAction.status = 'failed'; $report.picAction.error = $_.Exception.ToString(); throw }
+            }
+        }
+    }
 }
 
 try {
@@ -339,6 +360,8 @@ try {
         if ($GameHost -ne '127.0.0.1') { throw 'Disposable QA login input requires the isolated loopback test backend' }
         $script:qaPassword = [Guid]::NewGuid().ToString('N').Substring(0, 10)
         Write-Output "::add-mask::$script:qaPassword"
+        $script:qaPic = [Security.Cryptography.RandomNumberGenerator]::GetInt32(100000, 1000000).ToString([Globalization.CultureInfo]::InvariantCulture)
+        Write-Output "::add-mask::$script:qaPic"
     }
     $report.publicAccess = 'Activation deferred by user; unchanged public ports are not re-probed'
     if ($BaselineUrl.Scheme -ne 'https' -or $BaselineFilesBaseUrl.Scheme -ne 'https') {
@@ -580,6 +603,7 @@ try {
                             characterNameAction = $login.characterNameAction
                             appearanceAction = $login.appearanceAction; characterStartAction = $login.characterStartAction
                             accountBeforeLogin = $login.accountBeforeLogin
+                            picAction = $login.picAction
                             acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
                         if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
                             throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
@@ -735,6 +759,7 @@ try {
         if ($report.characterNameAction.status -eq 'failed') { throw 'Normal owned QA character-name input failed; retain actual UI evidence' }
         if ($report.appearanceAction.status -eq 'failed') { throw 'Normal owned QA appearance confirmation failed; retain actual UI evidence' }
         if ($report.characterStartAction.status -eq 'failed') { throw 'Normal owned QA character Start failed; retain actual UI evidence' }
+        if ($report.picAction.status -eq 'failed') { throw 'Normal owned QA PIC input failed; retain actual native dialog and read-only registration state' }
         if ($report.appearanceAction.status -eq 'submitted-normal-default-appearance' -and
             @($report.accountAfterObservation.account.characters | Where-Object { $_.name -eq $report.characterNameAction.name -and $_.id -gt 0 -and $_.world -eq 0 }).Count -ne 1) {
             throw 'Normal QA character creation did not persist the expected character; no character/world pass from submitted input'
