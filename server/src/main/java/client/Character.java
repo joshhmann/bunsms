@@ -603,7 +603,7 @@ public class Character extends AbstractCharacterObject {
      * 24h cooldown. Resets the cycle (clears day + mask) when the streak lapsed (>48h) or day 28 was
      * already claimed. Mutates in-memory state only (persisted on a claim).
      */
-    public int refreshCheckin() {
+    public synchronized int refreshCheckin() {
         final int cycle = server.DailyCheckinRewards.CYCLE_DAYS;
         if (checkinLastClaim <= 0) {           // never claimed -> fresh cycle, day 1 ready
             checkinDay = 0; checkinClaimed = 0;
@@ -616,12 +616,12 @@ public class Character extends AbstractCharacterObject {
         return checkinDay + 1;                  // consecutive day available
     }
 
-    /** Record a successful claim of day d: mark it, advance the streak, stamp the clock. */
-    public void applyCheckinClaim(int d) {
+    /** Publish the successful claim using the exact timestamp already committed with its reward. */
+    public synchronized void applyCheckinClaim(int d, long claimedAt) {
         if (d < 1 || d > server.DailyCheckinRewards.CYCLE_DAYS) return;
         checkinDay = d;
         checkinClaimed |= (1 << (d - 1));
-        checkinLastClaim = System.currentTimeMillis();
+        checkinLastClaim = claimedAt;
     }
 
     /** Seconds remaining on the 24h cooldown, or 0 if a claim is available now. */

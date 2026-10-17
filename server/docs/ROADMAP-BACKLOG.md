@@ -46,6 +46,11 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   `NativeDailyFixtureBackend` now genuinely creates an eligible GM0level30
   Warrior through the existing validated factory while preserving CID2/auth
   fields; this setup does not complete native Daily or reward acceptance.
+  Separate atomic-claim candidate4b30ffa9 now passes real MySQL/full-XML/TCP
+  wallet-cap, partial-grant restore, final-SQL rollback, concurrent single claim,
+  invalid-day/cooldown and new-client load checks on a genuine factory Warrior30.
+  The private probe reward is explicitly not the pending product calendar;
+  published637/native UI/reward policy/obtainability acceptance remain separate.
 
 - [x] **Ticket 4 — Evan WZ merge review + playable prerequisites (REVIEW ONLY)** — Owner: WZ integration
   Evidence: [durable per-file review](EVAN-WZ-REVIEW.md) and its linked full SHA256 manifest.
@@ -137,14 +142,14 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   Dependencies: paired native feature/runtime proof and exact Effect/Sound source
   disposition; consumed missing effects require actual visual classification.
 
-- [ ] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz)** — full-content-windows; exact62d/637/30de/3a06 full65/unchanged6a01 runtime passes actual ordinary GM0 auth/default creation/normal mouse PIC/channel7575/fresh0x3f ACK and viewed native MushroomTown world38998429482. Movement/chat/reconnect/PIC durability and addon acceptance remain open. Daily/cash/prism/long-damage UI gates are unblocked, not completed; weather remains last. Persistent matching .164 LAN backend/public installer8c support user-authorized manual TESTING, not a fully qualified release.
+- [x] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz): Windows PASS; Wine PARKED** — exact62d/637/30de/3a06/full65/unchanged6a01 passed ordinary GM0 auth/default creation/normal mouse PIC/channel7575/fresh0x3f ACK/viewed MushroomTown38998429482, then actual viewed walk/jump/general chat39000352540/14b0aff. This completes the accepted basic Windows runtime smoke, not Win10/11 or Wine compatibility, reconnect/PIC durability, bot movement/combat or add-ons. Daily/cash/prism/long-damage UI gates remain open; weather remains last. Persistent .164 LAN/backend/public installer8c support user-authorized manual TESTING, not a fully qualified release.
   Scope: Smoke staged Windows EXE/DLL/Custom.wz trial (Kaentake opt-in profile
   `0af7a62`+`35099e0` normally hosted); record pass/fail incl. Windows/Wine
   status; no behavior changes. Compat GO already recorded; this is the
   runtime proof the injector-based clients (tickets 11–13) build on.
   Dependencies: None (parallel). Blocks: ticket 11, ticket 12-client, ticket 13-client.
 
-- [ ] **Ticket 15 — Verified selfhost content intake (NX/community pack)** — full51/17WZ/13 Books and matching54659-file XML/current65-file native/runtime profile frozen; fresh full reader FAIL54 explicitly retained; actual native world/visual/catalog acceptance pending
+- [ ] **Ticket 15 — Verified selfhost content intake (NX/community pack)** — full51/17WZ/13 Books and matching54659-file XML/current65-file native/runtime profile frozen; fresh full reader FAIL54 explicitly retained. Basic native world/walk/jump/chat passes; family visuals, catalog/gameplay and full coverage qualification remain open.
   Scope: Inventory-then-fit TengaMS 4.9G / Community IMG 6.3G against WZ
   symlink + manifest + launcher hosting; settled NX set stages to the
   self-hosted asset dir (ticket 17 replaced R2); record hashes. Do not
@@ -184,7 +189,7 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   dashboard-owned server_config warnings remain explicit and unmodified.
   Actual NSIS/65-file installed consumer and public installer8c whole HTTPS/
   HEAD/206 tail passed; source review found no issue in its bounded scope.
-  Active682 and browser/NX bytes remain retained; native world/features,
+  Active682 and browser/NX bytes remain retained; native feature qualification,
   reader raw54 and final manifest/installer rollback qualification stay open.
   The user-authorized .164 **development** game/DB/dashboard were gracefully
   transitioned using existing Compose, not called “production unchanged.”
@@ -206,7 +211,7 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
 - Browser2 and Linux/Wine16 are parked, not Windows RC prerequisites.
 - Evan4 REVIEW ONLY is complete and constrains intake, not a playable class.
 - 5→6→7→8→9 remain accepted full-content slices, never baseline-first deferrals.
-- Paired native3/10/11/12/13/14 need actual negotiation/gameplay/UI proof.
+- Paired native3/10/11/12/13 still need actual feature/gameplay/UI proof; ticket14's basic Windows smoke passes and does not complete those features.
 - 9 also needs ordinary/bot lifecycle and missing-art visual disposition.
 - 15 needs exact native/XML/catalog/runtime pins and fresh actual reader proof.
 - 17 needs common immutable publication/real-byte rollback; rollout is separate.

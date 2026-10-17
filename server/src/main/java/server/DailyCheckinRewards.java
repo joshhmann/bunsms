@@ -1,7 +1,7 @@
 package server;
 
 import client.Client;
-import client.inventory.manipulator.InventoryManipulator;
+import server.transactions.DailyCheckinClaim;
 
 /**
  * Daily Check-In reward table — THE ONE FILE YOU EDIT to define what each of the 28 days grants.
@@ -14,8 +14,8 @@ import client.inventory.manipulator.InventoryManipulator;
  *       REAL item id with an icon. For meso-only days, pick any representative item.</li>
  *   <li>mesos      : mesos granted on claim (0 = none).</li>
  *   <li>grants     : items granted on claim (id, qty, optional expireDays for timed cash items).</li>
- *   <li>slotType   : 0 = none, else an inventory type to expand on claim (1=Equip 2=Use 3=Set-up
- *       4=Etc 5=Cash) by slotCount slots, via Character.gainSlots.</li>
+ *   <li>slotType   : 0 = none, else a persisted inventory type (1=Equip 2=Use 3=Set-up 4=Etc)
+ *       to expand by slotCount slots with the claim, up to 96. Cash capacity is already fixed at 96.</li>
  * </ul>
  * The tooltip the client shows on hover is built from this table (item names via
  * ItemInformationProvider.getName + mesos/slot lines).
@@ -26,7 +26,6 @@ import client.inventory.manipulator.InventoryManipulator;
  */
 public final class DailyCheckinRewards {
 
-    private static final long ONE_DAY_MS = 86_400_000L;
     public static final int CYCLE_DAYS = 28;
     /** Characters below this level can't see or use the Daily Check-In window. */
     public static final int MIN_LEVEL = 10;
@@ -87,31 +86,12 @@ public final class DailyCheckinRewards {
         return DAYS[day - 1].iconItemId();
     }
 
-    /**
-     * Grant the full reward for {@code day} (1-based). Best-effort: each piece is granted
-     * independently. Returns false only if the day is out of range.
-     */
-    public static boolean grantDay(Client c, int day) {
-        if (day < 1 || day > DAYS.length) {
+    /** Grant and persist the entire promised reward together with its daily claim marker. */
+    public static boolean claimDay(Client c, int day) {
+        if (day < 1 || day > DAYS.length || c == null || c.getPlayer() == null) {
             return false;
         }
-        // Null client/player must fail closed (no grant), never NPE the packet
-        // thread. The handler checks player != null first; this is defense in depth.
-        if (c == null || c.getPlayer() == null) {
-            return false;
-        }
-        Reward r = DAYS[day - 1];
-        if (r.mesos() > 0) {
-            c.getPlayer().gainMeso(r.mesos(), true);
-        }
-        for (Grant g : r.grants()) {
-            long expiration = g.expireDays() > 0 ? System.currentTimeMillis() + g.expireDays() * ONE_DAY_MS : -1;
-            InventoryManipulator.addById(c, g.itemId(), (short) g.qty(), expiration);
-        }
-        if (r.slotType() > 0 && r.slotCount() > 0) {
-            c.getPlayer().gainSlots(r.slotType(), r.slotCount());
-        }
-        return true;
+        return DailyCheckinClaim.claim(c, day, DAYS[day - 1]);
     }
 
     /** Human-readable multi-line breakdown for {@code day}, used as the client's hover tooltip. */

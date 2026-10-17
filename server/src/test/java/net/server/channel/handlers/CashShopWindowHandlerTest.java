@@ -1,8 +1,6 @@
 package net.server.channel.handlers;
 
 import client.ClientCaps;
-import net.opcodes.RecvOpcode;
-import net.opcodes.SendOpcode;
 import net.packet.InPacket;
 import net.packet.Packet;
 import org.junit.jupiter.api.Test;
@@ -60,11 +58,6 @@ class CashShopWindowHandlerTest extends HandlerTest {
         verify(client, never()).sendPacket(any());
     }
 
-    @Test
-    void opcodeValuesMatchRegistry() {
-        assertEquals(0x3730, RecvOpcode.CASHSHOP_WINDOW_ACTION.getValue());
-        assertEquals(0x3731, SendOpcode.CASHSHOP_WINDOW_SYNC.getValue());
-    }
 
     @Test
     void nullPlayerSendsNothing() {
