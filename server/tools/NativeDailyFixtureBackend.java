@@ -58,6 +58,16 @@ public final class NativeDailyFixtureBackend {
     private static String json(String value) {
         return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n") + "\"";
     }
+    private static void publishReady(Path target, String data) throws Exception {
+        Path temporary = Files.createTempFile(target.getParent(), ".daily-fixture-ready-", ".json");
+        try {
+            Files.writeString(temporary, data, StandardOpenOption.TRUNCATE_EXISTING);
+            require(!Files.exists(target, LinkOption.NOFOLLOW_LINKS), "Ready receipt already exists");
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE);
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
+    }
     public static void main(String[] args) {
         try {
             require(args.length == 4, "Expected MySQL UUID, receipt, PRIVATE credentials and producer source paths");
@@ -178,7 +188,7 @@ public final class NativeDailyFixtureBackend {
             require(password.find(), "Actual starter credential source is not identifiable");
             Files.createDirectories(credentials.getParent());
             Files.writeString(credentials, "{\"username\":\"fmbot\",\"password\":" + json(password.group(1)) + ",\"pic\":" + json(pic) + ",\"character\":\"" + NAME + "\"}\n", StandardOpenOption.CREATE_NEW);
-            Files.writeString(receipt, "{\"status\":\"PASS_GENUINE_WARRIOR_FACTORY_SETUP_NOT_NATIVE_AUTH_OR_FEATURE_ACCEPTANCE\",\"account\":{\"id\":" + account + ",\"name\":\"fmbot\",\"loggedinBefore\":0,\"loggedinAfter\":0,\"allOriginalFieldsUnchanged\":true},\"character\":{\"id\":" + character + ",\"name\":\"" + NAME + "\",\"world\":0,\"map\":102000000,\"level\":30,\"job\":100,\"gm\":0},\"orderedCharacters\":" + orderedCharacters + ",\"targetZeroBasedIndex\":" + targetIndex + ",\"chooserEvidence\":\"actual Client.loadCharacters(0), not an ID or SQL-order assumption\",\"cid2Unchanged\":true,\"mysqlUuid\":" + json(uuid) + ",\"schema\":\"buns_rc\",\"gameplaySourceCommit\":\"8b2110fff89b6d659b31aac360cb6881f5e4f3c2\",\"jarSha256\":\"" + JAR_SHA + "\",\"producerSourceSha256\":" + json(sha(source)) + ",\"realFactoryPacketBytes\":" + bytes.size() + ",\"normalServerRemainsRunning\":true,\"nativeAuthPicSelectionClaimRelogStillRequired\":true}\n", StandardOpenOption.CREATE_NEW);
+            publishReady(receipt, "{\"status\":\"PASS_GENUINE_WARRIOR_FACTORY_SETUP_NOT_NATIVE_AUTH_OR_FEATURE_ACCEPTANCE\",\"account\":{\"id\":" + account + ",\"name\":\"fmbot\",\"loggedinBefore\":0,\"loggedinAfter\":0,\"allOriginalFieldsUnchanged\":true},\"character\":{\"id\":" + character + ",\"name\":\"" + NAME + "\",\"world\":0,\"map\":102000000,\"level\":30,\"job\":100,\"gm\":0},\"orderedCharacters\":" + orderedCharacters + ",\"targetZeroBasedIndex\":" + targetIndex + ",\"chooserEvidence\":\"actual Client.loadCharacters(0), not an ID or SQL-order assumption\",\"cid2Unchanged\":true,\"mysqlUuid\":" + json(uuid) + ",\"schema\":\"buns_rc\",\"gameplaySourceCommit\":\"8b2110fff89b6d659b31aac360cb6881f5e4f3c2\",\"jarSha256\":\"" + JAR_SHA + "\",\"producerSourceSha256\":" + json(sha(source)) + ",\"realFactoryPacketBytes\":" + bytes.size() + ",\"normalServerRemainsRunning\":true,\"nativeAuthPicSelectionClaimRelogStillRequired\":true}\n");
             System.out.println("NATIVE_DAILY_FIXTURE_READY normal factory character WinDailyQa; native authentication/feature acceptance remain separate");
         } catch (Throwable failure) {
             failure.printStackTrace();
