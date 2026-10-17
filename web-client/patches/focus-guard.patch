@@ -1,0 +1,22 @@
+diff --git a/src/client/IO/UI.cpp b/src/client/IO/UI.cpp
+index f5bc08c..b084031 100644
+--- a/src/client/IO/UI.cpp
++++ b/src/client/IO/UI.cpp
+@@ -128,9 +128,16 @@ namespace jrc
+             Cursor::CLICKING :
+             Cursor::IDLE;
+         Point<int16_t> cursorpos = cursor.get_position();
++        Textfield* prefocused = focusedtextfield ? focusedtextfield.get() : nullptr;
+         send_cursor(cursorpos, cursorstate);
+ 
+-        if (focusedtextfield && pressed)
++        // A press that installs a new screen must not re-test the OLD click
++        // coordinates against a NEWLY focused field: the coordinates belong to
++        // the previous screen and the miss would instantly defocus the field
++        // the new screen focused in its constructor (e.g. creation naming).
++        // Only re-test when dispatch left the focused field unchanged.
++        if (focusedtextfield && pressed &&
++            focusedtextfield.get() == prefocused)
+         {
+             Cursor::State tstate = focusedtextfield->send_cursor(cursorpos, pressed);
+             switch (tstate)

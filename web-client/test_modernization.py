@@ -21,7 +21,9 @@ class ModernizationTests(unittest.TestCase):
             with tarfile.open(fileobj=io.BytesIO(archive)) as snapshot:
                 snapshot.extractall(source, filter="data")
             for name in ("remote-movement.patch", "deployed-npc-chat.patch",
-                         "browser-modernization.patch", "inventory-equipment.patch",
+                         "browser-modernization.patch", "focus-guard.patch",
+                         "nx-bitmap-decoder.patch", "inventory-equipment.patch",
+                         "inventory-equipment-slot24.patch",
                          "shop-storage.patch"):
                 patch = root / "patches" / name
                 subprocess.run(["git", "apply", "--check", str(patch)],
@@ -39,20 +41,44 @@ class ModernizationTests(unittest.TestCase):
                                  source / "src/client/Character/Inventory/InventoryType.cpp"],
                 "inventory_equipment": [client / "Net/InPacket.cpp",
                                         client / "Character/Inventory/InventoryType.cpp"],
+                "slot24": [client / "Character/Inventory/Inventory.cpp",
+                           client / "Character/Inventory/InventoryType.cpp",
+                           client / "Character/Inventory/Item.cpp",
+                           client / "Character/Inventory/Equip.cpp",
+                           client / "Character/Inventory/Pet.cpp",
+                           client / "Character/Inventory/Weapon.cpp",
+                           client / "Character/Inventory/EquipQuality.cpp",
+                           client / "Character/MapleStat.cpp",
+                           client / "Character/EquipStat.cpp",
+                           root / "test_slot24_stubs.cpp"],
+                "nx_decoder": [source / "src/nlnx/bitmap.cpp",
+                               source / "src/nlnx/file.cpp",
+                               source / "src/nlnx/node.cpp",
+                               source / "src/nlnx/nx.cpp",
+                               source / "src/nlnx/audio.cpp"],
             }
             for name, units in suites.items():
                 with self.subTest(suite=name):
                     binary = source / (name + "-test")
                     flags = ["-std=c++17", "-Wall", "-Wextra", "-Werror", "-O2"]
-                    if name in ("shop_storage", "inventory_equipment"):
+                    if name in ("shop_storage", "inventory_equipment", "slot24"):
                         # EnumMap transitively uses deprecated std::iterator;
                         # the engine CMake build does not promote it.
                         flags.append("-Wno-error=deprecated-declarations")
+                    link = ["-llz4"] if name == "nx_decoder" else []
+                    if name == "nx_decoder":
+                        # Pre-existing engine warning (unused static in node.cpp);
+                        # the engine CMake build does not promote it.
+                        flags = flags + ["-Wno-error=unused-function"]
+                    extra = ["-include", "cstddef", "-w",
+                               "-ffunction-sections", "-fdata-sections",
+                               "-Wl,--gc-sections"] if name == "slot24" else []
                     subprocess.run([
-                        "g++", *flags,
+                        "g++", *flags, *extra,
                         "-I", str(client), "-I", str(source / "src"),
                         str(root / ("test_" + name + ".cpp")),
                         *map(str, units), "-o", str(binary),
+                        *link,
                     ], check=True)
                     subprocess.run([str(binary)], check=True)
 

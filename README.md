@@ -372,10 +372,25 @@ The engine stays pinned to public submodule commit
 `8eece1d1fc43afa48e12df56b4719ca63af88e0b`. Apply repository-owned patches in order:
 `web-client/patches/remote-movement.patch`,
 `web-client/patches/deployed-npc-chat.patch`,
-`web-client/patches/browser-modernization.patch`.
+`web-client/patches/browser-modernization.patch`,
+`web-client/patches/focus-guard.patch`,
+`web-client/patches/nx-bitmap-decoder.patch`.
 The second patch preserves the three deployed user files: `UIChatBar.cpp`,
-`UINpcTalk.cpp`, and `NpcInteractionHandlers.cpp`; the final patch makes the
-bounded changes on top. No private gitlink or remote dirty directory is needed.
+`UINpcTalk.cpp`, and `NpcInteractionHandlers.cpp`; the modernization patch makes
+bounded changes on top. The NX bitmap decoder patch (`nx-bitmap-decoder.patch`,
+SHA256 `b4260fec6986c1252fd23b51adf2a073dc9c7368d89d7449db3f633b2dd40757`)
+fixes `src/nlnx/bitmap.cpp`: the old reader fed `length()` raw bytes as LZ4
+input to deprecated unsafe `LZ4_decompress_fast` (2-byte heap over-read proven
+under ASan on the genuine Map.nx 18-byte/16-byte entry). The fix reads the
+actual uint32 LE compressed-length prefix, EOF-bounds the payload against the
+file size before growing either reused buffer, and decodes with
+`LZ4_decompress_safe`, rejecting any short decode. Present-bitmap failures
+(bad prefix, out-of-bounds payload, short decode, undecodable dimensions)
+throw `std::runtime_error` per the file error contract instead of surfacing
+silent blank texture; absent nodes and zero-size canvases keep the legacy null
+contract. Genuine entry decodes to BGRA
+`5f0fd009e50b58f03e26fed7fb1b1b2e5c620591505167ff9051b9d595a13532`.
+No private gitlink or remote dirty directory is needed.
 The Dockerfile uses the same pinned emsdk image digest as the movement build.
 
 The preserved user patch SHA256 is
