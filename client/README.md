@@ -191,10 +191,13 @@ Its backed-up existing accounts/characters were preserved.
    the last successful screen and exact error; do not share passwords or PICs.
 
 Observed CI covers the actual installed full65 transfer/OS launch and native
-account/default-character/world entry on the matching loopback pair.
-Movement/chat, native addon UI/gameplay/reconnect and all-family acceptance
-remain separate checks, not a fully qualified release claim. Windows 10/11
-compatibility has not been exercised; the observed CI OS is Server 2022.
+account/default-character/world entry, ordinary walk/jump and rendered general
+chat on the matching loopback pair. Native addon UI/gameplay/reconnect and
+all-family acceptance remain separate checks, not a fully qualified release
+claim. Daily's current one-meso donor table is diagnostic only: real reward
+policy and failure-safe reward delivery are still required for finished Daily.
+Windows 10/11 compatibility has not been exercised; the observed CI OS is
+Server 2022.
 Players do not install Java, MySQL or Docker. The development server retains an
 open optional AdminAPI rate/message-persistence warning; live YAML rates remain
 active, and it is not evidence of a native login/world failure.
