@@ -252,7 +252,9 @@ async function checkForUpdates() {
     case "up_to_date":
       status.className = "update-status up-to-date";
       icon.textContent = "\u2705";
-      text.textContent = `Complete client files verified (v${result.version || "1.0"}).`;
+      text.textContent = result.profile === "stock"
+        ? `Stock patch files verified (v${result.version || "1.0"}); an existing game client is required.`
+        : `Complete client files verified (v${result.version || "1.0"}).`;
       enablePlay();
       break;
     case "updates_available": {
@@ -306,7 +308,9 @@ async function handlePlay() {
     }
     await refreshProfileUI();
     if (selectedProfile !== activeProfile) return checkForUpdates();
-    $("update-text").textContent = `Complete client files verified (${result.verifiedFiles} files).`;
+    $("update-text").textContent = selectedProfile === "stock"
+      ? `Stock patch files verified (${result.verifiedFiles} files); an existing game client is required.`
+      : `Complete client files verified (${result.verifiedFiles} files).`;
     $("update-status").className = "update-status up-to-date";
   }
   await launchGame();

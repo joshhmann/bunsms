@@ -111,6 +111,14 @@ The opt-in `exercise_login` path reserves at least five minutes for ordinary
 account menus; this does not extend the startup-only A/B controls or turn an
 unfinished character/world flow into a pass.
 
+The testing launcher's packaged release metadata pins the complete Kaentake
+cohort separately from the existing Stock patch API. Stock updates require an
+already installed game client; their managed patch list is not a complete-client
+certificate or a second full-client delivery. Both paths capture the profile,
+directory and authoritative file snapshot in a one-use install lease before
+asynchronous transfer. Existing user INI host/resolution sections are preserved;
+Kaentake still requires its full dependency manifest and pinned provenance.
+
 ## Paired release (§5)
 
 Client runtime and assets must be qualified against the matching server.

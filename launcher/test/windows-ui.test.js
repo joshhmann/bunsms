@@ -114,8 +114,8 @@ async function run() {
       const directory = path.resolve(gameDirectory);
       fs.mkdirSync(directory, { recursive: true });
       assert.equal(fs.readdirSync(directory).length, 0, "Full GUI install must start in an empty owned directory");
-      const click = async (id) => {
-        const box = await evaluate(`(() => { const element = document.getElementById(${JSON.stringify(id)}); const box = element.getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 }; })()`);
+      const click = async (id, label = false) => {
+        const box = await evaluate(`(() => { const element = document.getElementById(${JSON.stringify(id)}); const target = ${label ? "element.closest('label')" : "element"}; const box = target.getBoundingClientRect(); return { x: box.x + box.width / 2, y: box.y + box.height / 2 }; })()`);
         await command("Input.dispatchMouseEvent", { type: "mousePressed", ...box, button: "left", clickCount: 1 });
         await command("Input.dispatchMouseEvent", { type: "mouseReleased", ...box, button: "left", clickCount: 1 });
       };
@@ -227,7 +227,13 @@ async function run() {
         await click("profile-stock");
         const selectedStock = await evaluate(`window.buns.setProfilePath("stock", ${JSON.stringify(stockDirectory)})`);
         assert.equal(selectedStock.success, true, "Existing isolated Stock path was rejected");
-        assert.equal((await evaluate("window.buns.setHD(true)")).success, true);
+        await click("profile-kaentake");
+        await settledProfile(directory);
+        await click("profile-stock");
+        await settledProfile(stockDirectory);
+        await click("hd-checkbox", true);
+        assert.equal(await evaluate("window.buns.getHD()"), true);
+        await settledProfile(stockDirectory);
         const userIni = template.toString("utf8")
           .replace(/^ServerIP_Address=.*$/m, "ServerIP_Address=127.0.0.1")
           .replace(/^width=.*$/m, "width=1366").replace(/^height=.*$/m, "height=768")
@@ -243,7 +249,20 @@ async function run() {
             updates: patch.updates.map(({ name }) => ({ name })) })})
             .then(result => { globalThis.__stockPatchTransfer = { settled: true, result }; },
               error => { globalThis.__stockPatchTransfer = { settled: true, error: String(error) }; }); true;`);
+        const progressDeadline = Date.now() + 120000;
+        let inFlight;
+        while (Date.now() < progressDeadline) {
+          const observed = await evaluate(`({ transfer: globalThis.__stockPatchTransfer,
+            progress: Object.values(globalThis.__bunsConsumerEvents.downloads).filter(data =>
+              data.profile === "stock" && data.percent > 0 && data.percent < 100) })`);
+          if (observed.transfer.settled) throw new Error("Stock transfer settled before an actual in-flight profile-switch interval was observed");
+          if (observed.progress.length) { inFlight = { utc: new Date().toISOString(), ...observed }; break; }
+          await delay(100);
+        }
+        assert.ok(inFlight, "No actual Stock body-transfer progress was observed before the profile switch");
+        report.stockPatchPreservation.inFlightBeforeProfileSwitch = inFlight;
         await click("profile-kaentake");
+        report.stockPatchPreservation.profileSwitchSubmittedUtc = new Date().toISOString();
         const patchDeadline = Date.now() + 45 * 60 * 1000;
         let transfer;
         while (Date.now() < patchDeadline) {
