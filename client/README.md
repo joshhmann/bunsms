@@ -170,6 +170,36 @@ packaged file, not incorrectly assumed to survive as build-time environment.
 The canonical game host remains `buns.asslorde.com`; approved explicit test
 overrides and existing valid INI host/port/resolution choices are preserved.
 
+#### Current manual Windows LAN test
+
+[Download the Windows TESTING RC 1.1.0-rc.6 installer](https://buns.asslorde.com/rc-assets/client/r/8c224127defe00ec87f4d1c9bfd04c41e9af6dd5ef03b8b9821176b5fc6c7c40/windows/BunsMS-Testing-RC-1.1.0-rc.6.exe)
+(83,844,007 bytes, **unsigned**; SHA256
+`8c224127defe00ec87f4d1c9bfd04c41e9af6dd5ef03b8b9821176b5fc6c7c40`).
+The matching persistent Linux development server is `192.168.0.164`; this
+explicit LAN override is not a failover or a change to the canonical default.
+Its backed-up existing accounts/characters were preserved.
+
+1. Install/open **BunsMS Testing RC** and select **Kaentake TESTING RC**.
+2. Use the folder button to select a dedicated RC folder, not an existing Stock
+   folder. Let all 65 managed files download and verify as version `1.1.0-rc.6`.
+3. On the same LAN, set **Server Address** to `192.168.0.164`, then press **PLAY**.
+   Allow only the game's ordinary Windows UAC prompt; do not disable security
+   software or elevate the whole launcher as a workaround.
+4. Log in with an existing Cosmic account, select a character/channel, and use
+   the normal on-screen mouse keypad for PIC entry.
+5. Check world rendering, walk/jump, send a chat message, then reconnect. Report
+   the last successful screen and exact error; do not share passwords or PICs.
+
+Observed CI covers the actual installed full65 transfer/OS launch and native
+account/default-character/world entry on the matching loopback pair.
+Movement/chat, native addon UI/gameplay/reconnect and all-family acceptance
+remain separate checks, not a fully qualified release claim. Windows 10/11
+compatibility has not been exercised; the observed CI OS is Server 2022.
+Players do not install Java, MySQL or Docker. The development server retains an
+open optional AdminAPI rate/message-persistence warning; live YAML rates remain
+active, and it is not evidence of a native login/world failure.
+
+
 A complete manifest plus its SHA256-pinned provenance must authorize every
 required managed game/engine/runtime file. Check results carry a one-use,
 profile/folder/manifest lease: changing profiles or install paths during a
