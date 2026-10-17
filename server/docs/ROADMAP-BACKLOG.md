@@ -40,6 +40,12 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   unsupported-mask/new-client-reset no-mutation/no-custom-byte proof and actual
   valid-negotiation snapshots: JAR63790903, `caps-public-green-20261016-175305`.
   Full native window/claim/reward acceptance remains open, not checked off.
+  The supplied28-day1-meso/NONE/icon2000000 table is explicitly MOCK, not the
+  final reward policy. User-approved real mesos/consumables and coherent
+  full-inventory/mesos-cap/error/claim/relog proof remain required. CI-only
+  `NativeDailyFixtureBackend` now genuinely creates an eligible GM0level30
+  Warrior through the existing validated factory while preserving CID2/auth
+  fields; this setup does not complete native Daily or reward acceptance.
 
 - [x] **Ticket 4 — Evan WZ merge review + playable prerequisites (REVIEW ONLY)** — Owner: WZ integration
   Evidence: [durable per-file review](EVAN-WZ-REVIEW.md) and its linked full SHA256 manifest.
