@@ -17,9 +17,9 @@
     },
     {
       "name": "Item.wz",
-      "size": 18652152,
-      "sha256": "755f18e22a935e56d2843b4b147c54871c0906bac62d3fa784b56838787b0293",
-      "url": "https://buns.asslorde.com/rc-assets/client/r/755f18e22a935e56d2843b4b147c54871c0906bac62d3fa784b56838787b0293/Item.wz"
+      "size": 18654707,
+      "sha256": "c0ed1e7dc76a3e3a4fbbe47cafeff034bf77198e3604e440f20aecc7740aca7f",
+      "url": "https://buns.asslorde.com/rc-assets/client/r/c0ed1e7dc76a3e3a4fbbe47cafeff034bf77198e3604e440f20aecc7740aca7f/Item.wz"
     },
     {
       "name": "Map.wz",
@@ -71,9 +71,9 @@
     },
     {
       "name": "String.wz",
-      "size": 3698955,
-      "sha256": "56edda37c1abb72af7e56f660dd25cbcf4449d709e0c541dfdebe9028899fcce",
-      "url": "https://buns.asslorde.com/rc-assets/client/r/56edda37c1abb72af7e56f660dd25cbcf4449d709e0c541dfdebe9028899fcce/String.wz"
+      "size": 3699076,
+      "sha256": "a06ccdeb57147308f15800ccb7118eac4e9a01584a4f5493c678a3e87e8be7c9",
+      "url": "https://buns.asslorde.com/rc-assets/client/r/a06ccdeb57147308f15800ccb7118eac4e9a01584a4f5493c678a3e87e8be7c9/String.wz"
     },
     {
       "name": "UI.wz",
@@ -103,6 +103,7 @@
     "Effect.wz/WeatherPuddle.img",
     "Effect.wz/WeatherSplash.img",
     "Item.wz/Cash/0512.img",
+    "Item.wz/Cash/0559.img",
     "Item.wz/Cash/0578.img",
     "Item.wz/Consume/0203.img",
     "Item.wz/Consume/0221.img",
@@ -182346,6 +182347,38 @@
       "type": "property"
     },
     {
+      "path": "Item.wz/Cash/0559.img/05590001",
+      "type": "property"
+    },
+    {
+      "path": "Item.wz/Cash/0559.img/05590001/info/icon",
+      "type": "canvas"
+    },
+    {
+      "path": "Item.wz/Cash/0559.img/05590001/info/iconRaw",
+      "type": "canvas"
+    },
+    {
+      "path": "Item.wz/Cash/0559.img/05590001/info/cash",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "Item.wz/Cash/0559.img/05590001/info/slotMax",
+      "type": "int",
+      "value": 1
+    },
+    {
+      "path": "String.wz/Cash.img/5590001/name",
+      "type": "string",
+      "value": "Hyper Teleport Rock"
+    },
+    {
+      "path": "String.wz/Cash.img/5590001/desc",
+      "type": "string",
+      "value": "Allow the user to teleport clicking maps in the Worldmap!"
+    },
+    {
       "path": "Quest.wz/Check.img/3168",
       "type": "property"
     },
@@ -198147,7 +198180,7 @@
     }
   ],
   "policy": "Independent established C# reader; decode every canvas/audio leaf in each touched image, plus every catalog icon/name and runtime-required node. No Python writer code runs on verifier.",
-  "candidate_full_source_commit": "dd8de8515ce44f799563ba688ae16a5230b02fcc",
-  "candidate_common_sealed_release": "5a773ad8-ca59-4e0a-b678-c27c1242ec0d",
-  "qualification_policy": "FULL all15contracts/entire1843catalog; retain all genuine prefix and Ifrit checks. Existing49inheritedSoundaliases and5boundedVoice4dispositions remain reportable failures, NOTsuppressed. Fresh report qualifies ONLY these exact hashes, not native engine/UI/visibility."
+  "candidate_common_sealed_release": "62d4c2ee-4ce6-4851-9daa-ea61bb45ffeb",
+  "candidate_full_source_commit": "8b2110fff89b6d659b31aac360cb6881f5e4f3c2",
+  "qualification_policy": "Full accepted15 contracts and entire1843 catalog; NEW rc6 Item/String hashes must be actually read by pinnedMapleLib. Historical49 inheritedSound aliases and5boundedUNCONSUMEDVoice4 remain explicit/rawFAIL, not suppressed/waived. Reader success alone never proves native engine/world/UI."
 }
