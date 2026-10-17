@@ -419,6 +419,70 @@ function Save-NativeSnapshot([int[]]$Ids) {
             }
         }
     }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.picAction.status -eq 'submitted-normal-pic-mouse-input' -and
+        -not $report.worldIntroAction -and ([datetime]$row.utc) -gt ([datetime]$report.picAction.utc).AddSeconds(2)) {
+        $trace = Get-Content $debugLog -Raw
+        $channelConnect = $trace.LastIndexOf('client-socket-connect-enter login=0', [StringComparison]::Ordinal)
+        $channelAck = $trace.LastIndexOf('caps-ack version=1 accepted=0x3F', [StringComparison]::Ordinal)
+        if ($channelConnect -ge 0 -and $channelAck -gt $channelConnect) {
+            $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+            if ($window) {
+                $report.worldIntroAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                    scope = 'Normal End Chat on observed MapleAdministrator tutorial after actual channel-connection ACK; no quest/stat/auth writes' }
+                try {
+                    [NativeSmoke]::ClickClient($window, 187, 418)
+                    $report.worldIntroAction.status = 'submitted-normal-end-tutorial-chat'
+                } catch { $report.worldIntroAction.status = 'failed'; $report.worldIntroAction.error = $_.Exception.ToString(); throw }
+            }
+        }
+    }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.worldIntroAction.status -eq 'submitted-normal-end-tutorial-chat' -and
+        -not $report.movementAction -and ([datetime]$row.utc) -gt ([datetime]$report.worldIntroAction.utc).AddSeconds(2)) {
+        $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+        if ($window) {
+            $report.movementAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                beforeEvidence = @($row.screenshots | Where-Object visualContent) | Select-Object -First 1
+                scope = 'Normal owned RightArrow and Alt jump; actual displacement/server consumption requires reviewed evidence' }
+            try {
+                [NativeSmoke]::PressClientKey($window, 0x27, 600)
+                [NativeSmoke]::PressClientKey($window, 0x12, 100)
+                $report.movementAction.afterEvidence = Save-Screenshot $window.ClientX $window.ClientY $window.ClientWidth $window.ClientHeight (Join-Path $OutputDirectory 'ordinary-world-after-move.png')
+                $report.movementAction.status = 'submitted-normal-walk-and-jump'
+            } catch { $report.movementAction.status = 'failed'; $report.movementAction.error = $_.Exception.ToString(); throw }
+        }
+    }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.movementAction.status -eq 'submitted-normal-walk-and-jump' -and
+        -not $report.chatAction -and ([datetime]$row.utc) -gt ([datetime]$report.movementAction.utc).AddSeconds(2)) {
+        $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+        if ($window) {
+            $report.chatAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; message = 'Windows RC6 native chat'
+                scope = 'Normal native general-chat input; not a fake server response or a claim from submitted keys alone' }
+            try {
+                [NativeSmoke]::ClickClient($window, 700, 150)
+                [NativeSmoke]::PressClientKey($window, 0x0D, 100)
+                [NativeSmoke]::TypeClientText($window, $report.chatAction.message)
+                [NativeSmoke]::PressClientKey($window, 0x0D, 100)
+                Start-Sleep -Milliseconds 500
+                $report.chatAction.afterEvidence = Save-Screenshot $window.ClientX $window.ClientY $window.ClientWidth $window.ClientHeight (Join-Path $OutputDirectory 'ordinary-world-after-chat.png')
+                $report.chatAction.status = 'submitted-normal-general-chat'
+            } catch { $report.chatAction.status = 'failed'; $report.chatAction.error = $_.Exception.ToString(); throw }
+        }
+    }
+    if (-not $approvalPending -and $ExerciseLogin -and $report.chatAction.status -eq 'submitted-normal-general-chat' -and
+        -not $report.dailyCommandAction -and ([datetime]$row.utc) -gt ([datetime]$report.chatAction.utc).AddSeconds(2)) {
+        $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
+        if ($window) {
+            $report.dailyCommandAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
+                scope = 'Normal GM0 @daily chat path; fresh level1 is below MIN_LEVEL10, so eligibility response is NOT Daily window/claim acceptance' }
+            try {
+                [NativeSmoke]::ClickClient($window, 700, 150)
+                [NativeSmoke]::PressClientKey($window, 0x0D, 100)
+                [NativeSmoke]::TypeClientText($window, '@daily')
+                [NativeSmoke]::PressClientKey($window, 0x0D, 100)
+                $report.dailyCommandAction.status = 'submitted-normal-daily-chat-command'
+            } catch { $report.dailyCommandAction.status = 'failed'; $report.dailyCommandAction.error = $_.Exception.ToString(); throw }
+        }
+    }
 }
 
 try {
@@ -670,6 +734,8 @@ try {
                             appearanceAction = $login.appearanceAction; characterStartAction = $login.characterStartAction
                             accountBeforeLogin = $login.accountBeforeLogin
                             picAction = $login.picAction
+                            worldIntroAction = $login.worldIntroAction; movementAction = $login.movementAction
+                            chatAction = $login.chatAction; dailyCommandAction = $login.dailyCommandAction
                             acceptance = 'PENDING actual UI/backend review. Submitted input is not account/world proof; published zero-mask runtime is an internal enabler only.' }
                         if ($login.status -ne 'native-startup-observed' -or $login.loginInput.status -ne 'submitted-normal-OS-login-input') {
                             throw 'Ordinary native login attempt failed; preserve actual UI/backend evidence, not an asset-root attribution'
@@ -826,6 +892,10 @@ try {
         if ($report.appearanceAction.status -eq 'failed') { throw 'Normal owned QA appearance confirmation failed; retain actual UI evidence' }
         if ($report.characterStartAction.status -eq 'failed') { throw 'Normal owned QA character Start failed; retain actual UI evidence' }
         if ($report.picAction.status -eq 'failed') { throw 'Normal owned QA PIC input failed; retain actual native dialog and read-only registration state' }
+        if ($report.worldIntroAction.status -eq 'failed') { throw 'Normal owned world tutorial close failed; retain actual native scene' }
+        if ($report.movementAction.status -eq 'failed') { throw 'Normal owned native movement input failed; retain actual scene and backend state' }
+        if ($report.chatAction.status -eq 'failed') { throw 'Normal owned native chat input failed; retain actual native/chat state' }
+        if ($report.dailyCommandAction.status -eq 'failed') { throw 'Normal owned GM0 Daily command input failed; do not infer window or claim acceptance' }
         if ($report.appearanceAction.status -eq 'submitted-normal-default-appearance' -and
             @($report.accountAfterObservation.account.characters | Where-Object { $_.name -eq $report.characterNameAction.name -and $_.id -gt 0 -and $_.world -eq 0 }).Count -ne 1) {
             throw 'Normal QA character creation did not persist the expected character; no character/world pass from submitted input'

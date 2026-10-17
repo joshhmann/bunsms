@@ -288,6 +288,32 @@ public static class NativeSmoke
     [DllImport("user32.dll")] private static extern short GetKeyState(int key);
     [DllImport("user32.dll")] private static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
 
+    public static void PressClientKey(WindowInfo window, byte key, int milliseconds)
+    {
+        if (milliseconds < 1 || milliseconds > 1000)
+            throw new ArgumentOutOfRangeException("milliseconds");
+        IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
+        uint owner; GetWindowThreadProcessId(hwnd, out owner);
+        if (owner != window.ProcessId || !window.Visible || window.Class != "MapleStoryClass" ||
+            GetForegroundWindow() != hwnd)
+            throw new InvalidOperationException("Native game lost key ownership; no input submitted");
+        uint mapping = MapVirtualKey(key, 4);
+        if (mapping == 0) throw new InvalidOperationException("Native key has no ordinary scan mapping");
+        uint flags = (mapping & 0xFF00) != 0 ? 1u : 0u;
+        keybd_event(key, (byte)mapping, flags, UIntPtr.Zero);
+        try
+        {
+            for (int elapsed = 0; elapsed < milliseconds; elapsed += 50)
+            {
+                System.Threading.Thread.Sleep(Math.Min(50, milliseconds - elapsed));
+                if (GetForegroundWindow() != hwnd)
+                    throw new InvalidOperationException("Native game lost key ownership; key released");
+            }
+        }
+        finally { keybd_event(key, (byte)mapping, flags | 2u, UIntPtr.Zero); }
+        System.Threading.Thread.Sleep(100);
+    }
+
     public static void TypeClientText(WindowInfo window, string text)
     {
         IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
