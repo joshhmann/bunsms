@@ -27,7 +27,7 @@ public static class NativeSmoke
 
     public static int[] LastProcessIds { get; private set; } = Array.Empty<int>();
 
-    private static void ObserveProcesses(Dictionary<int, Process> processes, HashSet<int> ids, HashSet<string> modules, StreamWriter log)
+    private static void ObserveProcesses(Dictionary<int, Process> processes, HashSet<int> ids, HashSet<string> modules, TextWriter log)
     {
         IntPtr snapshot = CreateToolhelp32Snapshot(2, 0);
         if (snapshot != new IntPtr(-1))
@@ -88,6 +88,11 @@ public static class NativeSmoke
         // DEBUG_PROCESS flag, guard patch, or IsDebuggerPresent override is used.
         IntPtr ready = IntPtr.Zero, data = IntPtr.Zero, mapping = IntPtr.Zero, view = IntPtr.Zero;
         var processes = new Dictionary<int, Process>(); var ids = new HashSet<int>(); var modules = new HashSet<string>();
+        StreamWriter writer = null;
+        System.Threading.Thread reader = null;
+        int readerStop = 0;
+        bool readerStarted = false;
+        Exception readerError = null;
         try
         {
             ready = CreateEvent(IntPtr.Zero, false, false, "DBWIN_BUFFER_READY");
@@ -98,45 +103,65 @@ public static class NativeSmoke
                 throw new System.ComponentModel.Win32Exception(mappingError, "Cannot acquire isolated passive DBWIN listener");
             view = MapViewOfFile(mapping, 6, 0, 0, (UIntPtr)4096);
             if (view == IntPtr.Zero) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "Map DBWIN buffer");
-            using (var log = new StreamWriter(logPath, false, new UTF8Encoding(false)))
+            writer = new StreamWriter(logPath, false, new UTF8Encoding(false)) { AutoFlush = true };
+            TextWriter log = TextWriter.Synchronized(writer);
+            reader = new System.Threading.Thread(() =>
             {
-                log.AutoFlush = true;
-                var root = Process.Start(new ProcessStartInfo(executable) { WorkingDirectory = directory, UseShellExecute = false });
-                if (root == null) throw new InvalidOperationException("Native launcher did not start");
-                processes.Add(root.Id, root); ids.Add(root.Id); LastProcessIds = new[] { root.Id };
-                log.WriteLine("ROOT pid=" + root.Id + " mode=normal-process-no-debugger executable=" + executable);
-                var clock = Stopwatch.StartNew(); double nextObservation = 0, nextSnapshot = 10;
                 var buffer = new byte[4092];
-                while (clock.Elapsed.TotalSeconds < seconds)
+                try
                 {
-                    SetEvent(ready);
-                    if (WaitForSingleObject(data, 100) == 0)
+                    while (System.Threading.Volatile.Read(ref readerStop) == 0)
                     {
-                        int pid = Marshal.ReadInt32(view); Marshal.Copy(IntPtr.Add(view, 4), buffer, 0, buffer.Length);
+                        if (WaitForSingleObject(data, 100) != 0) continue;
+                        int pid = Marshal.ReadInt32(view);
+                        Marshal.Copy(IntPtr.Add(view, 4), buffer, 0, buffer.Length);
+                        SetEvent(ready);
                         int length = Array.IndexOf(buffer, (byte)0); if (length < 0) length = buffer.Length;
                         string text = Encoding.Default.GetString(buffer, 0, length);
                         // Never collect arbitrary unrelated process data or authentication payloads.
                         if (text.StartsWith("BUNS_RUNTIME ", StringComparison.Ordinal) || text.StartsWith("BUNS_SCAN ", StringComparison.Ordinal))
                             log.WriteLine(DateTime.UtcNow.ToString("O") + " DEBUG_STRING pid=" + pid + " " + text.TrimEnd('\0', '\r', '\n'));
                     }
-                    if (clock.Elapsed.TotalSeconds >= nextObservation)
-                    {
-                        ObserveProcesses(processes, ids, modules, log); nextObservation += 1;
-                        if (processes.Count == 0) break;
-                    }
-                    if (clock.Elapsed.TotalSeconds >= nextSnapshot)
-                    {
-                        try { snapshot(LastProcessIds); }
-                        catch (Exception error) { log.WriteLine("SNAPSHOT_ERROR " + error); }
-                        nextSnapshot += 20;
-                    }
                 }
-                log.WriteLine("OBSERVATION_END elapsedSeconds=" + clock.Elapsed.TotalSeconds + " activeProcesses=" + processes.Count + " controllerCleanupNotYetRun=true");
+                catch (Exception error) { System.Threading.Volatile.Write(ref readerError, error); }
+            }) { IsBackground = true };
+            // The passive consumer must keep draining while the controller takes
+            // screenshots, queries owned QA state, or submits ordinary UI input.
+            SetEvent(ready);
+            reader.Start();
+            readerStarted = true;
+            var root = Process.Start(new ProcessStartInfo(executable) { WorkingDirectory = directory, UseShellExecute = false });
+            if (root == null) throw new InvalidOperationException("Native launcher did not start");
+            processes.Add(root.Id, root); ids.Add(root.Id); LastProcessIds = new[] { root.Id };
+            log.WriteLine("ROOT pid=" + root.Id + " mode=normal-process-no-debugger dbwin=independent-passive-reader executable=" + executable);
+            var clock = Stopwatch.StartNew(); double nextObservation = 0, nextSnapshot = 10;
+            while (clock.Elapsed.TotalSeconds < seconds)
+            {
+                var error = System.Threading.Volatile.Read(ref readerError);
+                if (error != null) throw new InvalidOperationException("Passive DBWIN reader failed", error);
+                if (clock.Elapsed.TotalSeconds >= nextObservation)
+                {
+                    ObserveProcesses(processes, ids, modules, log); nextObservation += 1;
+                    if (processes.Count == 0) break;
+                }
+                if (clock.Elapsed.TotalSeconds >= nextSnapshot)
+                {
+                    try { snapshot(LastProcessIds); }
+                    catch (Exception failure) { log.WriteLine("SNAPSHOT_ERROR " + failure); }
+                    nextSnapshot += 20;
+                }
+                System.Threading.Thread.Sleep(100);
             }
+            if (System.Threading.Volatile.Read(ref readerError) != null)
+                throw new InvalidOperationException("Passive DBWIN reader failed", readerError);
+            log.WriteLine("OBSERVATION_END elapsedSeconds=" + clock.Elapsed.TotalSeconds + " activeProcesses=" + processes.Count + " controllerCleanupNotYetRun=true");
             return LastProcessIds;
         }
         finally
         {
+            System.Threading.Interlocked.Exchange(ref readerStop, 1);
+            if (readerStarted) reader.Join();
+            if (writer != null) writer.Dispose();
             foreach (var process in processes.Values) process.Dispose();
             if (view != IntPtr.Zero) UnmapViewOfFile(view);
             foreach (var handle in new[] { mapping, data, ready }) if (handle != IntPtr.Zero) CloseHandle(handle);
