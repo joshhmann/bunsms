@@ -51,6 +51,10 @@ on:
         description: "Submit normal OS login input to an own disposable GM0 account on the isolated loopback backend; not a gameplay pass"
         type: boolean
         default: false
+      daily_fixture:
+        description: "CI-only genuine existing Warrior30 diagnostic Daily UI probe; requires real loopback backend/login and exact published RC6 (not full reward acceptance)"
+        type: boolean
+        default: false
       backend_bundle_url:
         description: "Frozen QA server archive HTTPS URL"
         type: string
@@ -210,23 +214,35 @@ jobs:
           NATIVE_BASELINE_FILES_URL: ${{ inputs.native_baseline_files_url }}
           NATIVE_TEST_BACKEND: ${{ inputs.test_backend }}
           NATIVE_EXERCISE_LOGIN: ${{ inputs.exercise_login }}
+          NATIVE_DAILY_FIXTURE: ${{ inputs.daily_fixture }}
           NATIVE_PUBLISHED_RUNTIME: ${{ inputs.published_runtime }}
           NATIVE_ITEM_VARIANTS_URL: ${{ inputs.item_image_variants_url }}
           NATIVE_ITEM_VARIANTS_SHA256: ${{ inputs.item_image_variants_sha256 }}
         run: |
           $nativeExitCode = 0
           try {
+            if ($env:NATIVE_DAILY_FIXTURE -eq 'true' -and
+                ($env:NATIVE_TEST_BACKEND -ne 'true' -or $env:NATIVE_EXERCISE_LOGIN -ne 'true' -or $env:NATIVE_PUBLISHED_RUNTIME -ne 'true')) {
+              throw 'Daily fixture is CI-only and requires real loopback backend, ordinary native login and exact published runtime'
+            }
             if ($env:NATIVE_TEST_BACKEND -eq 'true') {
               # Both child services were absent by the old separate capture step;
               # keep the owning PowerShell alive through the game attempt.
               ./client/tools/start-test-backend.ps1 `
                 -BundleUrl $env:BACKEND_BUNDLE_URL -BundleSha256 $env:BACKEND_BUNDLE_SHA256 `
                 -XmlUrl $env:BACKEND_XML_URL -XmlSha256 $env:BACKEND_XML_SHA256 `
-                -MySqlSha256 a1bc2ad567eef672be20b591ad25b14f221e60bde3ae3eb235128d91e4166557
+                -MySqlSha256 a1bc2ad567eef672be20b591ad25b14f221e60bde3ae3eb235128d91e4166557 `
+                -DailyCheckinFixture:($env:NATIVE_DAILY_FIXTURE -eq 'true')
               if ($LASTEXITCODE) { throw 'Real QA backend did not start successfully' }
             }
             $gameHost = if ($env:NATIVE_TEST_BACKEND -eq 'true') { '127.0.0.1' } else { 'buns.asslorde.com' }
-            ./client/tools/native-smoke.ps1 `
+            $dailyArguments = @{}
+            if ($env:NATIVE_DAILY_FIXTURE -eq 'true') {
+              $fixtureBackend = Get-Content native-backend-output/result.json -Raw | ConvertFrom-Json
+              $dailyArguments.DailyFixtureReceipt = $fixtureBackend.dailyFixtureReceiptPath
+              $dailyArguments.DailyFixtureCredentials = $fixtureBackend.dailyFixtureCredentialsPath
+            }
+            ./client/tools/native-smoke.ps1 @dailyArguments `
               -BaselineUrl $env:NATIVE_BASELINE_URL `
               -BaselineSha256 $env:NATIVE_BASELINE_SHA256 `
               -BaselineFilesBaseUrl $env:NATIVE_BASELINE_FILES_URL `
@@ -260,6 +276,18 @@ jobs:
                 [pscustomobject]$row
               })
               $stops | ConvertTo-Json -Depth 6 | Set-Content native-backend-output/controlled-stops.json -Encoding utf8NoBOM
+            }
+            if ($env:NATIVE_DAILY_FIXTURE -eq 'true' -and $backend.dailyFixtureCredentialsPath) {
+              $privateCredentials = [IO.Path]::GetFullPath($backend.dailyFixtureCredentialsPath)
+              $privateRoot = [IO.Path]::GetDirectoryName($privateCredentials)
+              if ([IO.Path]::GetDirectoryName($privateRoot) -ne [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\') -or
+                  [IO.Path]::GetFileName($privateRoot) -notmatch '^buns-native-daily-[0-9a-f]{32}$' -or
+                  [IO.Path]::GetFileName($privateCredentials) -ne 'daily-credentials.json') {
+                throw 'Private credential cleanup refused a path outside this owned unique CI fixture directory'
+              }
+              if (Test-Path -LiteralPath $privateCredentials) { Remove-Item -LiteralPath $privateCredentials -ErrorAction Stop }
+              @{ utc = [DateTime]::UtcNow.ToString('O'); ownedPrivateFileAbsent = -not (Test-Path -LiteralPath $privateCredentials) } |
+                ConvertTo-Json | Set-Content native-backend-output/private-credential-cleanup.json -Encoding utf8NoBOM
             }
           }
           if ($nativeExitCode) { exit $nativeExitCode }

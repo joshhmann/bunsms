@@ -9,6 +9,8 @@ param(
     [ValidateRange(30, 600)][int]$ObserveSeconds = 90,
     [string]$GameHost = 'buns.asslorde.com',
     [switch]$ExerciseLogin,
+    [string]$DailyFixtureReceipt = '',
+    [string]$DailyFixtureCredentials = '',
     [string]$PreparedGameDirectory = '',
     [switch]$PublishedRuntimeControl,
     [switch]$ReferenceAssetControl,
@@ -34,6 +36,8 @@ $report = [ordered]@{
 $script:snapshotIndex = 0
 $networkJob = $null
 $script:qaPassword = $null
+$script:qaUsername = 'bunsrcqa'
+$script:dailyFixture = $null
 
 
 function Save-Screenshot([int]$X, [int]$Y, [int]$Width, [int]$Height, [string]$Path) {
@@ -66,9 +70,14 @@ function Read-QAAccountState {
     }
     $mysql = Get-Process -Id $backend.mysqlPid -ErrorAction Stop
     if ($mysql.ProcessName -ne 'mysqld') { throw 'QA MySQL PID identity changed before read-only observation' }
-    $query = @'
-SELECT JSON_OBJECT('id',a.id,'name',a.name,'tos',a.tos,'loggedin',a.loggedin,'gender',a.gender,'picConfigured',(a.pic IS NOT NULL AND a.pic<>''),'characters',(SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT('id',c.id,'name',c.name,'world',c.world,'map',c.map,'level',c.level)),JSON_ARRAY()) FROM characters c WHERE c.accountid=a.id)) FROM accounts a WHERE a.name='bunsrcqa';
-'@
+    $query = @"
+SELECT JSON_OBJECT('id',a.id,'name',a.name,'tos',a.tos,'loggedin',a.loggedin,'gender',a.gender,
+ 'mysqlUuid',@@server_uuid,'picConfigured',(a.pic IS NOT NULL AND a.pic<>''),
+ 'characters',(SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+  'id',c.id,'name',c.name,'world',c.world,'map',c.map,'level',c.level,'job',c.job,'gm',c.gm,'meso',c.meso,
+  'checkinDay',c.checkinDay,'checkinClaimed',c.checkinClaimed,'checkinLastClaim',c.checkinLastClaim)),JSON_ARRAY())
+  FROM characters c WHERE c.accountid=a.id)) FROM accounts a WHERE a.name='$script:qaUsername';
+"@
     $raw = @(& (Join-Path $backend.mysqlDirectory 'bin/mysql.exe') --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 --user=root --database=buns_rc --batch --skip-column-names "--execute=$query")
     if ($LASTEXITCODE) { throw 'Isolated read-only QA account query failed' }
     $recentAccounts = @()
@@ -208,7 +217,7 @@ function Save-NativeSnapshot([int[]]$Ids) {
             if ($java.ProcessName -ne 'java' -or $mysql.ProcessName -ne 'mysqld') { throw 'QA backend PID identity changed before ordinary login input' }
             $listeners = @(Get-NetTCPConnection -State Listen -LocalPort 8484 -OwningProcess $backend.serverPid -ErrorAction Stop)
             if (-not $listeners.Count) { throw 'Real QA backend has no login listener at ordinary input time' }
-            $report.loginInput = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; username = 'bunsrcqa'; hwnd = $window.Handle
+            $report.loginInput = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; username = $script:qaUsername; hwnd = $window.Handle
                 javaPid = $java.Id; javaCreationUtc = $java.StartTime.ToUniversalTime().ToString('O')
                 mysqlPid = $mysql.Id; mysqlCreationUtc = $mysql.StartTime.ToUniversalTime().ToString('O')
                 foregroundBeforeCredentials = [NativeSmoke]::ForegroundContext()
@@ -217,11 +226,19 @@ function Save-NativeSnapshot([int[]]$Ids) {
                 basis = 'Observed native window/nonuniform screenshot, completed normal Windows approval and live owned backend/listener; input submission is not authentication proof.' }
             try {
                 $report.accountBeforeLogin = Read-QAAccountState
-                if ($report.accountBeforeLogin.status -ne 'account-not-found') {
+                if ($DailyFixtureReceipt) {
+                    $before = $report.accountBeforeLogin.account
+                    $target = @($before.characters | Where-Object { $_.id -eq $script:dailyFixture.character.id -and $_.name -eq 'WinDailyQa' -and $_.level -eq 30 -and $_.job -eq 100 -and $_.gm -eq 0 -and $_.world -eq 0 -and $_.map -eq 102000000 })
+                    if ($report.accountBeforeLogin.status -ne 'observed' -or $before.id -ne $script:dailyFixture.account.id -or
+                        $before.name -ne 'fmbot' -or $before.loggedin -ne 0 -or -not $before.picConfigured -or
+                        $before.mysqlUuid -ne $script:dailyFixture.mysqlUuid -or $target.Count -ne 1) {
+                        throw 'Genuine owned existing fixture prestate differs or is not offline; no authentication/stat/PIC repair is permitted'
+                    }
+                } elseif ($report.accountBeforeLogin.status -ne 'account-not-found') {
                     throw 'Expected disposable QA account already exists before credentials; preserve stale-state evidence rather than resetting or seeding authentication'
                 }
                 [NativeSmoke]::ClickClient($window, 470, 245)
-                [NativeSmoke]::TypeClientText($window, 'bunsrcqa')
+                [NativeSmoke]::TypeClientText($window, $script:qaUsername)
                 $report.loginInput.usernameEvidenceUtc = [DateTime]::UtcNow.ToString('O')
                 $report.loginInput.usernameEvidence = Save-Screenshot $window.ClientX $window.ClientY $window.ClientWidth $window.ClientHeight (Join-Path $OutputDirectory 'ordinary-login-id-before-password.png')
                 [NativeSmoke]::ClickClient($window, 470, 279)
@@ -268,8 +285,13 @@ function Save-NativeSnapshot([int[]]$Ids) {
                 } catch { $report.genderAction.status = 'failed'; $report.genderAction.error = $_.Exception.ToString(); throw }
             }
         }
+        if ($DailyFixtureReceipt -and -not $report.genderAction -and $state.status -eq 'observed' -and
+            $state.account.tos -eq 1 -and $state.account.gender -eq 0 -and $state.account.loggedin -eq 2) {
+            $report.genderAction = [pscustomobject]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'observed-existing-authenticated-gender'
+                scope = 'Read-only genuine existing account state after normal native authentication; no gender UI submission or mutation' }
+        }
     }
-    if (-not $approvalPending -and $ExerciseLogin -and $report.genderAction.status -eq 'submitted-normal-gender-confirm' -and
+    if (-not $approvalPending -and $ExerciseLogin -and $report.genderAction.status -in @('submitted-normal-gender-confirm', 'observed-existing-authenticated-gender') -and
         -not $report.worldButtonAction -and ([datetime]$row.utc) -gt ([datetime]$report.genderAction.utc).AddSeconds(2)) {
         $state = Read-QAAccountState
         $report.accountBeforeWorldButton = $state
@@ -375,18 +397,32 @@ function Save-NativeSnapshot([int[]]$Ids) {
             }
         }
     }
-    if (-not $approvalPending -and $ExerciseLogin -and $report.appearanceAction.status -eq 'submitted-normal-default-appearance' -and
-        -not $report.characterStartAction -and ([datetime]$row.utc) -gt ([datetime]$report.appearanceAction.utc).AddSeconds(2)) {
+    if (-not $approvalPending -and $ExerciseLogin -and -not $report.characterStartAction -and
+        (($DailyFixtureReceipt -and $report.channelButtonAction.status -eq 'submitted-normal-channel-button-click' -and
+          ([datetime]$row.utc) -gt ([datetime]$report.channelButtonAction.utc).AddSeconds(2)) -or
+         (-not $DailyFixtureReceipt -and $report.appearanceAction.status -eq 'submitted-normal-default-appearance' -and
+          ([datetime]$row.utc) -gt ([datetime]$report.appearanceAction.utc).AddSeconds(2)))) {
         $state = Read-QAAccountState
         $report.accountBeforeCharacterStart = $state
-        $created = @($state.account.characters | Where-Object { $_.name -eq $report.characterNameAction.name -and $_.id -gt 0 -and $_.world -eq 0 })
+        $expectedName = if ($DailyFixtureReceipt) { 'WinDailyQa' } else { $report.characterNameAction.name }
+        $created = @($state.account.characters | Where-Object { $_.name -eq $expectedName -and $_.id -gt 0 -and $_.world -eq 0 })
+        if ($DailyFixtureReceipt -and $created.Count -eq 1 -and $created[0].id -ne $script:dailyFixture.character.id) {
+            throw 'Existing native target identity differs from the genuine factory receipt'
+        }
         if ($state.status -eq 'observed' -and $state.account.loggedin -eq 2 -and $created.Count -eq 1) {
             $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
             if ($window) {
                 $report.characterStartAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; characterId = $created[0].id
-                    scope = 'Normal first character slot and observed Start button after genuine persisted creation; next native screen/world requires actual review' }
+                    scope = if ($DailyFixtureReceipt) { 'Normal first-slot click, RightArrow per actual ordered server API receipt, then Start; selected UI/world must be reviewed, never inferred from fixture binding' }
+                            else { 'Normal first character slot and observed Start button after genuine persisted creation; next native screen/world requires actual review' } }
                 try {
                     [NativeSmoke]::ClickClient($window, 255, 333)
+                    if ($DailyFixtureReceipt) {
+                        for ($i = 0; $i -lt $script:dailyFixture.targetZeroBasedIndex; $i++) {
+                            [NativeSmoke]::PressClientKey($window, 0x27, 100)
+                        }
+                        $report.characterStartAction.selectionEvidence = Save-Screenshot $window.ClientX $window.ClientY $window.ClientWidth $window.ClientHeight (Join-Path $OutputDirectory 'ordinary-existing-character-before-start.png')
+                    }
                     [NativeSmoke]::ClickClient($window, 624, 160)
                     $report.characterStartAction.status = 'submitted-normal-character-start'
                 } catch { $report.characterStartAction.status = 'failed'; $report.characterStartAction.error = $_.Exception.ToString(); throw }
@@ -399,7 +435,7 @@ function Save-NativeSnapshot([int[]]$Ids) {
         $report.accountBeforePic = $state
         $created = @($state.account.characters | Where-Object { $_.id -eq $report.characterStartAction.characterId })
         if ($state.status -eq 'observed' -and $state.account.loggedin -eq 2 -and
-            -not $state.account.picConfigured -and $created.Count -eq 1) {
+            (($DailyFixtureReceipt -and $state.account.picConfigured) -or (-not $DailyFixtureReceipt -and -not $state.account.picConfigured)) -and $created.Count -eq 1) {
             $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
             if ($window) {
                 $report.picAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
@@ -419,7 +455,7 @@ function Save-NativeSnapshot([int[]]$Ids) {
             }
         }
     }
-    if (-not $approvalPending -and $ExerciseLogin -and $report.picAction.status -eq 'submitted-normal-pic-mouse-input' -and
+    if (-not $approvalPending -and $ExerciseLogin -and -not $DailyFixtureReceipt -and $report.picAction.status -eq 'submitted-normal-pic-mouse-input' -and
         -not $report.worldIntroAction -and ([datetime]$row.utc) -gt ([datetime]$report.picAction.utc).AddSeconds(2)) {
         $trace = Get-Content $debugLog -Raw
         $channelConnect = $trace.LastIndexOf('client-socket-connect-enter login=0', [StringComparison]::Ordinal)
@@ -486,11 +522,53 @@ function Save-NativeSnapshot([int[]]$Ids) {
 }
 
 try {
-    if ($ExerciseLogin) {
+    if ($DailyFixtureReceipt -or $DailyFixtureCredentials) {
+        if (-not $ExerciseLogin -or -not $PublishedRuntimeControl -or $GameHost -ne '127.0.0.1' -or
+            -not $DailyFixtureReceipt -or -not $DailyFixtureCredentials -or
+            $BaselineSha256.ToLowerInvariant() -ne 'c386861af826537e11051bcb4970061b67221bb2850b1c6574ab2eea5f10ed0b') {
+            throw 'Existing Daily fixture requires explicit matching RC6/published runtime/loopback real-login mode and both handoff files'
+        }
+        $privatePath = [IO.Path]::GetFullPath($DailyFixtureCredentials)
+        foreach ($uploaded in @($OutputDirectory, [IO.Path]::GetFullPath('native-backend-output'))) {
+            if ($privatePath.StartsWith($uploaded.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) {
+                throw 'Fixture credentials must stay outside uploaded evidence directories'
+            }
+        }
+        $fixtureBackend = Get-Content 'native-backend-output/result.json' -Raw | ConvertFrom-Json
+        $script:dailyFixture = Get-Content $DailyFixtureReceipt -Raw | ConvertFrom-Json
+        $fixture = $script:dailyFixture
+        if ($fixtureBackend.host -ne '127.0.0.1' -or $fixtureBackend.productionTouched -ne $false -or
+            $fixtureBackend.jar.sha256 -ne '63790903a2cd8f59664764fb7af8c2583313e422a404f8269005191aeb579503' -or
+            $fixture.jarSha256 -ne $fixtureBackend.jar.sha256 -or $fixture.schema -ne 'buns_rc' -or
+            $fixture.gameplaySourceCommit -ne '8b2110fff89b6d659b31aac360cb6881f5e4f3c2' -or
+            $fixture.producerSourceSha256 -ne $fixtureBackend.dailyFixtureProducer.sha256 -or
+            $fixture.account.name -ne 'fmbot' -or $fixture.account.loggedinBefore -ne 0 -or $fixture.account.loggedinAfter -ne 0 -or
+            $fixture.account.allOriginalFieldsUnchanged -ne $true -or $fixture.cid2Unchanged -ne $true -or
+            $fixture.character.name -ne 'WinDailyQa' -or $fixture.character.level -ne 30 -or $fixture.character.job -ne 100 -or
+            $fixture.character.gm -ne 0 -or $fixture.character.world -ne 0 -or $fixture.character.map -ne 102000000 -or
+            $null -eq $fixture.targetZeroBasedIndex -or $fixture.targetZeroBasedIndex -lt 0 -or $fixture.targetZeroBasedIndex -gt 5 -or
+            @($fixture.orderedCharacters)[$fixture.targetZeroBasedIndex].id -ne $fixture.character.id) {
+            throw 'Existing Daily factory handoff differs from the pinned genuine GM0 recipe/order/untouched-account contract'
+        }
+        try { $credentials = Get-Content $privatePath -Raw | ConvertFrom-Json }
+        catch { throw "Private fixture credential handoff could not be read ($($_.Exception.GetType().FullName)); content is not logged" }
+        if ($credentials.username -ne 'fmbot' -or $credentials.character -ne 'WinDailyQa' -or
+            -not $credentials.password -or $credentials.pic -notmatch '^[0-9]{6}$') {
+            throw 'Private fixture credentials do not match the genuine existing account contract'
+        }
+        $script:qaUsername = 'fmbot'
+        $script:qaPassword = $credentials.password
+        $script:qaPic = $credentials.pic
+        $credentials = $null
+        $report.dailyFixture = $fixture
+        $report.dailyMechanismAcceptance = 'PENDING actual native UI/claim/relog. Current configured1meso mock is DIAGNOSTIC ONLY, never full Daily acceptance; real reward policy remains required.'
+    } elseif ($ExerciseLogin) {
         if ($GameHost -ne '127.0.0.1') { throw 'Disposable QA login input requires the isolated loopback test backend' }
         $script:qaPassword = [Guid]::NewGuid().ToString('N').Substring(0, 10)
-        Write-Output "::add-mask::$script:qaPassword"
         $script:qaPic = [Security.Cryptography.RandomNumberGenerator]::GetInt32(100000, 1000000).ToString([Globalization.CultureInfo]::InvariantCulture)
+    }
+    if ($ExerciseLogin) {
+        Write-Output "::add-mask::$script:qaPassword"
         Write-Output "::add-mask::$script:qaPic"
     }
     $report.publicAccess = 'Activation deferred by user; unchanged public ports are not re-probed'

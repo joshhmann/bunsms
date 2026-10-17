@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory)][uri]$XmlUrl,
     [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{64}$')][string]$XmlSha256,
     [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{64}$')][string]$MySqlSha256,
-    [string]$OutputDirectory = 'native-backend-output'
+    [string]$OutputDirectory = 'native-backend-output',
+    [switch]$DailyCheckinFixture
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath($OutputDirectory)
@@ -86,10 +87,56 @@ try {
         evidence = 'Actual on-disk QA config before Java; no password/config dump or claim of direct JVM field observation'
     }
     $java = (Get-Command java.exe).Source
-    $gameServer = Start-Process $java -WindowStyle Hidden -WorkingDirectory $server -ArgumentList @('-Xms512m', '-Xmx2g', "`"-Dwz-path=$xml`"", '-jar', 'Cosmic.jar') -PassThru -RedirectStandardOutput (Join-Path $root 'server.log') -RedirectStandardError (Join-Path $root 'server-error.log')
+    $javaArguments = @('-Xms512m', '-Xmx2g', "`"-Dwz-path=$xml`"", '-jar', 'Cosmic.jar')
+    if ($DailyCheckinFixture) {
+        if (-not $env:RUNNER_TEMP -or $contract.jar.sha256 -ne '63790903a2cd8f59664764fb7af8c2583313e422a404f8269005191aeb579503') {
+            throw 'Daily factory setup is isolated-CI-only and requires the exact diagnostic frozen637 JAR'
+        }
+        $producerUrl = 'https://raw.githubusercontent.com/joshhmann/bunsms/3a255d4673398154733da5820fa24921530f8966/server/tools/NativeDailyFixtureBackend.java'
+        $producerSha256 = '1daa8a42ada201e100363054017b35490914188873f39a261fd84ea8d9687421'
+        $source = Join-Path $server 'NativeDailyFixtureBackend.java'
+        Receive-Pinned $producerUrl $producerSha256 $source
+        $classes = Join-Path $server 'qa-classes'
+        New-Item -ItemType Directory -Force $classes | Out-Null
+        & (Get-Command javac.exe).Source --release 21 -cp $jar -d $classes $source
+        if ($LASTEXITCODE) { throw 'Pinned genuine Daily factory producer did not compile against the actual frozen JAR' }
+        $uuid = @(& (Join-Path $mysql 'bin/mysql.exe') --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 --user=root --batch --skip-column-names '--execute=SELECT @@server_uuid;')
+        if ($LASTEXITCODE -or $uuid.Count -ne 1 -or $uuid[0] -notmatch '^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$') {
+            throw 'Actual owned QA MySQL UUID was not observed'
+        }
+        $privateRoot = Join-Path $env:RUNNER_TEMP ("buns-native-daily-" + [Guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory $privateRoot -ErrorAction Stop | Out-Null
+        $report.dailyFixtureReceiptPath = Join-Path $root 'daily-fixture.json'
+        $report.dailyFixtureCredentialsPath = Join-Path $privateRoot 'daily-credentials.json'
+        $report.dailyFixtureProducer = @{ url = $producerUrl; sha256 = $producerSha256 }
+        $report.mysqlUuid = $uuid[0]
+        $javaArguments = @('-Xms512m', '-Xmx2g', "`"-Dwz-path=$xml`"", '-cp', "`"$classes;$jar`"", 'NativeDailyFixtureBackend',
+            $uuid[0], "`"$($report.dailyFixtureReceiptPath)`"", "`"$($report.dailyFixtureCredentialsPath)`"", "`"$source`"")
+    }
+    $gameServer = Start-Process $java -WindowStyle Hidden -WorkingDirectory $server -ArgumentList $javaArguments -PassThru -RedirectStandardOutput (Join-Path $root 'server.log') -RedirectStandardError (Join-Path $root 'server-error.log')
     $report.serverPid = $gameServer.Id
     Wait-Listening 8484 $gameServer 300
     foreach ($port in @(7575, 7576, 7577)) { Wait-Listening $port $gameServer 90 }
+    if ($DailyCheckinFixture) {
+        $deadline = [DateTime]::UtcNow.AddSeconds(60)
+        while (-not (Test-Path -LiteralPath $report.dailyFixtureReceiptPath)) {
+            $gameServer.Refresh()
+            if ($gameServer.HasExited -or [DateTime]::UtcNow -ge $deadline) {
+                throw 'Genuine Daily factory did not atomically publish its completed receipt; inspect retained actual Java errors'
+            }
+            Start-Sleep -Milliseconds 250
+        }
+        $report.dailyFixture = Get-Content $report.dailyFixtureReceiptPath -Raw | ConvertFrom-Json
+        if ($report.dailyFixture.producerSourceSha256 -ne $producerSha256 -or
+            $report.dailyFixture.mysqlUuid -ne $report.mysqlUuid -or
+            $report.dailyFixture.jarSha256 -ne $contract.jar.sha256 -or
+            $report.dailyFixture.account.allOriginalFieldsUnchanged -ne $true -or
+            $report.dailyFixture.account.loggedinBefore -ne 0 -or $report.dailyFixture.account.loggedinAfter -ne 0 -or
+            $report.dailyFixture.cid2Unchanged -ne $true -or
+            -not (Test-Path -LiteralPath $report.dailyFixtureCredentialsPath)) {
+            throw 'Genuine Daily factory receipt differs from pinned identity/untouched-account setup'
+        }
+    }
     $report.status = 'real-server-listening'
     $report.bundle = @{ url = $BundleUrl.AbsoluteUri; sha256 = $BundleSha256 }
     $report.xml = @{ url = $XmlUrl.AbsoluteUri; sha256 = $XmlSha256 }
