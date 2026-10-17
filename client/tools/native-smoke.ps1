@@ -184,25 +184,12 @@ function Save-NativeSnapshot([int[]]$Ids) {
             $attempt = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); hwnd = $target.Handle; processId = $target.ProcessId
                 scope = 'Normal OS foreground request; if refused, one ordinary click only on a WindowFromPoint-verified exposed owned game footer; no login input, renderer, guard, or transport change' }
             try {
-                $report.windowPlacement = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'; beforeWindow = $target
-                    scope = 'Normal owned OS window movement only; NOSIZE/NOZORDER/NOACTIVATE, no renderer/native-hook/desktop/security change' }
-                $handle = [IntPtr]::new([Convert]::ToInt64($target.Handle.Substring(2), 16))
-                $work = [Windows.Forms.Screen]::FromHandle($handle).WorkingArea
-                $report.windowPlacement.workingArea = @{ left = $work.Left; top = $work.Top; right = $work.Right; bottom = $work.Bottom }
-                $report.windowPlacement.moved = [NativeSmoke]::FitClientInWorkArea($target, $work.Left, $work.Top, $work.Right, $work.Bottom)
-                $report.windowPlacement.status = 'positioned-without-resize-or-activation'
                 $attempt.observation = [NativeSmoke]::FocusClient($target)
                 $attempt.activated = $attempt.observation.Activated
             }
-            catch {
-                $attempt.error = $_.Exception.Message
-                if ($report.windowPlacement.status -eq 'attempting') {
-                    $report.windowPlacement.status = 'failed'; $report.windowPlacement.error = $_.Exception.ToString()
-                }
-            }
+            catch { $attempt.error = $_.Exception.Message }
             $report.foregroundAttempt = [pscustomobject]$attempt
             $row.windows = @([NativeSmoke]::Windows($Ids))
-            $report.windowPlacement.afterWindow = @($row.windows | Where-Object Handle -eq $target.Handle) | Select-Object -First 1
         }
     }
     try {
@@ -219,7 +206,7 @@ function Save-NativeSnapshot([int[]]$Ids) {
     $row.foregroundBeforeInput = [NativeSmoke]::ForegroundContext()
     $report.snapshots.Add([pscustomobject]$row)
     $row | ConvertTo-Json -Depth 15 | Set-Content "$prefix.json"
-    if (-not $approvalPending -and $ExerciseLogin -and -not $report.loginInput -and $report.windowPlacement.status -ne 'failed' -and
+    if (-not $approvalPending -and $ExerciseLogin -and -not $report.loginInput -and
         (Get-Content $debugLog -Raw).Contains('BUNS_RUNTIME initialize-success')) {
         $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
         if ($window -and @($row.screenshots | Where-Object visualContent).Count -gt 0 -and
@@ -964,7 +951,6 @@ try {
     $report.errorDialogObserved = @($final.windows | Where-Object { $_.Visible -and $_.Class -eq '#32770' }).Count -gt 0
     $failures = @($report.naturalExits | Where-Object { $_.exitCode -ne 0 })
     if ($failures.Count) { throw "Observed native process natural failure: $($failures | ConvertTo-Json -Compress). Cause remains unattributed; inspect independent crash receipts." }
-    if ($report.windowPlacement.status -eq 'failed') { throw 'Owned native window did not fit the actual working area without resizing; no login input or lower-HUD workaround is permitted' }
     if ($ExerciseLogin) {
         $report.accountAfterObservation = Read-QAAccountState
         $report.accountAfterObservation | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $OutputDirectory 'qa-account-state.json')

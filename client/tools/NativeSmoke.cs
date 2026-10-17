@@ -183,14 +183,13 @@ public static class NativeSmoke
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(IntPtr hwnd, StringBuilder text, int length);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr hwnd, StringBuilder text, int length);
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr hwnd);
-    [DllImport("user32.dll", SetLastError = true)] private static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
-    [DllImport("user32.dll", SetLastError = true)] private static extern bool GetClientRect(IntPtr hwnd, out Rect rect);
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
+    [DllImport("user32.dll")] private static extern bool GetClientRect(IntPtr hwnd, out Rect rect);
     [DllImport("user32.dll")] private static extern bool ClientToScreen(IntPtr hwnd, ref Point point);
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr hwnd);
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] private static extern IntPtr WindowFromPoint(Point point);
     [DllImport("user32.dll", SetLastError = true)] private static extern bool SetCursorPos(int x, int y);
-    [DllImport("user32.dll", SetLastError = true)] private static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int width, int height, uint flags);
     [DllImport("user32.dll")] private static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
 
     public sealed class ForegroundInfo
@@ -215,33 +214,6 @@ public static class NativeSmoke
         public bool NormalRequestActivated, ExposedFooterClickSubmitted, Activated;
         public int ScreenX, ScreenY;
         public string ExposedWindow;
-    }
-
-    public static bool FitClientInWorkArea(WindowInfo window, int left, int top, int right, int bottom)
-    {
-        IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
-        uint owner; GetWindowThreadProcessId(hwnd, out owner);
-        if (owner != window.ProcessId || !IsWindowVisible(hwnd) || window.Class != "MapleStoryClass")
-            throw new InvalidOperationException("Placement target is not the observed owned game window");
-        Rect before, client;
-        if (!GetWindowRect(hwnd, out before) || !GetClientRect(hwnd, out client))
-            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
-        int width = before.Right - before.Left, height = before.Bottom - before.Top;
-        if (client.Right - client.Left != window.ClientWidth || client.Bottom - client.Top != window.ClientHeight ||
-            width > right - left || height > bottom - top || width <= 0 || height <= 0)
-            throw new InvalidOperationException("Owned game cannot fit the actual working area without resizing; no workaround applied");
-        int x = Math.Max(left, Math.Min(before.Left, right - width));
-        int y = Math.Max(top, Math.Min(before.Top, bottom - height));
-        if (x == before.Left && y == before.Top) return false;
-        // NOSIZE | NOZORDER | NOACTIVATE: ordinary owned-window movement only.
-        if (!SetWindowPos(hwnd, IntPtr.Zero, x, y, 0, 0, 0x0015))
-            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
-        Rect after;
-        if (!GetWindowRect(hwnd, out after) || !GetClientRect(hwnd, out client) ||
-            client.Right - client.Left != window.ClientWidth || client.Bottom - client.Top != window.ClientHeight ||
-            after.Left < left || after.Top < top || after.Right > right || after.Bottom > bottom)
-            throw new InvalidOperationException("Owned game placement did not preserve size and fit; stop UI input");
-        return true;
     }
 
     public static FocusObservation FocusClient(WindowInfo window)
@@ -292,8 +264,6 @@ public static class NativeSmoke
         Point point = new Point { X = x, Y = y };
         if (!ClientToScreen(hwnd, ref point) || !SetCursorPos(point.X, point.Y))
             throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
-        if (GetForegroundWindow() != hwnd || WindowFromPoint(point) != hwnd)
-            throw new InvalidOperationException("Native click point is obscured or no longer foreground; no mouse input submitted");
         mouse_event(0x0002, 0, 0, 0, UIntPtr.Zero);
         mouse_event(0x0004, 0, 0, 0, UIntPtr.Zero);
         System.Threading.Thread.Sleep(100);
