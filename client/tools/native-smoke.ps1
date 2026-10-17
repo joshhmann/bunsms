@@ -71,8 +71,15 @@ SELECT JSON_OBJECT('id',a.id,'name',a.name,'tos',a.tos,'loggedin',a.loggedin,'ge
 '@
     $raw = @(& (Join-Path $backend.mysqlDirectory 'bin/mysql.exe') --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 --user=root --database=buns_rc --batch --skip-column-names "--execute=$query")
     if ($LASTEXITCODE) { throw 'Isolated read-only QA account query failed' }
+    $recentAccounts = @()
+    if (-not $raw.Count) {
+        $recent = @(& (Join-Path $backend.mysqlDirectory 'bin/mysql.exe') --no-defaults --protocol=TCP --host=127.0.0.1 --port=3306 --user=root --database=buns_rc --batch --skip-column-names "--execute=SELECT JSON_OBJECT('id',id,'name',name) FROM accounts ORDER BY id DESC LIMIT 12;")
+        if ($LASTEXITCODE) { throw 'Isolated read-only recent account query failed' }
+        $recentAccounts = @($recent | ForEach-Object { $_ | ConvertFrom-Json })
+    }
     return [pscustomobject]@{ utc = [DateTime]::UtcNow.ToString('O'); mysqlPid = $mysql.Id; readOnly = $true
         status = if ($raw.Count) { 'observed' } else { 'account-not-found' }
+        recentAccounts = $recentAccounts
         account = if ($raw.Count) { ($raw -join "`n") | ConvertFrom-Json } else { $null } }
 }
 
@@ -149,6 +156,8 @@ function Save-NativeSnapshot([int[]]$Ids) {
             try {
                 [NativeSmoke]::ClickClient($window, 470, 245)
                 [System.Windows.Forms.SendKeys]::SendWait('bunsrcqa')
+                $report.loginInput.usernameEvidenceUtc = [DateTime]::UtcNow.ToString('O')
+                $report.loginInput.usernameEvidence = Save-Screenshot $window.ClientX $window.ClientY $window.ClientWidth $window.ClientHeight (Join-Path $OutputDirectory 'ordinary-login-id-before-password.png')
                 [NativeSmoke]::ClickClient($window, 470, 279)
                 [System.Windows.Forms.SendKeys]::SendWait($script:qaPassword)
                 [NativeSmoke]::ClickClient($window, 640, 245)

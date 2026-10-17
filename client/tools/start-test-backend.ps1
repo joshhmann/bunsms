@@ -78,6 +78,13 @@ try {
     if ($LASTEXITCODE) { throw 'Native QA schema/user creation failed' }
     $config = (Get-Content (Join-Path $server 'config.template.yaml') -Raw).Replace('REPLACE_WITH_LOCAL_QA_PASSWORD', $password)
     $config | Set-Content (Join-Path $server 'config.yaml') -Encoding utf8NoBOM
+    $writtenConfig = Join-Path $server 'config.yaml'
+    $report.writtenRegistrationPolicy = [ordered]@{
+        path = $writtenConfig
+        sha256 = (Get-FileHash $writtenConfig -Algorithm SHA256).Hash.ToLowerInvariant()
+        lines = @(Get-Content $writtenConfig | Where-Object { $_ -match '^\s*(AUTOMATIC_REGISTER|BCRYPT_MIGRATION)\s*:' })
+        evidence = 'Actual on-disk QA config before Java; no password/config dump or claim of direct JVM field observation'
+    }
     $java = (Get-Command java.exe).Source
     $gameServer = Start-Process $java -WindowStyle Hidden -WorkingDirectory $server -ArgumentList @('-Xms512m', '-Xmx2g', "`"-Dwz-path=$xml`"", '-jar', 'Cosmic.jar') -PassThru -RedirectStandardOutput (Join-Path $root 'server.log') -RedirectStandardError (Join-Path $root 'server-error.log')
     $report.serverPid = $gameServer.Id
