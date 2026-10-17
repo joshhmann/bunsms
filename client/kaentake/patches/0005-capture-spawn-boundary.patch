@@ -1,0 +1,33 @@
+--- a/src/launcher.cpp
++++ b/src/launcher.cpp
+@@ -16,6 +16,21 @@
+     return result;
+ }
+ 
++static BOOL WINAPI TraceCreateProcessA(LPCSTR application, LPSTR command, LPSECURITY_ATTRIBUTES processAttributes, LPSECURITY_ATTRIBUTES threadAttributes, BOOL inherit, DWORD flags, LPVOID environment, LPCSTR directory, LPSTARTUPINFOA startup, LPPROCESS_INFORMATION process) {
++    const DWORD savedError = GetLastError();
++    char current[MAX_PATH] = {};
++    const DWORD currentLength = GetCurrentDirectoryA(MAX_PATH, current);
++    const DWORD executableAttributes = GetFileAttributesA(application);
++    const DWORD injectorAttributes = GetFileAttributesA("kaentake.dll");
++    DebugMessage("BUNS_RUNTIME flow spawn-call application=%s command=%s cwd=%s cwdLength=%lu requestedDirectory=%s flags=%08lX exeAttributes=%08lX dllAttributes=%08lX\n", application ? application : "<null>", command ? command : "<null>", currentLength < MAX_PATH ? current : "<too-long>", currentLength, directory ? directory : "<inherited>", flags, executableAttributes, injectorAttributes);
++    SetLastError(savedError);
++    const BOOL result = CreateProcessA(application, command, processAttributes, threadAttributes, inherit, flags, environment, directory, startup, process);
++    const DWORD error = GetLastError();
++    DebugMessage("BUNS_RUNTIME flow spawn-return created=%d child=%lu error=%lu\n", result, result ? process->dwProcessId : 0, error);
++    SetLastError(error);
++    return result;
++}
++
+ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
+     STARTUPINFOA si;
+     PROCESS_INFORMATION pi;
+@@ -23,7 +38,7 @@
+     ZeroMemory(&pi, sizeof(pi));
+     si.cb = sizeof(STARTUPINFOA);
+ 
+-    if (!DetourCreateProcessWithDllExA("MapleStory.exe", lpCmdLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi, "kaentake.dll", NULL)) {
++    if (!DetourCreateProcessWithDllExA("MapleStory.exe", lpCmdLine, NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi, "kaentake.dll", TraceCreateProcessA)) {
+         DWORD dwError = GetLastError();
+         LPSTR sErrorMessage = nullptr;
+         FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr, dwError, 0, (LPSTR)&sErrorMessage, 0, nullptr);
