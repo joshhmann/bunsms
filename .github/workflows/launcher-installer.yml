@@ -5,6 +5,13 @@ name: Launcher Installer (standalone)
 # Linux server deployment and are never installer/runtime prerequisites.
 
 on:
+  push:
+    branches:
+      - dll-repair-green
+      - native-kaentake-compat
+    paths:
+      - "launcher/**"
+      - ".github/workflows/launcher-installer.yml"
   workflow_dispatch:
     inputs:
       runner_os:
@@ -15,7 +22,7 @@ on:
           - windows-2025
         default: windows-2022
       api_base:
-        description: 'Dashboard API base baked into launcher'
+        description: 'Dashboard API base (reserved for future build-time use; runtime env wins today)'
         type: string
         default: 'https://buns.asslorde.com'
       manifest_url:
