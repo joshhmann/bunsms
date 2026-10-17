@@ -40,12 +40,13 @@ public final class NativeDailyFixtureBackend {
         var cfg = YamlConfig.config.server;
         return DriverManager.getConnection(String.format(cfg.DB_URL_FORMAT, "127.0.0.1"), cfg.DB_USER, cfg.DB_PASS);
     }
-    private static String rowHash(Connection db, String sql) throws Exception {
+    private static String rowHash(Connection db, String sql, boolean omitNxCredit) throws Exception {
         var digest = MessageDigest.getInstance("SHA-256");
         var length = java.nio.ByteBuffer.allocate(Integer.BYTES);
         try (var q = db.createStatement(); var r = q.executeQuery(sql)) {
             require(r.next(), "Required original fixture row absent");
             for (int i = 1; i <= r.getMetaData().getColumnCount(); i++) {
+                if (omitNxCredit && r.getMetaData().getColumnLabel(i).equalsIgnoreCase("nxCredit")) continue;
                 byte[] value = r.getBytes(i);
                 length.clear();
                 digest.update(length.putInt(value == null ? -1 : value.length).array());
@@ -57,6 +58,47 @@ public final class NativeDailyFixtureBackend {
     }
     private static String json(String value) {
         return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\r", "\\r").replace("\n", "\\n") + "\"";
+    }
+    private static int initializeCashPrism(Client context, int character, int account) throws Exception {
+        client.Character player = client.Character.loadCharFromDB(character, context, true);
+        require(player != null && player.getLevel() == 30 && player.getJob().getId() == 100
+                && player.gmLevel() == 0 && context.getPlayer() == null && context.getCapsMask() == 0,
+                "Unexpected normal pre-auth Warrior context");
+        var cash = player.getInventory(client.inventory.InventoryType.CASH);
+        require(cash.countById(5782000) == 0, "Prism fixture must start without a prism");
+        require(client.inventory.manipulator.InventoryManipulator.addByIdForCharacter(player, 5782000, (short) 1),
+                "Normal inventory API refused genuine Prism5782000");
+        int slot = cash.findById(5782000).getPosition();
+        require(cash.countById(5782000) == 1 && slot > 0, "Normal prism grant differs");
+        List<tools.Pair<client.inventory.Item, client.inventory.InventoryType>> items = new ArrayList<>();
+        for (var type : client.inventory.InventoryType.values()) {
+            if (type == client.inventory.InventoryType.UNDEFINED || type == client.inventory.InventoryType.CANHOLD) continue;
+            var inventory = player.getInventory(type);
+            if (inventory != null) for (var item : inventory.list()) items.add(new tools.Pair<>(item, type));
+        }
+        try (var connection = db()) {
+            connection.setAutoCommit(false);
+            boolean committed = false;
+            try {
+                try (var update = connection.prepareStatement(
+                        "UPDATE accounts SET nxCredit=10000 WHERE id=? AND nxCredit=0 AND loggedin=0")) {
+                    update.setInt(1, account);
+                    require(update.executeUpdate() == 1, "Expected genuinely offline zero-NX fixture account changed");
+                }
+                client.inventory.ItemFactory.INVENTORY.saveItems(items, character, connection);
+                connection.commit();
+                committed = true;
+            } finally {
+                if (!committed) connection.rollback();
+            }
+        }
+        client.Character reloaded = client.Character.loadCharFromDB(character, context, true);
+        var restored = reloaded.getInventory(client.inventory.InventoryType.CASH);
+        require(reloaded.gmLevel() == 0 && reloaded.getLevel() == 30 && reloaded.getJob().getId() == 100
+                && restored.countById(5782000) == 1 && restored.findById(5782000).getPosition() == slot
+                && reloaded.getCashShop().getCash(server.CashShop.NX_CREDIT) == 10000,
+                "Normal persisted fixture reload lost exact credit/prism/role identity");
+        return slot;
     }
     private static void publishReady(Path target, String data) throws Exception {
         Path temporary = Files.createTempFile(target.getParent(), ".daily-fixture-ready-", ".json");
@@ -70,7 +112,9 @@ public final class NativeDailyFixtureBackend {
     }
     public static void main(String[] args) {
         try {
-            require(args.length == 4, "Expected MySQL UUID, receipt, PRIVATE credentials and producer source paths");
+            require(args.length == 4 || (args.length == 5 && "cash-prism-preauth".equals(args[4])),
+                    "Expected MySQL UUID, receipt, PRIVATE credentials, producer source and optional cash-prism-preauth");
+            final boolean funded = args.length == 5;
             String uuid = args[0].toLowerCase(Locale.ROOT);
             require(uuid.matches("[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}"), "Invalid expected owned MySQL identity");
             Path receipt = Path.of(args[1]).toAbsolutePath().normalize();
@@ -93,15 +137,19 @@ public final class NativeDailyFixtureBackend {
             // Factory slot checks use the normal SQL-backed character view, not raw SQL row counts.
             // Populate it through the existing read-only server API without a login-state transition.
             Server.getInstance().loadAllAccountsCharactersView();
-            int account, gender, slots;
-            String accountBefore, templateBefore, pic;
-            try (var c = db(); var q = c.createStatement(); var r = q.executeQuery("SELECT id, gender, characterslots, loggedin, pic FROM accounts WHERE name='fmbot'")) {
+            int account, gender, slots, nxBefore;
+            int cashSlot = 0;
+            String accountBefore, accountInvariantBefore, templateBefore, pic;
+            try (var c = db(); var q = c.createStatement(); var r = q.executeQuery("SELECT id, gender, characterslots, loggedin, pic, nxCredit FROM accounts WHERE name='fmbot'")) {
                 require(r.next() && r.getInt("loggedin") == 0, "Seed account must genuinely be offline; never repair login flags");
                 account = r.getInt("id"); gender = r.getInt("gender"); slots = r.getInt("characterslots"); pic = r.getString("pic");
+                nxBefore = r.getInt("nxCredit");
+                require(!funded || nxBefore == 0, "Funded fixture requires the genuinely zero-NX starting seed");
                 require(gender == 0 && slots > 1 && slots <= Byte.MAX_VALUE && pic != null && pic.matches("[0-9]{6}"), "Unexpected genuine starter account policy");
                 require(!r.next(), "Seed account identity collision");
-                accountBefore = rowHash(c, "SELECT * FROM accounts WHERE name='fmbot'");
-                templateBefore = rowHash(c, "SELECT * FROM characters WHERE id=2");
+                accountBefore = rowHash(c, "SELECT * FROM accounts WHERE name='fmbot'", false);
+                accountInvariantBefore = rowHash(c, "SELECT * FROM accounts WHERE name='fmbot'", true);
+                templateBefore = rowHash(c, "SELECT * FROM characters WHERE id=2", false);
                 try (var collision = c.createStatement(); var rows = collision.executeQuery("SELECT COUNT(*) FROM characters WHERE name='" + NAME + "'")) {
                     require(rows.next() && rows.getInt(1) == 0, "Existing fixture name is not a fresh producer run");
                 }
@@ -119,7 +167,9 @@ public final class NativeDailyFixtureBackend {
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override protected void initChannel(SocketChannel ch) {
                             accepted.complete(ch);
-                            Client context = Client.createLoginClient(System.nanoTime(), "127.0.0.1", PacketProcessor.getLoginServerProcessor(), 0, -1);
+                            Client context = funded
+                                    ? Client.createChannelClient(System.nanoTime(), "127.0.0.1", PacketProcessor.getChannelServerProcessor(0, 1), 0, 1)
+                                    : Client.createLoginClient(System.nanoTime(), "127.0.0.1", PacketProcessor.getLoginServerProcessor(), 0, -1);
                             ch.pipeline().addLast("actual-factory-output", new ChannelOutboundHandlerAdapter() {
                                 @Override public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
                                     require(msg instanceof OutPacket, "Unexpected factory transport message");
@@ -159,6 +209,7 @@ public final class NativeDailyFixtureBackend {
                         }
                         require(targetIndex >= 0, "Actual chooser API does not contain the new normal character");
                         orderedCharacters = ordered.toString();
+                        if (funded) cashSlot = initializeCashPrism(context, chooser.get(targetIndex).getId(), account);
                     } finally {
                         context.setAccID(0); // Detach fixture ownership before ordinary transport teardown.
                     }
@@ -173,8 +224,14 @@ public final class NativeDailyFixtureBackend {
             }
             int character;
             try (var c = db()) {
-                require(accountBefore.equals(rowHash(c, "SELECT * FROM accounts WHERE name='fmbot'")), "Factory setup changed original account authentication data");
-                require(templateBefore.equals(rowHash(c, "SELECT * FROM characters WHERE id=2")), "Factory setup changed CID2");
+                require((funded ? accountInvariantBefore.equals(rowHash(c, "SELECT * FROM accounts WHERE name='fmbot'", true))
+                                : accountBefore.equals(rowHash(c, "SELECT * FROM accounts WHERE name='fmbot'", false))),
+                        "Factory setup changed account fields beyond the explicitly allowed pre-auth NX delta");
+                require(templateBefore.equals(rowHash(c, "SELECT * FROM characters WHERE id=2", false)), "Factory setup changed CID2");
+                try (var q = c.createStatement(); var r = q.executeQuery("SELECT nxCredit,loggedin FROM accounts WHERE id=" + account)) {
+                    require(r.next() && r.getInt(1) == (funded ? 10000 : nxBefore) && r.getInt(2) == 0 && !r.next(),
+                            "Expected exact pre-auth credit/offline state differs");
+                }
                 try (var q = c.createStatement(); var r = q.executeQuery("SELECT id,accountid,world,map,level,job,gm FROM characters WHERE name='" + NAME + "'")) {
                     require(r.next() && r.getInt("accountid") == account && r.getInt("world") == 0 && r.getInt("map") == 102000000 && r.getInt("level") == 30 && r.getInt("job") == 100 && r.getInt("gm") == 0, "Persisted normal Warrior recipe differs");
                     character = r.getInt("id"); require(character != 2 && !r.next(), "Invalid second-character identity");
@@ -188,7 +245,23 @@ public final class NativeDailyFixtureBackend {
             require(password.find(), "Actual starter credential source is not identifiable");
             Files.createDirectories(credentials.getParent());
             Files.writeString(credentials, "{\"username\":\"fmbot\",\"password\":" + json(password.group(1)) + ",\"pic\":" + json(pic) + ",\"character\":\"" + NAME + "\"}\n", StandardOpenOption.CREATE_NEW);
-            publishReady(receipt, "{\"status\":\"PASS_GENUINE_WARRIOR_FACTORY_SETUP_NOT_NATIVE_AUTH_OR_FEATURE_ACCEPTANCE\",\"account\":{\"id\":" + account + ",\"name\":\"fmbot\",\"loggedinBefore\":0,\"loggedinAfter\":0,\"allOriginalFieldsUnchanged\":true},\"character\":{\"id\":" + character + ",\"name\":\"" + NAME + "\",\"world\":0,\"map\":102000000,\"level\":30,\"job\":100,\"gm\":0},\"orderedCharacters\":" + orderedCharacters + ",\"targetZeroBasedIndex\":" + targetIndex + ",\"chooserEvidence\":\"actual Client.loadCharacters(0), not an ID or SQL-order assumption\",\"cid2Unchanged\":true,\"mysqlUuid\":" + json(uuid) + ",\"schema\":\"buns_rc\",\"gameplaySourceCommit\":\"8b2110fff89b6d659b31aac360cb6881f5e4f3c2\",\"jarSha256\":\"" + JAR_SHA + "\",\"producerSourceSha256\":" + json(sha(source)) + ",\"realFactoryPacketBytes\":" + bytes.size() + ",\"normalServerRemainsRunning\":true,\"nativeAuthPicSelectionClaimRelogStillRequired\":true}\n");
+            String accountIntegrity = "\"allOriginalFieldsUnchanged\":" + !funded
+                    + ",\"authenticationFieldsUnchanged\":true,\"allowedAccountDeltasExact\":true,\"allowedAccountDeltas\":"
+                    + (funded ? "{\"nxCredit\":{\"before\":0,\"after\":10000}}" : "{}");
+            String featureFixture = funded
+                    ? ",\"funding\":{\"origin\":\"FIXTURE_PRE_AUTH_NOT_EARNED\",\"currency\":\"NX_CREDIT\",\"before\":0,\"after\":10000}"
+                    + ",\"ownedPrism\":{\"origin\":\"FIXTURE_PRE_AUTH_NOT_OBTAINED\",\"itemId\":5782000,\"quantity\":1,\"actualCashSlot\":"
+                    + cashSlot + ",\"normalInventoryApiPersistedAndReloaded\":true}"
+                    : "";
+            publishReady(receipt, "{\"status\":\"PASS_GENUINE_WARRIOR_FACTORY_SETUP_NOT_NATIVE_AUTH_OR_FEATURE_ACCEPTANCE\",\"fixtureKind\":"
+                    + json(funded ? "CASH_PRISM_PREAUTH" : "DAILY_EXISTING_UNFUNDED_SEED")
+                    + ",\"account\":{\"id\":" + account + ",\"name\":\"fmbot\",\"loggedinBefore\":0,\"loggedinAfter\":0," + accountIntegrity
+                    + "},\"character\":{\"id\":" + character + ",\"name\":\"" + NAME + "\",\"world\":0,\"map\":102000000,\"level\":30,\"job\":100,\"gm\":0},\"orderedCharacters\":"
+                    + orderedCharacters + ",\"targetZeroBasedIndex\":" + targetIndex
+                    + ",\"chooserEvidence\":\"actual Client.loadCharacters(0), not an ID or SQL-order assumption\",\"cid2Unchanged\":true,\"mysqlUuid\":"
+                    + json(uuid) + ",\"schema\":\"buns_rc\",\"gameplaySourceCommit\":\"8b2110fff89b6d659b31aac360cb6881f5e4f3c2\",\"jarSha256\":\""
+                    + JAR_SHA + "\",\"producerSourceSha256\":" + json(sha(source)) + ",\"realFactoryPacketBytes\":" + bytes.size()
+                    + ",\"normalServerRemainsRunning\":true,\"nativeAuthPicSelectionClaimRelogStillRequired\":true" + featureFixture + "}\n");
             System.out.println("NATIVE_DAILY_FIXTURE_READY normal factory character WinDailyQa; native authentication/feature acceptance remain separate");
         } catch (Throwable failure) {
             failure.printStackTrace();

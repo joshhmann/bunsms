@@ -121,11 +121,19 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   (0x145–0x14D exist), catalog tooling, `UI/CashShop.img` merge, client
   window (injector or browser UI per decision). Server half standalone.
   Dependencies: actual paired native negotiation/catalog/window acceptance; no parked browser baseline gate.
+  A separate opt-in PRE-AUTH QA fixture now really initializes10000 NX and one
+  Prism via normal inventory/persistence/reload on frozen637, preserving all
+  auth/CID2 fields and reporting the exact NX-only delta. This can exercise
+  normal purchase/debit/delivery/relog, not earning; native UI remains pending.
 
 - [ ] **Ticket 11 — Coloring prism** — server remote-owner delivery, zero-count clear and legacy-owner disconnect/save/reload exercised through real production handlers and raw outbound fixture capture (not v83 AES/account login/native wire); paired native compiled; actual native tint/observer/relog acceptance pending
   Scope: DB xml (12 cols) → server → opcodes `0x372E`/`0x372F` + item
   5782000 → `weapontint.cpp` hooks (`CAvatar::PrepareActionLayer 0x00453AD1`);
   merge (don't stack) with ImGui color-picker work. Registry reserved `f868346`.
+  Ordinary obtainability is explicitly OPEN: frozen catalog/current scripts and
+  actual .164 shop/drop rows provide no accepted Prism distribution authority.
+  Optional preowned QA quantity1 is labelled FIXTURE, not obtaining proof;
+  no unapproved vendor price, DonorShop or Daily/NX policy is invented.
   Dependencies: actual paired native smoke/feature behavior. Blocks paired ticket12 acceptance.
 
 - [ ] **Ticket 12 — Damage cap to long** — Owner: unassigned — server-half [x] (landed; paired client release pending)
