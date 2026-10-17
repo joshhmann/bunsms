@@ -61,8 +61,10 @@ remain open rather than applying its10x seeds or inventing Java DDL.
 The exact **NotSigned** testing installer8c224127/83844007B is public through
 the same authority; actual whole HTTPS/HEAD/Range matches the Windows NSIS/65-file
 installed-app supplier. Its artifact-only publication does not mutate sealed62d
-or active682. Native PIC/world, all feature/family qualification, final manifest
-rollback consumer and the full reader's unwaived54 errors remain separate.
+or active682. Same-cohort Windows38998429482 actually reached normal mouse PIC,
+channel7575/ACK3f and the viewed MushroomTown world using unchanged6a01 runtime.
+PIC durability, movement/chat/reconnect, all feature/family qualification, final
+manifest rollback consumer and the reader's unwaived54 errors remain open.
 
 Private current-userdata backup and isolated same8.4 restore preceded actual
 graceful game/dashboard shutdown143/0 and final quiescent SQL SHA`908cab4d639bbcf87b6f143cbe9a4767ded294a9284426a1863c31f6a4185a80`.

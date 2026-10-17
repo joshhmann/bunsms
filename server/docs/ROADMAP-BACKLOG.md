@@ -131,7 +131,7 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   Dependencies: paired native feature/runtime proof and exact Effect/Sound source
   disposition; consumed missing effects require actual visual classification.
 
-- [ ] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz)** — full-content-windows; current exact62d/637/30de/3a06 full65/current6a01 runtime startup,0x3f ACK, ordinary GM0 auth and genuine default creation proven38996354495; actual PIC/world/movement/chat/features remain open. Matching persistent .164 LAN backend and exact public RC6 installer8c are available for the user-authorized existing-character manual TESTING path, not a fully qualified release.
+- [ ] **Ticket 14 — Kaentake client smoke (EXE/DLL/Custom.wz)** — full-content-windows; exact62d/637/30de/3a06 full65/unchanged6a01 runtime passes actual ordinary GM0 auth/default creation/normal mouse PIC/channel7575/fresh0x3f ACK and viewed native MushroomTown world38998429482. Movement/chat/reconnect/PIC durability and addon acceptance remain open. Daily/cash/prism/long-damage UI gates are unblocked, not completed; weather remains last. Persistent matching .164 LAN backend/public installer8c support user-authorized manual TESTING, not a fully qualified release.
   Scope: Smoke staged Windows EXE/DLL/Custom.wz trial (Kaentake opt-in profile
   `0af7a62`+`35099e0` normally hosted); record pass/fail incl. Windows/Wine
   status; no behavior changes. Compat GO already recorded; this is the
