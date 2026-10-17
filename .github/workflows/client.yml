@@ -55,6 +55,10 @@ on:
         description: "CI-only genuine existing Warrior30 diagnostic Daily UI probe; requires real loopback backend/login and exact published RC6 (not full reward acceptance)"
         type: boolean
         default: false
+      funded_fixture:
+        description: "Separate PRE-AUTH NX10000/ownedPrism1 GM0 fixture; requires daily_fixture, no earning/obtainability or mid-test mutation claim"
+        type: boolean
+        default: false
       backend_bundle_url:
         description: "Frozen QA server archive HTTPS URL"
         type: string
@@ -215,12 +219,16 @@ jobs:
           NATIVE_TEST_BACKEND: ${{ inputs.test_backend }}
           NATIVE_EXERCISE_LOGIN: ${{ inputs.exercise_login }}
           NATIVE_DAILY_FIXTURE: ${{ inputs.daily_fixture }}
+          NATIVE_FUNDED_FIXTURE: ${{ inputs.funded_fixture }}
           NATIVE_PUBLISHED_RUNTIME: ${{ inputs.published_runtime }}
           NATIVE_ITEM_VARIANTS_URL: ${{ inputs.item_image_variants_url }}
           NATIVE_ITEM_VARIANTS_SHA256: ${{ inputs.item_image_variants_sha256 }}
         run: |
           $nativeExitCode = 0
           try {
+            if ($env:NATIVE_FUNDED_FIXTURE -eq 'true' -and $env:NATIVE_DAILY_FIXTURE -ne 'true') {
+              throw 'Funded pre-auth fixture requires the separate owned Warrior fixture mode'
+            }
             if ($env:NATIVE_DAILY_FIXTURE -eq 'true' -and
                 ($env:NATIVE_TEST_BACKEND -ne 'true' -or $env:NATIVE_EXERCISE_LOGIN -ne 'true' -or $env:NATIVE_PUBLISHED_RUNTIME -ne 'true')) {
               throw 'Daily fixture is CI-only and requires real loopback backend, ordinary native login and exact published runtime'
@@ -232,7 +240,8 @@ jobs:
                 -BundleUrl $env:BACKEND_BUNDLE_URL -BundleSha256 $env:BACKEND_BUNDLE_SHA256 `
                 -XmlUrl $env:BACKEND_XML_URL -XmlSha256 $env:BACKEND_XML_SHA256 `
                 -MySqlSha256 a1bc2ad567eef672be20b591ad25b14f221e60bde3ae3eb235128d91e4166557 `
-                -DailyCheckinFixture:($env:NATIVE_DAILY_FIXTURE -eq 'true')
+                -DailyCheckinFixture:($env:NATIVE_DAILY_FIXTURE -eq 'true') `
+                -FundedCashPrismFixture:($env:NATIVE_FUNDED_FIXTURE -eq 'true')
               if ($LASTEXITCODE) { throw 'Real QA backend did not start successfully' }
             }
             $gameHost = if ($env:NATIVE_TEST_BACKEND -eq 'true') { '127.0.0.1' } else { 'buns.asslorde.com' }
@@ -251,6 +260,7 @@ jobs:
               -RuntimeArtifact native-crt `
               -GameHost $gameHost `
               -ExerciseLogin:($env:NATIVE_EXERCISE_LOGIN -eq 'true') `
+              -FundedCashPrismFixture:($env:NATIVE_FUNDED_FIXTURE -eq 'true') `
               -PublishedRuntimeControl:($env:NATIVE_PUBLISHED_RUNTIME -eq 'true') `
               -ItemImageVariantsUrl $env:NATIVE_ITEM_VARIANTS_URL `
               -ItemImageVariantsSha256 $env:NATIVE_ITEM_VARIANTS_SHA256 `

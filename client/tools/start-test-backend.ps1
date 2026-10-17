@@ -5,7 +5,8 @@ param(
     [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{64}$')][string]$XmlSha256,
     [Parameter(Mandatory)][ValidatePattern('^[a-fA-F0-9]{64}$')][string]$MySqlSha256,
     [string]$OutputDirectory = 'native-backend-output',
-    [switch]$DailyCheckinFixture
+    [switch]$DailyCheckinFixture,
+    [switch]$FundedCashPrismFixture
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath($OutputDirectory)
@@ -37,6 +38,7 @@ function Wait-Listening([int]$Port, [Diagnostics.Process]$Process, [int]$Seconds
     throw "QA process did not open loopback port $Port within $Seconds seconds"
 }
 try {
+    if ($FundedCashPrismFixture -and -not $DailyCheckinFixture) { throw 'Funded pre-auth fixture requires the separate owned Warrior fixture mode' }
     $report.disk = @(Get-PSDrive -PSProvider FileSystem | Select-Object Name, Used, Free)
     Receive-Pinned $BundleUrl $BundleSha256 (Join-Path $root 'server.tar.gz')
     Receive-Pinned $XmlUrl $XmlSha256 (Join-Path $root 'xml.tar.gz')
@@ -94,6 +96,10 @@ try {
         }
         $producerUrl = 'https://raw.githubusercontent.com/joshhmann/bunsms/3a255d4673398154733da5820fa24921530f8966/server/tools/NativeDailyFixtureBackend.java'
         $producerSha256 = '1daa8a42ada201e100363054017b35490914188873f39a261fd84ea8d9687421'
+        if ($FundedCashPrismFixture) {
+            $producerUrl = 'https://raw.githubusercontent.com/joshhmann/bunsms/d2332e9c7f7f11e9b82f9bf4b82f181dfd2e37d7/server/tools/NativeDailyFixtureBackend.java'
+            $producerSha256 = '6d09950482c8bb7cf66a8cd9df2782414699e0f13b85fb07da3c90167eeb6ffc'
+        }
         $source = Join-Path $server 'NativeDailyFixtureBackend.java'
         Receive-Pinned $producerUrl $producerSha256 $source
         $classes = Join-Path $server 'qa-classes'
@@ -112,6 +118,7 @@ try {
         $report.mysqlUuid = $uuid[0]
         $javaArguments = @('-Xms512m', '-Xmx2g', "`"-Dwz-path=$xml`"", '-cp', "`"$classes;$jar`"", 'NativeDailyFixtureBackend',
             $uuid[0], "`"$($report.dailyFixtureReceiptPath)`"", "`"$($report.dailyFixtureCredentialsPath)`"", "`"$source`"")
+        if ($FundedCashPrismFixture) { $javaArguments += 'cash-prism-preauth' }
     }
     $gameServer = Start-Process $java -WindowStyle Hidden -WorkingDirectory $server -ArgumentList $javaArguments -PassThru -RedirectStandardOutput (Join-Path $root 'server.log') -RedirectStandardError (Join-Path $root 'server-error.log')
     $report.serverPid = $gameServer.Id
@@ -130,7 +137,13 @@ try {
         if ($report.dailyFixture.producerSourceSha256 -ne $producerSha256 -or
             $report.dailyFixture.mysqlUuid -ne $report.mysqlUuid -or
             $report.dailyFixture.jarSha256 -ne $contract.jar.sha256 -or
-            $report.dailyFixture.account.allOriginalFieldsUnchanged -ne $true -or
+            (-not $FundedCashPrismFixture -and $report.dailyFixture.account.allOriginalFieldsUnchanged -ne $true) -or
+            ($FundedCashPrismFixture -and ($report.dailyFixture.fixtureKind -ne 'CASH_PRISM_PREAUTH' -or
+                $report.dailyFixture.account.authenticationFieldsUnchanged -ne $true -or
+                $report.dailyFixture.account.allowedAccountDeltasExact -ne $true -or
+                $report.dailyFixture.funding.before -ne 0 -or $report.dailyFixture.funding.after -ne 10000 -or
+                $report.dailyFixture.ownedPrism.itemId -ne 5782000 -or $report.dailyFixture.ownedPrism.quantity -ne 1 -or
+                $report.dailyFixture.ownedPrism.normalInventoryApiPersistedAndReloaded -ne $true)) -or
             $report.dailyFixture.account.loggedinBefore -ne 0 -or $report.dailyFixture.account.loggedinAfter -ne 0 -or
             $report.dailyFixture.cid2Unchanged -ne $true -or
             -not (Test-Path -LiteralPath $report.dailyFixtureCredentialsPath)) {

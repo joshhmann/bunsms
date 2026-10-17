@@ -11,6 +11,7 @@ param(
     [switch]$ExerciseLogin,
     [string]$DailyFixtureReceipt = '',
     [string]$DailyFixtureCredentials = '',
+    [switch]$FundedCashPrismFixture,
     [string]$PreparedGameDirectory = '',
     [switch]$PublishedRuntimeControl,
     [switch]$ReferenceAssetControl,
@@ -73,6 +74,7 @@ function Read-QAAccountState {
     $query = @"
 SELECT JSON_OBJECT('id',a.id,'name',a.name,'tos',a.tos,'loggedin',a.loggedin,'gender',a.gender,
  'mysqlUuid',@@server_uuid,'picConfigured',(a.pic IS NOT NULL AND a.pic<>''),
+ 'nxCredit',a.nxCredit,'maplePoint',a.maplePoint,'nxPrepaid',a.nxPrepaid,
  'characters',(SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
   'id',c.id,'name',c.name,'world',c.world,'map',c.map,'level',c.level,'job',c.job,'gm',c.gm,'meso',c.meso,
   'checkinDay',c.checkinDay,'checkinClaimed',c.checkinClaimed,'checkinLastClaim',c.checkinLastClaim)),JSON_ARRAY())
@@ -233,6 +235,9 @@ function Save-NativeSnapshot([int[]]$Ids) {
                         $before.name -ne 'fmbot' -or $before.loggedin -ne 0 -or -not $before.picConfigured -or
                         $before.mysqlUuid -ne $script:dailyFixture.mysqlUuid -or $target.Count -ne 1) {
                         throw 'Genuine owned existing fixture prestate differs or is not offline; no authentication/stat/PIC repair is permitted'
+                    }
+                    if ($FundedCashPrismFixture -and ($before.nxCredit -ne 10000 -or $before.maplePoint -ne 0 -or $before.nxPrepaid -ne 0)) {
+                        throw 'Separate pre-auth funded fixture wallet differs before native credentials; no mid-test wallet repair is permitted'
                     }
                 } elseif ($report.accountBeforeLogin.status -ne 'account-not-found') {
                     throw 'Expected disposable QA account already exists before credentials; preserve stale-state evidence rather than resetting or seeding authentication'
@@ -522,6 +527,9 @@ function Save-NativeSnapshot([int[]]$Ids) {
 }
 
 try {
+    if ($FundedCashPrismFixture -and (-not $DailyFixtureReceipt -or -not $DailyFixtureCredentials)) {
+        throw 'Funded pre-auth fixture requires the explicit separate owned fixture handoff'
+    }
     if ($DailyFixtureReceipt -or $DailyFixtureCredentials) {
         if (-not $ExerciseLogin -or -not $PublishedRuntimeControl -or $GameHost -ne '127.0.0.1' -or
             -not $DailyFixtureReceipt -or -not $DailyFixtureCredentials -or
@@ -543,12 +551,31 @@ try {
             $fixture.gameplaySourceCommit -ne '8b2110fff89b6d659b31aac360cb6881f5e4f3c2' -or
             $fixture.producerSourceSha256 -ne $fixtureBackend.dailyFixtureProducer.sha256 -or
             $fixture.account.name -ne 'fmbot' -or $fixture.account.loggedinBefore -ne 0 -or $fixture.account.loggedinAfter -ne 0 -or
-            $fixture.account.allOriginalFieldsUnchanged -ne $true -or $fixture.cid2Unchanged -ne $true -or
+            (-not $FundedCashPrismFixture -and $fixture.account.allOriginalFieldsUnchanged -ne $true) -or
+            $fixture.cid2Unchanged -ne $true -or
             $fixture.character.name -ne 'WinDailyQa' -or $fixture.character.level -ne 30 -or $fixture.character.job -ne 100 -or
             $fixture.character.gm -ne 0 -or $fixture.character.world -ne 0 -or $fixture.character.map -ne 102000000 -or
             $null -eq $fixture.targetZeroBasedIndex -or $fixture.targetZeroBasedIndex -lt 0 -or $fixture.targetZeroBasedIndex -gt 5 -or
             @($fixture.orderedCharacters)[$fixture.targetZeroBasedIndex].id -ne $fixture.character.id) {
             throw 'Existing Daily factory handoff differs from the pinned genuine GM0 recipe/order/untouched-account contract'
+        }
+        if ($FundedCashPrismFixture) {
+            if ($fixture.fixtureKind -ne 'CASH_PRISM_PREAUTH' -or $fixture.account.allOriginalFieldsUnchanged -ne $false -or
+                $fixture.account.authenticationFieldsUnchanged -ne $true -or $fixture.account.allowedAccountDeltasExact -ne $true -or
+                @($fixture.account.allowedAccountDeltas.PSObject.Properties).Count -ne 1 -or
+                $fixture.account.allowedAccountDeltas.nxCredit.before -ne 0 -or $fixture.account.allowedAccountDeltas.nxCredit.after -ne 10000 -or
+                $fixture.funding.origin -ne 'FIXTURE_PRE_AUTH_NOT_EARNED' -or $fixture.funding.currency -ne 'NX_CREDIT' -or
+                $fixture.funding.before -ne 0 -or $fixture.funding.after -ne 10000 -or
+                $fixture.ownedPrism.origin -ne 'FIXTURE_PRE_AUTH_NOT_OBTAINED' -or $fixture.ownedPrism.itemId -ne 5782000 -or
+                $fixture.ownedPrism.quantity -ne 1 -or $fixture.ownedPrism.actualCashSlot -lt 1 -or
+                $fixture.ownedPrism.actualCashSlot -gt 96 -or $fixture.ownedPrism.normalInventoryApiPersistedAndReloaded -ne $true) {
+                throw 'Separate pre-auth funded/prism fixture differs from explicit initial-state authority; no native earning/obtainability claim is permitted'
+            }
+            $report.fixturePreconditionOrigin = [ordered]@{
+                nxOrigin = 'FIXTURE_PRE_AUTH'; initialNxCredit = 10000; nxEarningQualified = $false
+                prismOrigin = 'FIXTURE_PRE_AUTH_OWNED'; initialPrisms = 1; prismObtainabilityQualified = $false
+                midTestWalletOrItemMutationPermitted = $false
+            }
         }
         try { $credentials = Get-Content $privatePath -Raw | ConvertFrom-Json }
         catch { throw "Private fixture credential handoff could not be read ($($_.Exception.GetType().FullName)); content is not logged" }
