@@ -104,8 +104,12 @@ ordinary-player, bot, native-visual or lifecycle acceptance.
   map/reward/episode values match all13 native definitions, not native Book UI proof.
   New genuine Hyper05590001/native Cash name is narrowly materialized in rc6
   with stock05590000 and the other49 catalog files preserved. Its real inventory/
-  opcode241 warp/cooldown/reload consumer passed; source/target field-limit/EIM,
-  actual acquisition and native UI remain open. Actual ordinary31124 dialogue/
+  opcode241 warp/cooldown/reload consumer passed, and the source/target field-limit
+  and live-EIM escape guards now have an actual bounded proof: Perion67→Zakum280030000
+  refused by target119, and a six-GM0 HardLotus1065 attempt refused by source109 with
+  all6 EIM members retained and no cooldown stamp. Real1065 already carries0x40, so
+  dedicatedEim114 is masked, not independently exercised. Actual ordinary acquisition
+  and native UI remain open. Actual ordinary31124 dialogue/
   eight portals/normal completion granted17.5m EXP once with no free emblem and
   persisted on reload; this does not finish Rulax/Alcaster or all progression.
   rc6 Item/String changes require fresh reader/engine qualification; old rc5
