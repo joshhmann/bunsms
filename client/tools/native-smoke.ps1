@@ -83,6 +83,67 @@ SELECT JSON_OBJECT('id',a.id,'name',a.name,'tos',a.tos,'loggedin',a.loggedin,'ge
         account = if ($raw.Count) { ($raw -join "`n") | ConvertFrom-Json } else { $null } }
 }
 
+function Get-StockPicDigitPositions($Window) {
+    $foreground = [NativeSmoke]::ForegroundContext()
+    if ($foreground.ProcessId -ne $Window.ProcessId -or $foreground.Handle -ne $Window.Handle -or
+        $foreground.Class -ne 'MapleStoryClass') { throw 'Stock PIC keypad is not in the owned foreground; no input submitted' }
+    if (-not $script:stockPicGlyphs) {
+        # Exact genuine stock glyphs observed in two real Windows layouts (389949/389963).
+        # Every live keypad must contain all ten unique matches; never reuse an old layout.
+        $script:stockPicGlyphs = @{
+            '7,11:3E7F636363636363773E0C' = '0'
+            '5,11:1C1E1F1818181818181808' = '1'
+            '7,11:3E7F636130381C0E677F01' = '2'
+            '7,11:3E3F633038387063773F08' = '3'
+            '7,11:383C3C3636337F7F303010' = '4'
+            '7,11:7E3F030B3F736063773E08' = '5'
+            '7,11:3E3F03033F776363773E0C' = '6'
+            '7,10:7F7F2030181C0C0C0E06' = '7'
+            '7,11:3E7E63773E3E6363773E08' = '8'
+            '7,11:3E7F6363777F6C60773E08' = '9'
+        }
+    }
+    $slots = @(@(361,266), @(400,266), @(439,266), @(361,300), @(400,300),
+        @(439,300), @(361,334), @(400,334), @(439,334), @(361,368))
+    $bitmap = [Drawing.Bitmap]::new(132, 132)
+    $graphics = [Drawing.Graphics]::FromImage($bitmap)
+    try {
+        $graphics.CopyFromScreen(($Window.ClientX + 335), ($Window.ClientY + 249), 0, 0, $bitmap.Size)
+        $keys = @{}
+        foreach ($slot in $slots) {
+            $left = 11; $right = -11; $top = 11; $bottom = -11
+            for ($y = -10; $y -le 10; $y++) {
+                for ($x = -10; $x -le 10; $x++) {
+                    $pixel = $bitmap.GetPixel(($slot[0] - 335 + $x), ($slot[1] - 249 + $y))
+                    if ($pixel.R -lt 190 -and $pixel.G -lt 190 -and $pixel.B -lt 190) {
+                        $left = [Math]::Min($left, $x); $right = [Math]::Max($right, $x)
+                        $top = [Math]::Min($top, $y); $bottom = [Math]::Max($bottom, $y)
+                    }
+                }
+            }
+            if ($right -lt $left -or $bottom -lt $top) { throw 'Stock PIC keypad glyph missing; input stopped' }
+            $rows = [Text.StringBuilder]::new()
+            for ($y = $top; $y -le $bottom; $y++) {
+                $mask = 0
+                for ($x = $left; $x -le $right; $x++) {
+                    $pixel = $bitmap.GetPixel(($slot[0] - 335 + $x), ($slot[1] - 249 + $y))
+                    if ($pixel.R -lt 190 -and $pixel.G -lt 190 -and $pixel.B -lt 190) {
+                        $mask = $mask -bor (1 -shl ($x - $left))
+                    }
+                }
+                [void]$rows.Append($mask.ToString('X2'))
+            }
+            $signature = '{0},{1}:{2}' -f ($right - $left + 1), ($bottom - $top + 1), $rows.ToString()
+            if (-not $script:stockPicGlyphs.ContainsKey($signature)) { throw 'Stock PIC keypad glyph unrecognized; input stopped' }
+            $digit = $script:stockPicGlyphs[$signature]
+            if ($keys.ContainsKey($digit)) { throw 'Stock PIC keypad glyph ambiguous; input stopped' }
+            $keys[$digit] = [Drawing.Point]::new($slot[0], $slot[1])
+        }
+        if ($keys.Count -ne 10) { throw 'Stock PIC keypad does not contain ten unique digits; input stopped' }
+        return $keys
+    } finally { $graphics.Dispose(); $bitmap.Dispose() }
+}
+
 function Save-NativeSnapshot([int[]]$Ids) {
     $script:snapshotIndex++
     $prefix = Join-Path $OutputDirectory ('snapshot-{0:D2}' -f $script:snapshotIndex)
@@ -342,13 +403,18 @@ function Save-NativeSnapshot([int[]]$Ids) {
             $window = @($row.windows | Where-Object { $_.Visible -and $_.Class -eq 'MapleStoryClass' -and $_.ClientWidth -eq 800 -and $_.ClientHeight -eq 600 }) | Select-Object -First 1
             if ($window) {
                 $report.picAction = [ordered]@{ utc = [DateTime]::UtcNow.ToString('O'); status = 'attempting'
-                    scope = 'Normal keyboard input and OK on observed stock PIC dialog; no PIC disablement, direct DB/auth write or world claim' }
+                    scope = 'Normal mouse clicks on live-recognized stock PIC digits and OK; no old layout reuse, forced text, PIC disablement or direct auth write' }
                 try {
-                    [NativeSmoke]::ClickClient($window, 399, 213)
-                    [NativeSmoke]::TypeClientText($window, $script:qaPic)
+                    foreach ($digit in $script:qaPic.ToCharArray()) {
+                        [NativeSmoke]::MoveClientPointer($window, 320, 150)
+                        $keys = Get-StockPicDigitPositions $window
+                        $point = $keys[$digit.ToString()]
+                        [NativeSmoke]::ClickClient($window, $point.X, $point.Y)
+                        Start-Sleep -Milliseconds 100
+                    }
                     $report.picAction.entryEvidence = Save-Screenshot $window.ClientX $window.ClientY $window.ClientWidth $window.ClientHeight (Join-Path $OutputDirectory 'ordinary-pic-before-confirm.png')
                     [NativeSmoke]::ClickClient($window, 370, 408)
-                    $report.picAction.status = 'submitted-normal-pic-keyboard-input'
+                    $report.picAction.status = 'submitted-normal-pic-mouse-input'
                 } catch { $report.picAction.status = 'failed'; $report.picAction.error = $_.Exception.ToString(); throw }
             }
         }

@@ -269,6 +269,20 @@ public static class NativeSmoke
         System.Threading.Thread.Sleep(100);
     }
 
+    public static void MoveClientPointer(WindowInfo window, int x, int y)
+    {
+        IntPtr hwnd = new IntPtr(Convert.ToInt64(window.Handle.Substring(2), 16));
+        uint owner; GetWindowThreadProcessId(hwnd, out owner);
+        if (owner != window.ProcessId || !window.Visible || window.Class != "MapleStoryClass" ||
+            GetForegroundWindow() != hwnd || x < 0 || y < 0 ||
+            x >= window.ClientWidth || y >= window.ClientHeight)
+            throw new InvalidOperationException("Native game lost pointer ownership; no movement submitted");
+        Point point = new Point { X = x, Y = y };
+        if (!ClientToScreen(hwnd, ref point) || !SetCursorPos(point.X, point.Y))
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+        System.Threading.Thread.Sleep(100);
+    }
+
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern short VkKeyScan(char character);
     [DllImport("user32.dll")] private static extern uint MapVirtualKey(uint code, uint mapType);
     [DllImport("user32.dll")] private static extern short GetKeyState(int key);

@@ -46,7 +46,11 @@ cmake --preset release-win32
 cmake --build --preset release-win32
 ```
 
-`build/Release/BunsMS.dll` (+ `.pdb`) is the artifact CI publishes.
+`build/Release/BunsMS.dll` and its matching `.pdb` are published together.
+Optimized Release keeps `/OPT:REF`, `/OPT:ICF` and `/INCREMENTAL:NO`, adds `/Zi`
+debug information and links `/DEBUG:FULL`. CI inspects exact case-sensitive
+export names and DUMPBIN `/PDBPATH` correspondence. Use the pair from the same
+build; new symbols do not retroactively match an older pinned runtime.
 Checkout requires `submodules: recursive` (Detours + WzLib).
 
 The required Kaentake runtime has a separate build tree to preserve upstream's
