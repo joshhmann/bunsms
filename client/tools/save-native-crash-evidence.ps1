@@ -9,6 +9,8 @@ $privateBase = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { [IO.Path]::GetT
 $private = Join-Path $privateBase ('buns-native-private-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force $destination, $private | Out-Null
 $receipt = [ordered]@{ startedUtc = $StartedUtc.ToUniversalTime().ToString('O'); observedUtc = [DateTime]::UtcNow.ToString('O'); events = @(); wer = @(); stacks = @(); errors = @(); rawFilesKeptPrivate = 0; mode = 'Existing Windows/native crash output only. Raw reports/dumps stay on private ephemeral runner disk, outside ALL artifact paths. No live debugger, dump-policy registry, guard or renderer changes.' }
+$receipt.privateFileInventory = @()
+$receipt.nativeText = @()
 try {
     $receipt.events = @(Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = $StartedUtc; Id = @(1000, 1001) } -ErrorAction Stop |
         Where-Object { $_.Message -match 'MapleStory|Kaentake|BunsMS\.dll' } |
@@ -48,6 +50,37 @@ foreach ($source in $files) {
         $target = Join-Path $private ("{0:D3}-{1}" -f $index, [IO.Path]::GetFileName($source))
         Copy-Item -LiteralPath $source -Destination $target
         $receipt.rawFilesKeptPrivate++
+        $file = Get-Item -LiteralPath $target
+        $extension = $file.Extension.ToLowerInvariant()
+        $receipt.privateFileInventory += [pscustomobject]@{
+            index = $index; fileName = [IO.Path]::GetFileName($source); extension = $extension
+            bytes = $file.Length; sha256 = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant()
+            lastWriteUtc = (Get-Item -LiteralPath $source).LastWriteTimeUtc.ToString('O')
+        }
+        if ($extension -in @('.log', '.txt')) {
+            # Never publish raw lines: a native report can include inherited environment/secrets.
+            $tokens = [Collections.Generic.List[object]]::new()
+            $reader = [IO.StreamReader]::new($target, $true)
+            try {
+                $lineNumber = 0; $stackLines = 0; $insideStack = $false
+                while (-not $reader.EndOfStream -and $lineNumber -lt 4096 -and $tokens.Count -lt 64) {
+                    $line = $reader.ReadLine(); $lineNumber++
+                    if ($line -match '(?i)\b(exception(?:\s+(?:code|address|offset))?|error\s+code|fault(?:ing)?(?:\s+(?:address|offset))?|eip|rip)\s*[:=]\s*(-?(?:0x)?[0-9a-f]{4,16})\b') {
+                        $tokens.Add([pscustomobject]@{ line = $lineNumber; kind = $Matches[1]; numericValue = $Matches[2] })
+                    }
+                    if ($line -match '(?i)^\s*(?:call\s+stack|stack\s*trace|backtrace)\b') { $insideStack = $true }
+                    if ($insideStack -and $stackLines -lt 16 -and $line -match '^\s*((?:0x)?[0-9a-fA-F]{8,16})\s+((?:0x)?[0-9a-fA-F]{8,16})(?:\s|$)') {
+                        $tokens.Add([pscustomobject]@{ line = $lineNumber; kind = 'bounded-stack-leading-addresses-only'; address1 = $Matches[1]; address2 = $Matches[2] })
+                        $stackLines++
+                    }
+                    foreach ($match in [regex]::Matches($line, '(?i)\b(MapleStory\.exe|BunsMS\.dll|Kaentake\.(?:dll|exe)|Gr2D_DX8\.dll|d3d8\.dll|ntdll\.dll|kernelbase\.dll|kernel32\.dll)(?:\s*[!+]\s*(0x[0-9a-f]{1,16}|[A-Za-z_?@$][A-Za-z0-9_?@$:.<>~-]{0,95}(?:\+0x[0-9a-f]{1,16})?))?')) {
+                        if ($tokens.Count -ge 64) { break }
+                        $tokens.Add([pscustomobject]@{ line = $lineNumber; kind = 'module-mention-not-fault-proof'; module = $match.Groups[1].Value; location = $match.Groups[2].Value })
+                    }
+                }
+                $receipt.nativeText += [pscustomobject]@{ fileIndex = $index; scannedLines = $lineNumber; limitLines = 4096; limitTokens = 64; tokens = $tokens }
+            } finally { $reader.Dispose() }
+        }
         if ([IO.Path]::GetExtension($target) -eq '.wer') {
             $pairs = @{}
             foreach ($line in Get-Content $target) { if ($line -match '^([^=]+)=(.*)$') { $pairs[$Matches[1]] = $Matches[2] } }
